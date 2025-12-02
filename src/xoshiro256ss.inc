@@ -5,6 +5,8 @@
 //   Made next static and renamed it nextss (to allow also nextpp)
 //   Made s refer to rng->state instead of a global variable
 //   Removed the jump and long jump functions
+//   Commented out definition of rotl (duplicate from xoshiro256.inc that should be
+//     included first
 // Kristján Jónasson, jonasson@hi.is, Dept. of Computer Science, University of Iceland
 
 /*  Written in 2018 by David Blackman and Sebastiano Vigna (vigna@acm.org)
@@ -37,9 +39,9 @@ IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE. */
    a 64-bit seed, we suggest to seed a splitmix64 generator and use its
    output to fill s. */
 
-static inline uint64_t rotl(const uint64_t x, int k) {
-	return (x << k) | (x >> (64 - k));
-}
+// static inline uint64_t rotl(const uint64_t x, int k) {
+// 	return (x << k) | (x >> (64 - k));
+// }
 
 static uint64_t nextss(randompack_rng *rng) {
 	uint64_t *s = rng->state.u64;

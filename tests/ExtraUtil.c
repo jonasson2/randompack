@@ -3,7 +3,6 @@
 #include "allocate.h"
 #include "ExtraUtil.h"
 #include "BlasGateway.h"
-#include "error.h"
 #include <math.h>
 #include <stdio.h>
 

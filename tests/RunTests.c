@@ -1,11 +1,11 @@
 #include <getopt.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
 #include "printX.h"
 #include "Tests.h"
-#include "error.h"
 #include "xCheck.h"
 
 static int NTOTAL = 0, NFAIL = 0;
@@ -42,7 +42,8 @@ static void option_error(const char *fmt, ...) {
   va_start(args, fmt);
   vsnprintf(msg_opt, sizeof(msg_opt), fmt, args);
   va_end(args);
-  xErrorExit(msg_opt);
+  fprintf(stderr, "%s\n", msg_opt);
+  exit(1);
 }
 
 static void run_test(const char *name, void (*fn)(void)) {

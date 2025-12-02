@@ -24,18 +24,14 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-typedef struct rand_rng randompack_rng;
+typedef struct randompack_rng randompack_rng;
 
 randompack_rng *randompack_create( // Create RNG with given type and seed, NULL on error
   const char *type,  // in   Park-Miller/PM, Xorshift128+/Xorshift/X+, R/R-default
-  long long seed     // in   0 to randomize, >0 to seed, <0 for thread randomize
+  uint64_t seed      // in   0 to randomize, >0 to seed, <0 for thread randomize
 );
 
 void randompack_free( // Free an RNG created with randompack_create
-  randompack_rng *rng   // in   Random number generator
-);
-
-unsigned int randompack_getPMseed( // Return the current Park-Miller seed, 0 on error
   randompack_rng *rng   // in   Random number generator
 );
 
@@ -51,6 +47,20 @@ bool randompack_int( // Generate uniform integers in [m, n], false on error
   int m,                // in   Inclusive minimum
   int n,                // in   Inclusive maximum
   randompack_rng *rng   // in   Random number generator
+);
+
+bool randompack_uint32( // Generate uint32 in [0, bound), false on error
+  uint32_t x[],          // out  len-vector of integers
+  int len,               // in   Number requested
+  uint32_t bound,        // in   Exclusive upper bound (>0)
+  randompack_rng *rng    // in   Random number generator
+);
+
+bool randompack_uint64( // Generate uint64 in [0, bound), false on error
+  uint64_t x[],          // out  len-vector of integers
+  int len,               // in   Number requested
+  uint64_t bound,        // in   Exclusive upper bound (>0)
+  randompack_rng *rng    // in   Random number generator
 );
 
 bool randompack_perm( // Generate a random permutation of 0..n-1, false on error

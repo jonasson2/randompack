@@ -19,6 +19,11 @@ _Static_assert(sizeof(long long) == 8, "randompack requires 64-bit long long");
 #define ALLOC(ptr, count) (((ptr) = calloc((size_t)(count), sizeof *(ptr))) != 0)
 #define FREE(p)  do { free(p); (p) = 0; } while (0)
 
+static inline int imin(int m, int n) { return m < n ? m : n; }
+static inline int imax(int m, int n) { return m > n ? m : n; }
+
+static const int mersenne8 = 2147483647;  // 2^31-1
+
 #ifdef __unix__
   #include <unistd.h>
   #include <fcntl.h>

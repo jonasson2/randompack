@@ -10,8 +10,8 @@
 #include <stdlib.h>
 #include <math.h>
 
-// Declaration of crypto_random function
-bool crypto_random(void *buffer, size_t size);
+// Bring in crypto_random implementation for standalone use
+#include "crypto_random.inc"
 
 // getopt declarations
 extern int optind;

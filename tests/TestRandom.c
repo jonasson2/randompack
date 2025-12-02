@@ -172,18 +172,18 @@ static void test_randomize_changes_stream(void) {
   freem(c);
 }
 
-static void test_pm_seed_updates(void) {
-  const int N = 4;
-  double x[N];
-  randompack_rng *rng = randompack_create("PM", 123);
-  unsigned int s1 = randompack_getPMseed(rng);
-  unsigned int s2 = randompack_getPMseed(rng);
-  xCheck(s1 == s2);
-  randompack_u01(x, N, rng);
-  unsigned int s3 = randompack_getPMseed(rng);
-  xCheck(s3 != s2);
-  randompack_free(rng);
-}
+// static void test_pm_seed_updates(void) {
+//   const int N = 4;
+//   double x[N];
+//   randompack_rng *rng = randompack_create("PM", 123);
+//   unsigned int s1 = randompack_getPMseed(rng);
+//   unsigned int s2 = randompack_getPMseed(rng);
+//   xCheck(s1 == s2);
+//   randompack_u01(x, N, rng);
+//   unsigned int s3 = randompack_getPMseed(rng);
+//   xCheck(s3 != s2);
+//   randompack_free(rng);
+// }
 
 static void test_int_api(void) {
   const int N = 128;
@@ -306,7 +306,7 @@ void TestRandomNumbers(void) {
   RUN_TEST(determinism_default_seed);
   RUN_TEST(pm_vs_default_selection);
   RUN_TEST(randomize_changes_stream);
-   RUN_TEST(pm_seed_updates);
+  //RUN_TEST(pm_seed_updates);
   RUN_TEST(int_api);
   RUN_TEST(perm_api);
   RUN_TEST(sample_api);

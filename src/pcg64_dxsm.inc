@@ -25,7 +25,7 @@ pcg64_random_fast(randompack_rng *rng) {
   const uint64_t mul = 15750249268501108917ULL;
   /* linear congruential generator */
   pcg_ulong_t state = rng->state.u128;
-  rng->state = state*mul + PCG_INCREMENT;
+  rng->state.u128 = state*mul + PCG_INCREMENT;
   /* DXSM (double xor shift multiply) permuted output */
   uint64_t hi = (uint64_t)(state >> 64);
   uint64_t lo = (uint64_t)(state | 1);

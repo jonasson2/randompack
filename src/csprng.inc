@@ -5,7 +5,7 @@ static uint64_t csprng(randompack_rng *rng) {
   uint64_t x;
 
   if (!crypto_random(&x, sizeof x)) {  // platform dependent function
-    rng->last_error = "system CSPRNG failed";
+    rng->last_error = "System CSPRNG failed (probably error reading /dev/random)";
     return 0;
   }
 

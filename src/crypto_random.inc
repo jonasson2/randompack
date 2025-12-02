@@ -7,6 +7,7 @@
 // - OpenBSD: arc4random_buf (uses ChaCha20)
 // - Linux/FreeBSD/DragonFly: getrandom() syscall (Linux uses ChaCha20)
 // - Fallback: /dev/urandom for other Unix-like systems
+// - Final fallback: An empty function that returns false (should not happen).
 //
 // All systems implement automatic reseeding for forward secrecy.
 

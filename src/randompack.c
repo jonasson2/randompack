@@ -8,15 +8,13 @@
 #include <stdbool.h>
 #include <string.h>
 #include <time.h>
-#include "randompack.h"
+//#include "randompack.h"
 #include "BlasGateway.h"
 //#include "VarmaUtilities.h"
 #include "randompack_config.h"
+#include "crypto_random.inc"
 
-#include "csprng.inc"
-#include "engines.inc"
-#include "randutil.inc"
-#include "distributions.inc"
+typedef struct randompack_rng randompack_rng;
 
 typedef enum {
   PARKMILLER,
@@ -28,22 +26,23 @@ typedef enum {
   SYS
 } rng_engine;
 
+typedef uint64_t (*engine_next)(randompack_rng *rng);
+
 struct randompack_rng {
   union {
-    uint32_t u32[16];
-    uint64_t u64[8];
+    uint32_t u32;
+    uint64_t u64[4];
     #ifdef HAVE128
-    uint128_t u128[4];
-	 #endif
+    uint128_t u128;
+    #endif
   } state;
   rng_engine engine;
   engine_next next;
-  uint64_t buf;
+  uint64_t buf64;
   double spare_norm;
   const char *last_error;
+  void *extra_state;
 };
-
-typedef uint64_t (*engine_next)(randompack_rng *rng);
 
 typedef struct {
   const char *full;
@@ -56,19 +55,19 @@ typedef struct {
 #define pcg64_random_fast 0
 #endif
 
+#include "engines.inc"
+#include "randutil.inc"
+#include "distributions.inc"
+
 static rng_entry rng_table[] = {
   { "park-miller",   "pm",       PARKMILLER,  0                 }, // special path
   { "xorshift128+",  "x128+",    X128P,       xorshift128p      },
   { "xoshiro256**",  "x256**",   X256SS,      nextss            },
   { "xoshiro256++",  "x256++",   X256PP,      nextpp            },
   { "pcg64",         "pcg",      PCG64,       pcg64_random_fast },
-  { "chacha20",      "chacha20", CHACHA20,    chacha20_u64      },
-  { "system-csprng", "system",   SYS,         sysrand_u64       }
+  { "chacha20",      "chacha20", CHACHA20,    chachacha         },
+  { "system-csprng", "system",   SYS,         csprng            }
 };
-
-#include "randutil.inc"
-#include "distributions.inc"
-#include "generators.inc"
 
 static bool select_engine(const char *s, randompack_rng *rng) {
   if (!rng) return false;
