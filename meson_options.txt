@@ -1,0 +1,5 @@
+option('blas_order', 
+  type: 'string', 
+  value: 'auto',
+  description: 'Comma-separated list of BLAS libraries to search for (e.g., "mkl,openblas,accelerate") or "auto" for platform default'
+)
