@@ -12,8 +12,10 @@ CORE C STYLE
 - else on a new line
 - // comments.
 - Pointer form: int *x. Prefer i++ in loops.  
-- Max line length 90; no spaces around * or /
+- Max line length 90; no spaces around * or /, spaces around comparison operators
 - Use bool/true/false; prefer 0 over NULL and '\0'
+- Don't use (int) cast unless necessary
+- Prefer brackets around sizeof argument
 
 ---------------------------
 ARCHITECTURE

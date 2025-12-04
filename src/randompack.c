@@ -70,22 +70,16 @@ static rng_entry rng_table[] = {
 };
 
 static rng_entry *find_entry(rng_engine e) {
-  for (int i = 0; i < LEN(rng_table); i++) {
+  for (int i = 0; i < LEN(rng_table); i++)
     if (rng_table[i].engine == e) return &rng_table[i];
-  }
   return 0;
 }
 
-static void set_engine_by_enum(randompack_rng *rng, rng_engine e) {
-  rng_entry *ent = find_entry(e);
-  rng->engine = e;
-  rng->next   = ent ? ent->next : 0;
-}
-
 static bool select_engine(const char *s, randompack_rng *rng) {
+  // set rng->{engine,next} according to the engine name s
   if (!rng) return false;
   if (!s) {
-    rng->engine = X256PP;   // default engine
+    rng->engine = X256PP; // default engine
     rng->next   = nextpp;
     return true;
   }
@@ -157,9 +151,9 @@ randompack_rng *randompack_create(const char *engine, uint64_t seed) {
       key256_t key;
       nonce96_t nonce;
       ChaCha20_Ctx *ctx = (ChaCha20_Ctx *)rng->extra_state;
-      for (int i = 0; i < (int)(sizeof key / (int)sizeof key[0]); i++)
+      for (int i = 0; i < sizeof(key)/sizeof(key[0]); i++)
         key[i] = (uint8_t)rand_splitmix64(&seed);
-      for (int i = 0; i < (int)(sizeof nonce / (int)sizeof nonce[0]); i++)
+      for (int i = 0; i < sizeof(nonce)/sizeof(nonce[0]); i++)
         nonce[i] = (uint8_t)rand_splitmix64(&seed);
       ChaCha20_init(ctx, key, nonce, 0);
     }
@@ -174,8 +168,7 @@ randompack_rng *randompack_create(const char *engine, uint64_t seed) {
 
 void randompack_free(randompack_rng *rng) {
   if (!rng) return;
-  if (rng->engine == CHACHA20)
-    FREE(rng->extra_state);
+  FREE(rng->extra_state);
   FREE(rng);
 }
 
@@ -185,80 +178,68 @@ typedef struct {
   uint64_t state_u64[4];
   uint64_t buf64;
   double spare_norm;
-  uint32_t flags;
   uint32_t reserved;
   ChaCha20_Ctx chacha;
 } rng_blob;
 
 enum {
   STATE_MIN_NEED =
-    (int)(sizeof(uint32_t)*2
-          + sizeof(((rng_blob *)0)->state_u64)
-          + sizeof(uint64_t)
-          + sizeof(double)
-          + sizeof(uint32_t)*2)
+  sizeof(uint32_t)*2
+  + sizeof(((rng_blob *)0)->state_u64)
+  + sizeof(uint64_t)
+  + sizeof(double)
+  + sizeof(uint32_t)*2
 };
 
 bool randompack_get_state(int *len, uint8_t *buf, randompack_rng *rng) {
+  // Returns the complete internal state of rng as an opaque byte buffer
   if (!rng) return false;
   if (!len) {
     rng->last_error = "randompack_get_state: len is null";
     return false;
   }
-
-  int need = STATE_MIN_NEED + (rng->engine==CHACHA20 ? (int)sizeof(ChaCha20_Ctx) : 0);
-
+  int need = STATE_MIN_NEED + (rng->engine == CHACHA20 ? sizeof(ChaCha20_Ctx) : 0);
   if (!buf) {
     *len = need;
     rng->last_error = 0;
     return true;
   }
-
   if (*len < need) {
     rng->last_error = "randompack_get_state: buffer too small";
     return false;
   }
-
   rng_blob blob = 0;
-
   blob.version = 1;
-  blob.engine = (uint32_t)rng->engine;
+  blob.engine = rng->engine;
   for (int i=0; i<LEN(rng->state.u64); i++) blob.state_u64[i] = rng->state.u64[i];
   blob.buf64 = rng->buf64;
   blob.spare_norm = rng->spare_norm;
-  blob.flags = (rng->engine==CHACHA20) ? 1u : 0u;
-
   if (rng->engine==CHACHA20 && rng->extra_state)
     memcpy(&blob.chacha, rng->extra_state, sizeof(ChaCha20_Ctx));
-
-  memcpy(buf, &blob, (size_t)need);
+  memcpy(buf, &blob, need);
   rng->last_error = 0;
   return true;
 }
 
 bool randompack_set_state(int len, const uint8_t *buf, randompack_rng *rng) {
-  if (!rng) goto invalid_args;
-  if (!buf || len<=0) goto invalid_args;
+  // Restores the rng state using a buffer obtained with randompack_get_state
+  if (!rng) return false;
+  if (!buf || len <= 0) goto invalid_args;
 
-  rng_blob blob;
-  int min_need = STATE_MIN_NEED;
-  if (len < min_need) goto corrupt;
+  rng_blob blob = {0};
+  memcpy(&blob, buf, imin(len, sizeof(blob)));
 
-  memset(&blob, 0, sizeof blob);
-  int copy = len < (int)sizeof blob ? len : (int)sizeof blob;
-  memcpy(&blob, buf, (size_t)copy);
+  rng_entry *ent = find_entry(blob.engine);
+  int extra_need = (blob.engine == CHACHA20 ? sizeof(ChaCha20_Ctx) : 0);
+  if (blob.version != 1
+      || !ent
+      || len < STATE_MIN_NEED + extra_need)
+    goto corrupt;  
+  
+  rng->engine = blob.engine;
+  rng->next   = ent->next;
 
-  if (blob.version!=1) goto corrupt;
-
-  rng_entry *ent = find_entry((rng_engine)blob.engine);
-  if (!ent) goto corrupt;
-
-  int need = min_need + ((blob.flags&1u) ? (int)sizeof(ChaCha20_Ctx) : 0);
-  if (len < need) goto corrupt;
-
-  set_engine_by_enum(rng, (rng_engine)blob.engine);
-
-  if (rng->engine==CHACHA20) {
+  if (rng->engine == CHACHA20) {
     if (!rng->extra_state) {
       ChaCha20_Ctx *ctx;
       if (!ALLOC(ctx, 1)) goto alloc_fail;
@@ -266,24 +247,20 @@ bool randompack_set_state(int len, const uint8_t *buf, randompack_rng *rng) {
     }
     memcpy(rng->extra_state, &blob.chacha, sizeof(ChaCha20_Ctx));
   }
-
-  for (int i=0; i<LEN(rng->state.u64); i++)
+  for (int i = 0; i < LEN(rng->state.u64); i++)
     rng->state.u64[i] = blob.state_u64[i];
-
-  rng->state.u32 = (uint32_t)blob.state_u64[0];
+  rng->state.u32 = blob.state_u64[0];
   rng->buf64 = blob.buf64;
   rng->spare_norm = blob.spare_norm;
   rng->last_error = 0;
   return true;
-
+  
 invalid_args:
-  if (rng) rng->last_error = "randompack_set_state: invalid arguments";
+  rng->last_error = "randompack_set_state: invalid arguments";
   return false;
-
 corrupt:
   rng->last_error = "randompack_set_state: corrupt state buffer";
   return false;
-
 alloc_fail:
   rng->last_error = "randompack_set_state: allocation failed";
   return false;

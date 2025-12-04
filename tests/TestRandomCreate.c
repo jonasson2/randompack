@@ -34,6 +34,9 @@ static void test_engine_aliases(void) {
     { "xoshiro256**", "x256**" },
     { "xoshiro256++", "x256++" },
     { "chacha20",     "chacha20" },
+#ifdef HAVE128
+    { "pcg64",        "pcg"     },
+#endif
   };
   const int n = (int)(sizeof engines / sizeof engines[0]);
   uint64_t vals[n];
@@ -78,8 +81,21 @@ static void test_null_engine_name(void) {
   randompack_free(rng);
 }
 
+static void test_system_csprng(void) {
+  randompack_rng *rng = randompack_create("system", 0);
+  xCheck(rng);
+  const char *err = randompack_last_error(rng);
+  xCheck(!err || !err[0]);
+  uint64_t x[2] = {0, 0};
+  bool ok = randompack_uint64(x, 2, 0, rng);
+  xCheck(ok);
+  xCheck(x[0] || x[1]);
+  randompack_free(rng);
+}
+
 void TestRandomCreate(void) {
   RUN_TEST(engine_aliases);
   RUN_TEST(bad_engine_name);
   RUN_TEST(null_engine_name);
+  RUN_TEST(system_csprng);
 }
