@@ -25,6 +25,8 @@
 #include <stdint.h>
 
 typedef struct randompack_rng randompack_rng;
+typedef struct { uint64_t v[4]; } randompack_counter, randompack_3fry_key;
+typedef struct { uint64_t v[2]; } randompack_philox_key;
 
 randompack_rng *randompack_create( // Create RNG with given type and seed, NULL on error
   const char *type,  // in   Park-Miller/PM, Xorshift128+/Xorshift/X+, R/R-default
@@ -32,6 +34,11 @@ randompack_rng *randompack_create( // Create RNG with given type and seed, NULL 
 );
 
 void randompack_free( // Free an RNG created with randompack_create
+  randompack_rng *rng   // in   Random number generator
+);
+
+bool randompack_set_norm_method( // Set algorithm used for random normals
+  char *method,         // in   "polar" or "default" (for ziggurat)
   randompack_rng *rng   // in   Random number generator
 );
 
@@ -47,20 +54,6 @@ bool randompack_int( // Generate uniform integers in [m, n], false on error
   int m,                // in   Inclusive minimum
   int n,                // in   Inclusive maximum
   randompack_rng *rng   // in   Random number generator
-);
-
-bool randompack_uint32( // Generate uint32 in [0, bound), false on error
-  uint32_t x[],          // out  len-vector of integers
-  int len,               // in   Number requested
-  uint32_t bound,        // in   Exclusive upper bound (>0)
-  randompack_rng *rng    // in   Random number generator
-);
-
-bool randompack_uint64( // Generate uint64 in [0, bound), false on error
-  uint64_t x[],          // out  len-vector of integers
-  int len,               // in   Number requested
-  uint64_t bound,        // in   Exclusive upper bound (>0)
-  randompack_rng *rng    // in   Random number generator
 );
 
 bool randompack_perm( // Generate a random permutation of 0..n-1, false on error
@@ -93,6 +86,44 @@ bool randompack_mvn( // Generate multivariate normal randoms N(mu,Sig), false on
   double L[],           // in/out d×d lower Cholesky factor of Sig (or NULL)
   randompack_rng *rng   // in     Random number generator
 );
+
+bool randompack_uint32( // Generate uint32 in [0, bound), false on error
+  uint32_t x[],          // out  len-vector of integers
+  int len,               // in   Number requested
+  uint32_t bound,        // in   Exclusive upper bound, or 0 for unbounded
+  randompack_rng *rng    // in   Random number generator
+);
+
+bool randompack_uint64( // Generate uint64 in [0, bound), false on error
+  uint64_t x[],          // out  len-vector of integers
+  int len,               // in   Number requested
+  uint64_t bound,        // in   Exclusive upper bound, or 0 for unbounded
+  randompack_rng *rng    // in   Random number generator
+);
+
+bool randompack_uint64_3fry(
+  uint64_t x[],          // out  len-vector of integers (unbounded)
+  int len,               // in   Number requested
+  randompack_counter ctr,// in   Counter state
+  randompack_3fry_key key// in   Threefry4x64 key
+);
+
+bool randompack_get_state( // Serialize RNG state to an opaque buffer
+  int *len,                 // in/out 0→query size; otherwise buffer length
+  uint8_t *buf,             // out    state buffer (may be NULL if *len==0)
+  randompack_rng *rng       // in     RNG whose state to serialize
+);
+
+bool randompack_set_state( // Restore RNG state from an opaque buffer
+  int len,                  // in  buffer length
+  const uint8_t *buf,       // in  serialized state
+  randompack_rng *rng       // in  target RNG (must be allocated)
+);
+
+const char *randompack_last_error( // Get last error string, or 0 if none
+  const randompack_rng *rng        // in  RNG
+);
+
 // NOTE 1: Sig, X and L are stored columnwise in Fortran fashion.
 // NOTE 2: There are situations when Sig is indefinite but close to being positive
 //         definite, for example due to rounding errors. To remedy this a pivoted

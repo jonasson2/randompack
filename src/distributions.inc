@@ -13,14 +13,73 @@ static int LastNonzeroColumn(int m, int n, double A[]) {
 
 #include "zmgd.inc"   // static zmgd() lives here
 
+static void rand_dble(double x[], int n, randompack_rng *rng) {
+  int i;
+  // Random uniform double
+  if (rng->engine == PARKMILLER) {
+    const double maxrand = 1.0 + (double)mersenne8;
+    for (i = 0; i < n; i++) {
+      uint32_t u = PM_rand_bits(rng);
+      double r = (double)u;
+      x[i] = r / maxrand;
+    }
+  }
+  else {
+    for (i = 0; i < n; i++) {
+      uint64_t v = rng->next(rng);
+      x[i] = (double)(v >> 11) * 0x1.0p-53;
+    }
+  }
+}
+
+static void rand_normal_polar(double x[], int n, randompack_rng *rng) {
+  // Normal random numbers from N(0,1); uses polar method.
+  double u=0.0, v=0.0, uv[2], s=0.0, R;
+  if (n<=0) return;
+  int k = 0;
+  if (rng->spare_norm == rng->spare_norm) {
+    x[k++] = rng->spare_norm;
+    rng->spare_norm = NAN;
+    if (k >= n) return;
+  }
+  while (k + 1 < n) {
+    do {
+      rand_dble(uv, 2, rng);
+      u = uv[0]*2.0 - 1.0;
+      v = uv[1]*2.0 - 1.0;
+      s = u*u + v*v;
+    } while (s <= 0.0 || s >= 1.0);
+    R = sqrt(-2.0*log(s)/s);
+    x[k++] = u*R;
+    x[k++] = v*R;
+  }
+  if (k < n) {
+    do {
+      rand_dble(uv, 2, rng);
+      u = uv[0]*2.0 - 1.0;
+      v = uv[1]*2.0 - 1.0;
+      s = u*u + v*v;
+    } while (s <= 0.0 || s >= 1.0);
+    R = sqrt(-2.0*log(s)/s);
+    x[k] = u*R;
+    rng->spare_norm = v*R;
+  }
+}
+
 static void rand_normal(double x[], int n, randompack_rng *rng) {
-  for (int i = 0; i < n; i++)
-    x[i] = zmgd(rng, rng);
+  if (rng->spare_norm == INFINITY)
+	 for (int i = 0; i < n; i++) x[i] = zmgd(rng, rng); // ziggurat
+  else
+	 rand_normal_polar(x, n, rng);
 }
 
 static void rand_uint64(uint64_t bound, uint64_t x[], int n, randompack_rng *rng) {
   // Sets x to n random integers in {0, 1,..., bound-1}
-  if (bound == 0) return;
+  if (bound == 0) {
+    for (int i = 0; i < n; i++)
+      x[i] = rng->next(rng);
+    return;
+  }
   int i = 0, j;
   uint64_t R;
   if (bound <= UINT8_MAX) {
@@ -70,7 +129,11 @@ static void rand_uint64(uint64_t bound, uint64_t x[], int n, randompack_rng *rng
 
 static void rand_uint32(uint32_t bound, uint32_t x[], int n, randompack_rng *rng) {
   // Sets x to n random integers in {0, 1,..., bound-1}
-  if (bound == 0) return;
+  if (bound == 0) {
+    for (int i = 0; i < n; i++)
+      x[i] = rand_32bits(rng);
+    return;
+  }
   int i = 0, j;
   uint64_t R;
   if (bound <= (uint32_t)UINT8_MAX) {
@@ -103,7 +166,7 @@ static void rand_uint32(uint32_t bound, uint32_t x[], int n, randompack_rng *rng
       R = rng->next(rng);
       r = (uint32_t)R;
       if (r >= thresh) x[i++] = (uint32_t)(r % b);
-      if (i>=n) break;
+      if (i>=n) break; // process left (high) half of R
       R >>= 32;
       r = (uint32_t)R;
       if (r >= thresh) x[i++] = (uint32_t)(r % b);
@@ -132,25 +195,6 @@ static void rand_int(int bound, int x[], int n, randompack_rng *rng) {
     rand_uint32((uint32_t) bound, (uint32_t*) x, n, rng);
 }
 
-static void rand_dble(double x[], int n, randompack_rng *rng) {
-  int i;
-  // Random uniform double
-  if (rng->engine == PARKMILLER) {
-    const double maxrand = 1.0 + (double)mersenne8;
-    for (i = 0; i < n; i++) {
-      uint32_t u = PM_rand_bits(rng);
-      double r = (double)u;
-      x[i] = r / maxrand;
-    }
-  }
-  else {
-    for (i = 0; i < n; i++) {
-      uint64_t v = rng->next(rng);
-      x[i] = (double)(v >> 11) * 0x1.0p-53;
-    }
-  }
-}
-
 static void rand_perm(int p[], int n, randompack_rng *rng) {
   // Fisher-Yates algorithm, stores a random permutation of 0..n-1 in p
   for (int i=0; i<n; i++) {
@@ -173,40 +217,6 @@ static void rand_sample(int p[], int n, int k, randompack_rng *rng) {
   for (int i=k; i<n; i++) {
     rand_int(i+1, &r, 1, rng);
     if (r < k) p[r] = i;
-  }
-}
-
-static void rand_normal_polar(double x[], int n, randompack_rng *rng) {
-  // Normal random numbers from N(0,1); uses polar method.
-  double u=0.0, v=0.0, uv[2], s=0.0, R;
-  if (n<=0) return;
-  int k = 0;
-  if (rng->spare_norm == rng->spare_norm) {
-    x[k++] = rng->spare_norm;
-    rng->spare_norm = NAN;
-    if (k >= n) return;
-  }
-  while (k + 1 < n) {
-    do {
-      rand_dble(uv, 2, rng);
-      u = uv[0]*2.0 - 1.0;
-      v = uv[1]*2.0 - 1.0;
-      s = u*u + v*v;
-    } while (s <= 0.0 || s >= 1.0);
-    R = sqrt(-2.0*log(s)/s);
-    x[k++] = u*R;
-    x[k++] = v*R;
-  }
-  if (k < n) {
-    do {
-      rand_dble(uv, 2, rng);
-      u = uv[0]*2.0 - 1.0;
-      v = uv[1]*2.0 - 1.0;
-      s = u*u + v*v;
-    } while (s <= 0.0 || s >= 1.0);
-    R = sqrt(-2.0*log(s)/s);
-    x[k] = u*R;
-    rng->spare_norm = v*R;
   }
 }
 

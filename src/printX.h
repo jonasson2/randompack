@@ -2,6 +2,7 @@
 #define PRINTX_H
 
 #ifdef DEBUG_PRINT
+#include <stdint.h>
 
 void printOff(void);
 void printOn(void);
@@ -20,6 +21,8 @@ void printMsgUnderl(const char *s);                    // print underlined messa
 
 void printI(const char *name, int i);                  // print named int
 void printP(const char *name, const void *p);          // print named pointer
+void print64(const char *name, uint64_t x);            // print named uint64
+void print32(const char *name, uint32_t x);            // print named uint32
 void printD(const char *name, double d);               // print named double
 void printV(const char *name, const double x[], int n);// print named vector
 void printIV(const char *name, const int iv[], int n); // print named int vector

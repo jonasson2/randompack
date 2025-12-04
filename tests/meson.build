@@ -1,6 +1,12 @@
 test_sources = files(
   'RunTests.c',
-  'TestRandom.c',
+  'TestRandomCreate.c',
+  'TestRandomInt.c',
+  'TestRandomNorm.c',
+  'TestRandomPerm.c',
+  'TestRandomRandomize.c',
+  'TestRandomSample.c',
+  'TestRandomU01.c',
   'TestRandomMvn.c',
 )
 

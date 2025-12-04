@@ -82,8 +82,14 @@ int main(int argc, char **argv) {
   if (TESTVERBOSITY <= 1) printOff();
   vprint("\n");
   vprint(headr_fmt, "TEST OF", "PASSED", "FAILED");
-  run_test("RandomNumbers",      TestRandomNumbers);
-  run_test("RandomNumbers_mvn",  TestRandomMvn);
+  run_test("RandomCreate",   TestRandomCreate);
+  //run_test("Randomize",      TestRandomRandomize);
+  //run_test("RandomInt",      TestRandomInt);
+  //run_test("RandomNorm",     TestRandomNorm);
+  //run_test("RandomPerm",     TestRandomPerm);
+  //run_test("RandomSample",   TestRandomSample);
+  //run_test("RandomU01",      TestRandomU01);
+  //run_test("RandomNumbers_mvn", TestRandomMvn);
   vprint(table_fmt, "TOTAL", NTOTAL - NFAIL, NFAIL);
   return (NFAIL > 0);
 }

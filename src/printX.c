@@ -63,6 +63,18 @@ void printI(const char *name, int i) { // print named int
   fflush(0);
 }
 
+void print64(const char *name, uint64_t x) {
+  if (noprint) return;
+  printf("%s = %llu\n", name, (unsigned long long)x);
+  fflush(0);
+}
+
+void print32(const char *name, uint32_t x) {
+  if (noprint) return;
+  printf("%s = %u\n", name, x);
+  fflush(0);
+}
+
 void printP(const char *name, const void *p) {
   if (noprint) return;
   printf("%s = %p\n",name, p);

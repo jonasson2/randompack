@@ -8,22 +8,22 @@
 #include <stdbool.h>
 #include <string.h>
 #include <time.h>
-//#include "randompack.h"
-#include "BlasGateway.h"
-//#include "VarmaUtilities.h"
+#include "randompack.h"
 #include "randompack_config.h"
+#include "BlasGateway.h"
 #include "crypto_random.inc"
 
 typedef struct randompack_rng randompack_rng;
 
 typedef enum {
+  INVALID,
   PARKMILLER,
   X128P,
   X256SS,
   X256PP,
   PCG64,
   CHACHA20,
-  SYS
+  SYS,
 } rng_engine;
 
 typedef uint64_t (*engine_next)(randompack_rng *rng);
@@ -69,6 +69,19 @@ static rng_entry rng_table[] = {
   { "system-csprng", "system",   SYS,         csprng            }
 };
 
+static rng_entry *find_entry(rng_engine e) {
+  for (int i = 0; i < LEN(rng_table); i++) {
+    if (rng_table[i].engine == e) return &rng_table[i];
+  }
+  return 0;
+}
+
+static void set_engine_by_enum(randompack_rng *rng, rng_engine e) {
+  rng_entry *ent = find_entry(e);
+  rng->engine = e;
+  rng->next   = ent ? ent->next : 0;
+}
+
 static bool select_engine(const char *s, randompack_rng *rng) {
   if (!rng) return false;
   if (!s) {
@@ -90,13 +103,23 @@ static bool select_engine(const char *s, randompack_rng *rng) {
   return false;  // unknown engine
 }
 
+static inline bool rng_ok(randompack_rng *rng) {
+  if (!rng || rng->engine==RNG_INVALID) {
+    if (rng) rng->last_error = "invalid randompack_rng object";
+    return false;
+  }
+  return true;
+}
+
 randompack_rng *randompack_create(const char *engine, uint64_t seed) {
   randompack_rng *rng;
   ALLOC(rng, 1);
   if (!rng) return 0;
   rng->last_error = 0;
-  rng->spare_norm = NAN;
+  rng->spare_norm = INFINITY; // Use ziggurat iff INFINITY
+  rng->engine = INVALID;
   if (!select_engine(engine, rng)) {
+    rng->engine = INVALID;
     rng->last_error = "unknown engine name (spelling error in requested engine)";
     return rng;
   }
@@ -104,19 +127,188 @@ randompack_rng *randompack_create(const char *engine, uint64_t seed) {
     rng->last_error = "PCG64 engine not supported on this platform (no 128-bit integers)";
     return rng;
   }
+  if (rng->engine == CHACHA20) {
+    ChaCha20_Ctx *ctx;
+    if (!ALLOC(ctx, 1)) {
+      rng->last_error = "randompack_create: memory allocation failed";
+      return rng;
+    }
+    rng->extra_state = ctx;
+  }
+  if (rng->engine == PARKMILLER) {
+    uint64_t x;
+    uint32_t s;
+    if (seed == 0) {
+      entropy_fill(rng, &x, sizeof x);
+      s = (uint32_t)(x % (uint32_t)mersenne8);
+    }
+    else
+      s = (uint32_t)(seed % (uint64_t)mersenne8);
+    if (s == 0) s = 1;
+    rng->state.u32 = s;
+    rng->buf64 = 0;
+    (void)PM_rand_bits(rng); // spin-up
+    return rng;
+  }
   if (seed == 0)
     rand_randomize(rng);
   else {
-    for (int i = 0; i < LEN(rng->state.u64); i++)
-      rng->state.u64[i] = rand_splitmix64(&seed);
-    if (rng->state.u64[0] == 0) rng->state.u64[0] = 1;
+    if (rng->engine == CHACHA20) {
+      key256_t key;
+      nonce96_t nonce;
+      ChaCha20_Ctx *ctx = (ChaCha20_Ctx *)rng->extra_state;
+      for (int i = 0; i < (int)(sizeof key / (int)sizeof key[0]); i++)
+        key[i] = (uint8_t)rand_splitmix64(&seed);
+      for (int i = 0; i < (int)(sizeof nonce / (int)sizeof nonce[0]); i++)
+        nonce[i] = (uint8_t)rand_splitmix64(&seed);
+      ChaCha20_init(ctx, key, nonce, 0);
+    }
+    else {
+      for (int i = 0; i < LEN(rng->state.u64); i++)
+        rng->state.u64[i] = rand_splitmix64(&seed);
+      if (rng->state.u64[0] == 0) rng->state.u64[0] = 1;
+    }
   }
   return rng;
 }
 
 void randompack_free(randompack_rng *rng) {
+  if (!rng) return;
+  if (rng->engine == CHACHA20)
+    FREE(rng->extra_state);
   FREE(rng);
 }
+
+typedef struct {
+  uint32_t version;
+  uint32_t engine;
+  uint64_t state_u64[4];
+  uint64_t buf64;
+  double spare_norm;
+  uint32_t flags;
+  uint32_t reserved;
+  ChaCha20_Ctx chacha;
+} rng_blob;
+
+enum {
+  STATE_MIN_NEED =
+    (int)(sizeof(uint32_t)*2
+          + sizeof(((rng_blob *)0)->state_u64)
+          + sizeof(uint64_t)
+          + sizeof(double)
+          + sizeof(uint32_t)*2)
+};
+
+bool randompack_get_state(int *len, uint8_t *buf, randompack_rng *rng) {
+  if (!rng) return false;
+  if (!len) {
+    rng->last_error = "randompack_get_state: len is null";
+    return false;
+  }
+
+  int need = STATE_MIN_NEED + (rng->engine==CHACHA20 ? (int)sizeof(ChaCha20_Ctx) : 0);
+
+  if (!buf) {
+    *len = need;
+    rng->last_error = 0;
+    return true;
+  }
+
+  if (*len < need) {
+    rng->last_error = "randompack_get_state: buffer too small";
+    return false;
+  }
+
+  rng_blob blob = 0;
+
+  blob.version = 1;
+  blob.engine = (uint32_t)rng->engine;
+  for (int i=0; i<LEN(rng->state.u64); i++) blob.state_u64[i] = rng->state.u64[i];
+  blob.buf64 = rng->buf64;
+  blob.spare_norm = rng->spare_norm;
+  blob.flags = (rng->engine==CHACHA20) ? 1u : 0u;
+
+  if (rng->engine==CHACHA20 && rng->extra_state)
+    memcpy(&blob.chacha, rng->extra_state, sizeof(ChaCha20_Ctx));
+
+  memcpy(buf, &blob, (size_t)need);
+  rng->last_error = 0;
+  return true;
+}
+
+bool randompack_set_state(int len, const uint8_t *buf, randompack_rng *rng) {
+  if (!rng) goto invalid_args;
+  if (!buf || len<=0) goto invalid_args;
+
+  rng_blob blob;
+  int min_need = STATE_MIN_NEED;
+  if (len < min_need) goto corrupt;
+
+  memset(&blob, 0, sizeof blob);
+  int copy = len < (int)sizeof blob ? len : (int)sizeof blob;
+  memcpy(&blob, buf, (size_t)copy);
+
+  if (blob.version!=1) goto corrupt;
+
+  rng_entry *ent = find_entry((rng_engine)blob.engine);
+  if (!ent) goto corrupt;
+
+  int need = min_need + ((blob.flags&1u) ? (int)sizeof(ChaCha20_Ctx) : 0);
+  if (len < need) goto corrupt;
+
+  set_engine_by_enum(rng, (rng_engine)blob.engine);
+
+  if (rng->engine==CHACHA20) {
+    if (!rng->extra_state) {
+      ChaCha20_Ctx *ctx;
+      if (!ALLOC(ctx, 1)) goto alloc_fail;
+      rng->extra_state = ctx;
+    }
+    memcpy(rng->extra_state, &blob.chacha, sizeof(ChaCha20_Ctx));
+  }
+
+  for (int i=0; i<LEN(rng->state.u64); i++)
+    rng->state.u64[i] = blob.state_u64[i];
+
+  rng->state.u32 = (uint32_t)blob.state_u64[0];
+  rng->buf64 = blob.buf64;
+  rng->spare_norm = blob.spare_norm;
+  rng->last_error = 0;
+  return true;
+
+invalid_args:
+  if (rng) rng->last_error = "randompack_set_state: invalid arguments";
+  return false;
+
+corrupt:
+  rng->last_error = "randompack_set_state: corrupt state buffer";
+  return false;
+
+alloc_fail:
+  rng->last_error = "randompack_set_state: allocation failed";
+  return false;
+}
+
+const char *randompack_last_error(const randompack_rng *rng) {
+  if (!rng) return 0;
+  return rng->last_error;
+}
+
+bool randompack_set_norm_method(char *method, randompack_rng *rng) {
+  if (!rng) return false;
+  rng->last_error = 0;
+  char t[10];
+  STRSET(t, method);
+  for (int i=0; t[i]; i++) t[i] = TOLOWER(t[i]);
+  if (!strcmp(method, "polar"))
+	 rng->spare_norm = NAN;  // Codes polar
+  else if (!strcmp(method, "default"))
+	 rng->spare_norm = INFINITY;
+  else
+	 rng->last_error = "randompack_set_norm_method: invalid method argument";
+  if (rng->last_error) return false;
+  return true;
+} 
 
 bool randompack_u01(double x[], int len, randompack_rng *rng) {
   if (!rng) return false;
@@ -159,14 +351,12 @@ bool randompack_uint32(uint32_t x[], int len, uint32_t bound, randompack_rng *rn
   if (!rng) return false;
   if (!x || len < 0)
     rng->last_error = "randompack_uint32: invalid arguments";
-  else if (bound == 0)
-    rng->last_error = "randompack_uint32: bound must be > 0";
   else if (rng->engine == PARKMILLER)
     rng->last_error = "randompack_uint32: Park-Miller does not support uint32 randoms";
   else
     rng->last_error = 0;
   if (rng->last_error) return false;
-  
+
   rand_uint32(bound, x, len, rng);
   return true;
 }
@@ -175,8 +365,6 @@ bool randompack_uint64(uint64_t x[], int len, uint64_t bound, randompack_rng *rn
   if (!rng) return false;
   if (!x || len < 0)
     rng->last_error = "invalid arguments to randompack_uint64";
-  else if (bound == 0)
-    rng->last_error = "randompack_uint64: bound must be > 0";
   else if (rng->engine == PARKMILLER)
     rng->last_error = "randompack_uint64: Park-Miller does not support uint64 randoms";
   else
@@ -211,26 +399,30 @@ bool randompack_sample(int x[], int len, int k, randompack_rng *rng) {
   return true;
 }
 
-// #ifdef USING_R
-//   if (rng->type == PARKMILLER)
-//     rand_normal(x, len, rng);
-//   else {
-//     GetRNGstate();
-//     for (int i = 0; i < len; i++) {
-//       x[i] = unif_rand(); // R-s built-in generator
-//     }
-//     PutRNGstate();
-//   }
+bool randompack_uint64_3fry(uint64_t x[], int len, randompack_counter ctr,
+                            randompack_3fry_key key) {
+  if (!x || len < 0)
+    return false;
+  rand_3fry_64bits(x, len, ctr, key);
+  return true;
+}
+
+bool randompack_uint64_philox(uint64_t x[], int len, randompack_counter ctr,
+                              randompack_philox_key key) {
+  if (!x || len < 0)
+    return false;
+  rand_phil_64bits(x, len, ctr, key);
+  return true;
+}
 
 bool randompack_norm(double x[], int len, randompack_rng *rng) {
-  if (!rng) return false;      // cannot set error if rng is NULL
+  if (!rng) return false;
   if (!x || len < 0)
     rng->last_error = "invalid arguments to randompack_norm";
   else
     rng->last_error = 0;
   if (rng->last_error) return false;
-
-  rand_normal(x, len, rng);    // len == 0 is fine
+  rand_normal(x, len, rng);
   return true;
 }
 

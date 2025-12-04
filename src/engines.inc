@@ -4,6 +4,7 @@
 #include "xoshiro256pp.inc"
 #include "xoshiro256ss.inc"
 #include "chachacha.inc"
+#include "counter_based.inc"
 #include "csprng.inc"
 
 #ifdef HAVE128

@@ -5,28 +5,25 @@ Always obey the rules below.
 ---------------------------
 CORE C STYLE
 ---------------------------
-- ISO C11 only; no compiler extensions except GNU's "eat the comma".  
-- Indent 2 spaces; Stroustrup braces; // comments.  
+- ISO C11 only; no compiler extensions
+- Indent 2 spaces; 
+- Stroustrup braces
+- Open brace ({) on same line as function definition 
+- else on a new line
+- // comments.
 - Pointer form: int *x. Prefer i++ in loops.  
-- Max line length 90; no spaces around *.  
-- Use bool/true/false; prefer 0 over NULL.  
-- Public API uses snake_case with prefix varmapack_ or randompack_.  
-- Internal helpers are static/static inline without prefixes.  
-- No macros except include guards. Use xAssert (not assert) for checks.  
-- Avoid min/max macros; use fmin/fmax or inline helpers.
+- Max line length 90; no spaces around * or /
+- Use bool/true/false; prefer 0 over NULL and '\0'
 
 ---------------------------
 ARCHITECTURE
 ---------------------------
-- Public headers: varmapack.h (and randompack.h for RNG facade).  
-- Sources under src/: core C files plus subdirs (e.g., src/r for R gateways).  
-- Tests live in tests/, examples in examples/.  
-- Meson/Ninja drive builds; no visibility attributes.  
-
----------------------------
-STATUS / EXPECTATIONS
----------------------------
-- Only varmapack_* and randompack_* APIs are public; internal helpers must stay private.
+- Public header: randompack.h
+- Use macros and helpers from randompack_config.h:
+-    STRSET, STRSETF, LEN, CLEAR, ALLOC, FREE, imin, imax 
+- Sources under src/, tests live in tests/, examples in examples/
+- Meson/Ninja drive builds
+- Single file build (via includes)
 
 ---------------------------
 OUTPUT
