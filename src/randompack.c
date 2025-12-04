@@ -98,7 +98,7 @@ static bool select_engine(const char *s, randompack_rng *rng) {
 }
 
 static inline bool rng_ok(randompack_rng *rng) {
-  if (!rng || rng->engine==RNG_INVALID) {
+  if (!rng || rng->engine == INVALID) {
     if (rng) rng->last_error = "invalid randompack_rng object";
     return false;
   }
@@ -151,9 +151,9 @@ randompack_rng *randompack_create(const char *engine, uint64_t seed) {
       key256_t key;
       nonce96_t nonce;
       ChaCha20_Ctx *ctx = (ChaCha20_Ctx *)rng->extra_state;
-      for (int i = 0; i < sizeof(key)/sizeof(key[0]); i++)
+      for (unsigned int i = 0; i < sizeof(key)/sizeof(key[0]); i++)
         key[i] = (uint8_t)rand_splitmix64(&seed);
-      for (int i = 0; i < sizeof(nonce)/sizeof(nonce[0]); i++)
+      for (unsigned int i = 0; i < sizeof(nonce)/sizeof(nonce[0]); i++)
         nonce[i] = (uint8_t)rand_splitmix64(&seed);
       ChaCha20_init(ctx, key, nonce, 0);
     }
@@ -208,7 +208,7 @@ bool randompack_get_state(int *len, uint8_t *buf, randompack_rng *rng) {
     rng->last_error = "randompack_get_state: buffer too small";
     return false;
   }
-  rng_blob blob = 0;
+  rng_blob blob = {0};
   blob.version = 1;
   blob.engine = rng->engine;
   for (int i=0; i<LEN(rng->state.u64); i++) blob.state_u64[i] = rng->state.u64[i];
