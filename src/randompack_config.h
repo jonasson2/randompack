@@ -1,3 +1,6 @@
+#ifndef RANDOMPACK_CONFIG_H
+#define RANDOMPACK_CONFIG_H
+
 #include <limits.h>
 #include <stdio.h>   // snprintf
 #include <stdlib.h>  // calloc, free
@@ -21,7 +24,7 @@ _Static_assert(sizeof(long long) == 8, "randompack requires 64-bit long long");
 static inline int imin(int m, int n) { return m < n ? m : n; }
 static inline int imax(int m, int n) { return m > n ? m : n; }
 
-static const int mersenne8 = 2147483647;  // 2^31-1
+static int mersenne8 = 2147483647;  // 2^31-1
 
 #ifdef __unix__
   #include <unistd.h>
@@ -33,4 +36,6 @@ static const int mersenne8 = 2147483647;  // 2^31-1
 #if defined(__SIZEOF_INT128__) && !defined(_MSC_VER)
   #define HAVE128 1
   typedef __uint128_t uint128_t;
+#endif
+
 #endif

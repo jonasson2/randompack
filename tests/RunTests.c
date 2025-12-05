@@ -48,20 +48,8 @@ static void option_error(const char *fmt, ...) {
 
 static void run_test(const char *name, void (*fn)(void)) {
   int ntotal, nfail;
-  xCheckInit(name);
+  xCheckInit();
   fn();
-  ntotal = xCheckNTotal();
-  nfail  = xCheckNFailures();
-  NTOTAL += ntotal;
-  NFAIL  += nfail;
-  vprint(table_fmt, name, ntotal - nfail, nfail);
-}
-
-static void run_bool_test(const char *name, bool (*fn)(void)) {
-  int ntotal, nfail;
-  xCheckInit(name);
-  bool ok = fn();
-  xCheck(ok);
   ntotal = xCheckNTotal();
   nfail  = xCheckNFailures();
   NTOTAL += ntotal;
@@ -82,14 +70,15 @@ int main(int argc, char **argv) {
   if (TESTVERBOSITY <= 1) printOff();
   vprint("\n");
   vprint(headr_fmt, "TEST OF", "PASSED", "FAILED");
-  run_test("RandomCreate",   TestRandomCreate);
-  //run_test("Randomize",      TestRandomRandomize);
-  //run_test("RandomInt",      TestRandomInt);
-  //run_test("RandomNorm",     TestRandomNorm);
-  //run_test("RandomPerm",     TestRandomPerm);
-  //run_test("RandomSample",   TestRandomSample);
-  //run_test("RandomU01",      TestRandomU01);
-  //run_test("RandomNumbers_mvn", TestRandomMvn);
+  run_test("Create",   TestCreate);
+  run_test("Uint32",   TestUint32);
+  //run_test("Randomize",      TestRandomize);
+  //run_test("Int",      TestInt);
+  //run_test("Norm",     TestNorm);
+  //run_test("Perm",     TestPerm);
+  //run_test("Sample",   TestSample);
+  //run_test("U01",      TestU01);
+  //run_test("Numbers_mvn", TestMvn);
   vprint(table_fmt, "TOTAL", NTOTAL - NFAIL, NFAIL);
   return (NFAIL > 0);
 }

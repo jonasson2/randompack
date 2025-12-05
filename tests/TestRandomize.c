@@ -7,12 +7,6 @@
 #include "randompack.h"
 #include "xCheck.h"
 
-#define RUN_TEST(x)        \
-  do {                     \
-    xCheckAddMsg(#x);      \
-    test_##x();            \
-  } while (0)
-
 static void test_randomize_changes_stream(void) {
   const int N = 128;
   double *a, *b, *c;
@@ -41,6 +35,6 @@ static void test_randomize_changes_stream(void) {
   freem(c);
 }
 
-void TestRandomRandomize(void) {
-  RUN_TEST(randomize_changes_stream);
+void TestRandomize(void) {
+  test_randomize_changes_stream();
 }

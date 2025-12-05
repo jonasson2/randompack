@@ -16,6 +16,7 @@ CORE C STYLE
 - Use bool/true/false; prefer 0 over NULL and '\0'
 - Don't use (int) cast unless necessary
 - Prefer brackets around sizeof argument
+- Never use const unless absolutely necessary
 
 ---------------------------
 ARCHITECTURE

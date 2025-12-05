@@ -2,26 +2,22 @@
 #ifndef XCHECK_H
 #define XCHECK_H
 
-#define xCheck(e) ((e) ? (void)xCheckOK() : xCheckFunc(#e, __FILE__, __LINE__)) 
-// returns silently if the condition e is true, but if it is false, then it is printed
-// (literally) on stderr along with the source file name and line number where the check
-// was made, the common message set with xCheckInit, and the additional message set with
-// xCheckAddMsg (if any). The counter returned by xCheckNTotal is incremented and failures
-// also increment the static counter returned by xCheckNfailures.
+#define xCheck(e) ((e) ? (void)xCheckOK() : \
+  xCheckFunc(#e, __FILE__, __LINE__, __func__, 0))
+// returns silently if the condition e is true; if it is false, then the condition and the
+// source location are printed. The counter returned by xCheckNTotal is incremented and
+// failures also increment the static counter returned by xCheckNfailures.
 
-#define xCheckMessage(e,msg)  ((e) ? (void)xCheckOK() : xCheckFunc(msg,__FILE__,__LINE__))
-// xCheckMessage(e, msg) behaves as xCheck except that msg is printed instead of the
-// condition upon failure.
+#define xCheckMsg(e,msg) ((e) ? (void)xCheckOK() : \
+  xCheckFunc(#e, __FILE__, __LINE__, __func__, msg))
 
-void xCheckFunc(const char *message, char* file, int line);
+void xCheckFunc(const char *message, const char *file, int line,
+                const char *func, const char *ctx);
 
 void xCheckOK(void);
 
-void xCheckInit(const char *msg);
-// Initializes static variables commonmsg, addmsg and NFAIL of xCheck.c to msg, "" and 0.
-
-void xCheckAddMsg(const char *amsg);
-// sets additional message (addmsg) to amsg.
+void xCheckInit(void);
+// Resets counters.
 
 int xCheckNFailures(void);
 // Returns number of failures since last xCheckInit call.

@@ -1,20 +1,34 @@
-#ifndef XCHECK_H
-#define XCHECK_H
-
 #include <stdio.h>
 #include <string.h>
 #include "xCheck.h"
 
 static int NTOTAL = 0;
 static int NFAIL = 0;
-static char commonmsg[60] = "";
-static char addmsg[60] = "";
 
-void xCheckFunc(const char *message, char* file, int line) {
-  // Print filename, line number, and upto two messages.
-  char fmt[] = "%s:%d: %s test failed: %s is false";
-  fprintf(stderr, fmt, file, line, commonmsg, message);
-  if (strlen(addmsg) > 0) fprintf(stderr, " (%s)", addmsg);
+static const char *basename_path(const char *file) {
+  const char *slash = strrchr(file, '/');
+  const char *bslash = strrchr(file, '\\');
+  const char *base = file;
+  if (slash && (!bslash || slash > bslash)) {
+    base = slash + 1;
+  }
+  else if (bslash) {
+    base = bslash + 1;
+  }
+  return base;
+}
+
+void xCheckFunc(const char *message, const char *file, int line,
+                const char *func, const char *ctx) {
+  const char *base = basename_path(file);
+  if (ctx) {
+    char fmt[] = "%s:%d (%s, %s): test failed, %s is false";
+    fprintf(stderr, fmt, base, line, func, ctx, message);
+  }
+  else {
+    char fmt[] = "%s:%d (%s): test failed, %s is false";
+    fprintf(stderr, fmt, base, line, func, message);
+  }
   fprintf(stderr, "\n");
   fflush(stderr);
   NTOTAL += 1;
@@ -25,15 +39,9 @@ void xCheckOK(void) {
   NTOTAL += 1;
 }
 
-void xCheckInit(const char *msg) { // set common message to msg and NFAIL to 0
-  strcpy(commonmsg, msg);
-  addmsg[0] = 0;
+void xCheckInit(void) { // reset counters
   NTOTAL = 0;
   NFAIL = 0;
-}
-
-void xCheckAddMsg(const char *amsg) { // set additional message to amsg
-  strcpy(addmsg, amsg);
 }
 
 int xCheckNFailures(void) {
@@ -43,5 +51,3 @@ int xCheckNFailures(void) {
 int xCheckNTotal(void) {
   return NTOTAL;
 }
-
-#endif

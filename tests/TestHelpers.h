@@ -1,7 +1,7 @@
 // -*- C -*-
 
-#ifndef TEST_RANDOM_HELPERS_H
-#define TEST_RANDOM_HELPERS_H
+#ifndef TEST_HELPERS_H
+#define TEST_HELPERS_H
 
 #include <stdbool.h>
 

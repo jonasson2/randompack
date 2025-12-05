@@ -2,14 +2,8 @@
 #include <stdbool.h>
 
 #include "randompack.h"
-#include "TestRandomHelpers.h"
+#include "TestHelpers.h"
 #include "xCheck.h"
-
-#define RUN_TEST(x)        \
-  do {                     \
-    xCheckAddMsg(#x);      \
-    test_##x();            \
-  } while (0)
 
 static void test_sample_api(void) {
   const int N = 50;
@@ -35,6 +29,6 @@ static void test_sample_api(void) {
   randompack_free(r3);
 }
 
-void TestRandomSample(void) {
-  RUN_TEST(sample_api);
+void TestSample(void) {
+  test_sample_api();
 }

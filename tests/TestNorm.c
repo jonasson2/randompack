@@ -9,12 +9,6 @@
 #include "randompack.h"
 #include "xCheck.h"
 
-#define RUN_TEST(x)        \
-  do {                     \
-    xCheckAddMsg(#x);      \
-    test_##x();            \
-  } while (0)
-
 static void test_normal_basic(void) {
   const int N = 1e6;
   double meantol = 7*1/sqrt(N);
@@ -57,7 +51,7 @@ static void test_determinism_default_seed(void) {
   freem(b);
 }
 
-void TestRandomNorm(void) {
-  RUN_TEST(normal_basic);
-  RUN_TEST(determinism_default_seed);
+void TestNorm(void) {
+  test_normal_basic();
+  test_determinism_default_seed();
 }

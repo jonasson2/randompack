@@ -1,4 +1,4 @@
-// TestRandomMvn.c — unit tests for randompack_mvn and multivariate normal logic
+// TestMvn.c — unit tests for randompack_mvn and multivariate normal logic
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -190,12 +190,10 @@ static void test_multivariate_normal(void) {
       0, 2, 1, 1,
       0, 0, 0, 0,
       0, 0, 0, 0};
-  xCheckAddMsg("Test positive definite Sigma");
   laset("Upper", 4, 4, 0.0, 0.0, Sig, 4);
   syrk("Lower", "NoT", 4, 4, 1.0, Lnonsing, 4, 0.0, Sig, 4);
   test_randnm(Sig, 4);
 
-  xCheckAddMsg("Test positive semidefinite Sigma");
   laset("Upper", 4, 4, 0.0, 0.0, Sig, 4);
   syrk("Lower", "NoT", 4, 4, 1.0, Lsing, 4, 0.0, Sig, 4);
   test_randnm(Sig, 2);
@@ -240,13 +238,7 @@ static void test_mvn_ldx(void) {
   randompack_free(r2);
 }
 
-#define RUN_TEST(x)                             \
- do {                                           \
-   xCheckAddMsg(#x);                            \
-   test_##x();                                  \
- } while(0)
-
-void TestRandomMvn(void) {
-  RUN_TEST(multivariate_normal);
-  RUN_TEST(mvn_ldx);
+void TestMvn(void) {
+  test_multivariate_normal();
+  test_mvn_ldx();
 }

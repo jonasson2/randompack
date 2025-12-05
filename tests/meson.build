@@ -1,13 +1,14 @@
 test_sources = files(
   'RunTests.c',
-  'TestRandomCreate.c',
-  'TestRandomInt.c',
-  'TestRandomNorm.c',
-  'TestRandomPerm.c',
-  'TestRandomRandomize.c',
-  'TestRandomSample.c',
-  'TestRandomU01.c',
-  'TestRandomMvn.c',
+  'TestCreate.c',
+  'TestInt.c',
+  'TestNorm.c',
+  'TestPerm.c',
+  'TestRandomize.c',
+  'TestSample.c',
+  'TestU01.c',
+  'TestMvn.c',
+  'TestUint32.c',
 )
 
 extra_util = files(

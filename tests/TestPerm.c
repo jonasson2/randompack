@@ -2,14 +2,8 @@
 #include <stdbool.h>
 
 #include "randompack.h"
-#include "TestRandomHelpers.h"
+#include "TestHelpers.h"
 #include "xCheck.h"
-
-#define RUN_TEST(x)        \
-  do {                     \
-    xCheckAddMsg(#x);      \
-    test_##x();            \
-  } while (0)
 
 static void test_perm_api(void) {
   const int N = 32;
@@ -21,6 +15,6 @@ static void test_perm_api(void) {
   randompack_free(rng);
 }
 
-void TestRandomPerm(void) {
-  RUN_TEST(perm_api);
+void TestPerm(void) {
+  test_perm_api();
 }

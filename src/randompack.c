@@ -105,8 +105,9 @@ static inline bool rng_ok(randompack_rng *rng) {
   return true;
 }
 
-randompack_rng *randompack_create(const char *engine, uint64_t seed) {
+randompack_rng *randompack_create(const char *engine, int seed) {
   randompack_rng *rng;
+  uint64_t seed64 = (uint64_t)(uint32_t)seed;
   ALLOC(rng, 1);
   if (!rng) return 0;
   rng->last_error = 0;
@@ -137,7 +138,7 @@ randompack_rng *randompack_create(const char *engine, uint64_t seed) {
       s = (uint32_t)(x % (uint32_t)mersenne8);
     }
     else
-      s = (uint32_t)(seed % (uint64_t)mersenne8);
+      s = (uint32_t)(seed64 % (uint64_t)mersenne8);
     if (s == 0) s = 1;
     rng->state.u32 = s;
     rng->buf64 = 0;
@@ -150,16 +151,18 @@ randompack_rng *randompack_create(const char *engine, uint64_t seed) {
     if (rng->engine == CHACHA20) {
       key256_t key;
       nonce96_t nonce;
+      uint64_t sm = seed64;
       ChaCha20_Ctx *ctx = (ChaCha20_Ctx *)rng->extra_state;
       for (unsigned int i = 0; i < sizeof(key)/sizeof(key[0]); i++)
-        key[i] = (uint8_t)rand_splitmix64(&seed);
+        key[i] = (uint8_t)rand_splitmix64(&sm);
       for (unsigned int i = 0; i < sizeof(nonce)/sizeof(nonce[0]); i++)
-        nonce[i] = (uint8_t)rand_splitmix64(&seed);
+        nonce[i] = (uint8_t)rand_splitmix64(&sm);
       ChaCha20_init(ctx, key, nonce, 0);
     }
     else {
+      uint64_t sm = seed64;
       for (int i = 0; i < LEN(rng->state.u64); i++)
-        rng->state.u64[i] = rand_splitmix64(&seed);
+        rng->state.u64[i] = rand_splitmix64(&sm);
       if (rng->state.u64[0] == 0) rng->state.u64[0] = 1;
     }
   }

@@ -30,7 +30,7 @@ typedef struct { uint64_t v[2]; } randompack_philox_key;
 
 randompack_rng *randompack_create( // Create RNG with given type and seed, NULL on error
   const char *type,  // in   Park-Miller/PM, Xorshift128+/Xorshift/X+, R/R-default
-  uint64_t seed      // in   0 to randomize, >0 to seed, <0 for thread randomize
+  int seed           // in   0 to randomize, >0 to seed, <0 for thread randomize
 );
 
 void randompack_free( // Free an RNG created with randompack_create
@@ -140,9 +140,9 @@ const char *randompack_last_error( // Get last error string, or 0 if none
 //         and return L on the first call, and let Sig be null and specify L on
 //         subsequent calls. If both Sig and L are null, the function exits with
 //         ok = 0.
-// NOTE 5: The seed type long long is 64 bits on almost all architectures in 2025. Only
-//         the most significant 32 bits are used for Park-Miller seeding. 
-// NOTE 6: To use the thread-randomize feature set the seed to -thread_id, to set the
-//         random state to a mix of the thread-id and system-entropy.
+// NOTE 5: The seed type int is 32 bits; only the lower 31 bits are used for Park-Miller
+//         seeding.
+// NOTE 6: To use the thread-randomize feature set the seed to -thread_id to mix the
+//         thread-id with system entropy.
 
 #endif /* RANDOMPACK_H */

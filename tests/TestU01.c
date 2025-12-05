@@ -9,12 +9,6 @@
 #include "randompack.h"
 #include "xCheck.h"
 
-#define RUN_TEST(x)        \
-  do {                     \
-    xCheckAddMsg(#x);      \
-    test_##x();            \
-  } while (0)
-
 static void test_uniform_basic(void) {
   const int N = 1e6;
   double meantol = 7*1/sqrt(12*N);
@@ -41,6 +35,6 @@ static void test_uniform_basic(void) {
   freem(x);
 }
 
-void TestRandomU01(void) {
-  RUN_TEST(uniform_basic);
+void TestU01(void) {
+  test_uniform_basic();
 }

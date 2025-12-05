@@ -9,10 +9,6 @@
 #include "xCheck.h"
 #include "TestUtil.h"
 
-typedef struct {
-  const char *full;
-  const char *abbrev;
-} engine_entry;
 // Test helper: verify that an RNG object is non-null and last_error is empty.
 static void check_rng_clean(randompack_rng *rng) {
   xCheck(rng);
@@ -36,8 +32,8 @@ static void check_failure(bool ok, randompack_rng *rng) {
 
 // Return the first n uint64 draws from the given engine with fixed seed 123.
 // Check that everything works cleanly.
-static void first_uint64_seq(const char *engine, uint64_t *x, int n) {
-  randompack_rng *rng = randompack_create(engine, 123);
+static void first_uint64_seq(const char *engine, uint64_t *x, int n, uint64_t seed) {
+  randompack_rng *rng = randompack_create(engine, seed);
   check_rng_clean(rng);
   bool ok = randompack_uint64(x, n, 0, rng);
   check_success(ok, rng);
@@ -45,36 +41,34 @@ static void first_uint64_seq(const char *engine, uint64_t *x, int n) {
   randompack_free(rng);
 }
 
-// Check that full engine names and their abbreviations produce identical first outputs
-// (same seed), and that different engines differ.
-static void test_engine_aliases(void) {
-  engine_entry engines[] = {
-    { "xorshift128+", "x128+" },
-    { "xoshiro256**", "x256**" },
-    { "xoshiro256++", "x256++" },
-    { "chacha20",     "chacha20" },
-#ifdef HAVE128
-    { "pcg64",        "pcg"     },
-#endif
-  };
-  const int n = (int)(sizeof engines/sizeof engines[0]);
-  const int m = 4;
-  uint64_t full[n][m];
-  uint64_t abbr[n][m];
-  // alias equality
-  for (int i=0; i<n; i++) {
-    first_uint64_seq(engines[i].full, full[i], m);
-    first_uint64_seq(engines[i].abbrev, abbr[i], m);
-    CHECK_VEC_EQ(full[i], abbr[i]);
-  }
-  // different engines must differ
-  for (int i=0; i<n; i++) {
-    for (int j=i+1; j<n; j++) {
-      CHECK_VEC_NEQ(full[i], full[j]);
+// Check that identical engines agree and different engines differ.
+static void test_engine_repeatability(void) {
+  int len = 4, nengines = LEN(engines);
+  uint64_t x[nengines][len], y[nengines][len], z[nengines][len];
+  for (int i=0; i<LEN(engines); i++) {
+    first_uint64_seq(engines[i], x[i], len, 42);
+    first_uint64_seq(engines[i], y[i], len, 42);
+    first_uint64_seq(engines[i], z[i], len, 43);
+    xCheck(equal_uint64(x[i], y[i], len));
+    xCheck(everywhere_different(x[i], z[i], len));
+    for (int j = i+1; j < nengines; j++) { // all the later engines
+      first_uint64_seq(engines[j], y[j], len, 42);
+      xCheck(everywhere_different(x[i], y[j], len));
     }
   }
 }
 
+// Check that abbreviated engine names work
+static void test_engine_aliases(void) {
+  int len = 4, nengines = LEN(engines);
+  uint64_t x[nengines][len], y[nengines][len];
+  for (int i=0; i<LEN(engines); i++) {
+    first_uint64_seq(engines[i], x[i], len, 42);
+    first_uint64_seq(abbrev[i], y[i], len, 42);
+    xCheck(equal_uint64(x[i], y[i], len));
+  }
+}
+  
 // Unknown engine names should yield a non-null "invalid" rng object with a non-blank
 // last_error. Drawing from an invalid rng must fail and set another non-blank error.
 static void test_bad_engine_name(void) {
@@ -106,8 +100,8 @@ static void test_null_engine_name(void) {
 // engine ("x256++" at present), for the same seed.
 static void test_default_engine_matches_x256pp(void) {
   uint64_t a[1], b[1];
-  first_uint64_seq(0, a, 1);
-  first_uint64_seq("x256++", b, 1);
+  first_uint64_seq(0, a, 1, 42);
+  first_uint64_seq("x256++", b, 1, 42);
   xCheck(a[0] == b[0]);
 }
 
@@ -180,15 +174,16 @@ static void test_park_miller_determinism(void) {
   randompack_free(r3);
 }
 
-void TestRandomCreate(void) {
-  RUN_TEST(engine_aliases);
-  RUN_TEST(bad_engine_name);
-  RUN_TEST(null_engine_name);
-  RUN_TEST(default_engine_matches_x256pp);
+void TestCreate(void) {
+  test_engine_repeatability();
+  test_engine_aliases();
+  test_bad_engine_name();
+  test_null_engine_name();
+  test_default_engine_matches_x256pp();
+  test_system_engine();
+  test_park_miller();
+  test_park_miller_determinism();
 #ifndef HAVE128
-  RUN_TEST(pcg64_unavailable);
+  test_pcg64_unavailable();
 #endif
-  RUN_TEST(system_engine);
-  RUN_TEST(park_miller);
-  RUN_TEST(park_miller_determinism);
 }

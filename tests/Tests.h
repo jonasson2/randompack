@@ -3,12 +3,13 @@
 
 #include <stdbool.h>
 
-void TestRandomCreate(void);
-void TestRandomRandomize(void);
-void TestRandomInt(void);
-void TestRandomNorm(void);
-void TestRandomPerm(void);
-void TestRandomSample(void);
-void TestRandomU01(void);
-void TestRandomMvn(void);
+void TestCreate(void);
+void TestRandomize(void);
+void TestInt(void);
+void TestNorm(void);
+void TestPerm(void);
+void TestSample(void);
+void TestU01(void);
+void TestMvn(void);
+void TestUint32(void);
 #endif /* TESTS_H */
