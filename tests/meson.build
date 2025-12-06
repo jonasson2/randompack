@@ -9,11 +9,13 @@ test_sources = files(
   'TestU01.c',
   'TestMvn.c',
   'TestUint32.c',
+  'TestUint64.c',
 )
 
 extra_util = files(
   'ExtraUtil.c',
   'xCheck.c',
+  'TestUtil.c',
 )
 
 run_tests = executable(

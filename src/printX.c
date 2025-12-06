@@ -112,6 +112,26 @@ void printIV(const char *name, const int iv[], int n) { // print named integer v
   fflush(0);
 }
 
+void printIVS(const char *name, const int iv[], int n) { // summarized integer vector
+  if (noprint) return;
+  printf("%s = ", name);
+  if (!iv) {
+    printf("NULL\n");
+    fflush(0);
+    return;
+  }
+  if (n <= 6) {
+    for (int i = 0; i < n; i++) printf("%d ", iv[i]);
+  }
+  else {
+    for (int i = 0; i < 4; i++) printf("%d ", iv[i]);
+    printf("... ");
+    for (int i = n - 2; i < n; i++) printf("%d ", iv[i]);
+  }
+  printf("\n");
+  fflush(0);
+}
+
 void printS(const char *name, const char *s) { // print named string
   if (noprint) return;
   printf("%s = %s\n",name,s);

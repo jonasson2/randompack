@@ -9,8 +9,8 @@
 #include "xCheck.h"
 
 static int NTOTAL = 0, NFAIL = 0;
-static const char *headr_fmt = "%-20s %8s %8s\n";
-static const char *table_fmt = "%-20s %8d %8d\n";
+static char *headr_fmt = "%-20s %8s %8s\n";
+static char *table_fmt = "%-20s %8d %8d\n";
 int TESTVERBOSITY = 0; // External
 
 static void print_help(void) {
@@ -26,7 +26,7 @@ static void print_help(void) {
 // -v    Summary
 // -vv  Also printX
 
-static void vprint(const char *fmt, ...) {
+static void vprint(char *fmt, ...) {
   if (TESTVERBOSITY < 1) return;
   va_list ap;
   va_start(ap, fmt);
@@ -35,7 +35,7 @@ static void vprint(const char *fmt, ...) {
   fflush(stdout);
 }
 
-static void option_error(const char *fmt, ...) {
+static void option_error(char *fmt, ...) {
   // Prints option error message formatted by fmt and exits
   char msg_opt[256];
   va_list args;
@@ -46,7 +46,7 @@ static void option_error(const char *fmt, ...) {
   exit(1);
 }
 
-static void run_test(const char *name, void (*fn)(void)) {
+static void run_test(char *name, void (*fn)(void)) {
   int ntotal, nfail;
   xCheckInit();
   fn();
@@ -72,6 +72,7 @@ int main(int argc, char **argv) {
   vprint(headr_fmt, "TEST OF", "PASSED", "FAILED");
   run_test("Create",   TestCreate);
   run_test("Uint32",   TestUint32);
+  run_test("Uint64",   TestUint64);
   //run_test("Randomize",      TestRandomize);
   //run_test("Int",      TestInt);
   //run_test("Norm",     TestNorm);

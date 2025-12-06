@@ -6,8 +6,8 @@
 #include "xCheck.h"
 
 static void test_sample_api(void) {
-  const int N = 50;
-  const int K = 10;
+  int N = 50;
+  int K = 10;
   int sample1[K], sample2[K];
   int used[N];
   randompack_rng *r1 = randompack_create("Xorshift", 11);

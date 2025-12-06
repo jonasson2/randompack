@@ -11,8 +11,8 @@
 #define xCheckMsg(e,msg) ((e) ? (void)xCheckOK() : \
   xCheckFunc(#e, __FILE__, __LINE__, __func__, msg))
 
-void xCheckFunc(const char *message, const char *file, int line,
-                const char *func, const char *ctx);
+void xCheckFunc(char *message, const char *file, int line, const char *func, const
+                char *ctx);
 
 void xCheckOK(void);
 

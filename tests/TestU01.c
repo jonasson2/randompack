@@ -10,7 +10,7 @@
 #include "xCheck.h"
 
 static void test_uniform_basic(void) {
-  const int N = 1e6;
+  int N = 1e6;
   double meantol = 7*1/sqrt(12*N);
   double vartol = 7*1/sqrt(180*N);
   double exactmu = 0.5, exactvar = 1.0/12.0;

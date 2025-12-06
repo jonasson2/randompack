@@ -40,13 +40,13 @@ struct randompack_rng {
   engine_next next;
   uint64_t buf64;
   double spare_norm;
-  const char *last_error;
+  char *last_error;
   void *extra_state;
 };
 
 typedef struct {
-  const char *full;
-  const char *abbrev;
+  char *full;
+  char *abbrev;
   rng_engine  engine;
   engine_next next;
 } rng_entry;
@@ -75,7 +75,7 @@ static rng_entry *find_entry(rng_engine e) {
   return 0;
 }
 
-static bool select_engine(const char *s, randompack_rng *rng) {
+static bool select_engine(char *s, randompack_rng *rng) {
   // set rng->{engine,next} according to the engine name s
   if (!rng) return false;
   if (!s) {
@@ -105,7 +105,7 @@ static inline bool rng_ok(randompack_rng *rng) {
   return true;
 }
 
-randompack_rng *randompack_create(const char *engine, int seed) {
+randompack_rng *randompack_create(char *engine, int seed) {
   randompack_rng *rng;
   uint64_t seed64 = (uint64_t)(uint32_t)seed;
   ALLOC(rng, 1);
@@ -224,7 +224,7 @@ bool randompack_get_state(int *len, uint8_t *buf, randompack_rng *rng) {
   return true;
 }
 
-bool randompack_set_state(int len, const uint8_t *buf, randompack_rng *rng) {
+bool randompack_set_state(int len, uint8_t *buf, randompack_rng *rng) {
   // Restores the rng state using a buffer obtained with randompack_get_state
   if (!rng) return false;
   if (!buf || len <= 0) goto invalid_args;
@@ -269,7 +269,7 @@ alloc_fail:
   return false;
 }
 
-const char *randompack_last_error(const randompack_rng *rng) {
+char *randompack_last_error(randompack_rng *rng) {
   if (!rng) return 0;
   return rng->last_error;
 }
@@ -304,16 +304,14 @@ bool randompack_u01(double x[], int len, randompack_rng *rng) {
 
 bool randompack_int(int x[], int len, int m, int n, randompack_rng *rng) {
   if (!rng) return false;
-
   int64_t span = (int64_t)n - (int64_t)m;
-
   if (!x || len < 0)
     rng->last_error = "invalid arguments to randompack_int";
   else if (m > n)
     rng->last_error = "randompack_int: m must be <= n";
-  else if (rng->engine == PARKMILLER && span > (int64_t)INT32_MAX - 3)
+  else if (rng->engine == PARKMILLER && span > (int64_t)INT_MAX - 2)
     rng->last_error = "randompack_int: for Park-Miller, n - m must be < 2^31 - 2";
-  else if (span > (int64_t)INT32_MAX)
+  else if (span > (int64_t)INT_MAX)
     rng->last_error = "randompack_int: n - m must be < 2^31";
   else
     rng->last_error = 0;
@@ -336,7 +334,7 @@ bool randompack_uint32(uint32_t x[], int len, uint32_t bound, randompack_rng *rn
   else
     rng->last_error = 0;
   if (rng->last_error) return false;
-
+  
   rand_uint32(bound, x, len, rng);
   return true;
 }
@@ -359,10 +357,11 @@ bool randompack_perm(int x[], int len, randompack_rng *rng) {
   if (!rng) return false;
   if (!x || len < 0)
     rng->last_error = "invalid arguments to randompack_perm";
+  else if (len > INT_MAX - 1)
+    rng->last_error = "randompack_perm: len must be <= 2^31 - 2";
   else
     rng->last_error = 0;
   if (rng->last_error) return false;
-
   rand_perm(x, len, rng);
   return true;
 }
@@ -371,10 +370,11 @@ bool randompack_sample(int x[], int len, int k, randompack_rng *rng) {
   if (!rng) return false;
   if (!x || len < 0 || k < 0 || k > len)
     rng->last_error = "invalid arguments to randompack_sample";
+  else if (len > INT_MAX - 1)
+    rng->last_error = "randompack_sample: len must be <= 2^31 - 2";	 
   else
     rng->last_error = 0;
   if (rng->last_error) return false;
-
   rand_sample(x, len, k, rng);
   return true;
 }

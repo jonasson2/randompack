@@ -12,4 +12,5 @@ void TestSample(void);
 void TestU01(void);
 void TestMvn(void);
 void TestUint32(void);
+void TestUint64(void);
 #endif /* TESTS_H */

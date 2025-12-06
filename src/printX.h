@@ -26,6 +26,7 @@ void print32(const char *name, uint32_t x);            // print named uint32
 void printD(const char *name, double d);               // print named double
 void printV(const char *name, const double x[], int n);// print named vector
 void printIV(const char *name, const int iv[], int n); // print named int vector
+void printIVS(const char *name, const int iv[], int n); // summarized int vector
 void printS(const char *name, const char *s);          // print named string
 
 void printM(const char *name, const double A[], int nr, int nc);  // print matrix

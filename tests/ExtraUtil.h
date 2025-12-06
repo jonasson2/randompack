@@ -8,8 +8,8 @@ extern "C" {
 #endif
 
 #include <stdbool.h>
-double mean(const double *x, int n);               // Mean of vector
-double var(const double *x, int n, double mu);     // Unbiased variance of vector
+double mean(double *x, int n);               // Mean of vector
+double var(double *x, int n, double mu);     // Unbiased variance of vector
 int almostSame(double a, double b);                // are a and b are almost equal?
 int almostEqual(double a[], double b[], int n);    // is rel.diff. beween a and b < 5e-14?
 int almostAllSame(double a[], int n);              // is max diff. among x-elements < 5e-14?

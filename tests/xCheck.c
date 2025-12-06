@@ -18,8 +18,8 @@ static const char *basename_path(const char *file) {
   return base;
 }
 
-void xCheckFunc(const char *message, const char *file, int line,
-                const char *func, const char *ctx) {
+void xCheckFunc(char *message, const char *file, int line, const char *func, const char
+                *ctx) {
   const char *base = basename_path(file);
   if (ctx) {
     char fmt[] = "%s:%d (%s, %s): test failed, %s is false";

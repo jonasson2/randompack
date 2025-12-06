@@ -6,14 +6,14 @@
 #include <math.h>
 #include <stdio.h>
 
-double mean(const double *x, int n) {
+double mean(double *x, int n) {
   // Mean of vector
   if (n <= 0) return 0.0;
   double s = 0.0; for (int i=0; i<n; i++) s += x[i];
   return s/n;
 }
 
-double var(const double *x, int n, double mu) {
+double var(double *x, int n, double mu) {
   // Unbiased variance of vector
   if (n <= 1) return 0.0;
   double s = 0.0;

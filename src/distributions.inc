@@ -186,9 +186,8 @@ static void PM_rand_int(int bound, int x[], int n, randompack_rng *rng) {
   }
 }
 
-static void rand_int(int bound, int x[], int n, randompack_rng *rng) {
-  // Sets x to integers in [0, bound), where 1 <= bound <= INT32_MAX.
-  if (bound <= 0 || bound > INT32_MAX) return; // also checked by caller
+static void rand_int_pm_compatible(int bound, int x[], int n, randompack_rng *rng) {
+  // Sets x to integers in [0, bound), where 1 <= bound <= INT32_MAX - 2.
   if (rng->engine == PARKMILLER)
     PM_rand_int(bound, x, n, rng);
   else
@@ -199,7 +198,7 @@ static void rand_perm(int p[], int n, randompack_rng *rng) {
   // Fisher-Yates algorithm, stores a random permutation of 0..n-1 in p
   for (int i=0; i<n; i++) {
     int j;
-    rand_int(i+1, &j, 1, rng);
+    rand_int_pm_compatible(i+1, &j, 1, rng);
     if (j != i) p[i] = p[j];
     p[j] = i;
   }
@@ -210,12 +209,12 @@ static void rand_sample(int p[], int n, int k, randompack_rng *rng) {
   int r;
   p[0] = 0;
   for (int i=0; i<k; i++) {
-    rand_int(i+1, &r, 1, rng);
+    rand_int_pm_compatible(i+1, &r, 1, rng);
     if (r != i) p[i] = p[r];
     p[r] = i;
   }
   for (int i=k; i<n; i++) {
-    rand_int(i+1, &r, 1, rng);
+    rand_int_pm_compatible(i+1, &r, 1, rng);
     if (r < k) p[r] = i;
   }
 }

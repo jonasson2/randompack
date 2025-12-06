@@ -10,7 +10,7 @@
 #include "xCheck.h"
 
 static void test_normal_basic(void) {
-  const int N = 1e6;
+  int N = 1e6;
   double meantol = 7*1/sqrt(N);
   double vartol = 7*sqrt(2.0/(N-1));
   double exactmu = 0.0, exactvar = 1.0;
@@ -32,7 +32,7 @@ static void test_normal_basic(void) {
 }
 
 static void test_determinism_default_seed(void) {
-  const int N = 1000;
+  int N = 1000;
   double *a = 0, *b = 0;
   allocate(a, N);
   allocate(b, N);

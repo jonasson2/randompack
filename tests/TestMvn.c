@@ -98,7 +98,7 @@ static void test_randnm(double Sig[], int rank) {
   // Prepare:
   if (rank == 4) msg("Positive definite sigma");
   if (rank < 4)  msg("Positive semidefinite sigma");
-  const int N = 10000, N1 = 10, N2 = 5;
+  int N = 10000, N1 = 10, N2 = 5;
   double mu[4] = {5, 10, 15, 20};
   double *X, *X1, *X2, *X3, LSig[16], S[16];
   double means[4], meanstd_N[4];
@@ -202,8 +202,8 @@ static void test_multivariate_normal(void) {
 // Check that ldX is honoured by randompack_mvn by drawing the same
 // 3×2 matrix into two layouts with different leading dimensions.
 static void test_mvn_ldx(void) {
-  const int d = 3;
-  const int n = 2;
+  int d = 3;
+  int n = 2;
   double Sig[9] = {
     1.0, 0.0, 0.0,
     0.0, 1.0, 0.0,

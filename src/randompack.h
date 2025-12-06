@@ -29,7 +29,7 @@ typedef struct { uint64_t v[4]; } randompack_counter, randompack_3fry_key;
 typedef struct { uint64_t v[2]; } randompack_philox_key;
 
 randompack_rng *randompack_create( // Create RNG with given type and seed, NULL on error
-  const char *type,  // in   Park-Miller/PM, Xorshift128+/Xorshift/X+, R/R-default
+  char *type,  // in   Park-Miller/PM, Xorshift128+/Xorshift/X+, R/R-default
   int seed           // in   0 to randomize, >0 to seed, <0 for thread randomize
 );
 
@@ -116,12 +116,12 @@ bool randompack_get_state( // Serialize RNG state to an opaque buffer
 
 bool randompack_set_state( // Restore RNG state from an opaque buffer
   int len,                  // in  buffer length
-  const uint8_t *buf,       // in  serialized state
+  uint8_t *buf,       // in  serialized state
   randompack_rng *rng       // in  target RNG (must be allocated)
 );
 
-const char *randompack_last_error( // Get last error string, or 0 if none
-  const randompack_rng *rng        // in  RNG
+char *randompack_last_error( // Get last error string, or 0 if none
+  randompack_rng *rng        // in  RNG
 );
 
 // NOTE 1: Sig, X and L are stored columnwise in Fortran fashion.

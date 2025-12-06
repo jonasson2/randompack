@@ -9,30 +9,9 @@
 #include "xCheck.h"
 #include "TestUtil.h"
 
-// Test helper: verify that an RNG object is non-null and last_error is empty.
-static void check_rng_clean(randompack_rng *rng) {
-  xCheck(rng);
-  const char *err = randompack_last_error(rng);
-  xCheck(!err || !err[0]);
-}
-
-// Test helper: verify that an RNG call succeeded and last_error is empty.
-static void check_success(bool ok, randompack_rng *rng) {
-  xCheck(ok);
-  const char *err = randompack_last_error(rng);
-  xCheck(!err || !err[0]);
-}
-
-// Test helper: verify that an RNG call failed and produced a non-empty error.
-static void check_failure(bool ok, randompack_rng *rng) {
-  xCheck(!ok);
-  const char *err = randompack_last_error(rng);
-  xCheck(err && err[0]);
-}
-
 // Return the first n uint64 draws from the given engine with fixed seed 123.
 // Check that everything works cleanly.
-static void first_uint64_seq(const char *engine, uint64_t *x, int n, uint64_t seed) {
+static void first_randoms(char *engine, uint64_t *x, int n, uint64_t seed) {
   randompack_rng *rng = randompack_create(engine, seed);
   check_rng_clean(rng);
   bool ok = randompack_uint64(x, n, 0, rng);
@@ -46,13 +25,13 @@ static void test_engine_repeatability(void) {
   int len = 4, nengines = LEN(engines);
   uint64_t x[nengines][len], y[nengines][len], z[nengines][len];
   for (int i=0; i<LEN(engines); i++) {
-    first_uint64_seq(engines[i], x[i], len, 42);
-    first_uint64_seq(engines[i], y[i], len, 42);
-    first_uint64_seq(engines[i], z[i], len, 43);
+    first_randoms(engines[i], x[i], len, 42);
+    first_randoms(engines[i], y[i], len, 42);
+    first_randoms(engines[i], z[i], len, 43);
     xCheck(equal_uint64(x[i], y[i], len));
     xCheck(everywhere_different(x[i], z[i], len));
     for (int j = i+1; j < nengines; j++) { // all the later engines
-      first_uint64_seq(engines[j], y[j], len, 42);
+      first_randoms(engines[j], y[j], len, 42);
       xCheck(everywhere_different(x[i], y[j], len));
     }
   }
@@ -63,8 +42,8 @@ static void test_engine_aliases(void) {
   int len = 4, nengines = LEN(engines);
   uint64_t x[nengines][len], y[nengines][len];
   for (int i=0; i<LEN(engines); i++) {
-    first_uint64_seq(engines[i], x[i], len, 42);
-    first_uint64_seq(abbrev[i], y[i], len, 42);
+    first_randoms(engines[i], x[i], len, 42);
+    first_randoms(abbrev[i], y[i], len, 42);
     xCheck(equal_uint64(x[i], y[i], len));
   }
 }
@@ -74,11 +53,11 @@ static void test_engine_aliases(void) {
 static void test_bad_engine_name(void) {
   randompack_rng *rng = randompack_create("garbage", 123); // garbage name
   xCheck(rng);
-  const char *err = randompack_last_error(rng);
+  char *err = randompack_last_error(rng);
   xCheck(err && err[0]); // non-null, non-blank
   bool ok = randompack_uint64(0, 1, 0, rng); // null output buffer
   check_failure(ok, rng);
-  const char *err2 = randompack_last_error(rng);
+  char *err2 = randompack_last_error(rng);
   printS("randompack_create with engine", "garbage");
   printS("last error", err);
   printMsg("randompack_uint64 with null output buffer");
@@ -100,18 +79,18 @@ static void test_null_engine_name(void) {
 // engine ("x256++" at present), for the same seed.
 static void test_default_engine_matches_x256pp(void) {
   uint64_t a[1], b[1];
-  first_uint64_seq(0, a, 1, 42);
-  first_uint64_seq("x256++", b, 1, 42);
+  first_randoms(0, a, 1, 42);
+  first_randoms("x256++", b, 1, 42);
   xCheck(a[0] == b[0]);
 }
 
 #ifndef HAVE128
 static void test_pcg64_unavailable(void) {
-  const char *names[] = { "pcg64", "pcg" };
+  char *names[] = { "pcg64", "pcg" };
   for (int i = 0; i < (int)(sizeof names/sizeof names[0]); i++) {
     randompack_rng *rng = randompack_create(names[i], 123);
     xCheck(rng);
-    const char *err = randompack_last_error(rng);
+    char *err = randompack_last_error(rng);
     xCheck(err && err[0]);
     uint64_t x = 0;
     bool ok = randompack_uint64(&x, 1, 0, rng);
@@ -126,7 +105,7 @@ static void test_pcg64_unavailable(void) {
 // "system" and "system-csprng" should both map to the system CSPRNG, produce non-trivial
 // output, and set no error.
 static void test_system_engine(void) {
-  const char *names[] = { "system", "system-csprng" };
+  char *names[] = { "system", "system-csprng" };
   for (int i = 0; i < (int)(sizeof names/sizeof names[0]); i++) {
     randompack_rng *rng = randompack_create(names[i], 0);
     check_rng_clean(rng);
