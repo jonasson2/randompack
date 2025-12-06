@@ -28,7 +28,7 @@ static void test_engine_repeatability(void) {
     first_randoms(engines[i], x[i], len, 42);
     first_randoms(engines[i], y[i], len, 42);
     first_randoms(engines[i], z[i], len, 43);
-    xCheck(equal_uint64(x[i], y[i], len));
+    xCheck(equal_vec64(x[i], y[i], len));
     xCheck(everywhere_different(x[i], z[i], len));
     for (int j = i+1; j < nengines; j++) { // all the later engines
       first_randoms(engines[j], y[j], len, 42);
@@ -44,7 +44,7 @@ static void test_engine_aliases(void) {
   for (int i=0; i<LEN(engines); i++) {
     first_randoms(engines[i], x[i], len, 42);
     first_randoms(abbrev[i], y[i], len, 42);
-    xCheck(equal_uint64(x[i], y[i], len));
+    xCheck(equal_vec64(x[i], y[i], len));
   }
 }
   

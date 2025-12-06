@@ -29,7 +29,7 @@ typedef struct { uint64_t v[4]; } randompack_counter, randompack_3fry_key;
 typedef struct { uint64_t v[2]; } randompack_philox_key;
 
 randompack_rng *randompack_create( // Create RNG with given type and seed, NULL on error
-  char *type,  // in   Park-Miller/PM, Xorshift128+/Xorshift/X+, R/R-default
+  const char *type,  // in   Park-Miller/PM, Xorshift128+/Xorshift/X+, R/R-default
   int seed           // in   0 to randomize, >0 to seed, <0 for thread randomize
 );
 

@@ -22,7 +22,7 @@ static void test_edge_cases(char *engine) {
   bool ok;
   randompack_rng *rng = randompack_create(engine, 333);
   ok = randompack_uint64(buf, 0, 0, rng); check_success(ok, rng); // n = 0
-  xCheck(equal_uint64(buf, original, 4));                         // –doesn't touch buffer
+  xCheck(equal_vec64(buf, original, 4));                         // –doesn't touch buffer
   ok = randompack_uint64(0, 4, 0, rng);   check_failure(ok, rng); // NULL buffer w/n > 0
   ok = randompack_uint64(buf, 4, 0, 0);   xCheck(!ok);            // NULL rng
   ok = randompack_uint64(buf, 4, 0, rng); check_success(ok, rng); // normal call
@@ -35,7 +35,7 @@ static void test_unbounded_determinism(char *engine) {
   uint64_t b[4];
   draw_randoms(engine, a, LEN(a), 0, 42);
   draw_randoms(engine, b, LEN(b), 0, 42);
-  xCheckMsg(equal_uint64(a, b, LEN(a)), engine);
+  xCheckMsg(equal_vec64(a, b, LEN(a)), engine);
 }
 
 static void test_seed_changes_output(char *engine) {
@@ -43,7 +43,7 @@ static void test_seed_changes_output(char *engine) {
   uint64_t b[4];
   draw_randoms(engine, a, LEN(a), 0, 42);
   draw_randoms(engine, b, LEN(b), 0, 43);
-  xCheckMsg(!equal_uint64(a, b, LEN(a)), engine);
+  xCheckMsg(!equal_vec64(a, b, LEN(a)), engine);
 }
 
 static void test_unbounded_nonzero(char *engine) {
@@ -64,7 +64,7 @@ static void test_balanced_counts(char *engine) {
     int counts[10] = {0};
     bool ok = randompack_uint64(x, n, bound, rng);
     xCheck(ok);
-	 xCheck(imaxv64(x, n) < bound);
+	 xCheck(maxv64(x, n) < bound);
     for (int i = 0; i < n; i++) counts[x[i]]++;
     xCheckMsg(check_balanced_counts(counts, (int)bound), engine);
   }

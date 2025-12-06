@@ -4,7 +4,6 @@ test_sources = files(
   'TestInt.c',
   'TestNorm.c',
   'TestPerm.c',
-  'TestRandomize.c',
   'TestSample.c',
   'TestU01.c',
   'TestMvn.c',
@@ -13,7 +12,6 @@ test_sources = files(
 )
 
 extra_util = files(
-  'ExtraUtil.c',
   'xCheck.c',
   'TestUtil.c',
 )

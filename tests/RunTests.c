@@ -73,7 +73,6 @@ int main(int argc, char **argv) {
   run_test("Create",   TestCreate);
   run_test("Uint32",   TestUint32);
   run_test("Uint64",   TestUint64);
-  //run_test("Randomize",      TestRandomize);
   //run_test("Int",      TestInt);
   //run_test("Norm",     TestNorm);
   //run_test("Perm",     TestPerm);

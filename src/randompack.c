@@ -75,7 +75,7 @@ static rng_entry *find_entry(rng_engine e) {
   return 0;
 }
 
-static bool select_engine(char *s, randompack_rng *rng) {
+static bool select_engine(const char *s, randompack_rng *rng) {
   // set rng->{engine,next} according to the engine name s
   if (!rng) return false;
   if (!s) {
@@ -97,15 +97,7 @@ static bool select_engine(char *s, randompack_rng *rng) {
   return false;  // unknown engine
 }
 
-static inline bool rng_ok(randompack_rng *rng) {
-  if (!rng || rng->engine == INVALID) {
-    if (rng) rng->last_error = "invalid randompack_rng object";
-    return false;
-  }
-  return true;
-}
-
-randompack_rng *randompack_create(char *engine, int seed) {
+randompack_rng *randompack_create(const char *engine, int seed) {
   randompack_rng *rng;
   uint64_t seed64 = (uint64_t)(uint32_t)seed;
   ALLOC(rng, 1);
@@ -230,7 +222,7 @@ bool randompack_set_state(int len, uint8_t *buf, randompack_rng *rng) {
   if (!buf || len <= 0) goto invalid_args;
 
   rng_blob blob = {0};
-  memcpy(&blob, buf, imin(len, sizeof(blob)));
+  memcpy(&blob, buf, min(len, sizeof(blob)));
 
   rng_entry *ent = find_entry(blob.engine);
   int extra_need = (blob.engine == CHACHA20 ? sizeof(ChaCha20_Ctx) : 0);

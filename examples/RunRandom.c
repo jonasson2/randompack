@@ -6,7 +6,7 @@
 #include <getopt.h>
 #include <ctype.h>
 
-#include "allocate.h"
+#include "randompack_config.h"
 #include "randompack.h"
 
 #define FAIL(...) do { fprintf(stderr, __VA_ARGS__); \
@@ -126,11 +126,11 @@ int main(int argc, char **argv) {
   }
 
   double *x;
-  allocate(x, n);
+  ALLOC(x, n);
 
   if (!randompack_u01(x, n, rng)) {
     fprintf(stderr, "randompack_u01 failed\n");
-    freem(x);
+    FREE(x);
     randompack_free(rng);
     return 1;
   }
@@ -139,7 +139,7 @@ int main(int argc, char **argv) {
     printf("%.4f\n", x[i]);
   }
 
-  freem(x);
+  FREE(x);
   randompack_free(rng);
   return 0;
 }

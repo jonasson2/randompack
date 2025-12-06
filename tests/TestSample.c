@@ -2,7 +2,7 @@
 #include <stdbool.h>
 
 #include "randompack.h"
-#include "TestHelpers.h"
+#include "TestUtil.h"
 #include "xCheck.h"
 
 static void test_sample_api(void) {

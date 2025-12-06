@@ -7,10 +7,10 @@
 #include "xCheck.h"
 
 #include "randompack.h"
-#include "VarmaUtilities.h"
+#include "MatrixTestUtil.h"
 #include "BlasGateway.h"
-#include "ExtraUtil.h"    // for mean, var, relabsdiff, almostSame, almostEqual
-#include "allocate.h"
+#include "TestUtil.h"    // for mean, var, relabsdiff, almostSame, almostEqual
+#include "randompack_config.h"
 #include "printX.h"
 
 extern int TESTVERBOSITY;
@@ -29,9 +29,9 @@ static void test_range(int m, int n, double A[], int k, double Y[]) {
   print3I("m, n, k", m, n, k);
   printM("A", A, m, n);
   printM("Y", Y, k, m);
-  allocate(B, n*n);
-  allocate(X, n*k);
-  allocate(R, m*k);
+  ALLOC(B, n*n);
+  ALLOC(X, n*k);
+  ALLOC(R, m*k);
   syrk("Lower", "T", n, m, 1.0, A, m, 1.0, B, n);       // B := A'A
   gemm("T", "T", n, k, m, 1.0, A, m, Y, k, 0.0, X, n);  // X := A'Y'
   posv("Lower", n, k, B, n, X, n, &info);               // Solve BX = A'Y
@@ -41,9 +41,9 @@ static void test_range(int m, int n, double A[], int k, double Y[]) {
   printM("Y", Y, k, m);
   subtracttranspose(m, k, Y, k, R, m);
   xCheck(almostZero(R, m*k));
-  freem(R);
-  freem(X);
-  freem(B);
+  FREE(R);
+  FREE(X);
+  FREE(B);
 }
 
 static void stdevs(double Sig[], double stds[], int n, int N) {
@@ -102,10 +102,10 @@ static void test_randnm(double Sig[], int rank) {
   double mu[4] = {5, 10, 15, 20};
   double *X, *X1, *X2, *X3, LSig[16], S[16];
   double means[4], meanstd_N[4];
-  allocate(X, N*4);
-  allocate(X1, N1*4);
-  allocate(X2, N1*4);
-  allocate(X3, N1*4);
+  ALLOC(X, N*4);
+  ALLOC(X1, N1*4);
+  ALLOC(X2, N1*4);
+  ALLOC(X3, N1*4);
   printM("Sig", Sig, 4, 4);
   randompack_rng *rng;
 
@@ -172,10 +172,10 @@ static void test_randnm(double Sig[], int rank) {
   check_cov("NoT", N, Sig, X, rng);
   check_cov("T", N, Sig, X, rng);
   randompack_free(rng);
-  freem(X);
-  freem(X1);
-  freem(X2);
-  freem(X3);
+  FREE(X);
+  FREE(X1);
+  FREE(X2);
+  FREE(X3);
 }
 
 static void test_multivariate_normal(void) {
