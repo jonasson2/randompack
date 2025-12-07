@@ -6,6 +6,7 @@
 #include "TestUtil.h"
 #include "randompack.h"
 #include "randompack_config.h"
+#include "printX.h"
 #include "xCheck.h"
 
 // Helper: create an RNG and fill n normals.
@@ -15,6 +16,20 @@ static void draw_randoms(char *engine, double *x, int n, int seed) {
   bool ok = randompack_norm(x, n, rng);
   check_success(ok, rng);
   randompack_free(rng);
+}
+
+// Helper: check max absolute value drawn:
+bool check_normal_max(double *x, int n) {
+  // [zlo, zhi] is the (1-q) confidence interval for max|x|; fairly easy to derive
+  double q, zlo, zhi, M;
+  q = TEST_P_VALUE;
+  zlo = probit((1 + pow(q/2, 1.0/n))/2);  // accurate
+  zhi = -probit(q/4/n);  // a very accurate approximation for q < 0.01, n > 100
+  M = fmax(maxvd(x, n), -minvd(x, n));
+  printD("lower confidence bound", zlo);
+  printD("upper confidence bound", zhi);
+  printD("normal max observed", M);
+  return (zlo <= M && M <= zhi);
 }
 
 // Different seeds => different randoms, same seeds => same randoms
@@ -40,17 +55,31 @@ static void test_edge_cases(char *engine) {
   randompack_free(rng);
 }
 
-// Check sample mean and variance are near N(0,1) targets
+// Check that sample mean, variance, skewness, and kurtosis agree with theoretical values
 static void test_statistics(char *engine) {
   int N = N_statistics;
   double *x, stdmu, stds2, mu, s2;
   ALLOC(x, N);
   draw_randoms(engine, x, N, 7);
+  //
+  // Check mean and variance
   mu = 0;
-  s2 = 1;
-  stdmu = 1/sqrt((double)N);
-  stds2 = sqrt(2.0/N);
-  xCheck(check_meanvar(x, N, mu, s2, stdmu, stds2));
+  sigma2 = 1;
+  stdmu = sqrt(1.0/N);
+  stdsigma2 = sqrt(2.0/N);
+  xCheck(check_meanvar(x, N, mu, sigma2, stdmu, stdsigma2));
+  //
+  // Check skewness and kurtosis
+  xCheck(check_skew(x, N, mu, sw, skew, skewstd));
+  xCheck(check_kurt(x, N, mu, sw, kurt, kurtstd));
+  skew = 0;
+  kurt = 0;
+  skewstd = sqrt(6.0/N);
+  kurtstd = sqrt(24.0/N);
+  // 
+  // Check maximum (and minimum)
+  xCheck(check_normal_max(x, N));
+  
   FREE(x);
 }
 

@@ -4,6 +4,7 @@
 #include <limits.h>
 #include <float.h>
 
+#include "TestUtil.h"
 #include "randompack.h"
 #include "randompack_config.h"
 #include "MatrixTestUtil.h"
@@ -80,21 +81,48 @@ int almostZero(double a[], int n) {
   return fabs(a[ia]) < 5.0e-14;
 }
 
+//------------------------------------------------------------------------------
+// Simple statistics
+//------------------------------------------------------------------------------
+
 double mean(double *x, int n) {
   if (n <= 0) return 0.0;
-  double s = 0.0;
-  for (int i = 0; i < n; i++) s += x[i];
-  return s/n;
+  double sum = 0.0;
+  for (int i = 0; i < n; i++) sum += x[i];
+  return sum/n;
 }
 
-double var(double *x, int n, double mu) {
+double var(double *x, int n, double xbar) {
   if (n <= 1) return 0.0;
-  double s = 0.0;
+  double sum = 0.0;
   for (int i = 0; i < n; i++) {
-    double d = x[i] - mu;
-    s += d*d;
+    double d = x[i] - xbar;
+    sum += d*d;
   }
-  return s/(n - 1);
+  return sum/(n - 1);
+}
+
+double skewness(double *x, int n, double xbar, double s2) {
+  if (n <= 2 || s2 <= 0.0) return 0.0;
+  double sum = 0.0;
+  for (int i = 0; i < n; i++) {
+    double d = x[i] - xbar;
+    sum += d*d*d;
+  }
+  double s = sqrt(s2);
+  return n*sum/((n - 1)*(n - 2)*s*s*s);
+}
+
+double kurtosis(double *x, int n, double xbar, double s2) {
+  if (n <= 3 || s2 <= 0) return 0.0;
+  double m4 = 0.0;
+  for (int i = 0; i < n; i++) {
+    double d = x[i] - xbar;
+    m4 += d*d*d*d;
+  }
+  double g2 = m4/(s2*s2*n) - 3.0;  // excess kurtosis
+  return g2*(n+1)*(n-1)/((n-2)*(n-3))
+         + 6.0*n/((n-2)*(n-3)); // unbiased correction
 }
 
 void cov(char *transp, int m, int n, double X[], double C[]) {
@@ -117,13 +145,30 @@ void cov(char *transp, int m, int n, double X[], double C[]) {
   FREE(mu);
 }
 
-bool check_meanvar(double *x, int n, double mu, double s2, double stdmu, double stds2) {
-  double mu_hat = mean(x, n);
-  double var_hat = var(x, n, mu_hat);
-  double meantol = 7*stdmu;
-  double vartol = 7*stds2;
-  if (fabs(mu_hat - mu) >= meantol) return false;
-  if (fabs(var_hat - s2) >= vartol) return false;
+bool check_meanvar(double *x, int n, double mu, double sigma2, double std_mu,
+						 double std_sigma2) {
+  double xbar = mean(x, n);
+  double s2 = var(x, n, xbar);
+  double meantol = 7*std_mu;
+  double vartol = 7*std_sigma2;
+  if (fabs(xbar - mu) >= meantol) return false;
+  if (fabs(s2 - sigma2) >= vartol) return false;
+  return true;
+}
+
+bool check_skew(double *x, int n, double xbar, double s2, double skew, double skew_std) {
+  double skew_hat;
+  double tol = 7*skew_std;
+  skew_hat = skewness(x, n, xbar, s2);
+  if (fabs(skew_hat - skew) >= tol) return false;
+  return true;
+}
+
+bool check_kurt(double *x, int n, double xbar, double s2, double kurt, double kurt_std) {
+  double kurt_hat;
+  double tol = 7*kurt_std;
+  kurt_hat = kurtosis(x, n, xbar, s2);
+  if (fabs(kurt_hat - kurt) >= tol) return false;
   return true;
 }
 
@@ -247,7 +292,7 @@ double minvd(double *x, int n) {
 //------------------------------------------------------------------------------
 
 bool check_balanced_counts(int *counts, int n) {
-  double q = 1e-13;
+  double q = TEST_P_VALUE;
   double mean, std, z, r, N = 0;
   for (int i = 0; i < n; i++) N += counts[i];
   mean = (double)N/n;
@@ -262,7 +307,7 @@ bool check_balanced_counts(int *counts, int n) {
 }
 
 bool check_balanced_bits(int *ones, int N, int B) {
-  double q = 1e-13;
+  double q = TEST_P_VALUE;
   double r, mean, std, z;
   mean = (double)N/2;
   std = sqrt((double)N/4);

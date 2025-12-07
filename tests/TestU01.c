@@ -20,7 +20,7 @@ static void draw_randoms(char *engine, double *x, int n, int seed) {
 // Helper: Check min and max
 bool check_u01_minmax(double *x, int n) {
   if (n <= 0) return true;
-  const double q = 1e-13;
+  const double q = TEST_P_VALUE;
   double lo = q/2/n;      // ≈ Betainv(q/2, 1, n)
   double hi = log(2/q)/n; // ≈ Betainv(1-q/2, n, 1)
   double xmin = minvd(x, n);

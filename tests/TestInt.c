@@ -71,7 +71,6 @@ static void test_balanced_bits(char *engine) {
       if (u & (1u << b)) ones[b]++;
     }
   }
-  printIV("int-bit-ones-0..30", ones, 31);
   xCheckMsg(check_balanced_bits(ones, N, 31), engine);
   randompack_free(rng);
   FREE(x);

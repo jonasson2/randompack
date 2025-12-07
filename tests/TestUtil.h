@@ -37,8 +37,8 @@ enum {
   N_BAL_CNTS = 500000,
   N_BAL_BITS = 40000,
   N_statistics = 100000
-  TEST_P_VALUE = 1e-13
 };
+static const double TEST_P_VALUE = 1e-12;
 
 //------------------------------------------------------------------------------
 // Vector equality / difference helpers
@@ -52,7 +52,7 @@ bool everywhere_different(uint64_t *a, uint64_t *b, int n); // ai ≠ bi for all
 bool is_perm_0_to_n_minus1(int *x, int n);
 
 //------------------------------------------------------------------------------
-// Simple statistics and approximate equality
+// Approximate equality
 //------------------------------------------------------------------------------
 
 int almostSame(double a, double b);
@@ -60,11 +60,19 @@ int almostEqual(double a[], double b[], int n);
 int almostAllSame(double a[], int n);
 int almostZero(double a[], int n);
 
+//------------------------------------------------------------------------------
+// Simple statistics
+//------------------------------------------------------------------------------
+
 double mean(double *x, int n);
 double var(double *x, int n, double mu);
+double skewness(double *x, int n, double xbar, double s2);
+double kurtosis(double *x, int n, double xbar, double s2);
 void cov(char *transp, int m, int n, double X[], double C[]);
 bool check_meanvar(double *x, int n, double mu, double s2, double stdmu, double stds2);
-double probit(double *p);
+bool check_skew(double *x, int n, double xbar, double s2, double skew, double skew_std);
+bool check_kurt(double *x, int n, double xbar, double s2, double kurt, double kurt_std);
+double probit(double p);
 
 //------------------------------------------------------------------------------
 // Min/max helpers for scalars and vectors
