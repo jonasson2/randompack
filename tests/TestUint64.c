@@ -30,21 +30,7 @@ static void test_edge_cases(char *engine) {
   randompack_free(rng);
 }
 
-static void test_unbounded_determinism(char *engine) {
-  uint64_t a[4];
-  uint64_t b[4];
-  draw_randoms(engine, a, LEN(a), 0, 42);
-  draw_randoms(engine, b, LEN(b), 0, 42);
-  xCheckMsg(equal_vec64(a, b, LEN(a)), engine);
-}
-
-static void test_seed_changes_output(char *engine) {
-  uint64_t a[4];
-  uint64_t b[4];
-  draw_randoms(engine, a, LEN(a), 0, 42);
-  draw_randoms(engine, b, LEN(b), 0, 43);
-  xCheckMsg(!equal_vec64(a, b, LEN(a)), engine);
-}
+// See test_determinism in TestCreate
 
 static void test_unbounded_nonzero(char *engine) {
   uint64_t x[1];
@@ -100,8 +86,6 @@ void TestUint64(void) {
     char *e = engines[i];
 	 printS("\nTesting Uint64 with engine", e);
     test_edge_cases(e);
-    test_unbounded_determinism(e);
-    test_seed_changes_output(e);
     test_unbounded_nonzero(e);	 
     test_balanced_counts(e);
     test_balanced_bits(e);

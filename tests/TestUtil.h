@@ -35,7 +35,9 @@ static char *abbrev[] = {
 
 enum {
   N_BAL_CNTS = 500000,
-  N_BAL_BITS = 40000
+  N_BAL_BITS = 40000,
+  N_statistics = 100000
+  TEST_P_VALUE = 1e-13
 };
 
 //------------------------------------------------------------------------------
@@ -61,6 +63,8 @@ int almostZero(double a[], int n);
 double mean(double *x, int n);
 double var(double *x, int n, double mu);
 void cov(char *transp, int m, int n, double X[], double C[]);
+bool check_meanvar(double *x, int n, double mu, double s2, double stdmu, double stds2);
+double probit(double *p);
 
 //------------------------------------------------------------------------------
 // Min/max helpers for scalars and vectors
@@ -83,7 +87,6 @@ double minvd(double *x, int n);
 
 bool check_balanced_counts(int *counts, int n);    // All counts ≈ equal
 bool check_balanced_bits(int *ones, int N, int B); // Is each bit set with ~50% prob?
-bool check_u01_minmax(double *x, int n);           // Are xmin and xmax ok?
 
 void check_rng_clean(randompack_rng *rng);         // rng ≠ 0 and last_error empty?
 void check_success(bool ok, randompack_rng *rng);  // ok and last_error empty?

@@ -73,11 +73,12 @@ int main(int argc, char **argv) {
   run_test("Create",   TestCreate);
   run_test("Uint32",   TestUint32);
   run_test("Uint64",   TestUint64);
-  //run_test("Int",      TestInt);
+  run_test("Normal",   TestNormal);
+  run_test("Int",      TestInt);
   //run_test("Norm",     TestNorm);
   //run_test("Perm",     TestPerm);
   //run_test("Sample",   TestSample);
-  //run_test("U01",      TestU01);
+  run_test("U01",      TestU01);
   //run_test("Numbers_mvn", TestMvn);
   vprint(table_fmt, "TOTAL", NTOTAL - NFAIL, NFAIL);
   return (NFAIL > 0);

@@ -10,8 +10,8 @@
 #include "TestUtil.h"
 
 // Return the first n uint64 draws from the given engine with fixed seed 123.
-// Check that everything works cleanly.
-static void first_randoms(char *engine, uint64_t *x, int n, uint64_t seed) {
+// Check that everything works cleanly (unbounded draw)
+static void draw_randoms(char *engine, uint64_t *x, int n, uint64_t seed) {
   randompack_rng *rng = randompack_create(engine, seed);
   check_rng_clean(rng);
   bool ok = randompack_uint64(x, n, 0, rng);
@@ -21,17 +21,17 @@ static void first_randoms(char *engine, uint64_t *x, int n, uint64_t seed) {
 }
 
 // Check that identical engines agree and different engines differ.
-static void test_engine_repeatability(void) {
+static void test_determinism(void) {
   int len = 4, nengines = LEN(engines);
   uint64_t x[nengines][len], y[nengines][len], z[nengines][len];
   for (int i=0; i<LEN(engines); i++) {
-    first_randoms(engines[i], x[i], len, 42);
-    first_randoms(engines[i], y[i], len, 42);
-    first_randoms(engines[i], z[i], len, 43);
+    draw_randoms(engines[i], x[i], len, 42);
+    draw_randoms(engines[i], y[i], len, 42);
+    draw_randoms(engines[i], z[i], len, 43);
     xCheck(equal_vec64(x[i], y[i], len));
     xCheck(everywhere_different(x[i], z[i], len));
     for (int j = i+1; j < nengines; j++) { // all the later engines
-      first_randoms(engines[j], y[j], len, 42);
+      draw_randoms(engines[j], y[j], len, 42);
       xCheck(everywhere_different(x[i], y[j], len));
     }
   }
@@ -42,8 +42,8 @@ static void test_engine_aliases(void) {
   int len = 4, nengines = LEN(engines);
   uint64_t x[nengines][len], y[nengines][len];
   for (int i=0; i<LEN(engines); i++) {
-    first_randoms(engines[i], x[i], len, 42);
-    first_randoms(abbrev[i], y[i], len, 42);
+    draw_randoms(engines[i], x[i], len, 42);
+    draw_randoms(abbrev[i], y[i], len, 42);
     xCheck(equal_vec64(x[i], y[i], len));
   }
 }
@@ -79,8 +79,8 @@ static void test_null_engine_name(void) {
 // engine ("x256++" at present), for the same seed.
 static void test_default_engine_matches_x256pp(void) {
   uint64_t a[1], b[1];
-  first_randoms(0, a, 1, 42);
-  first_randoms("x256++", b, 1, 42);
+  draw_randoms(0, a, 1, 42);
+  draw_randoms("x256++", b, 1, 42);
   xCheck(a[0] == b[0]);
 }
 
@@ -154,7 +154,7 @@ static void test_park_miller_determinism(void) {
 }
 
 void TestCreate(void) {
-  test_engine_repeatability();
+  test_determinism();
   test_engine_aliases();
   test_bad_engine_name();
   test_null_engine_name();

@@ -25,7 +25,7 @@ static void test_edge_cases(char *engine) {
   bool ok;
   randompack_rng *rng = randompack_create(engine, 333);
   ok = randompack_uint32(buf, 0, 0, rng); check_success(ok, rng); // n = 0
-  xCheck(equal_vec32(buf, original, 4));                         // –doesn't touch buffer
+  xCheck(equal_vec32(buf, original, 4));                          // –doesn't touch buffer
   ok = randompack_uint32(0, 4, 0, rng);   check_failure(ok, rng); // NULL buffer w/n > 0
   ok = randompack_uint32(buf, 4, 0, 0);   xCheck(!ok);            // NULL rng
   ok = randompack_uint32(buf, 4, 0, rng); check_success(ok, rng); // normal call
@@ -35,27 +35,12 @@ static void test_edge_cases(char *engine) {
 
 // Unbounded draws with same seed/engine must match.
 static void test_unbounded_determinism(char *engine) {
-  uint32_t a[4];
-  uint32_t b[4];
+  uint32_t a[3], b[3], c[3];
   draw_randoms(engine, a, LEN(a), 0, 42);
   draw_randoms(engine, b, LEN(b), 0, 42);
+  draw_randoms(engine, c, LEN(c), 0, 43);
   xCheckMsg(equal_vec32(a, b, LEN(a)), engine);
-}
-
-// Different seeds should produce different unbounded sequences.
-static void test_seed_changes_output(char *engine) {
-  uint32_t a[4];
-  uint32_t b[4];
-  draw_randoms(engine, a, LEN(a), 0, 42);
-  draw_randoms(engine, b, LEN(b), 0, 43);
-  xCheckMsg(!equal_vec32(a, b, LEN(a)), engine);
-}
-
-// Unbounded draws should produce something non-trivial.
-static void test_unbounded_nonzero(char *engine) {
-  uint32_t x[1];
-  draw_randoms(engine, x, LEN(x), 0, 123);
-  xCheckMsg(x[0], engine); // is zero with vanishingly small probability
+  xCheckMsg(a[0] != c[0] || a[1] != b[1], engine); // "or" to maintain "7 sigma tests"
 }
 
 // Bounded large-sample sanity check: counts across buckets are balanced.
@@ -110,8 +95,6 @@ void TestUint32(void) {
 	 printS("\nTesting Uint32 with engine", e);
     test_edge_cases(e);
     test_unbounded_determinism(e);
-    test_seed_changes_output(e);
-    test_unbounded_nonzero(e);
     test_balanced_counts(e);
     test_balanced_bits(e);
   }
