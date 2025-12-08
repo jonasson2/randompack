@@ -76,10 +76,10 @@ int main(int argc, char **argv) {
   run_test("Normal",   TestNormal);
   run_test("Int",      TestInt);
   run_test("Helpers",  TestHelpers);
-  //run_test("Perm",     TestPerm);
-  //run_test("Sample",   TestSample);
+  run_test("Perm",     TestPerm);
+  run_test("Sample",   TestSample);
   run_test("U01",      TestU01);
-  //run_test("Numbers_mvn", TestMvn);
+  run_test("Numbers_mvn", TestMvn);
   vprint(table_fmt, "TOTAL", NTOTAL - NFAIL, NFAIL);
   return (NFAIL > 0);
 }

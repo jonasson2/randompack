@@ -57,7 +57,7 @@ static void test_seed_changes_output(char *engine) {
 // Balanced bits check for large positive int range.
 // We test that bits 0..30 appear approx 50/50 when drawing from [0, INT_MAX - 2].
 static void test_balanced_bits(char *engine) {
-  const int N = 400000;
+  const int N = N_BAL_BITS;
   int *x;
   xCheck(ALLOC(x, N));
   randompack_rng *rng = randompack_create(engine, 44);
