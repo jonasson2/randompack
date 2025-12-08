@@ -75,7 +75,7 @@ int main(int argc, char **argv) {
   run_test("Uint64",   TestUint64);
   run_test("Normal",   TestNormal);
   run_test("Int",      TestInt);
-  //run_test("Norm",     TestNorm);
+  run_test("Helpers",  TestHelpers);
   //run_test("Perm",     TestPerm);
   //run_test("Sample",   TestSample);
   run_test("U01",      TestU01);

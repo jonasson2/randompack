@@ -38,7 +38,7 @@ enum {
   N_BAL_BITS = 40000,
   N_statistics = 100000
 };
-static const double TEST_P_VALUE = 1e-12;
+static const double TEST_P_VALUE = 1e-3;
 
 //------------------------------------------------------------------------------
 // Vector equality / difference helpers

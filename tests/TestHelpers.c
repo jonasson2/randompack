@@ -13,12 +13,12 @@ bool test_moments_4vec(void) {
   double xbar = mean(x, n);
   double s2 = var(x, n, xbar);
   double g1 = skewness(x, n, xbar, s2);
-  double g2 = kurtosis(x, n, xbar, s2);  // unbiased excess kurtosis
+  double g2 = kurtosis(x, n, xbar, s2);
 
   double xbar_exp = 1.5;
-  double s2_exp = 5.0/3.0;
+  double s2_exp = 1.25;
   double g1_exp = 0.0;
-  double g2_exp = -573.0/160.0;
+  double g2_exp = 1.64;
 
   if (!almostSame(xbar, xbar_exp)) return false;
   if (!almostSame(s2,   s2_exp))   return false;

@@ -12,6 +12,7 @@
 // Helper: create an RNG and fill n normals.
 static void draw_randoms(char *engine, double *x, int n, int seed) {
   randompack_rng *rng = randompack_create(engine, seed);
+  randompack_set_norm_method("polar", rng);
   check_rng_clean(rng);
   bool ok = randompack_norm(x, n, rng);
   check_success(ok, rng);
@@ -58,7 +59,7 @@ static void test_edge_cases(char *engine) {
 // Check that sample mean, variance, skewness, and kurtosis agree with theoretical values
 static void test_statistics(char *engine) {
   int N = N_statistics;
-  double *x, stdmu, stds2, mu, s2;
+  double *x, mu, xbar, s2, stdmu, sigma2, stdsigma2, skew, skewstd, kurt, kurtstd;
   ALLOC(x, N);
   draw_randoms(engine, x, N, 7);
   //
@@ -70,12 +71,14 @@ static void test_statistics(char *engine) {
   xCheck(check_meanvar(x, N, mu, sigma2, stdmu, stdsigma2));
   //
   // Check skewness and kurtosis
-  xCheck(check_skew(x, N, mu, sw, skew, skewstd));
-  xCheck(check_kurt(x, N, mu, sw, kurt, kurtstd));
+  xbar = mean(x, N);
+  s2 = var(x, N, xbar);
   skew = 0;
-  kurt = 0;
+  kurt = 3;
   skewstd = sqrt(6.0/N);
   kurtstd = sqrt(24.0/N);
+  xCheck(check_skew(x, N, xbar, s2, skew, skewstd));
+  xCheck(check_kurt(x, N, xbar, s2, kurt, kurtstd));
   // 
   // Check maximum (and minimum)
   xCheck(check_normal_max(x, N));

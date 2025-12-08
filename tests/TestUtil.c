@@ -99,18 +99,17 @@ double var(double *x, int n, double xbar) {
     double d = x[i] - xbar;
     sum += d*d;
   }
-  return sum/(n - 1);
+  return sum/n;
 }
 
 double skewness(double *x, int n, double xbar, double s2) {
   if (n <= 2 || s2 <= 0.0) return 0.0;
-  double sum = 0.0;
+  double m3 = 0.0;
   for (int i = 0; i < n; i++) {
     double d = x[i] - xbar;
-    sum += d*d*d;
+    m3 += d*d*d;
   }
-  double s = sqrt(s2);
-  return n*sum/((n - 1)*(n - 2)*s*s*s);
+  return m3/(n*s2*sqrt(s2));
 }
 
 double kurtosis(double *x, int n, double xbar, double s2) {
@@ -120,9 +119,7 @@ double kurtosis(double *x, int n, double xbar, double s2) {
     double d = x[i] - xbar;
     m4 += d*d*d*d;
   }
-  double g2 = m4/(s2*s2*n) - 3.0;  // excess kurtosis
-  return g2*(n+1)*(n-1)/((n-2)*(n-3))
-         + 6.0*n/((n-2)*(n-3)); // unbiased correction
+  return m4/(n*s2*s2);
 }
 
 void cov(char *transp, int m, int n, double X[], double C[]) {
@@ -160,6 +157,9 @@ bool check_skew(double *x, int n, double xbar, double s2, double skew, double sk
   double skew_hat;
   double tol = 7*skew_std;
   skew_hat = skewness(x, n, xbar, s2);
+  printD("skew lower bound", skew - tol);
+  printD("skew upper bound", skew + tol);
+  printD("skew observed", skew_hat);
   if (fabs(skew_hat - skew) >= tol) return false;
   return true;
 }
