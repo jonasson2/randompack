@@ -30,11 +30,10 @@ typedef struct { uint64_t v[2]; } randompack_philox_key;
 
 randompack_rng *randompack_create( // Create randomized RNG of given engine type, error→0
   const char *engine    // in      Engine name (Park-Miller, PCG, Xoshiro256++,...)
-  randompack_rng *rng   // out     Random number generator
 );
 
-randompack_rng *randompack_( // Create RNG with given type and seed, NULL on error
-  int seed              // in      Any integer seed; expanded with a hash to fill state
+bool *randompack_seed( // Create RNG with given type and seed, false on error
+  int seed,             // in      Any integer seed; expanded with a hash to fill state
   randompack_rng *rng   // in/out  Random number generator
 );
 
@@ -116,7 +115,7 @@ bool randompack_uint64( // Generate uint64 in [0, bound), false on error
 bool randompack_uint64_3fry( // Counter based random number generation with "threefry"
   uint64_t x[],             // out  len-vector of integers (unbounded)
   int len,                  // in   number requested
-  randompack_counter ctr,   // in   nounter state
+  randompack_counter ctr,   // in   counter state
   randompack_3fry_key key   // in   threefry4x64 key
 );
 
