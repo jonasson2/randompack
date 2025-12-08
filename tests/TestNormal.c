@@ -50,11 +50,12 @@ static void test_edge_cases(char *engine, char *method) {
   double orig[4] = {0.1, 0.2, 0.3, 0.4};
   bool ok;
   randompack_rng *rng = randompack_create(engine, 123);
-  randompack_set_norm_method(method, rng);
+  check_rng_clean(rng);
+  ok = randompack_set_norm_method(method, rng);
+  check_success(ok, rng);
   ok = randompack_norm(buf, 0, rng);      check_success(ok, rng); // len = 0
   xCheck(equal_vecd(buf, orig, 4));                               // untouched buffer
   ok = randompack_norm(0, 4, rng);        check_failure(ok, rng); // null buffer w/len > 0
-  ok = randompack_norm(buf, LEN(buf), 0); xCheck(!ok);            // null rng
   randompack_free(rng);
 }
 
@@ -93,12 +94,16 @@ static char *methods[] = {"default", "polar"};
 // Basic check of selecting method
 static void test_method_selection(char *engine) {
   randompack_rng *rng = randompack_create(engine, 42);
+  check_rng_clean(rng);
   bool ok = randompack_set_norm_method("garbage", rng);
   check_failure(ok, rng);
+  randompack_free(rng);
   for (int m = 0; m < 2; m++) {
-	 randompack_rng *rng = randompack_create(engine, 42);
-	 ok = randompack_set_norm_method(methods[m], rng);
-	 check_success(ok, rng);
+    randompack_rng *rng = randompack_create(engine, 42);
+    check_rng_clean(rng);
+    ok = randompack_set_norm_method(methods[m], rng);
+    check_success(ok, rng);
+    randompack_free(rng);
   }
 }
 

@@ -102,10 +102,10 @@ bool randompack_uint64( // Generate uint64 in [0, bound), false on error
 );
 
 bool randompack_uint64_3fry(
-  uint64_t x[],          // out  len-vector of integers (unbounded)
-  int len,               // in   Number requested
-  randompack_counter ctr,// in   Counter state
-  randompack_3fry_key key// in   Threefry4x64 key
+  uint64_t x[],            // out  len-vector of integers (unbounded)
+  int len,                 // in   Number requested
+  randompack_counter ctr,  // in   Counter state
+  randompack_3fry_key key  // in   Threefry4x64 key
 );
 
 bool randompack_get_state( // Serialize RNG state to an opaque buffer

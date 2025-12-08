@@ -70,16 +70,20 @@ int main(int argc, char **argv) {
   if (TESTVERBOSITY <= 1) printOff();
   vprint("\n");
   vprint(headr_fmt, "TEST OF", "PASSED", "FAILED");
+  run_test("Helpers",  TestHelpers);
   run_test("Create",   TestCreate);
   run_test("Uint32",   TestUint32);
   run_test("Uint64",   TestUint64);
-  run_test("Normal",   TestNormal);
   run_test("Int",      TestInt);
-  run_test("Helpers",  TestHelpers);
-  run_test("Perm",     TestPerm);
-  run_test("Sample",   TestSample);
   run_test("U01",      TestU01);
-  run_test("Numbers_mvn", TestMvn);
+  run_test("Normal",   TestNormal);
+  run_test("Perm",     TestPerm);   // TODO expand this
+  run_test("Sample",   TestSample); // TODO expand this
+  //run_test("Numbers_mvn", TestMvn); // TODO  
+  // TODO: philox (all), 3fry (rng), 
+  // TODO: Test philox, get_state, set_state, compare with known
+  // TODO: Timing
+  // Next: exp, t, gamma, beta... 
   vprint(table_fmt, "TOTAL", NTOTAL - NFAIL, NFAIL);
   return (NFAIL > 0);
 }

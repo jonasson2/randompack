@@ -102,6 +102,7 @@ static void test_randnm(double Sig[], int rank) {
   double mu[4] = {5, 10, 15, 20};
   double *X, *X1, *X2, *X3, LSig[16], S[16];
   double means[4], meanstd_N[4];
+  bool ok;
   ALLOC(X, N*4);
   ALLOC(X1, N1*4);
   ALLOC(X2, N1*4);
@@ -112,8 +113,10 @@ static void test_randnm(double Sig[], int rank) {
   stdevs(Sig, meanstd_N, 4, N); // Stddev of means:
 
   msg("Check that singular Sig gives singular LSig");
-  rng = randompack_create("Xorshift", 9);
-  randompack_mvn("NoT", mu, Sig, 4, N1, X1, N1, LSig, rng);
+  rng = randompack_create("xoshiro256++", 9);
+  check_rng_clean(rng);
+  ok = randompack_mvn("NoT", mu, Sig, 4, N1, X1, N1, LSig, rng);
+  check_success(ok, rng);
   xCheck(rank == 4 ? LSig[15] > 0 : LSig[15] == 0);
   randompack_free(rng);
 
@@ -125,26 +128,34 @@ static void test_randnm(double Sig[], int rank) {
   msg("LSig 0:");
 
   msg("Reuse LSig (Sig=0):");
-  rng = randompack_create("Xorshift", 9);
-  randompack_mvn("NoT", mu, 0, 4, N1, X2, N1, LSig, rng);
+  rng = randompack_create("xoshiro256++", 9);
+  check_rng_clean(rng);
+  ok = randompack_mvn("NoT", mu, 0, 4, N1, X2, N1, LSig, rng);
+  check_success(ok, rng);
   xCheck(almostEqual(X1, X2, N1*4));
   randompack_free(rng);
 
   msg("Check setting seed to same value");
-  rng = randompack_create("Xorshift", 9);
-  randompack_mvn("NoT", mu, Sig, 4, N1, X3, N1, 0, rng);
+  rng = randompack_create("xoshiro256++", 9);
+  check_rng_clean(rng);
+  ok = randompack_mvn("NoT", mu, Sig, 4, N1, X3, N1, 0, rng);
+  check_success(ok, rng);
   xCheck(almostEqual(X2, X3, N1*4));
   randompack_free(rng);
 
   msg("-Check that X is in the range of LSig:");
-  rng = randompack_create("Xorshift", 0);
-  randompack_mvn("NoT", 0, Sig, 4, N2, X, N2, LSig, rng);
+  rng = randompack_create("xoshiro256++", 0);
+  check_rng_clean(rng);
+  ok = randompack_mvn("NoT", 0, Sig, 4, N2, X, N2, LSig, rng);
+  check_success(ok, rng);
   test_range(4, rank, LSig, N2, X);
   randompack_free(rng);
 
   msg("Check correct means with specified mu:");
-  rng = randompack_create("Xorshift", 9);
-  randompack_mvn("NoT", mu, 0, 4, N, X, N, LSig, rng);
+  rng = randompack_create("xoshiro256++", 9);
+  check_rng_clean(rng);
+  ok = randompack_mvn("NoT", mu, 0, 4, N, X, N, LSig, rng);
+  check_success(ok, rng);
   meanmat("N", N, 4, X, N, means);
   printV("means", means, 4);
   axpy(4, -1.0, mu, 1, means, 1);
@@ -153,8 +164,10 @@ static void test_randnm(double Sig[], int rank) {
   xCheck(ok7sig(means, meanstd_N, 4));
   randompack_free(rng);
 
-  rng = randompack_create("Xorshift", 9);
-  randompack_mvn("T", mu, 0, 4, N, X, 4, LSig, rng); // also for X^T
+  rng = randompack_create("xoshiro256++", 9);
+  check_rng_clean(rng);
+  ok = randompack_mvn("T", mu, 0, 4, N, X, 4, LSig, rng); // also for X^T
+  check_success(ok, rng);
   meanmat("T", 4, N, X, 4, means);
   printV("means", means, 4);
   axpy(4, -1.0, mu, 1, means, 1);
@@ -162,8 +175,10 @@ static void test_randnm(double Sig[], int rank) {
   randompack_free(rng);
 
   msg("– and with mu=0:");
-  rng = randompack_create("Xorshift", 0);
-  randompack_mvn("NoT", 0, Sig, 4, N, X, N, LSig, rng);
+  rng = randompack_create("xoshiro256++", 0);
+  check_rng_clean(rng);
+  ok = randompack_mvn("NoT", 0, Sig, 4, N, X, N, LSig, rng);
+  check_success(ok, rng);
   meanmat("N", N, 4, X, N, means);
   printV("means", means, 4);
   xCheck(ok7sig(means, meanstd_N, 4));
@@ -216,14 +231,16 @@ static void test_mvn_ldx(void) {
   // Fill Xbig with sentinel values to ensure we only compare the filled block
   for (int i = 0; i < 10; i++) Xbig[i] = -999.0;
 
-  randompack_rng *r1 = randompack_create("Xorshift", 123);
-  randompack_rng *r2 = randompack_create("Xorshift", 123);
+  randompack_rng *r1 = randompack_create("xoshiro256++", 123);
+  randompack_rng *r2 = randompack_create("xoshiro256++", 123);
+  check_rng_clean(r1);
+  check_rng_clean(r2);
 
   bool ok1 = randompack_mvn("T", 0, Sig, d, n, X1, d, 0, r1); // 3×2, ldX = 3
   bool ok2 = randompack_mvn("T", 0, Sig, d, n, Xbig, 5, 0, r2); // 3×2 in 5×2, ldX = 5
 
-  xCheck(ok1);
-  xCheck(ok2);
+  check_success(ok1, r1);
+  check_success(ok2, r2);
 
   // Extract the leading 3×2 block from Xbig into X2 using contiguous layout
   for (int j = 0; j < n; j++) {
