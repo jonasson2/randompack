@@ -99,9 +99,8 @@ static bool select_engine(const char *s, randompack_rng *rng) {
 
 randompack_rng *randompack_create(const char *engine, int seed) {
   randompack_rng *rng;
-  uint64_t seed64 = (uint64_t)(uint32_t)seed;
-  ALLOC(rng, 1);
-  if (!rng) return 0;
+  uint64_t seed64 = (uint32_t)seed;
+  if (!ALLOC(rng, 1)) return 0;
   rng->last_error = 0;
   rng->spare_norm = INFINITY; // Use ziggurat iff INFINITY
   rng->engine = INVALID;

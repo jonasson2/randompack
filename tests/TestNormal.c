@@ -63,7 +63,7 @@ static void test_edge_cases(char *engine, char *method) {
 static void test_statistics(char *engine, char *method) {
   int N = 1000;//N_statistics;
   double *x, mu, xbar, s2, stdmu, sigma2, stdsigma2, skew, skewstd, kurt, kurtstd;
-  ALLOC(x, N);
+  xCheck(ALLOC(x, N));
   draw_randoms(engine, method, x, N, 7);
   //
   // Check mean and variance

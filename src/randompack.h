@@ -28,6 +28,7 @@ typedef struct randompack_rng randompack_rng;
 typedef struct { uint64_t v[4]; } randompack_counter, randompack_3fry_key;
 typedef struct { uint64_t v[2]; } randompack_philox_key;
 
+//TODO allow any seed (see Counter continuation design thread in ChatGPT)
 randompack_rng *randompack_create( // Create RNG with given type and seed, NULL on error
   const char *type,  // in   Park-Miller/PM, Xorshift128+/Xorshift/X+, R/R-default
   int seed           // in   0 to randomize, >0 to seed, <0 for thread randomize
@@ -102,10 +103,17 @@ bool randompack_uint64( // Generate uint64 in [0, bound), false on error
 );
 
 bool randompack_uint64_3fry(
-  uint64_t x[],            // out  len-vector of integers (unbounded)
-  int len,                 // in   Number requested
-  randompack_counter ctr,  // in   Counter state
-  randompack_3fry_key key  // in   Threefry4x64 key
+  uint64_t x[],             // out  len-vector of integers (unbounded)
+  int len,                  // in   Number requested
+  randompack_counter ctr,   // in   Counter state
+  randompack_3fry_key key   // in   Threefry4x64 key
+);
+
+bool randompack_uint64_philox(
+  uint64_t x[],             // out  len-vector of integers (unbounded)
+  int len,                  // in   Number requested
+  randompack_counter ctr,   // in   Counter state
+  randompack_philox_key key // in   Threefry4x64 key
 );
 
 bool randompack_get_state( // Serialize RNG state to an opaque buffer
