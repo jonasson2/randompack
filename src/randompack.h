@@ -28,24 +28,16 @@ typedef struct randompack_rng randompack_rng;
 typedef struct { uint64_t v[4]; } randompack_counter, randompack_3fry_key;
 typedef struct { uint64_t v[2]; } randompack_philox_key;
 
-//TODO allow any seed (see Counter continuation design thread in ChatGPT)
+randompack_rng *randompack_create( // Create RNG with given engine type, NULL on error
+  const char *engine,   // in   Engine name (Park-Miller, Xorshift128+, Xoshiro256++,...)
+);
+
 randompack_rng *randompack_create( // Create RNG with given type and seed, NULL on error
-  const char *type,  // in   Park-Miller/PM, Xorshift128+/Xorshift/X+, R/R-default
-  int seed           // in   0 to randomize, >0 to seed, <0 for thread randomize
+  int seed              // in   Any integer seed; expanded with a hash to fill full state
+  const char *type,     // in   Engine name (Park-Miller, Xorshift128+, Xoshiro256++,...)
 );
 
 void randompack_free( // Free an RNG created with randompack_create
-  randompack_rng *rng   // in   Random number generator
-);
-
-bool randompack_set_norm_method( // Set algorithm used for random normals
-  char *method,         // in   "polar" or "default" (for ziggurat)
-  randompack_rng *rng   // in   Random number generator
-);
-
-bool randompack_u01( // Generate uniform random numbers in [0,1), false on error
-  double x[],           // out  n-vector: uniform random numbers in [0,1)
-  int n,                // in   Number of variates
   randompack_rng *rng   // in   Random number generator
 );
 
@@ -70,6 +62,12 @@ bool randompack_sample( // Sample without replacement from 0..n-1, false on erro
   randompack_rng *rng   // in   Random number generator
 );
 
+bool randompack_u01( // Generate uniform random numbers in [0,1), false on error
+  double x[],           // out  n-vector: uniform random numbers in [0,1)
+  int n,                // in   Number of variates
+  randompack_rng *rng   // in   Random number generator
+);
+
 bool randompack_norm( // Generate standard normal random numbers N(0,1), false on error
   double x[],           // out  n-vector: standard normal random numbers
   int n,                // in   Number of variates
@@ -88,6 +86,18 @@ bool randompack_mvn( // Generate multivariate normal randoms N(mu,Sig), false on
   randompack_rng *rng   // in     Random number generator
 );
 
+char *randompack_last_error( // Get last error string, or 0 if none
+  randompack_rng *rng        // in  RNG
+);
+
+//========================================================================================
+// Advanced API: Low-level utilities and engine-specific features
+//
+// These functions expose additional control over RNG behaviour, distribution kernels, and
+// bit-precise integer generation. They are intended for specialised use cases, testing,
+// and performance tuning, and are typically not needed in routine applications.
+//========================================================================================
+
 bool randompack_uint32( // Generate uint32 in [0, bound), false on error
   uint32_t x[],          // out  len-vector of integers
   int len,               // in   Number requested
@@ -102,34 +112,35 @@ bool randompack_uint64( // Generate uint64 in [0, bound), false on error
   randompack_rng *rng    // in   Random number generator
 );
 
-bool randompack_uint64_3fry(
+bool randompack_uint64_3fry( // Counter based random number generation with "threefry"
   uint64_t x[],             // out  len-vector of integers (unbounded)
   int len,                  // in   Number requested
   randompack_counter ctr,   // in   Counter state
   randompack_3fry_key key   // in   Threefry4x64 key
 );
 
-bool randompack_uint64_philox(
+bool randompack_uint64_philox( // Counter based random number generation with "philox"
   uint64_t x[],             // out  len-vector of integers (unbounded)
   int len,                  // in   Number requested
   randompack_counter ctr,   // in   Counter state
   randompack_philox_key key // in   Threefry4x64 key
 );
 
-bool randompack_get_state( // Serialize RNG state to an opaque buffer
+bool randompack_get_serialized( // Serialize an RNG to an opaque byte buffer
   int *len,                 // in/out 0→query size; otherwise buffer length
   uint8_t *buf,             // out    state buffer (may be NULL if *len==0)
   randompack_rng *rng       // in     RNG whose state to serialize
 );
 
-bool randompack_set_state( // Restore RNG state from an opaque buffer
+bool randompack_set_serialized( // Restore an RNG from an opaque byte buffer
   int len,                  // in  buffer length
-  uint8_t *buf,       // in  serialized state
+  uint8_t *buf,             // in  serialized state
   randompack_rng *rng       // in  target RNG (must be allocated)
 );
 
-char *randompack_last_error( // Get last error string, or 0 if none
-  randompack_rng *rng        // in  RNG
+bool randompack_set_norm_method( // Set algorithm used for random normals
+  char *method,         // in   "polar" or "default" (for ziggurat)
+  randompack_rng *rng   // in   Random number generator
 );
 
 // NOTE 1: Sig, X and L are stored columnwise in Fortran fashion.

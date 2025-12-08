@@ -185,11 +185,11 @@ enum {
   + sizeof(uint32_t)*2
 };
 
-bool randompack_get_state(int *len, uint8_t *buf, randompack_rng *rng) {
+bool randompack_get_serialized(int *len, uint8_t *buf, randompack_rng *rng) {
   // Returns the complete internal state of rng as an opaque byte buffer
   if (!rng) return false;
   if (!len) {
-    rng->last_error = "randompack_get_state: len is null";
+    rng->last_error = "randompack_get_serialized: len is null";
     return false;
   }
   int need = STATE_MIN_NEED + (rng->engine == CHACHA20 ? sizeof(ChaCha20_Ctx) : 0);
@@ -199,7 +199,7 @@ bool randompack_get_state(int *len, uint8_t *buf, randompack_rng *rng) {
     return true;
   }
   if (*len < need) {
-    rng->last_error = "randompack_get_state: buffer too small";
+    rng->last_error = "randompack_get_serialized: buffer too small";
     return false;
   }
   rng_blob blob = {0};
@@ -215,8 +215,8 @@ bool randompack_get_state(int *len, uint8_t *buf, randompack_rng *rng) {
   return true;
 }
 
-bool randompack_set_state(int len, uint8_t *buf, randompack_rng *rng) {
-  // Restores the rng state using a buffer obtained with randompack_get_state
+bool randompack_set_serialized(int len, uint8_t *buf, randompack_rng *rng) {
+  // Restores the rng state using a buffer obtained with randompack_get_serialized
   if (!rng) return false;
   if (!buf || len <= 0) goto invalid_args;
 
@@ -250,13 +250,13 @@ bool randompack_set_state(int len, uint8_t *buf, randompack_rng *rng) {
   return true;
   
 invalid_args:
-  rng->last_error = "randompack_set_state: invalid arguments";
+  rng->last_error = "randompack_set_serialized: invalid arguments";
   return false;
 corrupt:
-  rng->last_error = "randompack_set_state: corrupt state buffer";
+  rng->last_error = "randompack_set_serialized: corrupt state buffer";
   return false;
 alloc_fail:
-  rng->last_error = "randompack_set_state: allocation failed";
+  rng->last_error = "randompack_set_serialized: allocation failed";
   return false;
 }
 

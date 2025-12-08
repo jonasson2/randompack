@@ -32,12 +32,14 @@ static void draw_unbounded_randoms(char *engine, uint64_t *x, int len, int seed)
       for (int i = 0; i < LEN(key.v); i++) key.v[i] = rand_splitmix64(&sm);
       ok = randompack_uint64_3fry(x, len, ctr, key);
       xCheck(ok);
+      print64("First draw from threefry", x[0]);
     }
     else {
       randompack_philox_key key;
       for (int i = 0; i < LEN(key.v); i++) key.v[i] = rand_splitmix64(&sm);
       ok = randompack_uint64_philox(x, len, ctr, key);
       xCheck(ok);
+      print64("First draw from philox", x[0]);
     }
   }
   else {
