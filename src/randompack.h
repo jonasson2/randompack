@@ -32,7 +32,7 @@ randompack_rng *randompack_create( // Create RNG with given engine type, NULL on
   const char *engine,   // in   Engine name (Park-Miller, Xorshift128+, Xoshiro256++,...)
 );
 
-randompack_rng *randompack_create( // Create RNG with given type and seed, NULL on error
+randompack_rng *randompack_( // Create RNG with given type and seed, NULL on error
   int seed              // in   Any integer seed; expanded with a hash to fill full state
   const char *type,     // in   Engine name (Park-Miller, Xorshift128+, Xoshiro256++,...)
 );
