@@ -12,7 +12,7 @@
 
 static void draw_bounded_randoms(char *engine, uint64_t *x, int len, uint64_t bound,
                                  int seed) {
-  randompack_rng *rng = randompack_create(engine, seed);
+  randompack_rng *rng = create_seeded_rng(engine, seed);
   xCheck(rng);
   bool ok = randompack_uint64(x, len, bound, rng);
   xCheck(ok);
@@ -43,7 +43,7 @@ static void draw_unbounded_randoms(char *engine, uint64_t *x, int len, int seed)
     }
   }
   else {
-    randompack_rng *rng = randompack_create(engine, seed);
+    randompack_rng *rng = create_seeded_rng(engine, seed);
     xCheck(rng);
     ok = randompack_uint64(x, len, 0, rng);
     xCheck(ok);
@@ -55,7 +55,7 @@ static void test_edge_cases(char *engine) {
   uint64_t buf[4] = {0xDEADBEEF, 0xCAFEBABE, 0x0BADF00D, 0xFEEDFACE};
   uint64_t original[4] = {0xDEADBEEF, 0xCAFEBABE, 0x0BADF00D, 0xFEEDFACE};
   bool ok;
-  randompack_rng *rng = randompack_create(engine, 333);
+  randompack_rng *rng = create_seeded_rng(engine, 333);
   ok = randompack_uint64(buf, 0, 0, rng); check_success(ok, rng); // len = 0
   xCheck(equal_vec64(buf, original, 4));                          // –doesn't touch buffer
   ok = randompack_uint64(0, 4, 0, rng);   check_failure(ok, rng); // NULL buffer w/len > 0

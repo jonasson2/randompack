@@ -11,7 +11,7 @@
 
 // Helper: create an RNG and fill n normals.
 static void draw_randoms(char *engine, char *method, double *x, int n,int seed) {
-  randompack_rng *rng = randompack_create(engine, seed);
+  randompack_rng *rng = create_seeded_rng(engine, seed);
   check_rng_clean(rng);
   bool ok = randompack_set_norm_method(method, rng);
   check_success(ok, rng);
@@ -49,7 +49,7 @@ static void test_edge_cases(char *engine, char *method) {
   double buf[4] = {0.1, 0.2, 0.3, 0.4};
   double orig[4] = {0.1, 0.2, 0.3, 0.4};
   bool ok;
-  randompack_rng *rng = randompack_create(engine, 123);
+  randompack_rng *rng = create_seeded_rng(engine, 123);
   check_rng_clean(rng);
   ok = randompack_set_norm_method(method, rng);
   check_success(ok, rng);
@@ -93,13 +93,13 @@ static char *methods[] = {"default", "polar"};
 
 // Basic check of selecting method
 static void test_method_selection(char *engine) {
-  randompack_rng *rng = randompack_create(engine, 42);
+  randompack_rng *rng = create_seeded_rng(engine, 42);
   check_rng_clean(rng);
   bool ok = randompack_set_norm_method("garbage", rng);
   check_failure(ok, rng);
   randompack_free(rng);
   for (int m = 0; m < 2; m++) {
-    randompack_rng *rng = randompack_create(engine, 42);
+    randompack_rng *rng = create_seeded_rng(engine, 42);
     check_rng_clean(rng);
     ok = randompack_set_norm_method(methods[m], rng);
     check_success(ok, rng);

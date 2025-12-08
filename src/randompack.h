@@ -32,7 +32,7 @@ randompack_rng *randompack_create( // Create randomized RNG of given engine type
   const char *engine    // in      Engine name (Park-Miller, PCG, Xoshiro256++,...)
 );
 
-bool *randompack_seed( // Create RNG with given type and seed, false on error
+bool randompack_seed( // Create RNG with given type and seed, false on error
   int seed,             // in      Any integer seed; expanded with a hash to fill state
   randompack_rng *rng   // in/out  Random number generator
 );
@@ -137,6 +137,12 @@ bool randompack_set_serialized( // Restore an RNG from an opaque byte buffer
   int len,               // in      buffer length
   randompack_rng *rng    // out     target RNG (must be allocated)
 );
+
+// bool randompack_set_state_array( //  TODO implement this
+//   uint64_t *state;
+//   int len;
+//   randompack_rng *rng
+// };
 
 bool randompack_set_norm_method( // Set algorithm used for random normals
   char *method,          // in      "polar" or "default" (for ziggurat)

@@ -113,7 +113,7 @@ static void test_randnm(double Sig[], int rank) {
   stdevs(Sig, meanstd_N, 4, N); // Stddev of means:
 
   msg("Check that singular Sig gives singular LSig");
-  rng = randompack_create("xoshiro256++", 9);
+  rng = create_seeded_rng("xoshiro256++", 9);
   check_rng_clean(rng);
   ok = randompack_mvn("NoT", mu, Sig, 4, N1, X1, N1, LSig, rng);
   check_success(ok, rng);
@@ -128,7 +128,7 @@ static void test_randnm(double Sig[], int rank) {
   msg("LSig 0:");
 
   msg("Reuse LSig (Sig=0):");
-  rng = randompack_create("xoshiro256++", 9);
+  rng = create_seeded_rng("xoshiro256++", 9);
   check_rng_clean(rng);
   ok = randompack_mvn("NoT", mu, 0, 4, N1, X2, N1, LSig, rng);
   check_success(ok, rng);
@@ -136,7 +136,7 @@ static void test_randnm(double Sig[], int rank) {
   randompack_free(rng);
 
   msg("Check setting seed to same value");
-  rng = randompack_create("xoshiro256++", 9);
+  rng = create_seeded_rng("xoshiro256++", 9);
   check_rng_clean(rng);
   ok = randompack_mvn("NoT", mu, Sig, 4, N1, X3, N1, 0, rng);
   check_success(ok, rng);
@@ -144,7 +144,7 @@ static void test_randnm(double Sig[], int rank) {
   randompack_free(rng);
 
   msg("-Check that X is in the range of LSig:");
-  rng = randompack_create("xoshiro256++", 0);
+  rng = create_seeded_rng("xoshiro256++", 0);
   check_rng_clean(rng);
   ok = randompack_mvn("NoT", 0, Sig, 4, N2, X, N2, LSig, rng);
   check_success(ok, rng);
@@ -152,7 +152,7 @@ static void test_randnm(double Sig[], int rank) {
   randompack_free(rng);
 
   msg("Check correct means with specified mu:");
-  rng = randompack_create("xoshiro256++", 9);
+  rng = create_seeded_rng("xoshiro256++", 9);
   check_rng_clean(rng);
   ok = randompack_mvn("NoT", mu, 0, 4, N, X, N, LSig, rng);
   check_success(ok, rng);
@@ -164,7 +164,7 @@ static void test_randnm(double Sig[], int rank) {
   xCheck(ok7sig(means, meanstd_N, 4));
   randompack_free(rng);
 
-  rng = randompack_create("xoshiro256++", 9);
+  rng = create_seeded_rng("xoshiro256++", 9);
   check_rng_clean(rng);
   ok = randompack_mvn("T", mu, 0, 4, N, X, 4, LSig, rng); // also for X^T
   check_success(ok, rng);
@@ -175,7 +175,7 @@ static void test_randnm(double Sig[], int rank) {
   randompack_free(rng);
 
   msg("– and with mu=0:");
-  rng = randompack_create("xoshiro256++", 0);
+  rng = create_seeded_rng("xoshiro256++", 0);
   check_rng_clean(rng);
   ok = randompack_mvn("NoT", 0, Sig, 4, N, X, N, LSig, rng);
   check_success(ok, rng);
@@ -231,8 +231,8 @@ static void test_mvn_ldx(void) {
   // Fill Xbig with sentinel values to ensure we only compare the filled block
   for (int i = 0; i < 10; i++) Xbig[i] = -999.0;
 
-  randompack_rng *r1 = randompack_create("xoshiro256++", 123);
-  randompack_rng *r2 = randompack_create("xoshiro256++", 123);
+  randompack_rng *r1 = create_seeded_rng("xoshiro256++", 123);
+  randompack_rng *r2 = create_seeded_rng("xoshiro256++", 123);
   check_rng_clean(r1);
   check_rng_clean(r2);
 

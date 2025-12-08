@@ -53,7 +53,7 @@ bool is_perm_0_to_n_minus1(int *x, int n) {
 }
 
 //------------------------------------------------------------------------------
-// Simple statistics and approximate equality
+// Approximate equality
 //------------------------------------------------------------------------------
 
 int almostSame(double a, double b) {
@@ -336,4 +336,10 @@ void check_failure(bool ok, randompack_rng *rng) {
   xCheck(!ok);
   char *err = randompack_last_error(rng);
   xCheck(err && err[0]);
+}
+
+randompack_rng *create_seeded_rng(const char *engine, int seed) {
+  randompack_rng *rng = randompack_create(engine);
+  if (rng) randompack_seed(seed, rng);
+  return rng;
 }

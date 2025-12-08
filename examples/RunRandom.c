@@ -118,13 +118,8 @@ int main(int argc, char **argv) {
     rngseed = (uint64_t)seed;
   }
 
-  randompack_rng *rng = randompack_create(rngtype, rngseed);
-  if (!rng) {
-    fprintf(stderr, "Failed to create RNG (type=\"%s\", seed=%lld)\n",
-            rngtype, (long long)rngseed);
-    return 1;
-  }
-
+  randompack_rng *rng = randompack_create(rngtype);
+  randompack_seed(rngseed, rng);
   double *x;
   ALLOC(x, n);
 

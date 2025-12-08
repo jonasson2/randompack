@@ -10,7 +10,7 @@
 
 // Helper: create an RNG and fill n doubles in [0,1).
 static void draw_randoms(char *engine, double *x, int n, int seed) {
-  randompack_rng *rng = randompack_create(engine, seed);
+  randompack_rng *rng = create_seeded_rng(engine, seed);
   check_rng_clean(rng);
   bool ok = randompack_u01(x, n, rng);
   check_success(ok, rng);
@@ -45,7 +45,7 @@ static void test_edge_cases(char *engine) {
   double buf[4] = {0.1, 0.2, 0.3};
   double orig[4] = {0.1, 0.2, 0.3};
   bool ok;
-  randompack_rng *rng = randompack_create(engine, 123);
+  randompack_rng *rng = create_seeded_rng(engine, 123);
   ok = randompack_u01(buf, 0, rng);      check_success(ok, rng); // len = 0
   xCheck(equal_vecd(buf, orig, 4));                              // –doesn't touch buffer
   ok = randompack_u01(0, 4, rng);        check_failure(ok, rng); // null buffer w/len > 0

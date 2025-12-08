@@ -97,15 +97,46 @@ static bool select_engine(const char *s, randompack_rng *rng) {
   return false;  // unknown engine
 }
 
-randompack_rng *randompack_create(const char *engine, int seed) {
-  randompack_rng *rng;
+bool randompack_seed(int seed, randompack_rng *rng) {
+  if (!rng) return false;
   uint64_t seed64 = (uint32_t)seed;
+  rng->last_error = 0;
+  if (rng->engine == PARKMILLER) {
+    uint32_t s = seed64 % (uint64_t)mersenne8;
+    if (s == 0) s = 1;
+    rng->state.u32 = s;
+    rng->buf64 = 0;
+    (void)PM_rand_bits(rng); // spin-up
+  }
+  else if (rng->engine == CHACHA20) {
+    key256_t key;
+    nonce96_t nonce;
+    uint64_t sm = seed64;
+    ChaCha20_Ctx *ctx = (ChaCha20_Ctx *)rng->extra_state;
+    for (unsigned int i = 0; i < sizeof(key)/sizeof(key[0]); i++)
+      key[i] = (uint8_t)rand_splitmix64(&sm);
+    for (unsigned int i = 0; i < sizeof(nonce)/sizeof(nonce[0]); i++)
+      nonce[i] = (uint8_t)rand_splitmix64(&sm);
+    ChaCha20_init(ctx, key, nonce, 0);
+  }
+  else {
+    uint64_t sm = seed64;
+    for (int i = 0; i < LEN(rng->state.u64); i++)
+      rng->state.u64[i] = rand_splitmix64(&sm);
+    if (rng->state.u64[0] == 0) rng->state.u64[0] = 1;
+  }
+  return true;
+}
+  
+
+randompack_rng *randompack_create(const char *engine) {
+  randompack_rng *rng;
+  // Create engine
   if (!ALLOC(rng, 1)) return 0;
   rng->last_error = 0;
   rng->spare_norm = INFINITY; // Use ziggurat iff INFINITY
   rng->engine = INVALID;
   if (!select_engine(engine, rng)) {
-    rng->engine = INVALID;
     rng->last_error = "unknown engine name (spelling error in requested engine)";
     return rng;
   }
@@ -121,41 +152,18 @@ randompack_rng *randompack_create(const char *engine, int seed) {
     }
     rng->extra_state = ctx;
   }
+  // Randomize engine
   if (rng->engine == PARKMILLER) {
     uint64_t x;
     uint32_t s;
-    if (seed == 0) {
-      entropy_fill(rng, &x, sizeof x);
-      s = (uint32_t)(x % (uint32_t)mersenne8);
-    }
-    else
-      s = (uint32_t)(seed64 % (uint64_t)mersenne8);
+    entropy_fill(rng, &x, sizeof x);
+    s = (uint32_t)(x % (uint32_t)mersenne8);
     if (s == 0) s = 1;
     rng->state.u32 = s;
     rng->buf64 = 0;
-    (void)PM_rand_bits(rng); // spin-up
-    return rng;
   }
-  if (seed == 0)
-    rand_randomize(rng);
   else {
-    if (rng->engine == CHACHA20) {
-      key256_t key;
-      nonce96_t nonce;
-      uint64_t sm = seed64;
-      ChaCha20_Ctx *ctx = (ChaCha20_Ctx *)rng->extra_state;
-      for (unsigned int i = 0; i < sizeof(key)/sizeof(key[0]); i++)
-        key[i] = (uint8_t)rand_splitmix64(&sm);
-      for (unsigned int i = 0; i < sizeof(nonce)/sizeof(nonce[0]); i++)
-        nonce[i] = (uint8_t)rand_splitmix64(&sm);
-      ChaCha20_init(ctx, key, nonce, 0);
-    }
-    else {
-      uint64_t sm = seed64;
-      for (int i = 0; i < LEN(rng->state.u64); i++)
-        rng->state.u64[i] = rand_splitmix64(&sm);
-      if (rng->state.u64[0] == 0) rng->state.u64[0] = 1;
-    }
+    rand_randomize(rng);
   }
   return rng;
 }
@@ -185,7 +193,7 @@ enum {
   + sizeof(uint32_t)*2
 };
 
-bool randompack_get_serialized(int *len, uint8_t *buf, randompack_rng *rng) {
+bool randompack_get_serialized(uint8_t *buf, int *len, randompack_rng *rng) {
   // Returns the complete internal state of rng as an opaque byte buffer
   if (!rng) return false;
   if (!len) {
@@ -215,7 +223,7 @@ bool randompack_get_serialized(int *len, uint8_t *buf, randompack_rng *rng) {
   return true;
 }
 
-bool randompack_set_serialized(int len, uint8_t *buf, randompack_rng *rng) {
+bool randompack_set_serialized(uint8_t *buf, int len, randompack_rng *rng) {
   // Restores the rng state using a buffer obtained with randompack_get_serialized
   if (!rng) return false;
   if (!buf || len <= 0) goto invalid_args;

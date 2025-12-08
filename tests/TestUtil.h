@@ -100,4 +100,6 @@ void check_rng_clean(randompack_rng *rng);         // rng ≠ 0 and last_error e
 void check_success(bool ok, randompack_rng *rng);  // ok and last_error empty?
 void check_failure(bool ok, randompack_rng *rng);  // !ok and last_error ≠ ""
 
+randompack_rng *create_seeded_rng(const char *engine, int seed);
+
 #endif

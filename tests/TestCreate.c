@@ -1,5 +1,5 @@
 // -*- C -*-
-// Tests for randompack_create and engine-name handling (aliases, defaults, system CSPRNG,
+// Tests for create_seeded_rng and engine-name handling (aliases, defaults, system CSPRNG,
 // Park-Miller behavior, and error reporting).
 #include <stdint.h>
 #include <stdbool.h>
@@ -12,7 +12,7 @@
 // Return the first n uint64 draws from the given engine with fixed seed 123.
 // Check that everything works cleanly (unbounded draw)
 static void draw_randoms(char *engine, uint64_t *x, int n, uint64_t seed) {
-  randompack_rng *rng = randompack_create(engine, seed);
+  randompack_rng *rng = create_seeded_rng(engine, seed);
   check_rng_clean(rng);
   bool ok = randompack_uint64(x, n, 0, rng);
   check_success(ok, rng);
@@ -51,14 +51,14 @@ static void test_engine_aliases(void) {
 // Unknown engine names should yield a non-null "invalid" rng object with a non-blank
 // last_error. Drawing from an invalid rng must fail and set another non-blank error.
 static void test_bad_engine_name(void) {
-  randompack_rng *rng = randompack_create("garbage", 123); // garbage name
+  randompack_rng *rng = randompack_create("garbage"); // garbage name
   xCheck(rng);
   char *err = randompack_last_error(rng);
   xCheck(err && err[0]); // non-null, non-blank
   bool ok = randompack_uint64(0, 1, 0, rng); // null output buffer
   check_failure(ok, rng);
   char *err2 = randompack_last_error(rng);
-  printS("randompack_create with engine", "garbage");
+  printS("create_seeded_rng with engine", "garbage");
   printS("last error", err);
   printMsg("randompack_uint64 with null output buffer");
   printS("last error", err2);
@@ -67,7 +67,7 @@ static void test_bad_engine_name(void) {
 
 // Null engine name --> default engine which produces valid output without error.
 static void test_null_engine_name(void) {
-  randompack_rng *rng = randompack_create(0, 123);
+  randompack_rng *rng = create_seeded_rng(0, 123);
   check_rng_clean(rng);
   uint64_t x = 0;
   bool ok = randompack_uint64(&x, 1, 0, rng);
@@ -88,7 +88,7 @@ static void test_default_engine_matches_x256pp(void) {
 static void test_pcg64_unavailable(void) {
   char *names[] = { "pcg64", "pcg" };
   for (int i = 0; i < (int)(sizeof names/sizeof names[0]); i++) {
-    randompack_rng *rng = randompack_create(names[i], 123);
+    randompack_rng *rng = create_seeded_rng(names[i], 123);
     xCheck(rng);
     char *err = randompack_last_error(rng);
     xCheck(err && err[0]);
@@ -107,7 +107,7 @@ static void test_pcg64_unavailable(void) {
 static void test_system_engine(void) {
   char *names[] = { "system", "system-csprng" };
   for (int i = 0; i < (int)(sizeof names/sizeof names[0]); i++) {
-    randompack_rng *rng = randompack_create(names[i], 0);
+    randompack_rng *rng = create_seeded_rng(names[i], 0);
     check_rng_clean(rng);
     uint64_t x[2] = {0, 0};
     bool ok = randompack_uint64(x, 2, 0, rng);
@@ -120,7 +120,7 @@ static void test_system_engine(void) {
 
 // Park-Miller supports only int draws; uint64 requests must fail.
 static void test_park_miller(void) {
-  randompack_rng *rng = randompack_create("park-miller", 123);
+  randompack_rng *rng = create_seeded_rng("park-miller", 123);
   check_rng_clean(rng);
   uint64_t x = 0;
   bool ok = randompack_uint64(&x, 1, 0, rng);
@@ -134,9 +134,9 @@ static void test_park_miller_determinism(void) {
   int a = 0;
   int b = 0;
   int c = 0;
-  randompack_rng *r1 = randompack_create("park-miller", 42);
-  randompack_rng *r2 = randompack_create("pm", 42);
-  randompack_rng *r3 = randompack_create("pm", 43);
+  randompack_rng *r1 = create_seeded_rng("park-miller", 42);
+  randompack_rng *r2 = create_seeded_rng("pm", 42);
+  randompack_rng *r3 = create_seeded_rng("pm", 43);
   check_rng_clean(r1);
   check_rng_clean(r2);
   check_rng_clean(r3);

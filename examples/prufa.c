@@ -4,7 +4,7 @@
 
 int main(void)
 {
-  randompack_rng *rng = randompack_create("Park-Miller", 42);
+  randompack_rng *rng = create_seeded_rng("Park-Miller", 42);
   if (!rng) {
     fprintf(stderr, "Failed to create RNG\n");
     return 1;

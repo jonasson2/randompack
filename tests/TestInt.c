@@ -11,7 +11,7 @@
 
 // Helper: create an RNG and fill n ints in [min, max].
 static void draw_randoms(char *engine, int *x, int n, int min, int max, int seed) {
-  randompack_rng *rng = randompack_create(engine, seed);
+  randompack_rng *rng = create_seeded_rng(engine, seed);
   xCheck(rng);
   bool ok = randompack_int(x, n, min, max, rng);
   check_success(ok, rng);
@@ -34,7 +34,7 @@ static void test_edge_cases(char *engine, int max) {
   int buf[4] = {1, 2, 3, 4};
   int orig[4] = {1, 2, 3, 4};
   bool ok;
-  randompack_rng *rng = randompack_create(engine, 123);
+  randompack_rng *rng = create_seeded_rng(engine, 123);
   ok = randompack_int(buf, 0, 0, 10, rng); check_success(ok, rng); // len = 0
   xCheck(equal_vec(buf, orig, 4));
   ok = randompack_int(0, 4, 0, 10, rng);    check_failure(ok, rng); // null buffer w/len>0
@@ -60,7 +60,7 @@ static void test_balanced_bits(char *engine) {
   const int N = N_BAL_BITS;
   int *x;
   xCheck(ALLOC(x, N));
-  randompack_rng *rng = randompack_create(engine, 44);
+  randompack_rng *rng = create_seeded_rng(engine, 44);
   check_rng_clean(rng);
   bool ok = randompack_int(x, N, 0, INT_MAX - 2, rng);
   check_success(ok, rng);

@@ -10,7 +10,7 @@
 
 // Helper: create an RNG and fill n uint32 values with a given bound.
 static void draw_randoms(char *engine, uint32_t *x, int n, uint32_t bound, int seed) {
-  randompack_rng *rng = randompack_create(engine, seed);
+  randompack_rng *rng = create_seeded_rng(engine, seed);
   xCheck(rng);
   bool ok = randompack_uint32(x, n, bound, rng);
   xCheck(ok);
@@ -23,7 +23,7 @@ static void test_edge_cases(char *engine) {
   uint32_t buf[4]      = {0xDEAD, 0xBEEF, 0xCAFE, 0xFEED};
   uint32_t original[4] = {0xDEAD, 0xBEEF, 0xCAFE, 0xFEED};
   bool ok;
-  randompack_rng *rng = randompack_create(engine, 333);
+  randompack_rng *rng = create_seeded_rng(engine, 333);
   ok = randompack_uint32(buf, 0, 0, rng); check_success(ok, rng); // n = 0
   xCheck(equal_vec32(buf, original, 4));                          // –doesn't touch buffer
   ok = randompack_uint32(0, 4, 0, rng);   check_failure(ok, rng); // NULL buffer w/n > 0
@@ -48,7 +48,7 @@ static void test_balanced_counts(char *engine) {
   uint32_t *x;
   int n = N_BAL_CNTS;
   xCheck(ALLOC(x, n));
-  randompack_rng *rng = randompack_create(engine, 42);
+  randompack_rng *rng = create_seeded_rng(engine, 42);
   xCheck(rng);
   uint32_t bounds[] = {5, 10};
   for (int b = 0; b < LEN(bounds); b++) {
@@ -73,7 +73,7 @@ static void test_balanced_bits(char *engine) {
   uint32_t *x;
   int n = N_BAL_BITS;
   xCheck(ALLOC(x, n));
-  randompack_rng *rng = randompack_create(engine, 44);
+  randompack_rng *rng = create_seeded_rng(engine, 44);
   xCheck(rng);
   bool ok = randompack_uint32(x, n, 0, rng); // bound = 0 => unbounded
   xCheck(ok);

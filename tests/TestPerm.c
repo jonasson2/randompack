@@ -8,7 +8,7 @@
 static void test_perm_api(void) {
   int N = 32;
   int perm[N];
-  randompack_rng *rng = randompack_create("xoshiro256++", 77);
+  randompack_rng *rng = create_seeded_rng("xoshiro256++", 77);
   check_rng_clean(rng);
   bool ok = randompack_perm(perm, N, rng);
   check_success(ok, rng);
