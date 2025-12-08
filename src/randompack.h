@@ -28,66 +28,67 @@ typedef struct randompack_rng randompack_rng;
 typedef struct { uint64_t v[4]; } randompack_counter, randompack_3fry_key;
 typedef struct { uint64_t v[2]; } randompack_philox_key;
 
-randompack_rng *randompack_create( // Create RNG with given engine type, NULL on error
-  const char *engine,   // in   Engine name (Park-Miller, Xorshift128+, Xoshiro256++,...)
+randompack_rng *randompack_create( // Create randomized RNG of given engine type, error→0
+  const char *engine    // in      Engine name (Park-Miller, PCG, Xoshiro256++,...)
+  randompack_rng *rng   // out     Random number generator
 );
 
 randompack_rng *randompack_( // Create RNG with given type and seed, NULL on error
-  int seed              // in   Any integer seed; expanded with a hash to fill full state
-  const char *type,     // in   Engine name (Park-Miller, Xorshift128+, Xoshiro256++,...)
+  int seed              // in      Any integer seed; expanded with a hash to fill state
+  randompack_rng *rng   // in/out  Random number generator
 );
 
 void randompack_free( // Free an RNG created with randompack_create
-  randompack_rng *rng   // in   Random number generator
+  randompack_rng *rng   // in      Random number generator
 );
 
 bool randompack_int( // Generate uniform integers in [m, n], false on error
-  int x[],              // out  len-vector of integers
-  int len,              // in   Number of integers requested
-  int m,                // in   Inclusive minimum
-  int n,                // in   Inclusive maximum
-  randompack_rng *rng   // in   Random number generator
+  int x[],              // out     len-vector of integers
+  int len,              // in      Number of integers requested
+  int m,                // in      Inclusive minimum
+  int n,                // in      Inclusive maximum
+  randompack_rng *rng   // in/out  Random number generator
 );
 
 bool randompack_perm( // Generate a random permutation of 0..n-1, false on error
-  int x[],              // out  n-vector containing the permutation
-  int n,                // in   Permutation size
-  randompack_rng *rng   // in   Random number generator
+  int x[],              // out     n-vector containing the permutation
+  int n,                // in      Permutation size
+  randompack_rng *rng   // in/out  Random number generator
 );
 
 bool randompack_sample( // Sample without replacement from 0..n-1, false on error
-  int x[],              // out  k-vector of sampled indices
-  int n,                // in   Population size
-  int k,                // in   Sample size (0 <= k <= n)
-  randompack_rng *rng   // in   Random number generator
+  int x[],              // out     k-vector of sampled indices
+  int n,                // in      Population size
+  int k,                // in      Sample size (0 <= k <= n)
+  randompack_rng *rng   // in/out  Random number generator
 );
 
 bool randompack_u01( // Generate uniform random numbers in [0,1), false on error
-  double x[],           // out  n-vector: uniform random numbers in [0,1)
-  int n,                // in   Number of variates
-  randompack_rng *rng   // in   Random number generator
+  double x[],           // out     n-vector: uniform random numbers in [0,1)
+  int n,                // in      Number of variates
+  randompack_rng *rng   // in/out  Random number generator
 );
 
 bool randompack_norm( // Generate standard normal random numbers N(0,1), false on error
-  double x[],           // out  n-vector: standard normal random numbers
-  int n,                // in   Number of variates
-  randompack_rng *rng   // in   Random number generator
+  double x[],           // out     n-vector: standard normal random numbers
+  int n,                // in      Number of variates
+  randompack_rng *rng   // in/out  Random number generator
 );
 
 bool randompack_mvn( // Generate multivariate normal randoms N(mu,Sig), false on error
-  char *transp,         // in     "N" to get n×d X, "T" to get d×n X
-  double mu[],          // in     d-vector: mean (NULL → zero-mean)
-  double Sig[],         // in     d×d covariance matrix (NULL → use L as-is)
-  int d,                // in     Dimension of each vector
-  int n,                // in     Number of replicates
-  double X[],           // out    n×d or d×n matrix of generated vectors
-  int ldx,              // in     Leading dimension of X
-  double L[],           // in/out d×d lower Cholesky factor of Sig (or NULL)
-  randompack_rng *rng   // in     Random number generator
+  char *transp,         // in      "N" to get n×d X, "T" to get d×n X
+  double mu[],          // in      d-vector: mean (NULL → zero-mean)
+  double Sig[],         // in      d×d covariance matrix (NULL → use L as-is)
+  int d,                // in      Dimension of each vector
+  int n,                // in      Number of replicates
+  double X[],           // out     n×d or d×n matrix of generated vectors
+  int ldx,              // in      Leading dimension of X
+  double L[],           // in/out  d×d lower Cholesky factor of Sig (or NULL)
+  randompack_rng *rng   // in/out  Random number generator
 );
 
 char *randompack_last_error( // Get last error string, or 0 if none
-  randompack_rng *rng        // in  RNG
+  randompack_rng *rng   // in      Random number generator
 );
 
 //========================================================================================
@@ -99,48 +100,48 @@ char *randompack_last_error( // Get last error string, or 0 if none
 //========================================================================================
 
 bool randompack_uint32( // Generate uint32 in [0, bound), false on error
-  uint32_t x[],          // out  len-vector of integers
-  int len,               // in   Number requested
-  uint32_t bound,        // in   Exclusive upper bound, or 0 for unbounded
-  randompack_rng *rng    // in   Random number generator
+  uint32_t x[],          // out     len-vector of integers
+  int len,               // in      number requested
+  uint32_t bound,        // in      exclusive upper bound, or 0 for unbounded
+  randompack_rng *rng    // in/out  random number generator
 );
 
 bool randompack_uint64( // Generate uint64 in [0, bound), false on error
-  uint64_t x[],          // out  len-vector of integers
-  int len,               // in   Number requested
-  uint64_t bound,        // in   Exclusive upper bound, or 0 for unbounded
-  randompack_rng *rng    // in   Random number generator
+  uint64_t x[],          // out     len-vector of integers
+  int len,               // in      number requested
+  uint64_t bound,        // in      exclusive upper bound, or 0 for unbounded
+  randompack_rng *rng    // in/out  random number generator
 );
 
 bool randompack_uint64_3fry( // Counter based random number generation with "threefry"
   uint64_t x[],             // out  len-vector of integers (unbounded)
-  int len,                  // in   Number requested
-  randompack_counter ctr,   // in   Counter state
-  randompack_3fry_key key   // in   Threefry4x64 key
+  int len,                  // in   number requested
+  randompack_counter ctr,   // in   nounter state
+  randompack_3fry_key key   // in   threefry4x64 key
 );
 
 bool randompack_uint64_philox( // Counter based random number generation with "philox"
   uint64_t x[],             // out  len-vector of integers (unbounded)
-  int len,                  // in   Number requested
-  randompack_counter ctr,   // in   Counter state
-  randompack_philox_key key // in   Threefry4x64 key
+  int len,                  // in   number requested
+  randompack_counter ctr,   // in   counter state
+  randompack_philox_key key // in   threefry4x64 key
 );
 
 bool randompack_get_serialized( // Serialize an RNG to an opaque byte buffer
-  int *len,                 // in/out 0→query size; otherwise buffer length
-  uint8_t *buf,             // out    state buffer (may be NULL if *len==0)
-  randompack_rng *rng       // in     RNG whose state to serialize
+  uint8_t *buf,          // out     buffer for serialization (may be NULL if *len==0)
+  int *len,              // in/out  0 → query size; otherwise buffer length
+  randompack_rng *rng    // in      RNG to serialize
 );
 
 bool randompack_set_serialized( // Restore an RNG from an opaque byte buffer
-  int len,                  // in  buffer length
-  uint8_t *buf,             // in  serialized state
-  randompack_rng *rng       // in  target RNG (must be allocated)
+  uint8_t *buf,          // in      buffer with serialization
+  int len,               // in      buffer length
+  randompack_rng *rng    // out     target RNG (must be allocated)
 );
 
 bool randompack_set_norm_method( // Set algorithm used for random normals
-  char *method,         // in   "polar" or "default" (for ziggurat)
-  randompack_rng *rng   // in   Random number generator
+  char *method,          // in      "polar" or "default" (for ziggurat)
+  randompack_rng *rng    // in      Random number generator
 );
 
 // NOTE 1: Sig, X and L are stored columnwise in Fortran fashion.
