@@ -40,18 +40,6 @@ bool everywhere_different(uint64_t *a, uint64_t *b, int n) {
   return true;
 }
 
-bool is_perm_0_to_n_minus1(int *x, int n) {
-  int seen[n];
-  for (int i = 0; i < n; i++) seen[i] = 0;
-  for (int i = 0; i < n; i++) {
-    int v = x[i];
-    if (v < 0 || v >= n) return false;
-    if (seen[v]) return false;
-    seen[v] = 1;
-  }
-  return true;
-}
-
 //------------------------------------------------------------------------------
 // Approximate equality
 //------------------------------------------------------------------------------

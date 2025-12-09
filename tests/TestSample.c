@@ -6,33 +6,30 @@
 #include "xCheck.h"
 
 static void test_sample_api(void) {
-  int N = 50;
-  int K = 10;
-  int sample1[K], sample2[K];
-  int used[N];
-  randompack_rng *r1 = create_seeded_rng("xoshiro256++", 11);
-  randompack_rng *r2 = create_seeded_rng("xoshiro256++", 11);
-  check_rng_clean(r1);
-  check_rng_clean(r2);
-  bool ok = randompack_sample(sample1, N, K, r1);
-  check_success(ok, r1);
-  ok = randompack_sample(sample2, N, K, r2);
-  check_success(ok, r2);
-  for (int i = 0; i < N; i++) used[i] = 0;
-  for (int i = 0; i < K; i++) {
-    int v = sample1[i];
-    xCheck(v >= 0 && v < N);
-    xCheck(!used[v]);
-    used[v] = 1;
-    xCheck(sample1[i] == sample2[i]);
+  int n = 50;
+  int k = 10;
+  int sample[10];
+  bool seen[n];
+  randompack_rng *rng = create_seeded_rng("xoshiro256++", 11);
+  bool ok = randompack_sample(sample, n, k, rng);
+  check_success(ok, rng);
+  for (int i = 0; i < n; i++) seen[i] = false;
+  for (int i = 0; i < k; i++) {
+    int v = sample[i];
+    xCheck(v >= 0 && v < n);
+    xCheck(!seen[v]);
+    seen[v] = true;
   }
-  randompack_rng *r3 = create_seeded_rng("xoshiro256++", 5);
-  check_rng_clean(r3);
-  ok = randompack_sample(sample1, N, 0, r3);
-  check_success(ok, r3);
-  randompack_free(r1);
-  randompack_free(r2);
-  randompack_free(r3);
+  // Check frequency in first and third entry in several samples.
+  int counts[7] = {0};
+  for (int i = 0; i < 4; i += 2) {
+	 for (int j = 0; j < 10000; j++) {
+		randompack_sample(sample, 7, 4, rng);
+		counts[sample[i]]++;
+	 }
+	 xCheckMsg(check_balanced_counts(counts, 7), "Sample");
+  }
+  randompack_free(rng);
 }
 
 void TestSample(void) {

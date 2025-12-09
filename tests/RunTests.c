@@ -79,7 +79,7 @@ int main(int argc, char **argv) {
   run_test("Normal",   TestNormal);
   run_test("Perm",     TestPerm);   // TODO expand this
   run_test("Sample",   TestSample); // TODO expand this
-  //run_test("Numbers_mvn", TestMvn); // TODO  
+  run_test("Mvn",      TestMvn); // TODO  
   // TODO: philox (all), 3fry (rng), 
   // TODO: Test philox, get_state, set_state, compare with known
   // TODO: Timing

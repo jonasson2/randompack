@@ -49,7 +49,6 @@ bool equal_vecd(double *a, double *b, int n);               // a = b?
 bool equal_vec32(uint32_t *a, uint32_t *b, int n);          // a = b?
 bool equal_vec64(uint64_t *a, uint64_t *b, int n);          // a = b?
 bool everywhere_different(uint64_t *a, uint64_t *b, int n); // ai ≠ bi for all i
-bool is_perm_0_to_n_minus1(int *x, int n);
 
 //------------------------------------------------------------------------------
 // Approximate equality

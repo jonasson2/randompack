@@ -98,6 +98,21 @@ char *randompack_last_error( // Get last error string, or 0 if none
 // and performance tuning, and are typically not needed in routine applications.
 //========================================================================================
 
+// bool randompack_split( // Generate a mixed hash of seed and path (index array)
+//   uint64_t seed,         // in    Seed to use
+//   uint64_t *path,        // in    Array of..
+//   int *child_seeds,      // out   
+//   int nchildren
+// );
+
+//========================================================================================
+// Advanced API: Low-level utilities and engine-specific features
+//
+// These functions expose additional control over RNG behaviour, distribution kernels, and
+// bit-precise integer generation. They are intended for specialised use cases, testing,
+// and performance tuning, and are typically not needed in routine applications.
+//========================================================================================
+
 bool randompack_uint32( // Generate uint32 in [0, bound), false on error
   uint32_t x[],          // out     len-vector of integers
   int len,               // in      number requested

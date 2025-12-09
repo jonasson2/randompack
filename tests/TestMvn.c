@@ -53,9 +53,9 @@ static void stdevs(double Sig[], double stds[], int n, int N) {
 }
 
 static bool ok7sig(double x[], double sig[], int n) {
-  // return true iff |x[k]| ≤ 7·sig for all k
+  // return true iff |x[k]| ≤ 8·sig for all k
   for (int k=0; k<n; k++) {
-    if (fabs(x[k]) > 7*sig[k]) return false;
+    if (fabs(x[k]) > 8*sig[k]) return false;
   }
   return true;
 }
