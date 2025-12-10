@@ -1,4 +1,24 @@
 // -*- C -*-
+static int serialized_extra_bytes(rng_engine engine) {
+  int extra = 0;
+  if (engine == CHACHA20)
+    extra += sizeof(ChaCha20_Ctx);
+  // later: if you add Philox extra_state to rng_blob,
+  // you can extend this:
+  // else if (engine == PHILOX)
+  //   extra += sizeof(philox_state);
+  return extra;
+}
+
+static int serialized_need(randompack_rng *rng) {
+  return STATE_MIN_NEED + serialized_extra_bytes(rng->engine);
+}
+
+// For deserialization: compute required size from a blob header
+static int serialized_need_from_blob(const rng_blob *blob) {
+  return STATE_MIN_NEED + serialized_extra_bytes((rng_engine)blob->engine);
+}
+
 static int serialized_need(randompack_rng *rng) {
    int need = STATE_MIN_NEED;
  if (rng->engine == CHACHA20)

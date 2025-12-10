@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <time.h>
+#include <assert.h>
 #include "randompack.h"
 #include "randompack_config.h"
 #include "BlasGateway.h"
@@ -49,6 +50,7 @@ typedef struct {
   char *full;
   char *abbrev;
   rng_engine  engine;
+  int extra_size;
   engine_next next;
 } rng_entry;
 
@@ -61,14 +63,14 @@ typedef struct {
 #include "distributions.inc"
 
 static rng_entry rng_table[] = {
-  { "park-miller",   "pm",       PARKMILLER,  0                 }, // special path
-  { "xorshift128+",  "x128+",    X128P,       xorshift128p      },
-  { "xoshiro256**",  "x256**",   X256SS,      nextss            },
-  { "xoshiro256++",  "x256++",   X256PP,      nextpp            },
-  { "pcg64",         "pcg",      PCG64,       pcg64_random_fast },
-  { "philox",        "philox",   PHILOX,      next_philox       },
-  { "chacha20",      "chacha20", CHACHA20,    chachacha         },
-  { "system-csprng", "system",   SYS,         csprng            }
+  { "park-miller",   "pm",       PARKMILLER, 0,  0                 },
+  { "xorshift128+",  "x128+",    X128P,      0,  xorshift128p      },
+  { "xoshiro256**",  "x256**",   X256SS,     0,  nextss            },
+  { "xoshiro256++",  "x256++",   X256PP,     0,  nextpp            },
+  { "pcg64",         "pcg",      PCG64,      0,  pcg64_random_fast },
+  { "philox",        "philox",   PHILOX,     6,  next_philox       },
+  { "chacha20",      "chacha20", CHACHA20,   17, chachacha         },
+  { "system-csprng", "system",   SYS,        0,  csprng            }
 };
 
 static rng_entry *find_entry(rng_engine e) {
@@ -151,22 +153,16 @@ randompack_rng *randompack_create(const char *engine) {
     rng->last_error = "PCG64 engine not supported on this platform (no 128-bit integers)";
     return rng;
   }
-  if (rng->engine == CHACHA20) {
-    ChaCha20_Ctx *ctx;
-    if (!ALLOC(ctx, 1)) {
+  rng_entry *ent = find_entry(rng->engine);
+  assert(ent);
+  if (ent->extra_words > 0) {
+    uint64_t *p;
+    if (!ALLOC(p, ent->extra_words)) {
       rng->last_error = "randompack_create: memory allocation failed";
       return rng;
     }
-    rng->extra_state = ctx;
+    rng->extra_state = p;
   }
-  else if (rng->engine == PHILOX) {
-    philox_state *st;
-    if (!ALLOC(st, 1)) {
-      rng->last_error = "randompack_create: memory allocation failed";
-      return rng;
-    }
-    rng->extra_state = st;
-  }  // Randomize engine
   if (rng->engine == PARKMILLER) {
     uint64_t x;
     uint32_t s;
@@ -241,10 +237,8 @@ bool randompack_deserialize(uint8_t *buf, int len, randompack_rng *rng) {
   rng_blob blob = {0};
   memcpy(&blob, buf, min(len, sizeof(blob)));
   rng_entry *ent = find_entry(blob.engine);
-  int extra_need = (blob.engine == CHACHA20 ? sizeof(ChaCha20_Ctx) : 0);
-  if (blob.version != 1
-      || !ent
-      || len < STATE_MIN_NEED + extra_need) {
+  int need = serialized_need_from_blob(&blob);
+  if (blob.version != 1 || !ent || len < need) {
     rng->last_error = "randompack_deserialize: corrupt state buffer";
     return false;
   }
