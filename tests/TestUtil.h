@@ -13,7 +13,8 @@ static char *engines[] = {
   "xorshift128+",
   "xoshiro256**",
   "xoshiro256++",
-  "chacha20"
+  "chacha20",
+  "philox"
 #ifdef HAVE128
   , "pcg64"
 #endif
@@ -23,7 +24,8 @@ static char *abbrev[] = {
   "x128+",
   "x256**",
   "x256++",
-  "chacha20"
+  "chacha20",
+  "philox"
 #ifdef HAVE128
   , "pcg"
 #endif

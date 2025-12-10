@@ -1,6 +1,6 @@
 // -*- mode: c -*-
 static uint64_t csprng(randompack_rng *rng) {
-  // Cryptographically secure pseudo-random-number-generator
+  // Cryptographically secure pseudo-random-number-generator, return system entropy
   
   uint64_t x;
 

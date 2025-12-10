@@ -12,12 +12,17 @@
 //    on randompack_{counter,3fry_key,philox_key}.
 // 5. Change __inline__ to inline and remove __atribute__((always_inline)
 // 6. Combine the files in random123_64x4.inc removing common definitions.
+// 7. Add the _umul128 to allow compilation on windows
 //
 // The Random123 commit used is 1a2b3c4d5e (February 2025). This version was
 // tested to give identical threefry4x64 outputs as the official library built
 // with ‘make’ in Random123/examples. BSD license, see License-Random123.txt.
 //
 // Kristján Jónasson, jonasson@hi.is, 2025
+
+#ifdef _MSC_VER
+#include <intrin.h>
+#endif
 
 enum r123_enum_threefry64x4 {
   R_64x4_0_0 = 14,
@@ -238,15 +243,20 @@ static inline threefry4x64_ctr_t threefry4x64(threefry4x64_ctr_t in,
   return ret;
 }
 
-#ifdef HAVE128
+#ifdef HAVE128MUL
  
 typedef randompack_philox_key r123array2x64;
 typedef randompack_counter r123array4x64;
 
 static inline uint64_t mulhilo64(uint64_t a, uint64_t b, uint64_t *hip) {
-  __uint128_t product = ((__uint128_t)a) * ((__uint128_t)b);
+#if defined(_MSC_VER)
+  return _umul128(a, b, hip);
+#else
+  _Static_assert(HAVE128, "Internal error");
+  uint128_t product = ((uint128_t)a) * ((uint128_t)b);
   *hip = product >> 64;
   return (uint64_t)product;
+#endif
 }
 
 static inline r123array2x64

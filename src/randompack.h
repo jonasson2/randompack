@@ -141,13 +141,13 @@ bool randompack_uint64_philox( // Counter based random number generation with "p
   randompack_philox_key key // in   threefry4x64 key
 );
 
-bool randompack_get_serialized( // Serialize an RNG to an opaque byte buffer
+bool randompack_serialize( // Serialize an RNG to an opaque byte buffer
   uint8_t *buf,          // out     buffer for serialization (may be NULL if *len==0)
   int *len,              // in/out  0 → query size; otherwise buffer length
   randompack_rng *rng    // in      RNG to serialize
 );
 
-bool randompack_set_serialized( // Restore an RNG from an opaque byte buffer
+bool randompack_deserialize( // Restore an RNG from an opaque byte buffer
   uint8_t *buf,          // in      buffer with serialization
   int len,               // in      buffer length
   randompack_rng *rng    // out     target RNG (must be allocated)

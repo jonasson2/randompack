@@ -43,8 +43,13 @@ static void rand_randomize(randompack_rng *rng) {
   }
   else {
     entropy_fill(rng, rng->state.u64, sizeof(rng->state.u64));
-    if (rng->state.u64[0] == 0)
-      rng->state.u64[0] = 1;
+	 if (rng->engine == PHILOX) {
+		philox_state *st = (philox_state *)rng->extra_state;
+		entropy_fill(rng, &st->key, sizeof(st->key));
+		st->idx = 4;
+	 }
+	 else if (rng->state.u64[0] == 0)
+		rng->state.u64[0] = 1;
   }
   rng->buf64 = 0;
   rng->spare_norm = NAN;

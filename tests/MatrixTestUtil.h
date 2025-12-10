@@ -56,11 +56,10 @@ static inline void meanmat(char *transp, int m, int n, double A[], int ldA, doub
       break;
     case 'T': case 't':
       setzero(m, mu);
-      for (int i = 0; i < n; i++) {
-        double *Ai = A + i;
-        for (int j = 0; j < m; j++) mu[j] += Ai[j*ldA];
+      for (int j = 0; j < m; j++) {
+        for (int i = 0; i < n; i++) mu[j] += A[j + i*ldA];
+        mu[j] /= n;
       }
-      for (int j = 0; j < m; j++) mu[j] /= n;
       break;
     default:
       assert(0);

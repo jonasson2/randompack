@@ -11,6 +11,10 @@
 #include "pcg64_dxsm.inc"
 #endif
 
+#ifdef HAVE128MUL
+#include "philox_rng.inc"
+#endif
+
 static inline uint32_t PM_rand_bits(randompack_rng *rng) {
   // returns an integer in [1, 2^31 - 2]
   const uint32_t a = 16807, m = mersenne8, q = m/a, r = m%a;

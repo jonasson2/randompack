@@ -45,4 +45,8 @@ static int mersenne8 = 2147483647;  // 2^31-1
   typedef __uint128_t uint128_t;
 #endif
 
+#if HAVE128 || (defined(_MSC_VER) && defined(_M_X64))
+  #define HAVE128MUL 1
+#endif
+
 #endif

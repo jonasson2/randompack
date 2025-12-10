@@ -22,6 +22,7 @@ typedef enum {
   X256SS,
   X256PP,
   PCG64,
+  PHILOX,
   CHACHA20,
   SYS,
 } rng_engine;
@@ -65,6 +66,7 @@ static rng_entry rng_table[] = {
   { "xoshiro256**",  "x256**",   X256SS,      nextss            },
   { "xoshiro256++",  "x256++",   X256PP,      nextpp            },
   { "pcg64",         "pcg",      PCG64,       pcg64_random_fast },
+  { "philox",        "philox",   PHILOX,      next_philox       },
   { "chacha20",      "chacha20", CHACHA20,    chachacha         },
   { "system-csprng", "system",   SYS,         csprng            }
 };
@@ -113,9 +115,9 @@ bool randompack_seed(int seed, randompack_rng *rng) {
     nonce96_t nonce;
     uint64_t sm = seed64;
     ChaCha20_Ctx *ctx = (ChaCha20_Ctx *)rng->extra_state;
-    for (unsigned int i = 0; i < sizeof(key)/sizeof(key[0]); i++)
+    for (unsigned int i = 0; i < LEN(key); i++)
       key[i] = (uint8_t)rand_splitmix64(&sm);
-    for (unsigned int i = 0; i < sizeof(nonce)/sizeof(nonce[0]); i++)
+    for (unsigned int i = 0; i < LEN(nonce); i++)
       nonce[i] = (uint8_t)rand_splitmix64(&sm);
     ChaCha20_init(ctx, key, nonce, 0);
   }
@@ -124,10 +126,15 @@ bool randompack_seed(int seed, randompack_rng *rng) {
     for (int i = 0; i < LEN(rng->state.u64); i++)
       rng->state.u64[i] = rand_splitmix64(&sm);
     if (rng->state.u64[0] == 0) rng->state.u64[0] = 1;
+    if (rng->engine == PHILOX) {
+      philox_state *st = (philox_state *)rng->extra_state;
+      st->key.v[0] = rand_splitmix64(&sm);
+      st->key.v[1] = rand_splitmix64(&sm);
+      st->idx = 4;
+    }
   }
   return true;
 }
-  
 
 randompack_rng *randompack_create(const char *engine) {
   randompack_rng *rng;
@@ -152,7 +159,14 @@ randompack_rng *randompack_create(const char *engine) {
     }
     rng->extra_state = ctx;
   }
-  // Randomize engine
+  else if (rng->engine == PHILOX) {
+    philox_state *st;
+    if (!ALLOC(st, 1)) {
+      rng->last_error = "randompack_create: memory allocation failed";
+      return rng;
+    }
+    rng->extra_state = st;
+  }  // Randomize engine
   if (rng->engine == PARKMILLER) {
     uint64_t x;
     uint32_t s;
@@ -193,79 +207,58 @@ enum {
   + sizeof(uint32_t)*2
 };
 
-bool randompack_get_serialized(uint8_t *buf, int *len, randompack_rng *rng) {
+#include "serializations.inc"
+
+bool randompack_serialize(uint8_t *buf, int *len, randompack_rng *rng) {
   // Returns the complete internal state of rng as an opaque byte buffer
   if (!rng) return false;
+  rng->last_error = 0;
   if (!len) {
-    rng->last_error = "randompack_get_serialized: len is null";
+    rng->last_error = "randompack_serialize: len is null";
     return false;
   }
-  int need = STATE_MIN_NEED + (rng->engine == CHACHA20 ? sizeof(ChaCha20_Ctx) : 0);
-  if (!buf) {
+  int need = serialized_need(rng);
+  if (!buf) { // Report needed buffer size
     *len = need;
-    rng->last_error = 0;
     return true;
   }
   if (*len < need) {
-    rng->last_error = "randompack_get_serialized: buffer too small";
+    rng->last_error = "randompack_serialize: buffer too small";
     return false;
   }
-  rng_blob blob = {0};
-  blob.version = 1;
-  blob.engine = rng->engine;
-  for (int i=0; i<LEN(rng->state.u64); i++) blob.state_u64[i] = rng->state.u64[i];
-  blob.buf64 = rng->buf64;
-  blob.spare_norm = rng->spare_norm;
-  if (rng->engine==CHACHA20 && rng->extra_state)
-    memcpy(&blob.chacha, rng->extra_state, sizeof(ChaCha20_Ctx));
-  memcpy(buf, &blob, need);
-  rng->last_error = 0;
+  serialize(buf, *len, rng);
   return true;
 }
 
-bool randompack_set_serialized(uint8_t *buf, int len, randompack_rng *rng) {
-  // Restores the rng state using a buffer obtained with randompack_get_serialized
+bool randompack_deserialize(uint8_t *buf, int len, randompack_rng *rng) {
+  // Restores the rng state using a buffer obtained with randompack_serialize
   if (!rng) return false;
-  if (!buf || len <= 0) goto invalid_args;
-
+  rng->last_error = 0;
+  if (!buf || len <= 0) {
+    rng->last_error = "randompack_deserialize: invalid arguments";
+    return false;
+  }
   rng_blob blob = {0};
   memcpy(&blob, buf, min(len, sizeof(blob)));
-
   rng_entry *ent = find_entry(blob.engine);
   int extra_need = (blob.engine == CHACHA20 ? sizeof(ChaCha20_Ctx) : 0);
   if (blob.version != 1
       || !ent
-      || len < STATE_MIN_NEED + extra_need)
-    goto corrupt;  
-  
-  rng->engine = blob.engine;
-  rng->next   = ent->next;
-
-  if (rng->engine == CHACHA20) {
-    if (!rng->extra_state) {
-      ChaCha20_Ctx *ctx;
-      if (!ALLOC(ctx, 1)) goto alloc_fail;
-      rng->extra_state = ctx;
-    }
-    memcpy(rng->extra_state, &blob.chacha, sizeof(ChaCha20_Ctx));
+      || len < STATE_MIN_NEED + extra_need) {
+    rng->last_error = "randompack_deserialize: corrupt state buffer";
+    return false;
   }
-  for (int i = 0; i < LEN(rng->state.u64); i++)
-    rng->state.u64[i] = blob.state_u64[i];
-  rng->state.u32 = blob.state_u64[0];
-  rng->buf64 = blob.buf64;
-  rng->spare_norm = blob.spare_norm;
-  rng->last_error = 0;
+  if (blob.engine == PCG64 && !ent->next) {
+    rng->last_error =
+      "randompack_deserialize: PCG64 engine not supported on this platform";
+    return false;
+  }
+  bool ok = deserialize(&blob, ent, rng);
+  if (!ok) {
+    rng->last_error = "randompack_deserialize: allocation failed";
+    return false;
+  }
   return true;
-  
-invalid_args:
-  rng->last_error = "randompack_set_serialized: invalid arguments";
-  return false;
-corrupt:
-  rng->last_error = "randompack_set_serialized: corrupt state buffer";
-  return false;
-alloc_fail:
-  rng->last_error = "randompack_set_serialized: allocation failed";
-  return false;
 }
 
 char *randompack_last_error(randompack_rng *rng) {
@@ -380,16 +373,14 @@ bool randompack_sample(int x[], int len, int k, randompack_rng *rng) {
 
 bool randompack_uint64_3fry(uint64_t x[], int len, randompack_counter ctr,
                             randompack_3fry_key key) {
-  if (!x || len < 0)
-    return false;
+  if (!x || len < 0) return false;
   rand_3fry_64bits(x, len, ctr, key);
   return true;
 }
 
 bool randompack_uint64_philox(uint64_t x[], int len, randompack_counter ctr,
                               randompack_philox_key key) {
-  if (!x || len < 0)
-    return false;
+  if (!x || len < 0) return false;
   rand_phil_64bits(x, len, ctr, key);
   return true;
 }
