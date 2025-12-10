@@ -43,14 +43,14 @@ struct randompack_rng {
   uint64_t buf64;
   double spare_norm;
   char *last_error;
-  void *extra_state;
+  uint64_t *extra_state;
 };
 
 typedef struct {
   char *full;
   char *abbrev;
   rng_engine  engine;
-  int extra_size;
+  int extra_words;
   engine_next next;
 } rng_entry;
 
@@ -68,7 +68,7 @@ static rng_entry rng_table[] = {
   { "xoshiro256**",  "x256**",   X256SS,     0,  nextss            },
   { "xoshiro256++",  "x256++",   X256PP,     0,  nextpp            },
   { "pcg64",         "pcg",      PCG64,      0,  pcg64_random_fast },
-  { "philox",        "philox",   PHILOX,     6,  next_philox       },
+  { "philox",        "philox",   PHILOX,     7,  next_philox       },
   { "chacha20",      "chacha20", CHACHA20,   17, chachacha         },
   { "system-csprng", "system",   SYS,        0,  csprng            }
 };
@@ -235,7 +235,7 @@ bool randompack_deserialize(uint8_t *buf, int len, randompack_rng *rng) {
     return false;
   }
   rng_blob blob = {0};
-  memcpy(&blob, buf, min(len, sizeof(blob)));
+  memcpy(&blob, buf, min(len, STATE_MIN_NEED));
   rng_entry *ent = find_entry(blob.engine);
   int need = serialized_need_from_blob(&blob);
   if (blob.version != 1 || !ent || len < need) {
@@ -247,7 +247,8 @@ bool randompack_deserialize(uint8_t *buf, int len, randompack_rng *rng) {
       "randompack_deserialize: PCG64 engine not supported on this platform";
     return false;
   }
-  bool ok = deserialize(&blob, ent, rng);
+  int extra = serialized_extra_bytes((rng_engine)blob.engine);
+  bool ok = deserialize(&blob, ent, buf + STATE_MIN_NEED, extra, rng);
   if (!ok) {
     rng->last_error = "randompack_deserialize: allocation failed";
     return false;

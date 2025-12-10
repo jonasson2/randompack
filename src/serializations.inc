@@ -1,13 +1,8 @@
 // -*- C -*-
 static int serialized_extra_bytes(rng_engine engine) {
-  int extra = 0;
-  if (engine == CHACHA20)
-    extra += sizeof(ChaCha20_Ctx);
-  // later: if you add Philox extra_state to rng_blob,
-  // you can extend this:
-  // else if (engine == PHILOX)
-  //   extra += sizeof(philox_state);
-  return extra;
+  rng_entry *ent = find_entry(engine);
+  if (!ent) return 0;
+  return ent->extra_words * (int)sizeof(uint64_t);
 }
 
 static int serialized_need(randompack_rng *rng) {
@@ -19,14 +14,8 @@ static int serialized_need_from_blob(const rng_blob *blob) {
   return STATE_MIN_NEED + serialized_extra_bytes((rng_engine)blob->engine);
 }
 
-static int serialized_need(randompack_rng *rng) {
-   int need = STATE_MIN_NEED;
- if (rng->engine == CHACHA20)
-    need += sizeof(ChaCha20_Ctx);
-  return need;
-}
-
 static bool serialize(uint8_t *buf, int need, randompack_rng *rng) {
+  (void)need;
   rng_blob blob = (rng_blob){0};
   blob.version = 1;
   blob.engine  = rng->engine;
@@ -39,26 +28,27 @@ static bool serialize(uint8_t *buf, int need, randompack_rng *rng) {
   blob.spare_norm = rng->spare_norm;
   blob.reserved   = 0;
 
-  // Copy CHACHA state if present
-  if (rng->engine == CHACHA20 && rng->extra_state)
-    memcpy(&blob.chacha, rng->extra_state, sizeof(ChaCha20_Ctx));
-
-  // Write exactly 'need' bytes to buf
-  memcpy(buf, &blob, need);
+  memcpy(buf, &blob, STATE_MIN_NEED);
+  if (rng->extra_state) {
+    int extra = serialized_extra_bytes(rng->engine);
+    if (extra > 0)
+      memcpy(buf + STATE_MIN_NEED, rng->extra_state, (size_t)extra);
+  }
   return true;
 }
 
-static bool deserialize(const rng_blob *blob, rng_entry *ent, randompack_rng *rng) {
+static bool deserialize(const rng_blob *blob, rng_entry *ent,
+                        const uint8_t *extra_buf, int extra_bytes,
+                        randompack_rng *rng) {
   rng->engine = (rng_engine)blob->engine;
   rng->next = ent->next;
 
-  if (rng->engine == CHACHA20) {
+  if (ent->extra_words > 0) {
     if (!rng->extra_state) {
-      ChaCha20_Ctx *ctx;
-      if (!ALLOC(ctx, 1)) return false;
-      rng->extra_state = ctx;
+      if (!ALLOC(rng->extra_state, ent->extra_words)) return false;
     }
-    memcpy(rng->extra_state, &blob->chacha, sizeof(ChaCha20_Ctx));
+    if (extra_bytes > 0 && extra_buf)
+      memcpy(rng->extra_state, extra_buf, (size_t)extra_bytes);
   }
 
   for (int i = 0; i < LEN(rng->state.u64); i++)
