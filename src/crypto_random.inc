@@ -1,5 +1,5 @@
 // -*- mode: c -*-
-// Cross-platform cryptographically secure random number generation
+// Cross-platform cryptographically secure system random number generation
 //
 // Platform support:
 // - Windows: RtlGenRandom (uses AES-CTR)
@@ -8,8 +8,6 @@
 // - Linux/FreeBSD/DragonFly: getrandom() syscall (Linux uses ChaCha20)
 // - Fallback: /dev/urandom for other Unix-like systems
 // - Final fallback: An empty function that returns false (should not happen).
-//
-// All systems implement automatic reseeding for forward secrecy.
 
 #include <stdbool.h>
 #include <stddef.h>

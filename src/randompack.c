@@ -12,6 +12,7 @@
 #include "randompack.h"
 #include "randompack_config.h"
 #include "BlasGateway.h"
+#include "seed_seq_fe128.inc"
 #include "crypto_random.inc"
 
 typedef struct randompack_rng randompack_rng;
@@ -101,38 +102,44 @@ static bool select_engine(const char *s, randompack_rng *rng) {
   return false;  // unknown engine
 }
 
+static void copy32(void *dst, const uint32_t *src, int n) {
+  memcpy(dst, src, (size_t)n*sizeof(uint32_t));
+}
+
 bool randompack_seed(int seed, randompack_rng *rng) {
   if (!rng) return false;
-  uint64_t seed64 = (uint32_t)seed;
+  uint32_t seed32 = (uint32_t)seed;
   rng->last_error = 0;
   if (rng->engine == PARKMILLER) {
-    uint32_t s = seed64 % (uint64_t)mersenne8;
+    uint32_t s = seed32 % mersenne8;
     if (s == 0) s = 1;
     rng->state.u32 = s;
     rng->buf64 = 0;
     (void)PM_rand_bits(rng); // spin-up
   }
-  else if (rng->engine == CHACHA20) {
-    key256_t key;
-    nonce96_t nonce;
-    uint64_t sm = seed64;
-    ChaCha20_Ctx *ctx = (ChaCha20_Ctx *)rng->extra_state;
-    for (unsigned int i = 0; i < LEN(key); i++)
-      key[i] = (uint8_t)rand_splitmix64(&sm);
-    for (unsigned int i = 0; i < LEN(nonce); i++)
-      nonce[i] = (uint8_t)rand_splitmix64(&sm);
-    ChaCha20_init(ctx, key, nonce, 0);
-  }
-  else {
-    uint64_t sm = seed64;
-    for (int i = 0; i < LEN(rng->state.u64); i++)
-      rng->state.u64[i] = rand_splitmix64(&sm);
-    if (rng->state.u64[0] == 0) rng->state.u64[0] = 1;
-    if (rng->engine == PHILOX) {
-      philox_state *st = (philox_state *)rng->extra_state;
-      st->key.v[0] = rand_splitmix64(&sm);
-      st->key.v[1] = rand_splitmix64(&sm);
-      st->idx = 4;
+  else {  // Use Melissa O'Neill's randutil to seed
+    uint32_t w[12], in[1] = {seed32};
+    seed_seq_fe128 ss;
+    seed_seq_fe128_seed(&ss, in, 1);
+    seed_seq_fe128_generate(&ss, w, 12);
+    if (rng->engine == CHACHA20) {
+      ChaCha20_Ctx *ctx = (ChaCha20_Ctx *)rng->extra_state;
+      key256_t key;
+      nonce96_t nonce;
+      copy32(key,   w + 0, 8);
+      copy32(nonce, w + 8, 3);
+      ChaCha20_init(ctx, key, nonce, 0);
+    }
+    else {
+      copy32(rng->state.u64, w, 8);
+      if (rng->engine == PHILOX) {
+        philox_state *st = (philox_state *)rng->extra_state;
+        copy32(&st->key, w + 8, 4);
+        st->idx = 4;
+      }
+      else if (rng->state.u64[0] == 0) { // the xo-family needs a nonzero state.
+        rng->state.u64[0] = 1;
+      }
     }
   }
   return true;

@@ -1,5 +1,6 @@
 // -*- C -*-
-// A stateful rng implementation of Philox.
+// A stateful rng implementation of Philox. The counter is stored
+// in rng->state and the key + cached output in rng->extra_state
 typedef struct {
   randompack_philox_key key;     // key.v[0..1]
   uint64_t              out[4];  // cached block of 4 outputs

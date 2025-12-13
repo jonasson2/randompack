@@ -24,3 +24,11 @@ run_tests = executable(
 )
 
 test('RunTests', run_tests, args : ['-v'])
+
+seedseq_test = executable(
+  'TestSeedSeq',
+  ['../src/TestSeedSeq.cpp'],
+  include_directories : [inc],
+)
+
+test('TestSeedSeq', seedseq_test)
