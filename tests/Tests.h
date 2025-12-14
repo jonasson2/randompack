@@ -14,4 +14,5 @@ void TestUint32(void);
 void TestUint64(void);
 void TestNormal(void);
 void TestHelpers(void);
+void TestSeed(void);
 #endif /* TESTS_H */

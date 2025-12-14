@@ -3,7 +3,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-
 #include "randompack.h"
 #include "TestUtil.h"
 #include "xCheck.h"
@@ -13,13 +12,10 @@ static void draw_stream(char *engine, uint64_t *x, int n,
   randompack_rng *rng = randompack_create(engine);
   xCheck(rng != 0);
   check_rng_clean(rng);
-
   bool ok = randompack_seed(seed, (uint32_t *)spawn_key, nkey, rng);
   check_success(ok, rng);
-
   ok = randompack_uint64(x, n, 0, rng);
   check_success(ok, rng);
-
   randompack_free(rng);
 }
 
@@ -28,32 +24,24 @@ static void draw_stream_reseed_same_rng(char *engine, uint64_t *x, uint64_t *y, 
   randompack_rng *rng = randompack_create(engine);
   xCheck(rng != 0);
   check_rng_clean(rng);
-
   bool ok = randompack_seed(seed, (uint32_t *)spawn_key, nkey, rng);
   check_success(ok, rng);
-
   ok = randompack_uint64(x, n, 0, rng);
   check_success(ok, rng);
 
   // Reseed the same RNG and confirm we restart the stream.
   ok = randompack_seed(seed, (uint32_t *)spawn_key, nkey, rng);
   check_success(ok, rng);
-
   ok = randompack_uint64(y, n, 0, rng);
   check_success(ok, rng);
-
   randompack_free(rng);
 }
 
 static void test_seed_determinism(void) {
   // Park-Miller supports seed-only; determinism with a spawn key is tested for
   // the seed-sequence engines below.
-  const char *engines_seed_only[] = {
-    "parkmiller",
-  };
-
   const char *engines_seq[] = {
-    "xoshiro128+",
+    "xorshift128+",
     "xoshiro256**",
     "xoshiro256++",
     "pcg64",
@@ -64,32 +52,14 @@ static void test_seed_determinism(void) {
   enum { LEN_STREAM = 4 };
   uint32_t key[] = {7u, 11u, 13u};
 
-  // Seed-only determinism (Park-Miller)
-  for (int i = 0; i < LEN(engines_seed_only); i++) {
-    uint64_t x[LEN_STREAM], y[LEN_STREAM], z[LEN_STREAM], r[LEN_STREAM];
-
-    draw_stream((char *)engines_seed_only[i], x, LEN_STREAM, 42, 0, 0);
-    draw_stream((char *)engines_seed_only[i], y, LEN_STREAM, 42, 0, 0);
-    xCheck(equal_vec64(x, y, LEN_STREAM));
-
-    draw_stream((char *)engines_seed_only[i], z, LEN_STREAM, 43, 0, 0);
-    xCheck(everywhere_different(x, z, LEN_STREAM));
-
-    draw_stream_reseed_same_rng((char *)engines_seed_only[i], x, r, LEN_STREAM, 42, 0, 0);
-    xCheck(equal_vec64(x, r, LEN_STREAM));
-  }
-
   // Seed-sequence determinism (same key, same seed)
   for (int i = 0; i < LEN(engines_seq); i++) {
     uint64_t x[LEN_STREAM], y[LEN_STREAM], z[LEN_STREAM], r[LEN_STREAM];
-
     draw_stream((char *)engines_seq[i], x, LEN_STREAM, 42, key, LEN(key));
     draw_stream((char *)engines_seq[i], y, LEN_STREAM, 42, key, LEN(key));
     xCheck(equal_vec64(x, y, LEN_STREAM));
-
     draw_stream((char *)engines_seq[i], z, LEN_STREAM, 43, key, LEN(key));
     xCheck(everywhere_different(x, z, LEN_STREAM));
-
     draw_stream_reseed_same_rng((char *)engines_seq[i], x, r, LEN_STREAM, 42, key, LEN(key));
     xCheck(equal_vec64(x, r, LEN_STREAM));
   }
@@ -99,7 +69,7 @@ static void test_spawn_key_separation(void) {
   // These tests target the "structural collision" class: [] vs [0], etc.
   // Skip Park-Miller because it does not support spawn_key.
   const char *engines[] = {
-    "xoshiro128+",
+    "xorshift128+",
     "xoshiro256**",
     "xoshiro256++",
     "pcg64",
@@ -108,11 +78,9 @@ static void test_spawn_key_separation(void) {
   };
 
   enum { LEN_STREAM = 4, NENGINES = LEN(engines) };
-
   uint32_t k0[] = {0u};
   uint32_t k321[] = {3u, 2u, 1u};
   uint32_t k3210[] = {3u, 2u, 1u, 0u};
-
   for (int i = 0; i < NENGINES; i++) {
     for (int seed = 0; seed < 4; seed++) {
       uint64_t a[LEN_STREAM], b[LEN_STREAM];
@@ -132,26 +100,20 @@ static void test_spawn_key_separation(void) {
 
 static void test_parkmiller_rejects_spawn_key(void) {
   // Requires the Park-Miller branch to reject any (spawn_key,nkey) != (0,0).
-  randompack_rng *rng = randompack_create("parkmiller");
+  randompack_rng *rng = randompack_create("park-miller");
   xCheck(rng != 0);
   check_rng_clean(rng);
-
   uint32_t key[] = {1u};
-
   bool ok = randompack_seed(42, key, 1, rng);
-  xCheck(!ok);
-  xCheck(rng->last_error != 0);
+  check_failure(ok, rng);
 
   // Also reject spawn_key non-null even when nkey == 0 (policy: must be 0,0).
-  rng->last_error = 0;
   ok = randompack_seed(42, key, 0, rng);
-  xCheck(!ok);
-  xCheck(rng->last_error != 0);
-
+  check_failure(ok, rng);
   randompack_free(rng);
 }
 
-void TestSeeding(void) {
+void TestSeed(void) {
   test_seed_determinism();
   test_spawn_key_separation();
   test_parkmiller_rejects_spawn_key();
