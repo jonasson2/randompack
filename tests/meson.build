@@ -9,7 +9,8 @@ test_sources = files(
   'TestMvn.c',
   'TestUint32.c',
   'TestUint64.c',
-  'TestHelpers.c',
+  'TestSeed.c',
+  'TestHelpers.c'
 )
 
 extra_util = files(

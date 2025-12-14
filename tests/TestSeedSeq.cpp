@@ -23,20 +23,13 @@ static void CheckSeedSeqFe128Pool(std::vector<uint32_t> x) {
   // C++ reference: unchanged
   randutils::seed_seq_fe128 ss_cpp(x.begin(), x.end());
 
-  // C translation: split x into input + seed
+  // C translation: same input sequence
   seed_seq_fe128 ss_c;
 
-  uint32_t seed = 0u;
-  uint32_t *begin = nullptr;
-  int n_input = 0;
+  uint32_t *input = x.empty() ? 0 : x.data();
+  int n_input = (int)x.size();
 
-  if (!x.empty()) {
-    seed = x.back();
-    n_input = (int)x.size() - 1;
-    begin = (n_input == 0) ? nullptr : x.data();  // x.data() points to x[0]
-  }
-
-  seed_seq_fe128_seed(&ss_c, seed, begin, n_input);
+  seed_seq_fe128_seed(&ss_c, input, n_input);
 
   // Compare the 4-word entropy pool bit-for-bit
   for (int i = 0; i < 4; i++) {

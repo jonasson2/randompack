@@ -47,54 +47,47 @@ static uint32_t seed_seq_mix(uint32_t x, uint32_t y) {
   return result;
 }
 
-// Core entropy mixer: fills mixer[0..3] from logical input [input,input+n_input) followed
-// by seed
-static void seed_seq_mix_entropy(uint32_t mixer[4], const uint32_t *input, int n_input,
-                                 uint32_t seed) {
+// Core entropy mixer: fills mixer[0..3] from input [begin,end)
+static void seed_seq_mix_entropy(uint32_t mixer[4], const uint32_t *begin, const uint32_t
+                                 *end) {
   uint32_t hash_const = SEED_SEQ_INIT_A;
-  int total = n_input + 1; // logical input words = spawn_key followed by seed
-  int idx = 0;
-
+  const uint32_t *current = begin;
   // Initialize mixer[i] with hashed inputs (or 0)
-  for (int i = 0; i < 4; i++) {
+  for (int i=0; i<4; i++) {
     uint32_t v = 0u;
-    if (idx < total) {
-      if (idx < n_input) v = input ? input[idx] : 0u;
-      else v = seed;
-      idx++;
+    if (current != end) {
+      v = *current;
+      current++;
     }
     mixer[i] = seed_seq_hash(v, &hash_const);
   }
-
   // Cross-mix all pairs (src,dest) with src != dest
-  for (int si = 0; si < 4; si++) {
+  for (int si=0; si<4; si++) {
     uint32_t src = mixer[si];
-    for (int di = 0; di < 4; di++) {
+    for (int di=0; di<4; di++) {
       if (di == si) continue;
       uint32_t h = seed_seq_hash(src, &hash_const);
       mixer[di] = seed_seq_mix(mixer[di], h);
     }
   }
-
   // Fold any remaining inputs across all dests
-  while (idx < total) {
-    uint32_t v = (idx < n_input) ? (input ? input[idx] : 0u) : seed;
-    idx++;
-    for (int di = 0; di < 4; di++) {
+  while (current != end) {
+    uint32_t v = *current;
+    current++;
+    for (int di=0; di<4; di++) {
       uint32_t h = seed_seq_hash(v, &hash_const);
       mixer[di] = seed_seq_mix(mixer[di], h);
     }
   }
 }
 
-// Public seed(): Construct 4-word entropy pool from input+seed
-static void seed_seq_fe128_seed(seed_seq_fe128 *ss, uint32_t seed, const uint32_t *input,
-                                int n_input) {
-  seed_seq_mix_entropy(ss->mixer, input, n_input, seed);
+// Public seed(): Construct 4-word entropy pool from input
+static void seed_seq_fe128_seed(seed_seq_fe128 *ss, uint32_t *input, int n_input) {
+  seed_seq_mix_entropy(ss->mixer, input, input + n_input);
 }
 
 // Public generate(): turn entropy pool into an output sequence
-static void seed_seq_fe128_generate(seed_seq_fe128 *ss, uint32_t *dest, int n_out) {
+static void seed_seq_fe128_generate(const seed_seq_fe128 *ss, uint32_t *dest, int n_out) {
   int src_index = 0;
   uint32_t hash_const = SEED_SEQ_INIT_B;
   for (int i=0; i<n_out; i++) {

@@ -12,7 +12,6 @@
 #include "randompack.h"
 #include "randompack_config.h"
 #include "BlasGateway.h"
-#include "seed_seq_fe128.inc"
 #include "crypto_random.inc"
 
 typedef struct randompack_rng randompack_rng;
@@ -102,15 +101,15 @@ static bool select_engine(const char *s, randompack_rng *rng) {
   return false;  // unknown engine
 }
 
-static void copy32(void *dst, const uint32_t *src, int n) {
-  memcpy(dst, src, (size_t)n*sizeof(uint32_t));
-}
-
-bool randompack_seed(int seed, uint32_t *spawn_key, int n_key, randompack_rng *rng)  {
+bool randompack_seed(int seed, uint32_t *spawn_key, int nkey, randompack_rng *rng)  {
   if (!rng) return false;
   uint32_t seed32 = (uint32_t)seed;
   rng->last_error = 0;
   if (rng->engine == PARKMILLER) {
+    if (nkey != 0 || spawn_key != 0) {
+      rng->last_error = "randompack_seed: spawn_key not supported for Park-Miller";
+      return false;
+    }
     uint32_t s = seed32 % mersenne8;
     if (s == 0) s = 1;
     rng->state.u32 = s;
@@ -118,14 +117,16 @@ bool randompack_seed(int seed, uint32_t *spawn_key, int n_key, randompack_rng *r
     (void)PM_rand_bits(rng); // burn-in
   }
   else {  // Use Melissa O'Neill's seed sequence
-    if (n_key < 0 || (n_key > 0 && !spawn_key)) {
+    if (nkey < 0 || (nkey > 0 && !spawn_key)) {
       rng->last_error = "randompack_seed: invalid spawn_key arguments";
       return false;
     }
     uint32_t w[12];
-    seed_seq_fe128 ss;
-    seed_seq_fe128_seed(&ss, seed32, spawn_key, n_key);
-    seed_seq_fe128_generate(&ss, w, 12);
+	 bool ok = seed_seq_seed(w, 12, seed32, spawn_key, nkey);
+	 if (!ok) {
+		rng->last_error = "randompack_seed: allocation failed";
+		return false;
+	 }	 
     if (rng->engine == CHACHA20) {
       ChaCha20_Ctx *ctx = (ChaCha20_Ctx *)rng->extra_state;
       key256_t key;

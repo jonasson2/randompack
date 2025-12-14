@@ -24,6 +24,10 @@ _Static_assert(sizeof(long long) == 8, "randompack requires 64-bit long long");
 static inline int min(int m, int n) { return m < n ? m : n; }
 static inline int max(int m, int n) { return m > n ? m : n; }
 
+static inline void copy32(void *dst, const uint32_t *src, int n) {
+  memcpy(dst, src, (size_t)n*sizeof(uint32_t));
+}
+
 static inline uint64_t rand_splitmix64(uint64_t *x) {
   uint64_t z = (*x += 0x9E3779B97F4A7C15ULL);
   z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9ULL;
