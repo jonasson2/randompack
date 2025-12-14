@@ -328,6 +328,6 @@ void check_failure(bool ok, randompack_rng *rng) {
 
 randompack_rng *create_seeded_rng(const char *engine, int seed) {
   randompack_rng *rng = randompack_create(engine);
-  if (rng) randompack_seed(seed, rng);
+  if (rng) randompack_seed(seed, 0, 0, rng);
   return rng;
 }

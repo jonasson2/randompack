@@ -6,15 +6,20 @@
 #include "printX.h"
 
 static bool is_permutation(int *x, int n) {
-  bool seen[n];
+  bool *seen;
+  bool ok = true;
+  if (!ALLOC(seen, n)) return false;
   for (int i = 0; i < n; i++) seen[i] = false;
   for (int i = 0; i < n; i++) {
     int v = x[i];
-    if (v < 0 || v >= n) return false;
-    if (seen[v]) return false;
+    if (v < 0 || v >= n || seen[v]) {
+      ok = false;
+      break;
+    }
     seen[v] = true;
   }
-  return true;
+  FREE(seen);
+  return ok;
 }
 
 static void test_perm_api(void) {

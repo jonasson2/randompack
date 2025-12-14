@@ -20,7 +20,7 @@ static void draw_randoms(char *engine, int *x, int n, int min, int max, int seed
 
 // Basic bounded range checks comparing shifted streams.
 static void test_int_simple(void) {
-  int N = 128;
+  enum { N = 128 };
   int a[N], b[N];
   draw_randoms("x256++", a, N, -3, 8, 99);
   draw_randoms("x256++", b, N, 0, 11, 99);

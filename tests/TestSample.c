@@ -6,10 +6,12 @@
 #include "xCheck.h"
 
 static void test_sample_api(void) {
-  int n = 50;
+  enum { N = 50 };
+  int n = N;
   int k = 10;
   int sample[10];
-  bool seen[n];
+  bool *seen;
+  xCheck(ALLOC(seen, n));
   randompack_rng *rng = create_seeded_rng("xoshiro256++", 11);
   bool ok = randompack_sample(sample, n, k, rng);
   check_success(ok, rng);
@@ -25,11 +27,12 @@ static void test_sample_api(void) {
   for (int i = 0; i < 4; i += 2) {
 	 for (int j = 0; j < 10000; j++) {
 		randompack_sample(sample, 7, 4, rng);
-		counts[sample[i]]++;
-	 }
-	 xCheckMsg(check_balanced_counts(counts, 7), "Sample");
+      counts[sample[i]]++;
+    }
+    xCheckMsg(check_balanced_counts(counts, 7), "Sample");
   }
   randompack_free(rng);
+  FREE(seen);
 }
 
 void TestSample(void) {

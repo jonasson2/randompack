@@ -106,7 +106,7 @@ static void copy32(void *dst, const uint32_t *src, int n) {
   memcpy(dst, src, (size_t)n*sizeof(uint32_t));
 }
 
-bool randompack_seed(int seed, randompack_rng *rng) {
+bool randompack_seed(int seed, uint32_t *spawn_key, int n_key, randompack_rng *rng)  {
   if (!rng) return false;
   uint32_t seed32 = (uint32_t)seed;
   rng->last_error = 0;
@@ -115,12 +115,16 @@ bool randompack_seed(int seed, randompack_rng *rng) {
     if (s == 0) s = 1;
     rng->state.u32 = s;
     rng->buf64 = 0;
-    (void)PM_rand_bits(rng); // spin-up
+    (void)PM_rand_bits(rng); // burn-in
   }
-  else {  // Use Melissa O'Neill's randutil to seed
-    uint32_t w[12], in[1] = {seed32};
+  else {  // Use Melissa O'Neill's seed sequence
+    if (n_key < 0 || (n_key > 0 && !spawn_key)) {
+      rng->last_error = "randompack_seed: invalid spawn_key arguments";
+      return false;
+    }
+    uint32_t w[12];
     seed_seq_fe128 ss;
-    seed_seq_fe128_seed(&ss, in, 1);
+    seed_seq_fe128_seed(&ss, seed32, spawn_key, n_key);
     seed_seq_fe128_generate(&ss, w, 12);
     if (rng->engine == CHACHA20) {
       ChaCha20_Ctx *ctx = (ChaCha20_Ctx *)rng->extra_state;
@@ -137,7 +141,7 @@ bool randompack_seed(int seed, randompack_rng *rng) {
         copy32(&st->key, w + 8, 4);
         st->idx = 4;
       }
-      else if (rng->state.u64[0] == 0) { // the xo-family needs a nonzero state.
+      else if (rng->state.u64[0] == 0) { // the xo-family needs a nonzero state
         rng->state.u64[0] = 1;
       }
     }

@@ -22,29 +22,30 @@ static void draw_randoms(char *engine, uint64_t *x, int n, uint64_t seed) {
 
 // Check that identical engines agree and different engines differ.
 static void test_determinism(void) {
-  int len = 4, nengines = LEN(engines);
-  uint64_t x[nengines][len], y[nengines][len], z[nengines][len];
-  for (int i=0; i<LEN(engines); i++) {
-    draw_randoms(engines[i], x[i], len, 42);
-    draw_randoms(engines[i], y[i], len, 42);
-    draw_randoms(engines[i], z[i], len, 43);
-    xCheck(equal_vec64(x[i], y[i], len));
-    xCheck(everywhere_different(x[i], z[i], len));
-    for (int j = i+1; j < nengines; j++) { // all the later engines
-      draw_randoms(engines[j], y[j], len, 42);
-      xCheck(everywhere_different(x[i], y[j], len));
+  enum { LEN_STREAM = 4, NENGINES = LEN(engines) };
+  uint64_t x[NENGINES][LEN_STREAM], y[NENGINES][LEN_STREAM],
+           z[NENGINES][LEN_STREAM];
+  for (int i=0; i<NENGINES; i++) {
+    draw_randoms(engines[i], x[i], LEN_STREAM, 42);
+    draw_randoms(engines[i], y[i], LEN_STREAM, 42);
+    draw_randoms(engines[i], z[i], LEN_STREAM, 43);
+    xCheck(equal_vec64(x[i], y[i], LEN_STREAM));
+    xCheck(everywhere_different(x[i], z[i], LEN_STREAM));
+    for (int j = i+1; j < NENGINES; j++) { // all the later engines
+      draw_randoms(engines[j], y[j], LEN_STREAM, 42);
+      xCheck(everywhere_different(x[i], y[j], LEN_STREAM));
     }
   }
 }
 
 // Check that abbreviated engine names work
 static void test_engine_aliases(void) {
-  int len = 4, nengines = LEN(engines);
-  uint64_t x[nengines][len], y[nengines][len];
-  for (int i=0; i<LEN(engines); i++) {
-    draw_randoms(engines[i], x[i], len, 42);
-    draw_randoms(abbrev[i], y[i], len, 42);
-    xCheck(equal_vec64(x[i], y[i], len));
+  enum { LEN_STREAM = 4, NENGINES = LEN(engines) };
+  uint64_t x[NENGINES][LEN_STREAM], y[NENGINES][LEN_STREAM];
+  for (int i=0; i<NENGINES; i++) {
+    draw_randoms(engines[i], x[i], LEN_STREAM, 42);
+    draw_randoms(abbrev[i], y[i], LEN_STREAM, 42);
+    xCheck(equal_vec64(x[i], y[i], LEN_STREAM));
   }
 }
   

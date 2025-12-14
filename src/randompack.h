@@ -34,6 +34,8 @@ randompack_rng *randompack_create( // Create randomized RNG of given engine type
 
 bool randompack_seed( // Create RNG with given type and seed, false on error
   int seed,             // in      Any integer seed; expanded with a hash to fill state
+  uint32_t *spawn_key,  // in      Optional spawn key array (may be 0 if n_key==0)
+  int n_key,            // in      Number of spawn_key entries
   randompack_rng *rng   // in/out  Random number generator
 );
 

@@ -119,7 +119,7 @@ int main(int argc, char **argv) {
   }
 
   randompack_rng *rng = randompack_create(rngtype);
-  randompack_seed(rngseed, rng);
+  randompack_seed(rngseed, 0, 0, rng);
   double *x;
   ALLOC(x, n);
 
