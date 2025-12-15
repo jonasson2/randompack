@@ -5,6 +5,7 @@ project('randompack', 'c', 'fortran', 'cpp',
     'cpp_std=c++11',
     'warning_level=3',
     'buildtype=debug',
+    'default_library=both',
   ]
 )
 

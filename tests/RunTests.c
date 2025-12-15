@@ -74,14 +74,16 @@ int main(int argc, char **argv) {
   run_test("Create",   TestCreate);
   run_test("Uint32",   TestUint32);
   run_test("Uint64",   TestUint64);
+  run_test("Reference",TestReference);
   run_test("Int",      TestInt);
   run_test("U01",      TestU01);
   run_test("Normal",   TestNormal);
-  run_test("Perm",     TestPerm);   // TODO expand this
-  run_test("Sample",   TestSample); // TODO expand this
+  run_test("Perm",     TestPerm);   // Make the 10000 a constant
+  run_test("Sample",   TestSample); // ditto
   run_test("Seed",     TestSeed);
   run_test("SetState", TestSetState);
-  run_test("Mvn",      TestMvn); // TODO
+  run_test("Mvn",      TestMvn);
+  
   // TODO: philox (all), 3fry (rng), 
   // TODO: Test philox, get_state, set_state, compare with known
   // TODO: Timing

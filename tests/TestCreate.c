@@ -87,7 +87,7 @@ static void test_default_engine_matches_x256pp(void) {
 
 #ifndef HAVE128
 static void test_pcg64_unavailable(void) {
-  char *names[] = { "pcg64", "pcg" };
+  char *names[] = { "pcg64_dxsm", "pcg64" };
   for (int i = 0; i < (int)(sizeof names/sizeof names[0]); i++) {
     randompack_rng *rng = create_seeded_rng(names[i], 123);
     xCheck(rng);
@@ -96,7 +96,7 @@ static void test_pcg64_unavailable(void) {
     uint64_t x = 0;
     bool ok = randompack_uint64(&x, 1, 0, rng);
     check_failure(ok, rng);
-    printS("pcg engine (unavailable)", names[i]);
+    printS("pcg64_dxsm engine (unavailable)", names[i]);
     printS("last error", err);
     randompack_free(rng);
   }

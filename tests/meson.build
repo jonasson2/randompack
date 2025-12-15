@@ -9,6 +9,7 @@ test_sources = files(
   'TestMvn.c',
   'TestUint32.c',
   'TestUint64.c',
+  'TestReference.c',
   'TestSeed.c',
   'TestSetState.c',
   'TestHelpers.c'

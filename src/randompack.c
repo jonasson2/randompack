@@ -12,6 +12,7 @@
 #include "randompack.h"
 #include "randompack_config.h"
 #include "BlasGateway.h"
+#include "pcg64.h"
 #include "crypto_random.inc"
 
 typedef struct randompack_rng randompack_rng;
@@ -35,7 +36,7 @@ struct randompack_rng {
     uint32_t u32;
     uint64_t u64[4];
     #ifdef HAVE128
-    uint128_t u128;
+    pcg64_t pcg;   // <--- add this
     #endif
   } state;
   rng_engine engine;
@@ -55,23 +56,28 @@ typedef struct {
   engine_next next;
 } rng_entry;
 
-#ifndef HAVE128
-#define pcg64_random_fast 0
-#endif
 
 #include "engines.inc"
 #include "randutil.inc"
 #include "distributions.inc"
 
+#ifdef HAVE128
+static uint64_t next_pcg64(randompack_rng *rng) {
+  return pcg64_random_fast(&rng->state.pcg);
+}
+#else
+#define next_pcg64 0
+#endif
+
 static rng_entry rng_table[] = {
-  { "park-miller",   "pm",       PARKMILLER, 1, 0,  0                 },
-  { "xorshift128+",  "x128+",    X128P,      2, 0,  xorshift128p      },
-  { "xoshiro256**",  "x256**",   X256SS,     4, 0,  nextss            },
-  { "xoshiro256++",  "x256++",   X256PP,     4, 0,  nextpp            },
-  { "pcg64",         "pcg",      PCG64,      4, 0,  pcg64_random_fast },
-  { "philox",        "philox",   PHILOX,     6, 7,  next_philox       },
-  { "chacha20",      "chacha20", CHACHA20,   6, 17, chachacha         },
-  { "system-csprng", "system",   SYS,        0, 0,  csprng            }
+  { "park-miller",   "pm",       PARKMILLER, 1, 0,  0            },
+  { "xorshift128+",  "x128+",    X128P,      2, 0,  xorshift128p },
+  { "xoshiro256**",  "x256**",   X256SS,     4, 0,  nextss       },
+  { "xoshiro256++",  "x256++",   X256PP,     4, 0,  nextpp       },
+  { "pcg64_dxsm",    "pcg64",    PCG64,      4, 0,  next_pcg64   },
+  { "philox",        "philox",   PHILOX,     6, 7,  next_philox  },
+  { "chacha20",      "chacha20", CHACHA20,   6, 17, chachacha    },
+  { "system-csprng", "system",   SYS,        0, 0,  csprng       }
 };
 
 static rng_entry *find_entry(rng_engine e) {

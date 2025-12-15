@@ -16,7 +16,7 @@ static int engine_nstate(char *engine) {
   if (!strcmp(engine, "xorshift128+")) return 2;
   if (!strcmp(engine, "xoshiro256++")) return 4;
   if (!strcmp(engine, "xoshiro256**")) return 4;
-  if (!strcmp(engine, "pcg")) return 4;
+  if (!strcmp(engine, "pcg64") || !strcmp(engine, "pcg64_dxsm")) return 4;
   if (!strcmp(engine, "philox")) return 6;
   if (!strcmp(engine, "chacha20")) return 6;
   return 0;
@@ -35,7 +35,7 @@ static void test_invalid_args(void) {
     "xorshift128+",
     "xoshiro256++",
     "xoshiro256**",
-    "pcg",
+    "pcg64",
     "philox",
     "chacha20",
   };
@@ -94,7 +94,7 @@ static void test_xoshiro_nonzero(void) {
 static void test_pcg_inc_odd(void) {
   uint64_t even_inc[] = {1,2,4,5};
   uint64_t odd_inc[] = {1,2,5,6};
-  randompack_rng *rng = make_rng("pcg");
+  randompack_rng *rng = make_rng("pcg64");
 
   bool ok = randompack_set_state(even_inc, 4, rng);
   check_failure(ok, rng);
@@ -145,7 +145,7 @@ static void test_determinism(void) {
     {"xorshift128+", x128, LEN(x128), false},
     {"xoshiro256++", x256pp, LEN(x256pp), false},
     {"xoshiro256**", x256ss, LEN(x256ss), false},
-    {"pcg", pcg, LEN(pcg), false},
+    {"pcg64", pcg, LEN(pcg), false},
     {"philox", philox, LEN(philox), false},
     {"chacha20", chacha, LEN(chacha), false},
   };

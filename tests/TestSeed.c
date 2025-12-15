@@ -44,7 +44,7 @@ static void test_seed_determinism(void) {
     "xorshift128+",
     "xoshiro256**",
     "xoshiro256++",
-    "pcg64",
+    "pcg64_dxsm",
     "philox",
     "chacha20",
   };
@@ -72,7 +72,7 @@ static void test_spawn_key_separation(void) {
     "xorshift128+",
     "xoshiro256**",
     "xoshiro256++",
-    "pcg64",
+    "pcg64_dxsm",
     "philox",
     "chacha20",
   };

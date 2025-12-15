@@ -19,7 +19,7 @@ static void print_help(void) {
   printf("  -h         Show this help message\n");
   printf("  -n number  Number of random values to generate (default 3)\n");
   printf("  -P         Use Park–Miller RNG (default: Xorshift128+)\n");
-  printf("  -e engine  RNG engine: x128, x*, x+, pcg, cha, sys\n");
+  printf("  -e engine  RNG engine: x128, x*, x+, pcg64, cha, sys\n");
   printf("  -s seed    RNG seed (default randomized; 42 if -P and no seed)\n\n");
   printf("Examples:\n");
   printf("  RunRandom -P          # Park–Miller, seed 42, 3 values\n");
@@ -79,7 +79,7 @@ static const char *resolve_engine(const char *opt) {
   if (!strcmp(t, "x128")) return "x128+";
   if (!strcmp(t, "x*")) return "x256**";
   if (!strcmp(t, "x+")) return "x256++";
-  if (!strcmp(t, "pcg")) return "pcg";
+  if (!strcmp(t, "pcg64")) return "pcg64_dxsm";
   if (!strcmp(t, "cha")) return "chacha20";
   if (!strcmp(t, "sys")) return "system";
   return 0;

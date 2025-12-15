@@ -16,7 +16,7 @@ static char *engines[] = {
   "chacha20",
   "philox"
 #ifdef HAVE128
-  , "pcg64"
+  , "pcg64_dxsm"
 #endif
 };
 
@@ -27,7 +27,7 @@ static char *abbrev[] = {
   "chacha20",
   "philox"
 #ifdef HAVE128
-  , "pcg"
+  , "pcg64"
 #endif
 };
 
@@ -44,7 +44,7 @@ static engine_table_entry engine_table[] = {
   {"chacha20",      6, 17},
   {"philox",        6,  7},
 #ifdef HAVE128
-  {"pcg64",         4,  0},
+  {"pcg64_dxsm",    4,  0},
 #endif
 };
 //------------------------------------------------------------------------------
