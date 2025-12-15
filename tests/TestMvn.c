@@ -243,6 +243,9 @@ static void test_mvn_ldx(void) {
 
   for (int t=0; t<2; t++) {
     char transp[2] = { t ? 'T' : 'N', 0 };
+    int row = t ? d : n;
+    int col = t ? n : d;
+    int ld_big = row + 2; // padded ldX
 
     for (int i=0; i<10; i++) Xbig[i] = -999.0;
 
@@ -251,24 +254,17 @@ static void test_mvn_ldx(void) {
     check_rng_clean(r1);
     check_rng_clean(r2);
 
-    bool ok = randompack_mvn(transp, 0, Sig, d, n, X1, d, 0, r1);
+    bool ok = randompack_mvn(transp, 0, Sig, d, n, X1, row, 0, r1);
     check_success(ok, r1);
-    ok = randompack_mvn(transp, 0, Sig, d, n, Xbig, 5, 0, r2);
+    ok = randompack_mvn(transp, 0, Sig, d, n, Xbig, ld_big, 0, r2);
     check_success(ok, r2);
 
-    // Extract leading d×n block from Xbig into contiguous X2 (ld = d)
-    if (transp[0] == 'N') {
-      for (int j=0; j<n; j++)
-        for (int i=0; i<d; i++)
-          X2[i + j*d] = Xbig[i + j*5];
-    }
-    else { // transp == 'T'
-      for (int i=0; i<d; i++)
-        for (int j=0; j<n; j++)
-          X2[i + j*d] = Xbig[j + i*5];
-    }
+    // Extract leading block from Xbig into contiguous X2 (ld = row)
+    for (int j=0; j<col; j++)
+      for (int i=0; i<row; i++)
+        X2[i + j*row] = Xbig[i + j*ld_big];
 
-    xCheck(almostEqual(X1, X2, d*n));
+    xCheck(almostEqual(X1, X2, row*col));
 
     randompack_free(r1);
     randompack_free(r2);
@@ -320,9 +316,9 @@ static void test_mvn_bad_args(void) {
   check_failure(ok, rng);
 
   // ldX too small: must be rejected (prevents out-of-bounds writes)
-  ok = randompack_mvn("N", mu, Sig, d, n, X, d - 1, 0, rng);
+  ok = randompack_mvn("N", mu, Sig, d, n, X, n - 1, 0, rng);
   check_failure(ok, rng);
-  ok = randompack_mvn("T", mu, Sig, d, n, X, n - 1, 0, rng);
+  ok = randompack_mvn("T", mu, Sig, d, n, X, d - 1, 0, rng);
   check_failure(ok, rng);
 
   // Sanity check: valid calls must still succeed after failures

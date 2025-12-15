@@ -472,6 +472,8 @@ bool randompack_mvn(char *transp, double mu[], double Sig[], int d, int n, doubl
     rng->last_error = "randompack_mvn: transp must begin with 'N' or 'T'";
   else if ((!X && n > 0) || d <= 0 || n < 0 || (ldX <= 0 && X))
     rng->last_error = "randompack_mvn: invalid arguments";
+  else if (X && n > 0 && ldX < ((transp[0] == 'N') ? n : d))
+    rng->last_error = "randompack_mvn: invalid arguments";
   else
     rng->last_error = 0;
   if (rng->last_error) return false;
