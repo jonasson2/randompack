@@ -50,6 +50,7 @@ typedef struct {
   char *full;
   char *abbrev;
   rng_engine  engine;
+  int state_words;
   int extra_words;
   engine_next next;
 } rng_entry;
@@ -63,14 +64,14 @@ typedef struct {
 #include "distributions.inc"
 
 static rng_entry rng_table[] = {
-  { "park-miller",   "pm",       PARKMILLER, 0,  0                 },
-  { "xorshift128+",  "x128+",    X128P,      0,  xorshift128p      },
-  { "xoshiro256**",  "x256**",   X256SS,     0,  nextss            },
-  { "xoshiro256++",  "x256++",   X256PP,     0,  nextpp            },
-  { "pcg64",         "pcg",      PCG64,      0,  pcg64_random_fast },
-  { "philox",        "philox",   PHILOX,     7,  next_philox       },
-  { "chacha20",      "chacha20", CHACHA20,   17, chachacha         },
-  { "system-csprng", "system",   SYS,        0,  csprng            }
+  { "park-miller",   "pm",       PARKMILLER, 1, 0,  0                 },
+  { "xorshift128+",  "x128+",    X128P,      2, 0,  xorshift128p      },
+  { "xoshiro256**",  "x256**",   X256SS,     4, 0,  nextss            },
+  { "xoshiro256++",  "x256++",   X256PP,     4, 0,  nextpp            },
+  { "pcg64",         "pcg",      PCG64,      4, 0,  pcg64_random_fast },
+  { "philox",        "philox",   PHILOX,     6, 7,  next_philox       },
+  { "chacha20",      "chacha20", CHACHA20,   6, 17, chachacha         },
+  { "system-csprng", "system",   SYS,        0, 0,  csprng            }
 };
 
 static rng_entry *find_entry(rng_engine e) {
@@ -221,6 +222,10 @@ bool randompack_serialize(uint8_t *buf, int *len, randompack_rng *rng) {
   // Returns the complete internal state of rng as an opaque byte buffer
   if (!rng) return false;
   rng->last_error = 0;
+  if (rng->engine == SYS) {
+    rng->last_error = "randompack_serialize: system-csprng not supported";
+    return false;
+  }
   if (!len) {
     rng->last_error = "randompack_serialize: len is null";
     return false;
@@ -242,6 +247,10 @@ bool randompack_deserialize(uint8_t *buf, int len, randompack_rng *rng) {
   // Restores the rng state using a buffer obtained with randompack_serialize
   if (!rng) return false;
   rng->last_error = 0;
+  if (rng->engine == SYS) {
+    rng->last_error = "randompack_deserialize: system-csprng not supported";
+    return false;
+  }
   if (!buf || len <= 0) {
     rng->last_error = "randompack_deserialize: invalid arguments";
     return false;
@@ -252,6 +261,14 @@ bool randompack_deserialize(uint8_t *buf, int len, randompack_rng *rng) {
   int need = serialized_need_from_blob(&blob);
   if (blob.version != 1 || !ent || len < need) {
     rng->last_error = "randompack_deserialize: corrupt state buffer";
+    return false;
+  }
+  if (blob.engine == SYS) {
+    rng->last_error = "randompack_deserialize: system-csprng not supported";
+    return false;
+  }
+  if (rng->engine != INVALID && rng->engine != (rng_engine)blob.engine) {
+    rng->last_error = "randompack_deserialize: engine mismatch";
     return false;
   }
   if (blob.engine == PCG64 && !ent->next) {
@@ -265,6 +282,49 @@ bool randompack_deserialize(uint8_t *buf, int len, randompack_rng *rng) {
     rng->last_error = "randompack_deserialize: allocation failed";
     return false;
   }
+  return true;
+}
+
+static bool allzero64(uint64_t *x, int n) {
+  for (int i = 0; i < n; i++) if (x[i] != 0) return false;
+  return true;
+}
+
+bool randompack_set_state(uint64_t state[], int nstate, randompack_rng *rng) {
+  if (!rng) return false;
+  rng->last_error = 0;
+  if (!state || nstate < 0) {
+    rng->last_error = "randompack_set_state: invalid arguments";
+    return false;
+  }
+  rng_entry *ent = find_entry(rng->engine);
+  assert(ent);
+  if (rng->engine == SYS) {
+    rng->last_error = "randompack_set_state: not supported for system-csprng";
+    return false;
+  }
+  if (rng->engine == PCG64 && !ent->next) {
+    rng->last_error =
+      "randompack_set_state: PCG64 engine not supported on this platform";
+    return false;
+  }
+  if (nstate != ent->state_words) {
+    rng->last_error = "randompack_set_state: wrong nstate for this engine";
+    return false;
+  }
+  if ((rng->engine == X256SS || rng->engine == X256PP) && allzero64(state, 4)) {
+    rng->last_error = "randompack_set_state: xoshiro state must be nonzero";
+    return false;
+  }
+  if (rng->engine == PCG64 && (state[2] & 1) == 0) {
+    rng->last_error = "randompack_set_state: pcg64 increment must be odd";
+    return false;
+  }
+  if (rng->engine == PARKMILLER && (state[0] < 1 || state[0] >= (uint64_t)mersenne8)) {
+    rng->last_error = "randompack_set_state: Park-Miller state out of range";
+    return false;
+  }
+  set_state(state, nstate, rng);
   return true;
 }
 

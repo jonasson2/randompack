@@ -31,6 +31,22 @@ static char *abbrev[] = {
 #endif
 };
 
+typedef struct {
+  const char *name;
+  int state_words;
+  int extra_words;
+} engine_table_entry;
+
+static engine_table_entry engine_table[] = {
+  {"xorshift128+",  2,  0},
+  {"xoshiro256**",  4,  0},
+  {"xoshiro256++",  4,  0},
+  {"chacha20",      6, 17},
+  {"philox",        6,  7},
+#ifdef HAVE128
+  {"pcg64",         4,  0},
+#endif
+};
 //------------------------------------------------------------------------------
 // Global test sizes / sample counts
 //------------------------------------------------------------------------------

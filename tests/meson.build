@@ -10,6 +10,7 @@ test_sources = files(
   'TestUint32.c',
   'TestUint64.c',
   'TestSeed.c',
+  'TestSetState.c',
   'TestHelpers.c'
 )
 

@@ -80,3 +80,38 @@ static bool seed_seq_seed(uint32_t *w, int nw, uint32_t seed32, uint32_t *spawn_
   FREE(seq);
   return true;
 }
+
+static void set_state(uint64_t *state, int nstate, randompack_rng *rng) {  
+  rng->buf64 = 0;
+  rng->spare_norm = INFINITY;
+  if (rng->engine == CHACHA20) {
+    uint32_t w[12];
+    for (int i=0; i<6; i++) {
+      w[2*i + 0] = (uint32_t)state[i];
+      w[2*i + 1] = (uint32_t)(state[i] >> 32);
+    }
+	 assert(rng->extra_state);
+    ChaCha20_Ctx *ctx = (ChaCha20_Ctx *)rng->extra_state;
+    key256_t key;
+    nonce96_t nonce;
+    copy32(key,   w + 0, 8);
+    copy32(nonce, w + 8, 3);
+    ChaCha20_init(ctx, key, nonce, w[11]);
+  }
+  else if (rng->engine == PARKMILLER) {
+	 rng->state.u32 = (uint32_t)state[0];
+  }
+  else {
+	 int ncore = min(nstate, 4), nextra = nstate - 4;
+	 copy64(rng->state.u64, state, ncore);
+	 for (int i=ncore; i<4; i++) rng->state.u64[i] = 0;
+	 if (nextra > 0) {
+		assert(rng->extra_state);
+		copy64(rng->extra_state, state + 4, nextra);
+	 }
+	 if (rng->engine == PHILOX) {
+		philox_state *st = (philox_state *)rng->extra_state;
+		st->idx = 4;
+	 }	 
+  }
+}

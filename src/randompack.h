@@ -155,6 +155,12 @@ bool randompack_deserialize( // Restore an RNG from an opaque byte buffer
   randompack_rng *rng    // out     target RNG (must be allocated)
 );
 
+bool randompack_set_state( // Set engine state directly
+  uint64_t state[],       // in      state words (length depends on engine)
+  int nstate,             // in      number of state words provided
+  randompack_rng *rng     // in/out  target RNG
+);
+
 // bool randompack_set_state_array( //  TODO implement this
 //   uint64_t *state;
 //   int len;
