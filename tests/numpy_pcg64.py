@@ -1,8 +1,9 @@
 import numpy as np
-bg = np.random.PCG64DXSM(seed=123)
-stdict = bg.state['state'];
-print("state:", stdict['state'])
-print("incre:", stdict['inc'])
+bg = np.random.PCG64DXSM()
+st = bg.state
+st['state']['state'] = (1 << 96) + 42;
+st['state']['inc'] = 123;
+bg.state = st;
 g = np.random.Generator(bg)
 x = g.integers(0, 2**64, size=3, dtype=np.uint64)
 print('draw0:', x[0])
