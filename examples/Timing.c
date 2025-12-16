@@ -32,6 +32,11 @@ static double bench_engine(const char *engine, int seed, int n_total, int chunk)
   randompack_rng *rng = randompack_create(engine);
   if (!rng) return -1.0;
 
+  if (randompack_last_error(rng)) {
+    randompack_free(rng);
+    return -1.0;
+  }
+
   bool ok = randompack_seed(seed, 0, 0, rng);
   if (!ok) {
     randompack_free(rng);
@@ -47,7 +52,7 @@ static double bench_engine(const char *engine, int seed, int n_total, int chunk)
   volatile uint64_t sink = 0;
 
   // Small warm-up (burn-in) to settle caches/branch predictors.
-  for (int i=0; i<4; i++) {
+  for (int i = 0; i < 4; i++) {
     ok = randompack_uint64(buf, chunk, 0, rng);
     if (!ok) break;
     sink ^= buf[i];
@@ -64,7 +69,7 @@ static double bench_engine(const char *engine, int seed, int n_total, int chunk)
     int n = left < chunk ? left : chunk;
     ok = randompack_uint64(buf, n, 0, rng);
     if (!ok) break;
-    for (int i=0; i<n; i++) sink ^= buf[i];
+    for (int i = 0; i < n; i++) sink ^= buf[i];
     left -= n;
   }
   uint64_t t1 = now_ns();
@@ -117,10 +122,8 @@ int main(void) {
     "xoshiro256**",
     "pcg64",
     "philox",
-    "threefry",
     "chacha20",
-    "parkmiller",
-    "sys",
+    "system",
   };
   const int m = (int)(sizeof(engines)/sizeof(engines[0]));
   row_t rows[32];

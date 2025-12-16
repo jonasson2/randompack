@@ -13,3 +13,9 @@ run_cryptorandom = executable(
   ['RunCryptoRandom.c'] + example_util,
   dependencies : [randompack_dep],
 )
+
+timing = executable(
+  'Timing',
+  ['Timing.c'],
+  dependencies : [randompack_dep],
+)
