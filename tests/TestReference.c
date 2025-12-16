@@ -4,25 +4,17 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include "randompack.h"
 #include "randompack_config.h"
 #include "printX.h"
 #include "xCheck.h"
 #include "TestUtil.h"
-#ifdef HAVE128
 
-// -*- C -*-
 // ChaCha20 test against RFC 8439 Section 2.3.2
 // Authoritative source:
 // https://www.rfc-editor.org/rfc/rfc8439.html
-
-#include <stdint.h>
-#include <stdbool.h>
-#include <string.h>
-
-#include "randompack.h"
-#include "xCheck.h"
 
 // Verbatim RFC material (bytes only, spaces only)
 
@@ -42,7 +34,7 @@ static const char *rfc8439_serialized_block =
 // --- helpers ------------------------------------------------------------
 
 static void parse_hex_bytes(const char *s, uint8_t *out, int n) {
-  for (int i=0; i<n; i++) {
+  for (int i = 0; i < n; i++) {
     unsigned int x;
     xCheck(sscanf(s, "%2x", &x) == 1);
     out[i] = (uint8_t)x;
@@ -51,33 +43,54 @@ static void parse_hex_bytes(const char *s, uint8_t *out, int n) {
   }
 }
 
-// --- test ---------------------------------------------------------------
+static uint32_t pack32le(uint8_t *b) {
+  uint32_t w0 = b[0];
+  uint32_t w1 = (uint32_t)b[1] << 8;
+  uint32_t w2 = (uint32_t)b[2] << 16;
+  uint32_t w3 = (uint32_t)b[3] << 24;
+  return w0 | w1 | w2 | w3;
+}
 
-// static void TestChaCha20AgainstRFC8439(void) {
-//   uint8_t key[32];
-//   uint8_t nonce[12];
-//   uint8_t expect[64];
-//   uint8_t got[64];
+static void build_chacha_state(uint64_t *state, uint8_t *key, uint8_t *nonce,
+                               uint32_t counter) {
+  uint32_t w[12];
+  for (int i = 0; i < 8; i++) w[i] = pack32le(key + 4*i);
+  for (int i = 0; i < 3; i++) w[8 + i] = pack32le(nonce + 4*i);
+  w[11] = counter;
+  for (int i = 0; i < 6; i++) {
+    state[i] = (uint64_t)w[2*i];
+    state[i] |= (uint64_t)w[2*i + 1] << 32;
+  }
+}
 
-//   parse_hex_bytes(rfc8439_key_bytes, key, 32);
-//   parse_hex_bytes(rfc8439_nonce_bytes, nonce, 12);
-//   parse_hex_bytes(rfc8439_serialized_block, expect, 64);
+static void TestChaCha20AgainstRFC8439(void) {
+  uint8_t key[32];
+  uint8_t nonce[12];
+  uint8_t expect[64];
+  uint8_t got[64];
+  uint64_t state[6];
 
-//   randompack_rng *rng = randompack_create("chacha20");
-//   check_rng_clean(rng);
+  parse_hex_bytes(rfc8439_key_bytes, key, 32);
+  parse_hex_bytes(rfc8439_nonce_bytes, nonce, 12);
+  parse_hex_bytes(rfc8439_serialized_block, expect, 64);
 
-//   // RFC parameters:
-//   // counter = 1, nonce = given, key = given
-//   bool ok = randompack_set_chacha20(key, nonce, 1u, rng);
-//   check_success(ok, rng);
+  randompack_rng *rng = randompack_create("chacha20");
+  check_rng_clean(rng);
 
-//   ok = randompack_uint8(got, 64, 0, rng);
-//   check_success(ok, rng);
+  // RFC parameters: counter = 1, nonce = given, key = given
+  build_chacha_state(state, key, nonce, 1u);
+  bool ok = randompack_set_state(state, LEN(state), rng);
+  check_success(ok, rng);
 
-//   xCheck(memcmp(got, expect, 64) == 0);
+  ok = randompack_uint8(got, 64, 0, rng);
+  check_success(ok, rng);
 
-//   randompack_free(rng);
-// }
+  xCheck(memcmp(got, expect, 64) == 0);
+
+  randompack_free(rng);
+}
+
+#ifdef HAVE128
 
 static void TestAgainstNumpyPCG(void) {
   // import numpy as np
@@ -134,50 +147,118 @@ static void TestAgainstNumpyPCG(void) {
   randompack_free(rng);
 }
 #else
-static void test_pcg64_dxsm_compare(void) {
+static void TestAgainstNumpyPCG(void) {
 }
 #endif
 
-static void TestPhiloxAgainstRandom123(void) {
+static void TestPhiloxAgainstRandom123(void) { // Also stateful against stateless
   // Random123 version 1.14 was downloaded from github.com/DEShawResearch/random123,
   // and the following C program was then run to obtain randoms with the given state:
   //
   // #include "random123/include/Random123/philox.h"
   // #include <stdio.h>
+  // #include <inttypes.h>
+  //
   // int main(void) {
   //   philox4x64_key_t key = {{1, 2}};
   //   philox4x64_ctr_t ctr = {{1, 2, 3, 4}};
   //   philox4x64_ctr_t result = philox4x64(ctr, key);
-  //   printf("draw0: %llu\n", result.v[0]);
-  //   printf("draw1: %llu\n", result.v[1]);
-  //   printf("draw2: %llu\n", result.v[2]);
+  //   printf("Draws:\n");
+  //   printf("%" PRIu64 "\n", result.v[0]);
+  //   printf("%" PRIu64 "\n", result.v[1]);
+  //   printf("%" PRIu64 "\n", result.v[2]);
+  //   printf("%" PRIu64 "\n", result.v[3]);
+  //   ctr.v[0]++;
+  //   result = philox4x64(ctr, key);  
+  //   printf("%" PRIu64 "\n", result.v[0]);
   //   return 0;
   // }
 
   randompack_philox_key key = {1, 2};
   randompack_counter ctr = {1, 2, 3, 4};
 
-  uint64_t x[3];
-  bool ok = randompack_uint64_philox(x, 3, ctr, key);
+  uint64_t x[5], y[5];
+
+  // Call counter-based philox
+  bool ok = randompack_uint64_philox(x, 5, ctr, key);
   xCheck(ok);
 
-  uint64_t r123[3] = {
-	 15293350248826363405ull,
-	 16459017380466521836ull,
-	 14953335634064817228ull
-  };
+  // Compare with stateful version
+  randompack_rng *rng = randompack_create("philox");
+  uint64_t state[6] = {1, 2, 3, 4, 1, 2};
+  randompack_set_state(state, 6, rng);
+  randompack_uint64(y, 5, 0, rng);
+  xCheck(equal_vec64(x, y, 5));
 
-  xCheck(equal_vec64(x, r123, 3));
+  // Compare with Random123
+  uint64_t r123[] = {
+    15293350248826363405ull,
+    16459017380466521836ull,
+    14953335634064817228ull,
+    8379624740030528727ull,
+    14229447488281503856ull
+  };
+  xCheck(equal_vec64(x, r123, 5));
 
   printMsg("COMPARISON WITH ORIGINAL PHILOX:");
   printMsg("Random123 philox draws:");
   print64("r123[0]", r123[0]);
-  print64("r123[1]", r123[1]);
-  print64("r123[2]", r123[2]);
+  printMsg("...");
+  print64("r123[4]", r123[4]);
   printMsg("randompack philox draws:");
   print64("rp[0]", x[0]);
-  print64("rp[1]", x[1]);
-  print64("rp[2]", x[2]);
+  printMsg("...");
+  print64("rp[4]", x[4]);
+}
+
+static void TestThreefryAgainstRandom123(void) {
+  // Random123 version 1.14 was downloaded from github.com/DEShawResearch/random123,
+  // and the following C program was then run to obtain randoms with the given state:
+  //
+  // #include "random123/include/Random123/threefry.h"
+  // #include <stdio.h>
+  // #include <inttypes.h>
+  //
+  // int main(void) {
+  //   threefry4x64_key_t key = {{1, 2}};
+  //   threefry4x64_ctr_t ctr = {{1, 2, 3, 4}};
+  //   threefry4x64_ctr_t result = threefry4x64(ctr, key);
+  //   printf("Draws:\n");
+  //   printf("%" PRIu64 "\n", result.v[0]);
+  //   printf("%" PRIu64 "\n", result.v[1]);
+  //   printf("%" PRIu64 "\n", result.v[2]);
+  //   printf("%" PRIu64 "\n", result.v[3]);
+  //   ctr.v[0]++;
+  //   result = threefry4x64(ctr, key);  
+  //   printf("%" PRIu64 "\n", result.v[0]);
+  //   return 0;
+  // }
+
+  randompack_3fry_key key = {1, 2, 3, 4};
+  randompack_counter ctr = {1, 2, 3, 4};
+
+  uint64_t x[5];
+  bool ok = randompack_uint64_3fry(x, 5, ctr, key);
+  xCheck(ok);
+
+  uint64_t r123[] = {
+    11809167116910720061ull,
+    3692938059179392440ull,
+    2879571537043795855ull,
+    11863350089667317614ull,
+    5432961706470527865ull
+  };
+  xCheck(equal_vec64(x, r123, 5));
+
+  printMsg("COMPARISON WITH ORIGINAL THREEFRY:");
+  printMsg("Random123 threefry draws:");
+  print64("r123[0]", r123[0]);
+  printMsg("...");
+  print64("r123[4]", r123[4]);
+  printMsg("randompack threefry draws:");
+  print64("rp[0]", x[0]);
+  printMsg("...");
+  print64("rp[4]", x[4]);
 }
 
 static void TestXoshiro256ppAgainstRust(void) {
@@ -266,9 +347,10 @@ static void TestXoshiro256ssAgainstRust(void) {
 }
 
 void TestReference(void) {
+  TestChaCha20AgainstRFC8439();
   TestAgainstNumpyPCG();
   TestPhiloxAgainstRandom123();
+  TestThreefryAgainstRandom123();
   TestXoshiro256ppAgainstRust();
   TestXoshiro256ssAgainstRust();
-  //TestChaCha20AgainstRFC8439();
 }

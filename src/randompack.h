@@ -100,21 +100,6 @@ char *randompack_last_error( // Get last error string, or 0 if none
 // and performance tuning, and are typically not needed in routine applications.
 //========================================================================================
 
-// bool randompack_split( // Generate a mixed hash of seed and path (index array)
-//   uint64_t seed,         // in    Seed to use
-//   uint64_t *path,        // in    Array of..
-//   int *child_seeds,      // out   
-//   int nchildren
-// );
-
-//========================================================================================
-// Advanced API: Low-level utilities and engine-specific features
-//
-// These functions expose additional control over RNG behaviour, distribution kernels, and
-// bit-precise integer generation. They are intended for specialised use cases, testing,
-// and performance tuning, and are typically not needed in routine applications.
-//========================================================================================
-
 bool randompack_uint8( // Generate uint8 in [0, bound), false on error
   uint8_t x[],           // out     len-vector of bytes
   int len,               // in      number requested
@@ -169,17 +154,11 @@ bool randompack_deserialize( // Restore an RNG from an opaque byte buffer
   randompack_rng *rng    // out     target RNG (must be allocated)
 );
 
-bool randompack_set_state( // Set engine state directly
+bool randompack_set_state( // Set engine state array directly
   uint64_t state[],       // in      state words (length depends on engine)
   int nstate,             // in      number of state words provided
   randompack_rng *rng     // in/out  target RNG
 );
-
-// bool randompack_set_state_array( //  TODO implement this
-//   uint64_t *state;
-//   int len;
-//   randompack_rng *rng
-// };
 
 bool randompack_set_norm_method( // Set algorithm used for random normals
   char *method,          // in      "polar" or "default" (for ziggurat)

@@ -85,7 +85,6 @@ int main(int argc, char **argv) {
   run_test("Seed",     TestSeed);
   run_test("SetState", TestSetState);
   run_test("Mvn",      TestMvn);
-  // TODO: Test philox, compare with known
   // TODO: Timing
   // Next: exp, t, gamma, beta... 
   vprint(table_fmt, "TOTAL", NTOTAL - NFAIL, NFAIL);

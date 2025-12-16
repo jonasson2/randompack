@@ -1,3 +1,4 @@
+#include <inttypes.h>
 #include "printX.h"
 #ifdef DEBUG_PRINT
 
@@ -65,7 +66,7 @@ void printI(const char *name, int i) { // print named int
 
 void print64(const char *name, uint64_t x) {
   if (noprint) return;
-  printf("%s = %llu\n", name, (unsigned long long)x);
+  printf("%s = %" PRIu64 "\n", name, (unsigned long long)x);
   fflush(0);
 }
 

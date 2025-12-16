@@ -118,6 +118,13 @@ static bool seed_seq_seed(uint32_t *w, int nw, uint32_t seed32, uint32_t *spawn_
   return true;
 }
 
+static inline void store_le32(uint8_t *dst, uint32_t x) {
+  dst[0] = (uint8_t)(x);
+  dst[1] = (uint8_t)(x >> 8);
+  dst[2] = (uint8_t)(x >> 16);
+  dst[3] = (uint8_t)(x >> 24);
+}
+
 static void set_state(uint64_t *state, int nstate, randompack_rng *rng) {  
   rng->buf64 = 0;
   rng->buf_counter = 0;
@@ -132,8 +139,8 @@ static void set_state(uint64_t *state, int nstate, randompack_rng *rng) {
     ChaCha20_Ctx *ctx = (ChaCha20_Ctx *)rng->extra_state;
     key256_t key;
     nonce96_t nonce;
-    copy32(key,   w + 0, 8);
-    copy32(nonce, w + 8, 3);
+    for (int i=0; i<8; i++) store_le32(&key[4*i], w[i]);  // for big-endian correctness
+    for (int i=0; i<3; i++) store_le32(&nonce[4*i], w[8 + i]);  // ditto    
     ChaCha20_init(ctx, key, nonce, w[11]);
   }
   else if (rng->engine == PARKMILLER) {
