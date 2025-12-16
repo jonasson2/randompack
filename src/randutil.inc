@@ -1,39 +1,50 @@
 // -*- mode: c; -*-
 static inline uint8_t rand_8bits(randompack_rng *rng) {
-  if (rng->buf_counter >= 4) {
+  if (rng->buf_counter == 0 || rng->buf_counter >= 8) {
     rng->buf64 = rng->next(rng);
-    rng->buf_counter = 1;
+    rng->buf_counter = 0;
   }
-  else
-    rng->buf_counter++;
   uint8_t x = (uint8_t)(rng->buf64 & 0xffu);
   rng->buf64 >>= 8;
+  rng->buf_counter++;
   return x;
 }
 
 static inline uint16_t rand_16bits(randompack_rng *rng) {
-  rng->buf_counter = ((rng->buf_counter + 1)/2) * 2;
-  if (rng->buf_counter >= 4) {
+  if (rng->buf_counter == 0 || rng->buf_counter >= 8) {
     rng->buf64 = rng->next(rng);
-    rng->buf_counter = 2;
+    rng->buf_counter = 0;
   }
-  else
-    rng->buf_counter += 2;
+  if (rng->buf_counter & 1) {
+    rng->buf64 >>= 8;
+    rng->buf_counter++;
+  }
+  if (rng->buf_counter >= 8) {
+    rng->buf64 = rng->next(rng);
+    rng->buf_counter = 0;
+  }
   uint16_t x = (uint16_t)(rng->buf64 & 0xffffu);
   rng->buf64 >>= 16;
+  rng->buf_counter += 2;
   return x;
 }
 
 static inline uint32_t rand_32bits(randompack_rng *rng) {
-  rng->buf_counter = ((rng->buf_counter + 3)/4) * 4;
-  if (rng->buf_counter >= 4) {
+  if (rng->buf_counter == 0 || rng->buf_counter >= 8) {
     rng->buf64 = rng->next(rng);
-    rng->buf_counter = 4;
+    rng->buf_counter = 0;
   }
-  else
-    rng->buf_counter += 4;
-  uint16_t x = (uint16_t)(rng->buf64 & 0xffffffffu);
+  while (rng->buf_counter % 4 != 0) {
+    rng->buf64 >>= 8;
+    rng->buf_counter++;
+  }
+  if (rng->buf_counter >= 8) {
+    rng->buf64 = rng->next(rng);
+    rng->buf_counter = 0;
+  }
+  uint32_t x = (uint32_t)(rng->buf64 & 0xffffffffu);
   rng->buf64 >>= 32;
+  rng->buf_counter += 4;
   return x;
 }
 
@@ -77,6 +88,7 @@ static void rand_randomize(randompack_rng *rng) {
 		rng->state.u64[0] = 1;
   }
   rng->buf64 = 0;
+  rng->buf_counter = 0;
   rng->spare_norm = NAN;
   rng->last_error = 0;
 }
@@ -108,6 +120,7 @@ static bool seed_seq_seed(uint32_t *w, int nw, uint32_t seed32, uint32_t *spawn_
 
 static void set_state(uint64_t *state, int nstate, randompack_rng *rng) {  
   rng->buf64 = 0;
+  rng->buf_counter = 0;
   rng->spare_norm = INFINITY;
   if (rng->engine == CHACHA20) {
     uint32_t w[12];

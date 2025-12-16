@@ -122,6 +122,7 @@ bool randompack_seed(int seed, uint32_t *spawn_key, int nkey, randompack_rng *rn
     if (s == 0) s = 1;
     rng->state.u32 = s;
     rng->buf64 = 0;
+    rng->buf_counter = 0;
     (void)PM_rand_bits(rng); // burn-in
   }
   else {  // Use Melissa O'Neill's seed sequence
@@ -155,6 +156,9 @@ bool randompack_seed(int seed, uint32_t *spawn_key, int nkey, randompack_rng *rn
       }
     }
   }
+  rng->buf64 = 0;
+  rng->buf_counter = 0;
+  rng->spare_norm = INFINITY;
   return true;
 }
 
@@ -191,6 +195,7 @@ randompack_rng *randompack_create(const char *engine) {
     if (s == 0) s = 1;
     rng->state.u32 = s;
     rng->buf64 = 0;
+    rng->buf_counter = 0;
   }
   else {
     rand_randomize(rng);

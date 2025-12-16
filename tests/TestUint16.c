@@ -66,7 +66,7 @@ static void test_unbounded_determinism(char *engine) {
   two_part_draw(engine, d, 3, 2, 42);
   xCheckMsg(equal_vec16(a, b, LEN(a)), engine);
   xCheckMsg(equal_vec16(a, d, LEN(a)), engine);  
-  xCheckMsg(a[0] != c[0] || a[1] != b[1], engine); // "or" to maintain "7 sigma tests"
+  xCheckMsg(!equal_vec16(a, c, 3), engine);
 }
 
 // Bounded large-sample sanity check: counts across buckets are balanced.
