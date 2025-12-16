@@ -12,6 +12,73 @@
 #include "TestUtil.h"
 #ifdef HAVE128
 
+// -*- C -*-
+// ChaCha20 test against RFC 8439 Section 2.3.2
+// Authoritative source:
+// https://www.rfc-editor.org/rfc/rfc8439.html
+
+#include <stdint.h>
+#include <stdbool.h>
+#include <string.h>
+
+#include "randompack.h"
+#include "xCheck.h"
+
+// Verbatim RFC material (bytes only, spaces only)
+
+static const char *rfc8439_key_bytes =
+"00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f "
+"10 11 12 13 14 15 16 17 18 19 1a 1b 1c 1d 1e 1f";
+
+static const char *rfc8439_nonce_bytes =
+"00 00 00 09 00 00 00 4a 00 00 00 00";
+
+static const char *rfc8439_serialized_block =
+"10 f1 e7 e4 d1 3b 59 15 50 0f dd 1f a3 20 71 c4 "
+"c7 d1 f4 c7 33 c0 68 03 04 22 aa 9a c3 d4 6c 4e "
+"d2 82 64 46 07 9f aa 09 14 c2 d7 05 d9 8b 02 a2 "
+"b5 12 9c d1 de 16 4e b9 cb d0 83 e8 a2 50 3c 4e";
+
+// --- helpers ------------------------------------------------------------
+
+static void parse_hex_bytes(const char *s, uint8_t *out, int n) {
+  for (int i=0; i<n; i++) {
+    unsigned int x;
+    xCheck(sscanf(s, "%2x", &x) == 1);
+    out[i] = (uint8_t)x;
+    s += 2;
+    if (*s == ' ') s++;
+  }
+}
+
+// --- test ---------------------------------------------------------------
+
+// static void TestChaCha20AgainstRFC8439(void) {
+//   uint8_t key[32];
+//   uint8_t nonce[12];
+//   uint8_t expect[64];
+//   uint8_t got[64];
+
+//   parse_hex_bytes(rfc8439_key_bytes, key, 32);
+//   parse_hex_bytes(rfc8439_nonce_bytes, nonce, 12);
+//   parse_hex_bytes(rfc8439_serialized_block, expect, 64);
+
+//   randompack_rng *rng = randompack_create("chacha20");
+//   check_rng_clean(rng);
+
+//   // RFC parameters:
+//   // counter = 1, nonce = given, key = given
+//   bool ok = randompack_set_chacha20(key, nonce, 1u, rng);
+//   check_success(ok, rng);
+
+//   ok = randompack_uint8(got, 64, 0, rng);
+//   check_success(ok, rng);
+
+//   xCheck(memcmp(got, expect, 64) == 0);
+
+//   randompack_free(rng);
+// }
+
 static void TestAgainstNumpyPCG(void) {
   // import numpy as np
   // bg = np.random.PCG64DXSM(seed=123)
@@ -203,4 +270,5 @@ void TestReference(void) {
   TestPhiloxAgainstRandom123();
   TestXoshiro256ppAgainstRust();
   TestXoshiro256ssAgainstRust();
+  //TestChaCha20AgainstRFC8439();
 }

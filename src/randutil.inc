@@ -1,15 +1,40 @@
 // -*- mode: c; -*-
+static inline uint8_t rand_8bits(randompack_rng *rng) {
+  if (rng->buf_counter >= 4) {
+    rng->buf64 = rng->next(rng);
+    rng->buf_counter = 1;
+  }
+  else
+    rng->buf_counter++;
+  uint8_t x = (uint8_t)(rng->buf64 & 0xffu);
+  rng->buf64 >>= 8;
+  return x;
+}
+
+static inline uint16_t rand_16bits(randompack_rng *rng) {
+  rng->buf_counter = ((rng->buf_counter + 1)/2) * 2;
+  if (rng->buf_counter >= 4) {
+    rng->buf64 = rng->next(rng);
+    rng->buf_counter = 2;
+  }
+  else
+    rng->buf_counter += 2;
+  uint16_t x = (uint16_t)(rng->buf64 & 0xffffu);
+  rng->buf64 >>= 16;
+  return x;
+}
 
 static inline uint32_t rand_32bits(randompack_rng *rng) {
-  if (rng->engine == PARKMILLER)
-    return PM_rand_bits(rng);
-  if (rng->buf64 == 0) { // get fresh 64 bit value from engine, use low 32 bits
+  rng->buf_counter = ((rng->buf_counter + 3)/4) * 4;
+  if (rng->buf_counter >= 4) {
     rng->buf64 = rng->next(rng);
-    return (uint32_t)(rng->buf64 & 0xffffffffu);
+    rng->buf_counter = 4;
   }
-  uint32_t hi = (uint32_t)(rng->buf64 >> 32); // use high 32 bits and clear buffer
-  rng->buf64 = 0;
-  return hi;
+  else
+    rng->buf_counter += 4;
+  uint16_t x = (uint16_t)(rng->buf64 & 0xffffffffu);
+  rng->buf64 >>= 32;
+  return x;
 }
 
 static void fill_bytes(uint8_t *a, int len, uint64_t *x) {

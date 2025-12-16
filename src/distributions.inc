@@ -174,6 +174,62 @@ static void rand_uint32(uint32_t bound, uint32_t x[], int n, randompack_rng *rng
   }
 }
 
+static void rand_uint16(uint16_t bound, uint16_t x[], int n, randompack_rng *rng) {
+  // Sets x to n random integers in {0, 1,..., bound-1}
+  if (bound == 0) {
+    for (int i = 0; i < n; i++)
+      x[i] = rand_16bits(rng);
+    return;
+  }
+  int i = 0, j;
+  uint64_t R;
+  if (bound <= (uint16_t)UINT8_MAX) {
+    uint8_t r, b = (uint8_t)bound, thresh = (1u<<8) % b;
+    while (i < n) {
+      R = rng->next(rng);
+      for (j = 0; j<8; j++) {
+        r = (uint8_t)R;
+        if (r >= thresh) x[i++] = (uint16_t)(r % b);
+        if (i>=n) break;
+        R >>= 8;
+      }
+    }
+  }
+  else {
+    uint16_t r, b = (uint16_t)bound, thresh = (1u<<16) % b;
+    while (i < n) {
+      R = rng->next(rng);
+      for (j = 0; j<4; j++) {
+        r = (uint16_t)R;
+        if (r >= thresh) x[i++] = (uint16_t)(r % b);
+        if (i>=n) break;
+        R >>= 16;
+      }
+    }
+  }
+}
+
+static void rand_uint8(uint8_t bound, uint8_t x[], int n, randompack_rng *rng) {
+  // Sets x to n random integers in {0, 1,..., bound-1}
+  if (bound == 0) {
+    for (int i = 0; i < n; i++)
+      x[i] = rand_8bits(rng);
+    return;
+  }
+  int i = 0, j;
+  uint64_t R;
+  uint8_t r, b = (uint8_t)bound, thresh = (1u<<8) % b;
+  while (i < n) {
+	 R = rng->next(rng);
+	 for (j = 0; j<8; j++) {
+		r = (uint8_t)R;
+		if (r >= thresh) x[i++] = (uint8_t)(r % b);
+		if (i>=n) break;
+		R >>= 8;
+	 }
+  }
+}
+
 static void PM_rand_int(int bound, int x[], int n, randompack_rng *rng) {
   if (bound <= 0 || bound >= mersenne8) return;
   int thresh = (mersenne8 - 1) % bound;

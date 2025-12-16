@@ -40,8 +40,9 @@ struct randompack_rng {
     #endif
   } state;
   rng_engine engine;
-  engine_next next;
+  int buf_counter;
   uint64_t buf64;
+  engine_next next;
   double spare_norm;
   char *last_error;
   uint64_t *extra_state;
@@ -61,7 +62,7 @@ typedef struct {
 #include "randutil.inc"
 #include "distributions.inc"
 
-#ifdef HAVE128
+#ifdef HAVE128 // Thin wrapper
 static uint64_t next_pcg64(randompack_rng *rng) {
   return pcg64_random_fast(&rng->state.pcg);
 }
@@ -398,9 +399,34 @@ bool randompack_uint32(uint32_t x[], int len, uint32_t bound, randompack_rng *rn
     rng->last_error = "randompack_uint32: Park-Miller does not support uint32 randoms";
   else
     rng->last_error = 0;
-  if (rng->last_error) return false;
-  
+  if (rng->last_error) return false;  
   rand_uint32(bound, x, len, rng);
+  return true;
+}
+
+bool randompack_uint16(uint16_t x[], int len, uint16_t bound, randompack_rng *rng) {
+  if (!rng) return false;
+  if (!x || len < 0)
+    rng->last_error = "randompack_uint16: invalid arguments";
+  else if (rng->engine == PARKMILLER)
+    rng->last_error = "randompack_uint16: Park-Miller does not support uint16 randoms";
+  else
+    rng->last_error = 0;
+  if (rng->last_error) return false;  
+  rand_uint16(bound, x, len, rng);
+  return true;
+}
+
+bool randompack_uint8(uint8_t x[], int len, uint8_t bound, randompack_rng *rng) {
+  if (!rng) return false;
+  if (!x || len < 0)
+    rng->last_error = "randompack_uint8: invalid arguments";
+  else if (rng->engine == PARKMILLER)
+    rng->last_error = "randompack_uint8: Park-Miller does not support uint8 randoms";
+  else
+    rng->last_error = 0;
+  if (rng->last_error) return false;  
+  rand_uint8(bound, x, len, rng);
   return true;
 }
 

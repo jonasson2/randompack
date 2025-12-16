@@ -10,6 +10,8 @@ void TestPerm(void);
 void TestSample(void);
 void TestU01(void);
 void TestMvn(void);
+void TestUint8(void);
+void TestUint16(void);
 void TestUint32(void);
 void TestUint64(void);
 void TestNormal(void);

@@ -64,6 +64,8 @@ static const double TEST_P_VALUE = 1e-3;
 
 bool equal_vec(int *a, int *b, int n);                      // a = b?
 bool equal_vecd(double *a, double *b, int n);               // a = b?
+bool equal_vec8(uint8_t *a, uint8_t *b, int n);             // a = b?
+bool equal_vec16(uint16_t *a, uint16_t *b, int n);          // a = b?
 bool equal_vec32(uint32_t *a, uint32_t *b, int n);          // a = b?
 bool equal_vec64(uint64_t *a, uint64_t *b, int n);          // a = b?
 bool everywhere_different(uint64_t *a, uint64_t *b, int n); // ai ≠ bi for all i
@@ -99,6 +101,8 @@ uint32_t max32(uint32_t a, uint32_t b);
 uint64_t max64(uint64_t a, uint64_t b);
 
 int maxv(int *x, int n);
+uint8_t maxv8(uint8_t *x, int n);
+uint16_t maxv16(uint16_t *x, int n);
 uint32_t maxv32(uint32_t *x, int n);
 uint64_t maxv64(uint64_t *x, int n);
 double maxvd(double *x, int n);

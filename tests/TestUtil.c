@@ -25,6 +25,16 @@ bool equal_vecd(double *a, double *b, int n) {
   return true;
 }
 
+bool equal_vec8(uint8_t *a, uint8_t *b, int n) {
+  for (int i = 0; i < n; i++) if (a[i] != b[i]) return false;
+  return true;
+}
+
+bool equal_vec16(uint16_t *a, uint16_t *b, int n) {
+  for (int i = 0; i < n; i++) if (a[i] != b[i]) return false;
+  return true;
+}
+
 bool equal_vec32(uint32_t *a, uint32_t *b, int n) {
   for (int i = 0; i < n; i++) if (a[i] != b[i]) return false;
   return true;
@@ -231,6 +241,14 @@ double probit(double p) { // Return NAN if p <= 0 or p >= 1
 // Min/max helpers for scalars and vectors
 //------------------------------------------------------------------------------
 
+uint8_t max8(uint8_t a, uint8_t b) {
+  return a > b ? a : b;
+}
+
+uint16_t max16(uint16_t a, uint16_t b) {
+  return a > b ? a : b;
+}
+
 uint32_t max32(uint32_t a, uint32_t b) {
   return a > b ? a : b;
 }
@@ -242,6 +260,18 @@ uint64_t max64(uint64_t a, uint64_t b) {
 int maxv(int *x, int n) {
   int m = INT_MIN;
   for (int i = 0; i < n; i++) m = max(m, x[i]);
+  return m;
+}
+
+uint8_t maxv8(uint8_t *x, int n) {
+  uint8_t m = 0;
+  for (int i = 0; i < n; i++) m = max8(m, x[i]);
+  return m;
+}
+
+uint16_t maxv16(uint16_t *x, int n) {
+  uint16_t m = 0;
+  for (int i = 0; i < n; i++) m = max16(m, x[i]);
   return m;
 }
 

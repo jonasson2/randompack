@@ -115,6 +115,20 @@ char *randompack_last_error( // Get last error string, or 0 if none
 // and performance tuning, and are typically not needed in routine applications.
 //========================================================================================
 
+bool randompack_uint8( // Generate uint8 in [0, bound), false on error
+  uint8_t x[],           // out     len-vector of bytes
+  int len,               // in      number requested
+  uint8_t bound,         // in      exclusive upper bound, or 0 for unbounded
+  randompack_rng *rng    // in/out  random number generator
+);
+
+bool randompack_uint16( // Generate uint16 in [0, bound), false on error
+  uint16_t x[],          // out     len-vector of short integers
+  int len,               // in      number requested
+  uint16_t bound,        // in      exclusive upper bound, or 0 for unbounded
+  randompack_rng *rng    // in/out  random number generator
+);
+
 bool randompack_uint32( // Generate uint32 in [0, bound), false on error
   uint32_t x[],          // out     len-vector of integers
   int len,               // in      number requested
@@ -123,7 +137,7 @@ bool randompack_uint32( // Generate uint32 in [0, bound), false on error
 );
 
 bool randompack_uint64( // Generate uint64 in [0, bound), false on error
-  uint64_t x[],          // out     len-vector of integers
+  uint64_t x[],          // out     len-vector of uint64_t integers
   int len,               // in      number requested
   uint64_t bound,        // in      exclusive upper bound, or 0 for unbounded
   randompack_rng *rng    // in/out  random number generator

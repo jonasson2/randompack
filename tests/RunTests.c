@@ -72,6 +72,8 @@ int main(int argc, char **argv) {
   vprint(headr_fmt, "TEST OF", "PASSED", "FAILED");
   run_test("Helpers",  TestHelpers);
   run_test("Create",   TestCreate);
+  run_test("Uint8",    TestUint8);
+  run_test("Uint16",   TestUint16);
   run_test("Uint32",   TestUint32);
   run_test("Uint64",   TestUint64);
   run_test("Reference",TestReference);

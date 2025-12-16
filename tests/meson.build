@@ -7,6 +7,8 @@ test_sources = files(
   'TestNormal.c',
   'TestU01.c',
   'TestMvn.c',
+  'TestUint8.c',
+  'TestUint16.c',
   'TestUint32.c',
   'TestUint64.c',
   'TestReference.c',

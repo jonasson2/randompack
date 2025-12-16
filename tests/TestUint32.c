@@ -17,9 +17,17 @@ static void draw_randoms(char *engine, uint32_t *x, int n, uint32_t bound, int s
   randompack_free(rng);
 }
 
-// Check argument handling, including null / zero-length arguments
-// Boundary-condition tests for randompack_uint32
+static void two_part_draw(char *engine, uint32_t *x, int n1, int n2, int seed) {
+  randompack_rng *rng = create_seeded_rng(engine, seed);
+  xCheck(rng);
+  xCheck(randompack_uint32(x, n1, 0, rng));
+  xCheck(randompack_uint32(x + n1, n2, 0, rng));
+  randompack_free(rng);
+}
+
 static void test_edge_cases(char *engine) {
+  // Check argument handling, including null / zero-length arguments
+  // Boundary-condition tests for randompack_uint32
   uint32_t buf[4]      = {0xDEAD, 0xBEEF, 0xCAFE, 0xFEED};
   uint32_t original[4] = {0xDEAD, 0xBEEF, 0xCAFE, 0xFEED};
   bool ok;
@@ -33,13 +41,31 @@ static void test_edge_cases(char *engine) {
   randompack_free(rng);
 }
 
-// Unbounded draws with same seed/engine must match.
+static void test_mixed_draw(char *engine) {
+  uint8_t byte[5];
+  uint32_t a[2];
+  uint32_t b[5];
+  randompack_rng *rng = create_seeded_rng(engine, 42);
+  xCheck(rng);
+  xCheck(randompack_uint8(byte, 5, 0, rng)); // leaves just one uint16 in buf64
+  xCheck(randompack_uint32(a, 2, 0, rng));
+  randompack_free(rng);
+  rng = create_seeded_rng(engine, 42);
+  xCheck(rng);
+  xCheck(randompack_uint32(b, 4, 0, rng));
+  xCheck(equal_vec32(a, b + 2, 2));
+  randompack_free(rng);
+}
+
 static void test_unbounded_determinism(char *engine) {
-  uint32_t a[3], b[3], c[3];
+  // Unbounded draws with same seed/engine must match, also when drawn in two parts.
+  uint32_t a[5], b[5], c[5], d[5];
   draw_randoms(engine, a, LEN(a), 0, 42);
   draw_randoms(engine, b, LEN(b), 0, 42);
   draw_randoms(engine, c, LEN(c), 0, 43);
+  two_part_draw(engine, d, 3, 2, 42);
   xCheckMsg(equal_vec32(a, b, LEN(a)), engine);
+  xCheckMsg(equal_vec32(a, d, LEN(a)), engine);  
   xCheckMsg(a[0] != c[0] || a[1] != b[1], engine); // "or" to maintain "7 sigma tests"
 }
 
@@ -97,5 +123,6 @@ void TestUint32(void) {
     test_unbounded_determinism(e);
     test_balanced_counts(e);
     test_balanced_bits(e);
+	 test_mixed_draw(e);
   }
 }
