@@ -1,0 +1,128 @@
+// -*- C -*-
+// Basic tests for randompack_uint32: bounds, determinism, seed variation.
+#include <stdbool.h>
+#include <stdint.h>
+
+#include "randompack.h"
+#include "printX.h"
+#include "TestUtil.h"
+#include "xCheck.h"
+
+// Helper: create an RNG and fill n uint16 values with a given bound.
+static void draw_randoms(char *engine, uint16_t *x, int n, uint16_t bound, int seed) {
+  randompack_rng *rng = create_seeded_rng(engine, seed);
+  xCheck(rng);
+  bool ok = randompack_uint16(x, n, bound, rng);
+  xCheck(ok);
+  randompack_free(rng);
+}
+
+static void two_part_draw(char *engine, uint16_t *x, int n1, int n2, int seed) {
+  randompack_rng *rng = create_seeded_rng(engine, seed);
+  xCheck(rng);
+  xCheck(randompack_uint16(x, n1, 0, rng));
+  xCheck(randompack_uint16(x + n1, n2, 0, rng));
+  randompack_free(rng);
+}
+
+static void test_edge_cases(char *engine) {
+  // Check argument handling, including null / zero-length arguments
+  // Boundary-condition tests for randompack_uint16
+  uint16_t buf[4]      = {0xDEAD, 0xBEEF, 0xCAFE, 0xFEED};
+  uint16_t original[4] = {0xDEAD, 0xBEEF, 0xCAFE, 0xFEED};
+  bool ok;
+  randompack_rng *rng = create_seeded_rng(engine, 333);
+  ok = randompack_uint16(buf, 0, 0, rng); check_success(ok, rng); // n = 0
+  xCheck(equal_vec16(buf, original, 4));                          // –doesn't touch buffer
+  ok = randompack_uint16(0, 4, 0, rng);   check_failure(ok, rng); // NULL buffer w/n > 0
+  ok = randompack_uint16(buf, 4, 0, 0);   xCheck(!ok);            // NULL rng
+  ok = randompack_uint16(buf, 4, 0, rng); check_success(ok, rng); // normal call
+  ok = randompack_uint16(buf, 4, UINT16_MAX, rng); check_success(ok, rng); // max bound
+  randompack_free(rng);
+}
+
+static void test_mixed_draw(char *engine) {
+  uint8_t byte[5];
+  uint16_t a[2];
+  uint16_t b[5];
+  randompack_rng *rng = create_seeded_rng(engine, 42);
+  xCheck(rng);
+  xCheck(randompack_uint8(byte, 5, 0, rng)); // leaves just one uint16 in buf64
+  xCheck(randompack_uint16(a, 2, 0, rng));
+  randompack_free(rng);
+  rng = create_seeded_rng(engine, 42);
+  xCheck(rng);
+  xCheck(randompack_uint16(b, 5, 0, rng));
+  xCheck(equal_vec16(a, b + 3, 2));
+  randompack_free(rng);
+}
+
+static void test_unbounded_determinism(char *engine) {
+  // Unbounded draws with same seed/engine must match, also when drawn in two parts.
+  uint16_t a[5], b[5], c[5], d[5];
+  draw_randoms(engine, a, LEN(a), 0, 42);
+  draw_randoms(engine, b, LEN(b), 0, 42);
+  draw_randoms(engine, c, LEN(c), 0, 43);
+  two_part_draw(engine, d, 3, 2, 42);
+  xCheckMsg(equal_vec16(a, b, LEN(a)), engine);
+  xCheckMsg(equal_vec16(a, d, LEN(a)), engine);  
+  xCheckMsg(a[0] != c[0] || a[1] != b[1], engine); // "or" to maintain "7 sigma tests"
+}
+
+// Bounded large-sample sanity check: counts across buckets are balanced.
+static void test_balanced_counts(char *engine) {
+  uint16_t *x;
+  int n = N_BAL_CNTS;
+  xCheck(ALLOC(x, n));
+  randompack_rng *rng = create_seeded_rng(engine, 42);
+  xCheck(rng);
+  uint16_t bounds[] = {5, 10};
+  for (int b = 0; b < LEN(bounds); b++) {
+    uint16_t bound = bounds[b];
+    int counts[10] = {0};
+    bool ok = randompack_uint16(x, n, bound, rng);
+    xCheck(ok);
+	 xCheck(maxv16(x, n) < bound);
+    for (int i = 0; i < n; i++) counts[x[i]]++;
+    xCheckMsg(check_balanced_counts(counts, bound), engine);
+  }
+  randompack_free(rng);
+  FREE(x);
+}
+
+static inline bool bitset(uint16_t x, int b) {
+  return x & (1u << b);
+}
+
+// Balanced bits check. Check that all bits appear approximately equally often
+static void test_balanced_bits(char *engine) {
+  uint16_t *x;
+  int n = N_BAL_BITS;
+  xCheck(ALLOC(x, n));
+  randompack_rng *rng = create_seeded_rng(engine, 44);
+  xCheck(rng);
+  bool ok = randompack_uint16(x, n, 0, rng); // bound = 0 => unbounded
+  xCheck(ok);
+  int ones[16] = {0};
+  for (int i = 0; i < n; i++) {
+    for (int b = 0; b < 16; b++) {
+      if (bitset(x[i], b)) ones[b]++;
+    }
+  }
+  bool balanced_bits = check_balanced_bits(ones, n, 16);
+  xCheckMsg(balanced_bits, engine);
+  randompack_free(rng);
+  FREE(x);
+}
+
+void TestUint16(void) {
+  for (int i = 0; i < LEN(engines); i++) {
+    char *e = engines[i];
+	 printS("\nTesting Uint16 with engine", e);
+    test_edge_cases(e);
+    test_unbounded_determinism(e);
+    test_balanced_counts(e);
+    test_balanced_bits(e);
+	 test_mixed_draw(e);
+  }
+}
