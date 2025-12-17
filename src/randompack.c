@@ -120,6 +120,59 @@ static bool select_engine(const char *s, randompack_rng *rng) {
   return false;  // unknown engine
 }
 
+bool randompack_seed(int seed, uint32_t *spawn_key, int nkey, randompack_rng *rng)  {
+  if (!rng) return false;
+  uint32_t seed32 = (uint32_t)seed;
+  rng->last_error = 0;
+  if (rng->engine == PARKMILLER) {
+    if (nkey != 0 || spawn_key != 0) {
+      rng->last_error = "randompack_seed: spawn_key not supported for Park-Miller";
+      return false;
+    }
+    uint32_t s = seed32 % mersenne8;
+    if (s == 0) s = 1;
+    rng->state.u32 = s;
+    rng->buf64 = 0;
+    rng->buf_counter = 0;
+    (void)PM_rand_bits(rng); // burn-in
+  }
+  else {  // Use Melissa O'Neill's seed sequence
+    if (nkey < 0 || (nkey > 0 && !spawn_key)) {
+      rng->last_error = "randompack_seed: invalid spawn_key arguments";
+      return false;
+    }
+    uint32_t w[12];
+	 bool ok = seed_seq_seed(w, 12, seed32, spawn_key, nkey);
+	 if (!ok) {
+		rng->last_error = "randompack_seed: allocation failed";
+		return false;
+	 }	 
+    if (rng->engine == CHACHA20) {
+      ChaCha20_Ctx *ctx = (ChaCha20_Ctx *)rng->extra_state;
+      key256_t key;
+      nonce96_t nonce;
+      copy32(key,   w + 0, 8);
+      copy32(nonce, w + 8, 3);
+      ChaCha20_init(ctx, key, nonce, 0);
+    }
+    else {
+      copy32(rng->state.u64, w, 8);
+      if (rng->engine == PHILOX) {
+        philox_state *st = (philox_state *)rng->extra_state;
+        copy32(&st->key, w + 8, 4);
+        st->idx = 4;
+      }
+      else if (rng->state.u64[0] == 0) { // the xo-family needs a nonzero state
+        rng->state.u64[0] = 1;
+      }
+    }
+  }
+  rng->buf64 = 0;
+  rng->buf_counter = 0;
+  rng->spare_norm = INFINITY;
+  return true;
+}
+
 randompack_rng *randompack_create(const char *engine) {
   randompack_rng *rng;
   // Create engine
@@ -166,6 +219,25 @@ void randompack_free(randompack_rng *rng) {
   FREE(rng->extra_state);
   FREE(rng);
 }
+
+typedef struct {
+  uint32_t version;
+  uint32_t engine;
+  uint64_t state_u64[4];
+  uint64_t buf64;
+  double spare_norm;
+  uint32_t reserved;
+  ChaCha20_Ctx chacha;
+} rng_blob;
+
+enum {
+  STATE_MIN_NEED =
+  sizeof(uint32_t)*2
+  + sizeof(((rng_blob *)0)->state_u64)
+  + sizeof(uint64_t)
+  + sizeof(double)
+  + sizeof(uint32_t)*2
+};
 
 #include "serializations.inc"
 
