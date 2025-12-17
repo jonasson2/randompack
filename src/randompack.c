@@ -15,6 +15,10 @@
 #include "pcg64.h"
 #include "crypto_random.inc"
 
+#ifndef BUFFSIZE
+#define BUFFSIZE 256
+#endif
+
 typedef struct randompack_rng randompack_rng;
 
 typedef enum {
@@ -30,6 +34,7 @@ typedef enum {
 } rng_engine;
 
 typedef uint64_t (*engine_next)(randompack_rng *rng);
+typedef void (*engine_fill)(uint64_t *out, int n, randompack_rng *rng);
 
 struct randompack_rng {
   union {
@@ -42,10 +47,13 @@ struct randompack_rng {
   rng_engine engine;
   int buf_counter;
   uint64_t buf64;
+  int buff_pos;
   engine_next next;
+  engine_fill fill;
   double spare_norm;
   char *last_error;
   uint64_t *extra_state;
+  uint64_t buff[BUFFSIZE];
 };
 
 typedef struct {
@@ -55,10 +63,12 @@ typedef struct {
   int state_words;
   int extra_words;
   engine_next next;
+  engine_fill fill;
 } rng_entry;
 
 
 #include "engines.inc"
+#include "buffer_draw.inc"
 #include "randutil.inc"
 #include "distributions.inc"
 
@@ -71,14 +81,14 @@ static uint64_t next_pcg64(randompack_rng *rng) {
 #endif
 
 static rng_entry rng_table[] = {
-  { "park-miller",   "pm",       PARKMILLER, 1, 0,  0            },
-  { "xorshift128+",  "x128+",    X128P,      2, 0,  xorshift128p },
-  { "xoshiro256**",  "x256**",   X256SS,     4, 0,  nextss       },
-  { "xoshiro256++",  "x256++",   X256PP,     4, 0,  nextpp       },
-  { "pcg64_dxsm",    "pcg64",    PCG64,      4, 0,  next_pcg64   },
-  { "philox",        "philox",   PHILOX,     6, 7,  next_philox  },
-  { "chacha20",      "chacha20", CHACHA20,   6, 17, chachacha    },
-  { "system-csprng", "system",   SYS,        0, 0,  csprng       }
+  { "park-miller",   "pm",       PARKMILLER, 1, 0,  0,            0             },
+  { "xorshift128+",  "x128+",    X128P,      2, 0,  xorshift128p, fill64_generic},
+  { "xoshiro256**",  "x256**",   X256SS,     4, 0,  nextss,       fill64_x256ss },
+  { "xoshiro256++",  "x256++",   X256PP,     4, 0,  nextpp,       fill64_generic},
+  { "pcg64_dxsm",    "pcg64",    PCG64,      4, 0,  next_pcg64,   fill64_generic},
+  { "philox",        "philox",   PHILOX,     6, 7,  next_philox,  fill64_generic},
+  { "chacha20",      "chacha20", CHACHA20,   6, 17, chachacha,    fill64_generic},
+  { "system-csprng", "system",   SYS,        0, 0,  csprng,       fill64_generic}
 };
 
 static rng_entry *find_entry(rng_engine e) {
@@ -103,63 +113,11 @@ static bool select_engine(const char *s, randompack_rng *rng) {
         !strcmp(t, rng_table[i].abbrev)) {
       rng->engine = rng_table[i].engine;
       rng->next   = rng_table[i].next;   // may be 0 for PARKMILLER
+		rng->fill   = rng_table[i].fill;
       return true;
     }
   }
   return false;  // unknown engine
-}
-
-bool randompack_seed(int seed, uint32_t *spawn_key, int nkey, randompack_rng *rng)  {
-  if (!rng) return false;
-  uint32_t seed32 = (uint32_t)seed;
-  rng->last_error = 0;
-  if (rng->engine == PARKMILLER) {
-    if (nkey != 0 || spawn_key != 0) {
-      rng->last_error = "randompack_seed: spawn_key not supported for Park-Miller";
-      return false;
-    }
-    uint32_t s = seed32 % mersenne8;
-    if (s == 0) s = 1;
-    rng->state.u32 = s;
-    rng->buf64 = 0;
-    rng->buf_counter = 0;
-    (void)PM_rand_bits(rng); // burn-in
-  }
-  else {  // Use Melissa O'Neill's seed sequence
-    if (nkey < 0 || (nkey > 0 && !spawn_key)) {
-      rng->last_error = "randompack_seed: invalid spawn_key arguments";
-      return false;
-    }
-    uint32_t w[12];
-	 bool ok = seed_seq_seed(w, 12, seed32, spawn_key, nkey);
-	 if (!ok) {
-		rng->last_error = "randompack_seed: allocation failed";
-		return false;
-	 }	 
-    if (rng->engine == CHACHA20) {
-      ChaCha20_Ctx *ctx = (ChaCha20_Ctx *)rng->extra_state;
-      key256_t key;
-      nonce96_t nonce;
-      copy32(key,   w + 0, 8);
-      copy32(nonce, w + 8, 3);
-      ChaCha20_init(ctx, key, nonce, 0);
-    }
-    else {
-      copy32(rng->state.u64, w, 8);
-      if (rng->engine == PHILOX) {
-        philox_state *st = (philox_state *)rng->extra_state;
-        copy32(&st->key, w + 8, 4);
-        st->idx = 4;
-      }
-      else if (rng->state.u64[0] == 0) { // the xo-family needs a nonzero state
-        rng->state.u64[0] = 1;
-      }
-    }
-  }
-  rng->buf64 = 0;
-  rng->buf_counter = 0;
-  rng->spare_norm = INFINITY;
-  return true;
 }
 
 randompack_rng *randompack_create(const char *engine) {
@@ -208,25 +166,6 @@ void randompack_free(randompack_rng *rng) {
   FREE(rng->extra_state);
   FREE(rng);
 }
-
-typedef struct {
-  uint32_t version;
-  uint32_t engine;
-  uint64_t state_u64[4];
-  uint64_t buf64;
-  double spare_norm;
-  uint32_t reserved;
-  ChaCha20_Ctx chacha;
-} rng_blob;
-
-enum {
-  STATE_MIN_NEED =
-  sizeof(uint32_t)*2
-  + sizeof(((rng_blob *)0)->state_u64)
-  + sizeof(uint64_t)
-  + sizeof(double)
-  + sizeof(uint32_t)*2
-};
 
 #include "serializations.inc"
 

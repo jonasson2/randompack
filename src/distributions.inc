@@ -76,8 +76,7 @@ static void rand_normal(double x[], int n, randompack_rng *rng) {
 static void rand_uint64(uint64_t bound, uint64_t x[], int n, randompack_rng *rng) {
   // Sets x to n random integers in {0, 1,..., bound-1}
   if (bound == 0) {
-    for (int i = 0; i < n; i++)
-      x[i] = rng->next(rng);
+    draw_u64_copy(x, n, rng);
     return;
   }
   int i = 0, j;
@@ -85,7 +84,7 @@ static void rand_uint64(uint64_t bound, uint64_t x[], int n, randompack_rng *rng
   if (bound <= UINT8_MAX) {
     uint8_t r, b = (uint8_t)bound, thresh = (1u<<8) % b;
     while (i < n) {
-      R = rng->next(rng);
+      R = draw_u64(rng);
       for (j = 0; j<8; j++) {
         r = (uint8_t)R;
         if (r >= thresh) x[i++] = (uint64_t)(r % b);
@@ -97,7 +96,7 @@ static void rand_uint64(uint64_t bound, uint64_t x[], int n, randompack_rng *rng
   else if (bound <= (uint64_t)UINT16_MAX) {
     uint16_t r, b = (uint16_t)bound, thresh = (1u<<16) % b;
     while (i < n) {
-      R = rng->next(rng);
+      R = draw_u64(rng);
       for (j = 0; j<4; j++) {
         r = (uint16_t)R;
         if (r >= thresh) x[i++] = (uint64_t)(r % b);
@@ -109,7 +108,7 @@ static void rand_uint64(uint64_t bound, uint64_t x[], int n, randompack_rng *rng
   else if (bound <= (uint64_t)UINT32_MAX) {
     uint32_t r, b = (uint32_t)bound, M = (uint32_t)0-b, thresh = M % b;
     while (i < n) {
-      R = rng->next(rng);
+      R = draw_u64(rng);
       r = (uint32_t)R;
       if (r >= thresh) x[i++] = (uint64_t)(r % b);
       if (i>=n) break;
@@ -121,7 +120,7 @@ static void rand_uint64(uint64_t bound, uint64_t x[], int n, randompack_rng *rng
   else {
     uint64_t M = 0-bound, thresh = M % bound;
     while (i < n) {
-      R = rng->next(rng);
+      R = draw_u64(rng);
       if (R >= thresh) x[i++] = R % bound;
     }
   }

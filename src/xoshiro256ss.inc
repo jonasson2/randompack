@@ -42,8 +42,8 @@ IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE. */
 // static inline uint64_t rotl(const uint64_t x, int k) {
 // 	return (x << k) | (x >> (64 - k));
 // }
-
-static uint64_t nextss(randompack_rng *rng) {
+#define rotl(x,k) ((x) << (k)) | ((x) >> (64 - (k)))
+static inline uint64_t nextss(randompack_rng *rng) {
 	uint64_t *s = rng->state.u64;
 	const uint64_t result = rotl(s[1] * 5, 7) * 9;
 

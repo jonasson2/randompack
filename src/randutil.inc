@@ -88,6 +88,7 @@ static void rand_randomize(randompack_rng *rng) {
 		rng->state.u64[0] = 1;
   }
   rng->buf64 = 0;
+  rng->buff_pos = 0;
   rng->buf_counter = 0;
   rng->spare_norm = NAN;
   rng->last_error = 0;
