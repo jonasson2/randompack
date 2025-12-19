@@ -31,19 +31,7 @@ static uint64_t now_ns(void) {
 
 static double bench_engine(const char *engine, int seed, int n_total, int chunk) {
   randompack_rng *rng = randompack_create(engine);
-  if (!rng) return -1.0;
-
-  if (randompack_last_error(rng)) {
-    randompack_free(rng);
-    return -1.0;
-  }
-
-  bool ok = randompack_seed(seed, 0, 0, rng);
-  if (!ok) {
-    randompack_free(rng);
-    return -1.0;
-  }
-
+  ALLOC(buf, chunk);
   uint64_t *buf = (uint64_t *)malloc((size_t)chunk*sizeof(uint64_t));
   if (!buf) {
     randompack_free(rng);
@@ -137,7 +125,7 @@ int main(void) {
   // Adjust if you want longer/shorter runs.
   const int seed = 7;
   const int n_total = (1<<27) / 10;   // shorter run while debugging
-  const int chunk = 1<<12;     // 65536 uint64 per call
+  const int chunk   = 1<<12;
 
   // Engine names must match what randompack_create expects in your build.
   const char *engines[] = {

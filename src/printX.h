@@ -60,9 +60,12 @@ void print6I(const char *s, int i1, int i2, int i3, int i4, int i5,
 
 #define printI(name, i)                         ((void)0)
 #define printP(name, p)                         ((void)0)
+#define print64(name, x)                        ((void)0)
+#define print32(name, x)                        ((void)0)
 #define printD(name, d)                         ((void)0)
 #define printV(name, x, n)                      ((void)0)
 #define printIV(name, iv, n)                    ((void)0)
+#define printIVS(name, iv, n)                   ((void)0)
 #define printS(name, s)                         ((void)0)
 
 #define printM(name, A, nr, nc)                 ((void)0)

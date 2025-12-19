@@ -23,6 +23,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stddef.h>
 
 typedef struct randompack_rng randompack_rng;
 typedef struct { uint64_t v[4]; } randompack_counter, randompack_3fry_key;
@@ -45,7 +46,7 @@ void randompack_free( // Free an RNG created with randompack_create
 
 bool randompack_int( // Generate uniform integers in [m, n], false on error
   int x[],              // out     len-vector of integers
-  int len,              // in      Number of integers requested
+  size_t len,           // in      Number of integers requested
   int m,                // in      Inclusive minimum
   int n,                // in      Inclusive maximum
   randompack_rng *rng   // in/out  Random number generator
@@ -66,13 +67,13 @@ bool randompack_sample( // Sample without replacement from 0..n-1, false on erro
 
 bool randompack_u01( // Generate uniform random numbers in [0,1), false on error
   double x[],           // out     n-vector: uniform random numbers in [0,1)
-  int n,                // in      Number of variates
+  size_t n,             // in      Number of variates
   randompack_rng *rng   // in/out  Random number generator
 );
 
 bool randompack_norm( // Generate standard normal random numbers N(0,1), false on error
   double x[],           // out     n-vector: standard normal random numbers
-  int n,                // in      Number of variates
+  size_t n,             // in      Number of variates
   randompack_rng *rng   // in/out  Random number generator
 );
 
@@ -81,7 +82,7 @@ bool randompack_mvn( // Generate multivariate normal randoms N(mu,Sig), false on
   double mu[],          // in      d-vector: mean (NULL → zero-mean)
   double Sig[],         // in      d×d covariance matrix (NULL → use L as-is)
   int d,                // in      Dimension of each vector
-  int n,                // in      Number of replicates
+  size_t n,             // in      Number of replicates
   double X[],           // out     n×d or d×n matrix of generated vectors
   int ldx,              // in      Leading dimension of X
   double L[],           // in/out  d×d lower Cholesky factor of Sig (or NULL)
@@ -102,42 +103,42 @@ char *randompack_last_error( // Get last error string, or 0 if none
 
 bool randompack_uint8( // Generate uint8 in [0, bound), false on error
   uint8_t x[],           // out     len-vector of bytes
-  int len,               // in      number requested
+  size_t len,            // in      number requested
   uint8_t bound,         // in      exclusive upper bound, or 0 for unbounded
   randompack_rng *rng    // in/out  random number generator
 );
 
 bool randompack_uint16( // Generate uint16 in [0, bound), false on error
   uint16_t x[],          // out     len-vector of short integers
-  int len,               // in      number requested
+  size_t len,            // in      number requested
   uint16_t bound,        // in      exclusive upper bound, or 0 for unbounded
   randompack_rng *rng    // in/out  random number generator
 );
 
 bool randompack_uint32( // Generate uint32 in [0, bound), false on error
   uint32_t x[],          // out     len-vector of integers
-  int len,               // in      number requested
+  size_t len,            // in      number requested
   uint32_t bound,        // in      exclusive upper bound, or 0 for unbounded
   randompack_rng *rng    // in/out  random number generator
 );
 
 bool randompack_uint64( // Generate uint64 in [0, bound), false on error
   uint64_t x[],          // out     len-vector of uint64_t integers
-  int len,               // in      number requested
+  size_t len,            // in      number requested
   uint64_t bound,        // in      exclusive upper bound, or 0 for unbounded
   randompack_rng *rng    // in/out  random number generator
 );
 
 bool randompack_uint64_3fry( // Counter based random number generation with "threefry"
   uint64_t x[],             // out  len-vector of integers (unbounded)
-  int len,                  // in   number requested
+  size_t len,               // in   number requested
   randompack_counter ctr,   // in   counter state
   randompack_3fry_key key   // in   threefry4x64 key
 );
 
 bool randompack_uint64_philox( // Counter based random number generation with "philox"
   uint64_t x[],             // out  len-vector of integers (unbounded)
-  int len,                  // in   number requested
+  size_t len,               // in   number requested
   randompack_counter ctr,   // in   counter state
   randompack_philox_key key // in   threefry4x64 key
 );

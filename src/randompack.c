@@ -15,10 +15,6 @@
 #include "pcg64.h"
 #include "crypto_random.inc"
 
-#ifndef BUFFSIZE
-#define BUFFSIZE 256
-#endif
-
 typedef struct randompack_rng randompack_rng;
 
 typedef enum {
@@ -34,7 +30,7 @@ typedef enum {
 } rng_engine;
 
 typedef uint64_t (*engine_next)(randompack_rng *rng);
-typedef void (*engine_fill)(uint64_t *out, int n, randompack_rng *rng);
+typedef void (*engine_fill)(uint64_t *out, size_t n, randompack_rng *rng);
 
 struct randompack_rng {
   union {
@@ -45,15 +41,14 @@ struct randompack_rng {
     #endif
   } state;
   rng_engine engine;
-  int buf_counter;
-  uint64_t buf64;
-  int buff_pos;
+  int buf_word;
+  int buf_byte;
   engine_next next;
   engine_fill fill;
   double spare_norm;
   char *last_error;
   uint64_t *extra_state;
-  uint64_t buff[BUFFSIZE];
+  uint64_t buf[BUFFSIZE];
 };
 
 typedef struct {
@@ -66,6 +61,19 @@ typedef struct {
   engine_fill fill;
 } rng_entry;
 
+#define ROTL64(x,k) (((x) << (k)) | ((x) >> (64 - (k))))
+static uint64_t nextss_ref(randompack_rng *rng) {
+  uint64_t *s = rng->state.u64;
+  uint64_t result = ROTL64(s[1] * 5, 7) * 9;
+  uint64_t t = s[1] << 17;
+  s[2] ^= s[0];
+  s[3] ^= s[1];
+  s[1] ^= s[2];
+  s[0] ^= s[3];
+  s[2] ^= t;
+  s[3] = ROTL64(s[3], 45);
+  return result;
+}
 
 #include "engines.inc"
 #include "buffer_draw.inc"
@@ -83,7 +91,7 @@ static uint64_t next_pcg64(randompack_rng *rng) {
 static rng_entry rng_table[] = {
   { "park-miller",   "pm",       PARKMILLER, 1, 0,  0,            0             },
   { "xorshift128+",  "x128+",    X128P,      2, 0,  xorshift128p, fill64_generic},
-  { "xoshiro256**",  "x256**",   X256SS,     4, 0,  nextss,       fill64_x256ss },
+  { "xoshiro256**",  "x256**",   X256SS,     4, 0,  nextss_ref,   fill64_x256ss },
   { "xoshiro256++",  "x256++",   X256PP,     4, 0,  nextpp,       fill64_generic},
   { "pcg64_dxsm",    "pcg64",    PCG64,      4, 0,  next_pcg64,   fill64_generic},
   { "philox",        "philox",   PHILOX,     6, 7,  next_philox,  fill64_generic},
@@ -103,6 +111,7 @@ static bool select_engine(const char *s, randompack_rng *rng) {
   if (!s) {
     rng->engine = X256PP; // default engine
     rng->next   = nextpp;
+    rng->fill   = fill64_generic;
     return true;
   }
   char t[64];
@@ -132,8 +141,8 @@ bool randompack_seed(int seed, uint32_t *spawn_key, int nkey, randompack_rng *rn
     uint32_t s = seed32 % mersenne8;
     if (s == 0) s = 1;
     rng->state.u32 = s;
-    rng->buf64 = 0;
-    rng->buf_counter = 0;
+    rng->buf_word = BUFFSIZE;
+    rng->buf_byte = 0;
     (void)PM_rand_bits(rng); // burn-in
   }
   else {  // Use Melissa O'Neill's seed sequence
@@ -167,8 +176,8 @@ bool randompack_seed(int seed, uint32_t *spawn_key, int nkey, randompack_rng *rn
       }
     }
   }
-  rng->buf64 = 0;
-  rng->buf_counter = 0;
+  rng->buf_word = BUFFSIZE;
+  rng->buf_byte = 0;
   rng->spare_norm = INFINITY;
   return true;
 }
@@ -180,6 +189,8 @@ randompack_rng *randompack_create(const char *engine) {
   rng->last_error = 0;
   rng->spare_norm = INFINITY; // Use ziggurat iff INFINITY
   rng->engine = INVALID;
+  rng->buf_word = BUFFSIZE;
+  rng->buf_byte = 0;
   if (!select_engine(engine, rng)) {
     rng->last_error = "unknown engine name (spelling error in requested engine)";
     return rng;
@@ -205,8 +216,8 @@ randompack_rng *randompack_create(const char *engine) {
     s = (uint32_t)(x % (uint32_t)mersenne8);
     if (s == 0) s = 1;
     rng->state.u32 = s;
-    rng->buf64 = 0;
-    rng->buf_counter = 0;
+    rng->buf_word = BUFFSIZE;
+    rng->buf_byte = 0;
   }
   else {
     rand_randomize(rng);
@@ -224,9 +235,11 @@ typedef struct {
   uint32_t version;
   uint32_t engine;
   uint64_t state_u64[4];
-  uint64_t buf64;
   double spare_norm;
-  uint32_t reserved;
+  uint32_t buf_word;
+  uint32_t buf_byte;
+  uint32_t reserved0;
+  uint32_t reserved1;
   ChaCha20_Ctx chacha;
 } rng_blob;
 
@@ -234,9 +247,8 @@ enum {
   STATE_MIN_NEED =
   sizeof(uint32_t)*2
   + sizeof(((rng_blob *)0)->state_u64)
-  + sizeof(uint64_t)
   + sizeof(double)
-  + sizeof(uint32_t)*2
+  + sizeof(uint32_t)*4
 };
 
 #include "serializations.inc"
@@ -372,7 +384,7 @@ bool randompack_set_norm_method(char *method, randompack_rng *rng) {
   return true;
 } 
 
-bool randompack_u01(double x[], int len, randompack_rng *rng) {
+bool randompack_u01(double x[], size_t len, randompack_rng *rng) {
   if (!rng) return false;
   if (!x || len < 0)
     rng->last_error = "invalid arguments to randompack_u01";
@@ -384,7 +396,7 @@ bool randompack_u01(double x[], int len, randompack_rng *rng) {
   return true;
 }
 
-bool randompack_int(int x[], int len, int m, int n, randompack_rng *rng) {
+bool randompack_int(int x[], size_t len, int m, int n, randompack_rng *rng) {
   if (!rng) return false;
   int64_t span = (int64_t)n - (int64_t)m;
   if (!x || len < 0)
@@ -403,11 +415,11 @@ bool randompack_int(int x[], int len, int m, int n, randompack_rng *rng) {
     PM_rand_int((int)(span + 1), x, len, rng);
   else
     rand_uint32((uint32_t)(span + 1), (uint32_t*)x, len, rng);
-  for (int i = 0; i < len; i++) x[i] += m;
+  for (size_t i = 0; i < len; i++) x[i] += m;
   return true;
 }
 
-bool randompack_uint32(uint32_t x[], int len, uint32_t bound, randompack_rng *rng) {
+bool randompack_uint32(uint32_t x[], size_t len, uint32_t bound, randompack_rng *rng) {
   if (!rng) return false;
   if (!x || len < 0)
     rng->last_error = "randompack_uint32: invalid arguments";
@@ -420,7 +432,7 @@ bool randompack_uint32(uint32_t x[], int len, uint32_t bound, randompack_rng *rn
   return true;
 }
 
-bool randompack_uint16(uint16_t x[], int len, uint16_t bound, randompack_rng *rng) {
+bool randompack_uint16(uint16_t x[], size_t len, uint16_t bound, randompack_rng *rng) {
   if (!rng) return false;
   if (!x || len < 0)
     rng->last_error = "randompack_uint16: invalid arguments";
@@ -433,7 +445,7 @@ bool randompack_uint16(uint16_t x[], int len, uint16_t bound, randompack_rng *rn
   return true;
 }
 
-bool randompack_uint8(uint8_t x[], int len, uint8_t bound, randompack_rng *rng) {
+bool randompack_uint8(uint8_t x[], size_t len, uint8_t bound, randompack_rng *rng) {
   if (!rng) return false;
   if (!x || len < 0)
     rng->last_error = "randompack_uint8: invalid arguments";
@@ -446,7 +458,7 @@ bool randompack_uint8(uint8_t x[], int len, uint8_t bound, randompack_rng *rng) 
   return true;
 }
 
-bool randompack_uint64(uint64_t x[], int len, uint64_t bound, randompack_rng *rng) {
+bool randompack_uint64(uint64_t x[], size_t len, uint64_t bound, randompack_rng *rng) {
   if (!rng) return false;
   if (!x || len < 0)
     rng->last_error = "invalid arguments to randompack_uint64";
@@ -486,21 +498,21 @@ bool randompack_sample(int x[], int len, int k, randompack_rng *rng) {
   return true;
 }
 
-bool randompack_uint64_3fry(uint64_t x[], int len, randompack_counter ctr,
+bool randompack_uint64_3fry(uint64_t x[], size_t len, randompack_counter ctr,
                             randompack_3fry_key key) {
   if (!x || len < 0) return false;
   rand_3fry_64bits(x, len, ctr, key);
   return true;
 }
 
-bool randompack_uint64_philox(uint64_t x[], int len, randompack_counter ctr,
+bool randompack_uint64_philox(uint64_t x[], size_t len, randompack_counter ctr,
                               randompack_philox_key key) {
   if (!x || len < 0) return false;
   rand_phil_64bits(x, len, ctr, key);
   return true;
 }
 
-bool randompack_norm(double x[], int len, randompack_rng *rng) {
+bool randompack_norm(double x[], size_t len, randompack_rng *rng) {
   if (!rng) return false;
   if (!x || len < 0)
     rng->last_error = "invalid arguments to randompack_norm";
@@ -511,7 +523,7 @@ bool randompack_norm(double x[], int len, randompack_rng *rng) {
   return true;
 }
 
-bool randompack_mvn(char *transp, double mu[], double Sig[], int d, int n, double X[],
+bool randompack_mvn(char *transp, double mu[], double Sig[], int d, size_t n, double X[],
                     int ldX, double L[], randompack_rng *rng) {
   if (!rng) return false;
   if (!Sig && !L)
@@ -520,7 +532,7 @@ bool randompack_mvn(char *transp, double mu[], double Sig[], int d, int n, doubl
     rng->last_error = "randompack_mvn: transp must begin with 'N' or 'T'";
   else if ((!X && n > 0) || d <= 0 || n < 0 || (ldX <= 0 && X))
     rng->last_error = "randompack_mvn: invalid arguments";
-  else if (X && n > 0 && ldX < ((transp[0] == 'N') ? n : d))
+  else if (X && n > 0 && (size_t)ldX < ((transp[0] == 'N') ? n : d))
     rng->last_error = "randompack_mvn: invalid arguments";
   else
     rng->last_error = 0;

@@ -19,4 +19,5 @@ void TestHelpers(void);
 void TestSeed(void);
 void TestSetState(void);
 void TestReference(void);
+void TestBuffer(void);
 #endif /* TESTS_H */

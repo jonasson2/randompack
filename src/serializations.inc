@@ -24,9 +24,11 @@ static bool serialize(uint8_t *buf, int need, randompack_rng *rng) {
   for (int i = 0; i < LEN(rng->state.u64); i++)
     blob.state_u64[i] = rng->state.u64[i];
 
-  blob.buf64      = rng->buf64;
   blob.spare_norm = rng->spare_norm;
-  blob.reserved   = 0;
+  blob.buf_word   = (uint32_t)rng->buf_word;
+  blob.buf_byte   = (uint32_t)rng->buf_byte;
+  blob.reserved0  = 0;
+  blob.reserved1  = 0;
 
   memcpy(buf, &blob, STATE_MIN_NEED);
   if (rng->extra_state) {
@@ -42,6 +44,7 @@ static bool deserialize(const rng_blob *blob, rng_entry *ent,
                         randompack_rng *rng) {
   rng->engine = (rng_engine)blob->engine;
   rng->next = ent->next;
+  rng->fill = ent->fill;
 
   if (ent->extra_words > 0) {
     if (!rng->extra_state) {
@@ -54,7 +57,8 @@ static bool deserialize(const rng_blob *blob, rng_entry *ent,
   for (int i = 0; i < LEN(rng->state.u64); i++)
     rng->state.u64[i] = blob->state_u64[i];
   rng->state.u32 = blob->state_u64[0];
-  rng->buf64 = blob->buf64;
+  rng->buf_word = BUFFSIZE;
+  rng->buf_byte = 0;
   rng->spare_norm = blob->spare_norm;
 
   return true;

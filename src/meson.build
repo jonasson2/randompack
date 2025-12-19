@@ -5,15 +5,17 @@ src_files = files(
   'lapack_dpstrf.f',
 )
 
-librandompack = library(
+librandompack = static_library(
   'randompack',
   src_files,
-  include_directories : inc,
-  dependencies : [blas_dep],
+  include_directories: inc,
+  dependencies: [blas_dep],
+  pic: true,
+  install: true,
 )
 
 randompack_dep = declare_dependency(
-  link_with : librandompack,
-  include_directories : inc,
-  dependencies : [blas_dep],
+  link_with: librandompack,
+  include_directories: inc,
+  dependencies: [blas_dep],
 )

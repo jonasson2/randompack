@@ -36,7 +36,7 @@
 // typedef uint64_t ZMG_SEED_t;
 
 typedef randompack_rng ZMG_STATE;
-#define ZMG_U32(rng) rand_32bits((rng))
+#define ZMG_U32(rng) draw_u32((rng))
 
 /********************************************************************
 This data was auto-generated on Mon 14 Jan 2019 12:38:48

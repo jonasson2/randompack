@@ -17,20 +17,19 @@ _Static_assert(sizeof(long long) == 8, "randompack requires 64-bit long long");
 #define TOLOWER(c) (((c) >= 'A' && (c) <= 'Z') ? ((c)-'A'+'a') : (c))
 #define STRSET(dst, src) snprintf((dst), sizeof(dst), "%s", (src) ? (src) : "")
 #define STRSETF(dst, fmt, ...) snprintf((dst), sizeof(dst), (fmt), __VA_ARGS__)
-#define LEN(a) ((int)(sizeof(a) / sizeof((a)[0])))
+#define LEN(a) (int)((sizeof(a) / sizeof((a)[0])))
 #define CLEAR(dst) memset((dst), 0, sizeof(dst))
-#define ALLOC(ptr, count) (((ptr) = calloc((size_t)(count), sizeof *(ptr))) != 0)
+#define ALLOC(ptr, count) (((ptr) = calloc((count), sizeof *(ptr))) != 0)
 #define FREE(p)  do { free(p); (p) = 0; } while (0)
 static inline int min(int m, int n) { return m < n ? m : n; }
 static inline int max(int m, int n) { return m > n ? m : n; }
 
-static inline void copy32(void *dst, const uint32_t *src, int n) {
-  memcpy(dst, src, (size_t)n*sizeof(uint32_t));
-}
-
-static inline void copy64(void *dst, const uint64_t *src, int n) {
-  memcpy(dst, src, (size_t)n*sizeof(uint64_t));
-}
+static inline void copy16(void *dst, void *src, int n) { memcpy(dst, src, (size_t)n*2); }
+static inline void copy32(void *dst, void *src, int n) { memcpy(dst, src, (size_t)n*4); }
+static inline void copy64(void *dst, void *src, int n) { memcpy(dst, src, (size_t)n*8); }
+#ifndef BUFFSIZE
+#define BUFFSIZE 256
+#endif
 
 static inline uint64_t rand_splitmix64(uint64_t *x) {
   uint64_t z = (*x += 0x9E3779B97F4A7C15ULL);

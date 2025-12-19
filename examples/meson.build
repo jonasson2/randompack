@@ -14,8 +14,8 @@ run_cryptorandom = executable(
   dependencies : [randompack_dep],
 )
 
-timing = executable(
-  'Timing',
-  ['Timing.c'],
+bench = executable(
+  'bench',
+  ['bench.c'],
   dependencies : [randompack_dep],
 )

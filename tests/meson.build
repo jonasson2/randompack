@@ -14,7 +14,8 @@ test_sources = files(
   'TestReference.c',
   'TestSeed.c',
   'TestSetState.c',
-  'TestHelpers.c'
+  'TestHelpers.c',
+  'TestBuffer.c',
 )
 
 extra_util = files(
