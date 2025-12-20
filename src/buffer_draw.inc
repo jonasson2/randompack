@@ -1,10 +1,6 @@
 // -*- C -*-
-static void fill64_generic(uint64_t *out, size_t n, randompack_rng *rng) {
-  for (size_t i = 0; i < n; i++) out[i] = rng->next(rng);
-}
-
 static inline void fill_buf(randompack_rng *rng) {
-  rng->fill(rng->buf, BUFFSIZE, rng);
+  rng->fill(rng);
   rng->buf_word = 0;
   rng->buf_byte = 0;
 }
@@ -33,15 +29,15 @@ static inline void align64(randompack_rng *rng) { // align to beginning or word
 }
 
 static inline void fill_buf_if_empty(randompack_rng *rng) {
-  if (rng->buf_word >= BUFFSIZE) {
-    rng->fill(rng->buf, BUFFSIZE, rng);
+  if (rng->buf_word >= BUFSIZE) {
+    rng->fill(rng);
     rng->buf_word = 0;
     rng->buf_byte = 0;
   }
 }
 
 static inline uint8_t draw_byte(randompack_rng *rng) {
-  if (rng->buf_word >= BUFFSIZE) fill_buf(rng);
+  if (rng->buf_word >= BUFSIZE) fill_buf(rng);
   uint64_t w = rng->buf[rng->buf_word];
   uint8_t b = (uint8_t)(w >> (8 * rng->buf_byte));
   rng->buf_byte++;
@@ -91,7 +87,7 @@ static inline void draw_u16_copy(uint16_t *out, size_t n, randompack_rng *rng) {
   while (i < n) {
     fill_buf_if_empty(rng);
     int pos16 = 4*rng->buf_word + rng->buf_byte/2;
-    int avail = 4*BUFFSIZE - pos16;
+    int avail = 4*BUFSIZE - pos16;
     size_t rem = n - i;
     int take = avail;
     if (rem < (size_t)avail) take = (int)rem;
@@ -111,7 +107,7 @@ static inline void draw_u32_copy(uint32_t *out, size_t n, randompack_rng *rng) {
   while (i < n) {
     fill_buf_if_empty(rng);
     int pos32 = 2*rng->buf_word + rng->buf_byte/4;
-    int avail = 2*BUFFSIZE - pos32;
+    int avail = 2*BUFSIZE - pos32;
     size_t rem = n - i;
     int take = avail;
     if (rem < (size_t)avail) take = rem;
@@ -129,7 +125,7 @@ static inline void draw_u64_copy(uint64_t *out, size_t n, randompack_rng *rng) {
   size_t i = 0;
   while (i < n) {
     fill_buf_if_empty(rng);
-    int take = min(n - i, BUFFSIZE - rng->buf_word);
+    int take = min(n - i, BUFSIZE - rng->buf_word);
     copy64(out + i, rng->buf + rng->buf_word, take);
     rng->buf_word += take;
     i += take;

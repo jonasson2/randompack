@@ -53,7 +53,7 @@ static void test_engine_aliases(void) {
 // last_error. Drawing from an invalid rng must fail and set another non-blank error.
 static void test_bad_engine_name(void) {
   randompack_rng *rng = randompack_create("garbage"); // garbage name
-  xCheck(rng);
+  ASSERT(rng);
   char *err = randompack_last_error(rng);
   xCheck(err && err[0]); // non-null, non-blank
   bool ok = randompack_uint64(0, 1, 0, rng); // null output buffer
@@ -90,7 +90,7 @@ static void test_pcg64_unavailable(void) {
   char *names[] = { "pcg64_dxsm", "pcg64" };
   for (int i = 0; i < (int)(sizeof names/sizeof names[0]); i++) {
     randompack_rng *rng = create_seeded_rng(names[i], 123);
-    xCheck(rng);
+    ASSERT(rng);
     char *err = randompack_last_error(rng);
     xCheck(err && err[0]);
     uint64_t x = 0;

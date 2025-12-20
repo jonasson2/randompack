@@ -29,6 +29,14 @@ pcg64_random_fast(pcg64_t *rng) {
 	return (hi);
 }
 
+static inline void fill_pcg64_opt(randompack_rng *rng) {
+  uint64_t *out = rng->buf;
+  size_t n = BUFSIZE;
+  pcg64_t st = rng->state.pcg;
+  for (size_t i = 0; i < n; i++) out[i] = pcg64_random_fast(&st);
+  rng->state.pcg = st;
+}
+
 // static inline double
 // pcg64_double(pcg64_t *rng) {
 // 	return ((double)(pcg64_random(rng) >> 11) * 0x1.0p-53);

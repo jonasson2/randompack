@@ -11,17 +11,17 @@
 // Helper: create an RNG and fill n uint16 values with a given bound.
 static void draw_randoms(char *engine, uint16_t *x, int n, uint16_t bound, int seed) {
   randompack_rng *rng = create_seeded_rng(engine, seed);
-  xCheck(rng);
+  ASSERT(rng);
   bool ok = randompack_uint16(x, n, bound, rng);
-  xCheck(ok);
+  ASSERT(ok);
   randompack_free(rng);
 }
 
 static void two_part_draw(char *engine, uint16_t *x, int n1, int n2, int seed) {
   randompack_rng *rng = create_seeded_rng(engine, seed);
-  xCheck(rng);
-  xCheck(randompack_uint16(x, n1, 0, rng));
-  xCheck(randompack_uint16(x + n1, n2, 0, rng));
+  ASSERT(rng);
+  ASSERT(randompack_uint16(x, n1, 0, rng));
+  ASSERT(randompack_uint16(x + n1, n2, 0, rng));
   randompack_free(rng);
 }
 
@@ -46,13 +46,13 @@ static void test_mixed_draw(char *engine) {
   uint16_t a[2];
   uint16_t b[5];
   randompack_rng *rng = create_seeded_rng(engine, 42);
-  xCheck(rng);
-  xCheck(randompack_uint8(byte, 5, 0, rng)); // leaves just one uint16 in buf64
-  xCheck(randompack_uint16(a, 2, 0, rng));
+  ASSERT(rng);
+  ASSERT(randompack_uint8(byte, 5, 0, rng)); // leaves just one uint16 in buf64
+  ASSERT(randompack_uint16(a, 2, 0, rng));
   randompack_free(rng);
   rng = create_seeded_rng(engine, 42);
-  xCheck(rng);
-  xCheck(randompack_uint16(b, 5, 0, rng));
+  ASSERT(rng);
+  ASSERT(randompack_uint16(b, 5, 0, rng));
   xCheck(equal_vec16(a, b + 3, 2));
   randompack_free(rng);
 }
@@ -73,15 +73,15 @@ static void test_unbounded_determinism(char *engine) {
 static void test_balanced_counts(char *engine) {
   uint16_t *x;
   int n = N_BAL_CNTS;
-  xCheck(ALLOC(x, n));
+  TEST_ALLOC(x, n);
   randompack_rng *rng = create_seeded_rng(engine, 42);
-  xCheck(rng);
+  ASSERT(rng);
   uint16_t bounds[] = {5, 10};
   for (int b = 0; b < LEN(bounds); b++) {
     uint16_t bound = bounds[b];
     int counts[10] = {0};
     bool ok = randompack_uint16(x, n, bound, rng);
-    xCheck(ok);
+    ASSERT(ok);
 	 xCheck(maxv16(x, n) < bound);
     for (int i = 0; i < n; i++) counts[x[i]]++;
     xCheckMsg(check_balanced_counts(counts, bound), engine);
@@ -98,11 +98,11 @@ static inline bool bitset(uint16_t x, int b) {
 static void test_balanced_bits(char *engine) {
   uint16_t *x;
   int n = N_BAL_BITS;
-  xCheck(ALLOC(x, n));
+  TEST_ALLOC(x, n);
   randompack_rng *rng = create_seeded_rng(engine, 44);
-  xCheck(rng);
+  ASSERT(rng);
   bool ok = randompack_uint16(x, n, 0, rng); // bound = 0 => unbounded
-  xCheck(ok);
+  ASSERT(ok);
   int ones[16] = {0};
   for (int i = 0; i < n; i++) {
     for (int b = 0; b < 16; b++) {

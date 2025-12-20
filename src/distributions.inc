@@ -76,10 +76,8 @@ static void rand_normal(double x[], size_t n, randompack_rng *rng) {
 static void rand_uint64(uint64_t bound, uint64_t x[], size_t n, randompack_rng *rng) {
   // Sets x to n random integers in {0, 1,..., bound-1}
   if (bound == 0) {
-    rng->fill(x, n, rng);
-    rng->buf_word = BUFFSIZE;
-    rng->buf_byte = 0;
-    return;
+	 draw_u64_copy(x, n, rng);
+	 return;
   }
   size_t i = 0;
   uint64_t R;

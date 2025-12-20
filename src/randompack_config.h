@@ -27,9 +27,10 @@ static inline int max(int m, int n) { return m > n ? m : n; }
 static inline void copy16(void *dst, void *src, int n) { memcpy(dst, src, (size_t)n*2); }
 static inline void copy32(void *dst, void *src, int n) { memcpy(dst, src, (size_t)n*4); }
 static inline void copy64(void *dst, void *src, int n) { memcpy(dst, src, (size_t)n*8); }
-#ifndef BUFFSIZE
-#define BUFFSIZE 256
+#ifndef BUFSIZE
+#define BUFSIZE 256
 #endif
+_Static_assert(BUFSIZE % 8 == 0, "BUFSIZE must be a multiple of 8 uint64 words (64 bytes)");
 
 static inline uint64_t rand_splitmix64(uint64_t *x) {
   uint64_t z = (*x += 0x9E3779B97F4A7C15ULL);

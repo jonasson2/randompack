@@ -11,8 +11,9 @@ static void test_sample_api(void) {
   int k = 10;
   int sample[10];
   bool *seen;
-  xCheck(ALLOC(seen, n));
+  TEST_ALLOC(seen, n);
   randompack_rng *rng = create_seeded_rng("xoshiro256++", 11);
+  ASSERT(rng);
   bool ok = randompack_sample(sample, n, k, rng);
   check_success(ok, rng);
   for (int i = 0; i < n; i++) seen[i] = false;

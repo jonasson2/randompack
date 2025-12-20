@@ -35,9 +35,9 @@ static void test_range(int m, int n, double A[], int k, double Y[]) {
     printM("Y", Y, k, m);
   }
 
-  xCheck(ALLOC(B, n*n));
-  xCheck(ALLOC(X, n*k));
-  xCheck(ALLOC(R, m*k));
+  TEST_ALLOC(B, n*n);
+  TEST_ALLOC(X, n*k);
+  TEST_ALLOC(R, m*k);
 
   syrk("Lower", "T", n, m, 1.0, A, m, 1.0, B, n);        // B := A'A
   gemm("T", "T", n, k, m, 1.0, A, m, Y, k, 0.0, X, n);   // X := A'Y'
@@ -121,10 +121,10 @@ static void test_randnm(double Sig[], int rank) {
   double means[4], meanstd_N[4];
   bool ok;
 
-  xCheck(ALLOC(X,  N*4));
-  xCheck(ALLOC(X1, N1*4));
-  xCheck(ALLOC(X2, N1*4));
-  xCheck(ALLOC(X3, N1*4));
+  TEST_ALLOC(X,  N*4);
+  TEST_ALLOC(X1, N1*4);
+  TEST_ALLOC(X2, N1*4);
+  TEST_ALLOC(X3, N1*4);
 
   if (TESTVERBOSITY >= 3) printM("Sig", Sig, 4, 4);
 

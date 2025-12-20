@@ -1,19 +1,27 @@
 // -*- C -*-
 // A stateful rng implementation of Philox. The counter is stored
-// in rng->state and the key + cached output in rng->extra_state
+// in rng->state and the key in rng->extra_state
 typedef struct {
-  randompack_philox_key key;     // key.v[0..1]
-  uint64_t              out[4];  // cached block of 4 outputs
-  int                   idx;     // next word index in out, 0..4
+  randompack_philox_key key;
+  int idx;
 } philox_state;
 
-static uint64_t next_philox(randompack_rng *rng) {
-  philox_state *st = (philox_state *)rng->extra_state;
-  if (st->idx >= 4) {  // get next 4 words
-    randompack_counter ctr = *(randompack_counter *)rng->state.u64;
-    rand_phil_64bits(st->out, 4, ctr, st->key);
-    rng->state.u64[0]++;
-    st->idx = 0;
+static inline void fill_philox(randompack_rng *rng) {
+  uint64_t *out = rng->buf;
+  size_t n = BUFSIZE;
+  randompack_counter ctr;
+  randompack_philox_key key;
+  copy64(ctr.v, rng->state.u64, 4);
+  copy64(key.v, rng->state.u64 + 4, 2);
+  size_t i = 0;
+  while (i < n) {
+    randompack_counter blk = philox4x64(ctr, key);
+    int take = 4;
+    size_t rem = n - i;
+    if (rem < 4) take = (int)rem;
+    copy64(out + i, blk.v, take);
+    i += (size_t)take;
+    ctr.v[0]++;
   }
-  return st->out[st->idx++];
+  copy64(rng->state.u64, ctr.v, 4);
 }

@@ -2,8 +2,20 @@
 #ifndef TEST_UTIL_H
 #define TEST_UTIL_H
 
+#include <stdio.h>
+#include <stdlib.h>
+
 #include "randompack.h"
 #include "randompack_config.h"
+
+#define ASSERT(e) do { \
+  if (!(e)) { \
+    fprintf(stderr, "ASSERT failed %s:%d: %s\n", __FILE__, __LINE__, #e); \
+    abort(); \
+  } \
+} while (0)
+
+#define TEST_ALLOC(p, n) ASSERT(ALLOC((p), (n)))
 
 //------------------------------------------------------------------------------
 // Engine name tables used by tests
@@ -34,17 +46,16 @@ static char *abbrev[] = {
 typedef struct {
   const char *name;
   int state_words;
-  int extra_words;
 } engine_table_entry;
 
 static engine_table_entry engine_table[] = {
-  {"xorshift128+",  2,  0},
-  {"xoshiro256**",  4,  0},
-  {"xoshiro256++",  4,  0},
-  {"chacha20",      6, 17},
-  {"philox",        6,  7},
+  {"xorshift128+",  2},
+  {"xoshiro256**",  4},
+  {"xoshiro256++",  4},
+  {"chacha20",      6},
+  {"philox",        6},
 #ifdef HAVE128
-  {"pcg64_dxsm",    4,  0},
+  {"pcg64_dxsm",    4},
 #endif
 };
 //------------------------------------------------------------------------------

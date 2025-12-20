@@ -1,60 +1,27 @@
-// -*- mode: c; c-basic-offset: 2; -*-
+// -*- C -*-
+// The core of this file is copied from prng.di.unimi.it/xoshiro256plusplus.c, written in
+// 2019 by David Blackman and Sebastiano Vigna (vigna@acm.org; public domain).
 
-// Minor changes in this file from the original, downloaded from
-// https://prng.di.unimi.it on 30 Nov. 2025:
-//   Made next static and renamed it nextpp (to allow also nextss)
-//   Made s refer to rng->state instead of a global variable
-//   Removed the jump and long jump functions
-// Kristján Jónasson, jonasson@hi.is, Dept. of Computer Science, University of Iceland
-
-/*  Written in 2019 by David Blackman and Sebastiano Vigna (vigna@acm.org)
-
-To the extent possible under law, the author has dedicated all copyright
-and related and neighboring rights to this software to the public domain
-worldwide.
-
-Permission to use, copy, modify, and/or distribute this software for any
-purpose with or without fee is hereby granted.
-
-THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
-WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
-MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
-ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
-WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
-ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR
-IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE. */
-
-#include <stdint.h>
-
-/* This is xoshiro256++ 1.0, one of our all-purpose, rock-solid generators.
-   It has excellent (sub-ns) speed, a state (256 bits) that is large
-   enough for any parallel application, and it passes all tests we are
-   aware of.
-
-   For generating just floating-point numbers, xoshiro256+ is even faster.
-
-   The state must be seeded so that it is not everywhere zero. If you have
-   a 64-bit seed, we suggest to seed a splitmix64 generator and use its
-   output to fill s. */
-
-static inline uint64_t rotl(const uint64_t x, int k) {
-	return (x << k) | (x >> (64 - k));
-}
-
-static uint64_t nextpp(randompack_rng *rng) {
-        uint64_t *s = rng->state.u64;
-	const uint64_t result = rotl(s[0] + s[3], 23) + s[0];
-
-	const uint64_t t = s[1] << 17;
-
-	s[2] ^= s[0];
-	s[3] ^= s[1];
-	s[1] ^= s[2];
-	s[0] ^= s[3];
-
-	s[2] ^= t;
-
-	s[3] = rotl(s[3], 45);
-
-	return result;
+static inline void fill_x256pp(randompack_rng *rng) {
+  uint64_t *out = rng->buf;
+  size_t n = BUFSIZE;
+  uint64_t s0 = rng->state.u64[0];
+  uint64_t s1 = rng->state.u64[1];
+  uint64_t s2 = rng->state.u64[2];
+  uint64_t s3 = rng->state.u64[3];
+  for (size_t i = 0; i < n; i++) {
+    uint64_t result = ROTL64(s0 + s3, 23) + s0;
+    uint64_t t = s1 << 17;
+    s2 ^= s0;
+    s3 ^= s1;
+    s1 ^= s2;
+    s0 ^= s3;
+    s2 ^= t;
+    s3 = ROTL64(s3, 45);
+    out[i] = result;
+  }
+  rng->state.u64[0] = s0;
+  rng->state.u64[1] = s1;
+  rng->state.u64[2] = s2;
+  rng->state.u64[3] = s3;
 }

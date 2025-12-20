@@ -29,86 +29,15 @@ static uint64_t now_ns(void) {
   return (uint64_t)ts.tv_sec*1000000000ull + (uint64_t)ts.tv_nsec;
 }
 
-static double bench_engine(const char *engine, int seed, int n_total, int chunk) {
+static double time_engine(const char *engine, int seed, int n_total, int chunk) {
   randompack_rng *rng = randompack_create(engine);
-  ALLOC(buf, chunk);
-  uint64_t *buf = (uint64_t *)malloc((size_t)chunk*sizeof(uint64_t));
-  if (!buf) {
-    randompack_free(rng);
-    return -1.0;
-  }
-
-  volatile uint64_t sink = 0;
-
-  // Small warm-up (burn-in) to settle caches/branch predictors.
-  for (int i = 0; i < 4; i++) {
-    ok = randompack_uint64(buf, chunk, 0, rng);
-    if (!ok) break;
-    sink ^= buf[i];
-  }
-  if (!ok) {
-    free(buf);
-    randompack_free(rng);
-    return -1.0;
-  }
-
+  TEST_ALLOC(buf, chunk);
   uint64_t t0 = now_ns();
-  int left = n_total;
-  while (left > 0) {
-    int n = left < chunk ? left : chunk;
-    ok = randompack_uint64(buf, n, 0, rng);
-    if (!ok) break;
-    sink ^= buf[0];
-    sink ^= buf[n/2];
-    sink ^= buf[n-1];
-    left -= n;
-  }
+  ...
   uint64_t t1 = now_ns();
-
-  // Prevent the compiler from getting clever.
-  if (sink == 0x123456789abcdef0ull) printf("sink=%" PRIu64 "\n", sink);
-
-  free(buf);
-  randompack_free(rng);
-
-  if (!ok) return -1.0;
-
   double dt = (double)(t1 - t0)*1e-9;          // seconds
   double bytes = 8.0*(double)n_total;
   return (bytes/1e9)/dt;                       // GB/s (decimal)
-}
-
-static inline uint64_t rotl(uint64_t x, int k) {
-  return (x << k) | (x >> (64 - k));
-}
-
-static void seed_x256ss(uint64_t *s, int seed) {
-  uint64_t x = (uint64_t)seed;
-  for (int i = 0; i < 4; i++) s[i] = rand_splitmix64(&x);
-  if (s[0] == 0 && s[1] == 0 && s[2] == 0 && s[3] == 0) s[0] = 1;
-}
-
-static inline uint64_t nextss_state(uint64_t *s) {
-  uint64_t t = s[1] << 17;
-  uint64_t result = rotl(s[1] * 5, 7) * 9;
-  s[2] ^= s[0];
-  s[3] ^= s[1];
-  s[1] ^= s[2];
-  s[0] ^= s[3];
-  s[2] ^= t;
-  s[3] = rotl(s[3], 45);
-  return result;
-}
-
-static double bench_x256ss(int seed, int n_total) {
-  uint64_t s[4];
-  seed_x256ss(s, seed);
-  volatile uint64_t sink = 0;
-  uint64_t t0 = now_ns();
-  for (int i = 0; i < n_total; i++) sink ^= nextss_state(s);
-  uint64_t t1 = now_ns();
-  double dt = (double)(t1 - t0)*1e-9;
-  return (8.0*(double)n_total/1e9)/dt;
 }
 
 static int cmp_desc(const void *a, const void *b) {

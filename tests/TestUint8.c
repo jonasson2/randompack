@@ -11,26 +11,26 @@
 // Helper: create an RNG and fill n uint8 values with a given bound.
 static void draw_randoms(char *engine, uint8_t *x, int n, uint8_t bound, int seed) {
   randompack_rng *rng = create_seeded_rng(engine, seed);
-  xCheck(rng);
+  ASSERT(rng);
   bool ok = randompack_uint8(x, n, bound, rng);
-  xCheck(ok);
+  ASSERT(ok);
   randompack_free(rng);
 }
 
 static void two_part_draw(char *engine, uint8_t *x, int n1, int n2, int seed) {
   randompack_rng *rng = create_seeded_rng(engine, seed);
-  xCheck(rng);
-  xCheck(randompack_uint8(x, n1, 0, rng));
-  xCheck(randompack_uint8(x + n1, n2, 0, rng));
+  ASSERT(rng);
+  ASSERT(randompack_uint8(x, n1, 0, rng));
+  ASSERT(randompack_uint8(x + n1, n2, 0, rng));
   randompack_free(rng);
 }
 
 static void three_part_draw(char *engine, uint8_t *x, int n1, int n2, int n3, int seed) {
   randompack_rng *rng = create_seeded_rng(engine, seed);
-  xCheck(rng);
-  xCheck(randompack_uint8(x, n1, 0, rng));
-  xCheck(randompack_uint8(x + n1, n2, 0, rng));
-  xCheck(randompack_uint8(x + n1 + n2, n3, 0, rng));
+  ASSERT(rng);
+  ASSERT(randompack_uint8(x, n1, 0, rng));
+  ASSERT(randompack_uint8(x + n1, n2, 0, rng));
+  ASSERT(randompack_uint8(x + n1 + n2, n3, 0, rng));
   randompack_free(rng);
 }
 
@@ -68,15 +68,15 @@ static void test_unbounded_determinism(char *engine) {
 static void test_balanced_counts(char *engine) {
   uint8_t *x;
   int n = N_BAL_CNTS;
-  xCheck(ALLOC(x, n));
+  TEST_ALLOC(x, n);
   randompack_rng *rng = create_seeded_rng(engine, 42);
-  xCheck(rng);
+  ASSERT(rng);
   uint8_t bounds[] = {5, 10};
   for (int b = 0; b < LEN(bounds); b++) {
     uint8_t bound = bounds[b];
     int counts[10] = {0};
     bool ok = randompack_uint8(x, n, bound, rng);
-    xCheck(ok);
+    ASSERT(ok);
 	 xCheck(maxv8(x, n) < bound);
     for (int i = 0; i < n; i++) counts[x[i]]++;
     xCheckMsg(check_balanced_counts(counts, bound), engine);
@@ -93,11 +93,11 @@ static inline bool bitset(uint8_t x, int b) {
 static void test_balanced_bits(char *engine) {
   uint8_t *x;
   int n = N_BAL_BITS;
-  xCheck(ALLOC(x, n));
+  TEST_ALLOC(x, n);
   randompack_rng *rng = create_seeded_rng(engine, 44);
-  xCheck(rng);
+  ASSERT(rng);
   bool ok = randompack_uint8(x, n, 0, rng); // bound = 0 => unbounded
-  xCheck(ok);
+  ASSERT(ok);
   int ones[8] = {0};
   for (int i = 0; i < n; i++) {
     for (int b = 0; b < 8; b++) {

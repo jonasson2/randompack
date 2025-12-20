@@ -59,11 +59,11 @@ static void test_edge_cases(char *engine, char *method) {
   randompack_free(rng);
 }
 
-// Check that sample mean, variance, skewness, and kurtosis agree with theoretical values
+  // Check that sample mean, variance, skewness, and kurtosis agree with theoretical values
 static void test_statistics(char *engine, char *method) {
   int N = 1000;//N_statistics;
   double *x, mu, xbar, s2, stdmu, sigma2, stdsigma2, skew, skewstd, kurt, kurtstd;
-  xCheck(ALLOC(x, N));
+  TEST_ALLOC(x, N);
   draw_randoms(engine, method, x, N, 7);
   //
   // Check mean and variance

@@ -8,7 +8,7 @@
 static bool is_permutation(int *x, int n) {
   bool *seen;
   bool ok = true;
-  if (!ALLOC(seen, n)) return false;
+  TEST_ALLOC(seen, n);
   for (int i = 0; i < n; i++) seen[i] = false;
   for (int i = 0; i < n; i++) {
     int v = x[i];

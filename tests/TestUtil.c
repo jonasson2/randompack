@@ -126,8 +126,8 @@ void cov(char *transp, int m, int n, double X[], double C[]) {
   if (transp[0] == 'T') { tmp = n; n = m; m = tmp; }
   setzero(n*n, C);
   if (m <= 1) return;
-  ALLOC(mu, n);
-  ALLOC(Xm, m*n);
+  TEST_ALLOC(mu, n);
+  TEST_ALLOC(Xm, m*n);
   setzero(n, mu);
   if (transp[0] == 'T') copytranspose(n, m, X, n, Xm, m);
   else copy(m*n, X, 1, Xm, 1);
@@ -339,21 +339,21 @@ bool check_balanced_bits(int *ones, int N, int B) {
 }
 
 void check_rng_clean(randompack_rng *rng) {
-  xCheck(rng);
+  ASSERT(rng);
   char *err = randompack_last_error(rng);
-  xCheck(!err || !err[0]);
+  ASSERT(!err || !err[0]);
 }
 
 void check_success(bool ok, randompack_rng *rng) {
-  xCheck(ok);
+  ASSERT(ok);
   char *err = randompack_last_error(rng);
-  xCheck(!err || !err[0]);
+  ASSERT(!err || !err[0]);
 }
 
 void check_failure(bool ok, randompack_rng *rng) {
-  xCheck(!ok);
+  ASSERT(!ok);
   char *err = randompack_last_error(rng);
-  xCheck(err && err[0]);
+  ASSERT(err && err[0]);
 }
 
 randompack_rng *create_seeded_rng(const char *engine, int seed) {

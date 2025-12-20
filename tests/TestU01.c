@@ -59,7 +59,7 @@ static void test_statistics(char *engine) {
   double *x, stdmu, stds2, mu, s2;  
 
   // Draw a sample
-  ALLOC(x, N);
+  TEST_ALLOC(x, N);
   draw_randoms(engine, x, N, 42);
 
   // Check mean and variance

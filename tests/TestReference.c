@@ -181,7 +181,7 @@ static void TestPhiloxAgainstRandom123(void) { // Also stateful against stateles
 
   // Call counter-based philox
   bool ok = randompack_uint64_philox(x, 5, ctr, key);
-  xCheck(ok);
+  ASSERT(ok);
 
   // Compare with stateful version
   randompack_rng *rng = randompack_create("philox");
@@ -239,7 +239,7 @@ static void TestThreefryAgainstRandom123(void) {
 
   uint64_t x[5];
   bool ok = randompack_uint64_3fry(x, 5, ctr, key);
-  xCheck(ok);
+  ASSERT(ok);
 
   uint64_t r123[] = {
     11809167116910720061ull,

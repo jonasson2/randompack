@@ -24,7 +24,7 @@ static int engine_nstate(char *engine) {
 
 static randompack_rng *make_rng(char *engine) {
   randompack_rng *rng = randompack_create(engine);
-  xCheck(rng != 0);
+  ASSERT(rng);
   check_rng_clean(rng);
   return rng;
 }

@@ -10,7 +10,7 @@
 static void draw_stream(char *engine, uint64_t *x, int n,
                         int seed, const uint32_t *spawn_key, int nkey) {
   randompack_rng *rng = randompack_create(engine);
-  xCheck(rng != 0);
+  ASSERT(rng);
   check_rng_clean(rng);
   bool ok = randompack_seed(seed, (uint32_t *)spawn_key, nkey, rng);
   check_success(ok, rng);
@@ -22,7 +22,7 @@ static void draw_stream(char *engine, uint64_t *x, int n,
 static void draw_stream_reseed_same_rng(char *engine, uint64_t *x, uint64_t *y, int n,
                                         int seed, const uint32_t *spawn_key, int nkey) {
   randompack_rng *rng = randompack_create(engine);
-  xCheck(rng != 0);
+  ASSERT(rng);
   check_rng_clean(rng);
   bool ok = randompack_seed(seed, (uint32_t *)spawn_key, nkey, rng);
   check_success(ok, rng);
@@ -101,7 +101,7 @@ static void test_spawn_key_separation(void) {
 static void test_parkmiller_rejects_spawn_key(void) {
   // Requires the Park-Miller branch to reject any (spawn_key,nkey) != (0,0).
   randompack_rng *rng = randompack_create("park-miller");
-  xCheck(rng != 0);
+  ASSERT(rng);
   check_rng_clean(rng);
   uint32_t key[] = {1u};
   bool ok = randompack_seed(42, key, 1, rng);

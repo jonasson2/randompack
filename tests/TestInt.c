@@ -12,7 +12,7 @@
 // Helper: create an RNG and fill n ints in [min, max].
 static void draw_randoms(char *engine, int *x, int n, int min, int max, int seed) {
   randompack_rng *rng = create_seeded_rng(engine, seed);
-  xCheck(rng);
+  ASSERT(rng);
   bool ok = randompack_int(x, n, min, max, rng);
   check_success(ok, rng);
   randompack_free(rng);
@@ -59,7 +59,7 @@ static void test_seed_changes_output(char *engine) {
 static void test_balanced_bits(char *engine) {
   const int N = N_BAL_BITS;
   int *x;
-  xCheck(ALLOC(x, N));
+  TEST_ALLOC(x, N);
   randompack_rng *rng = create_seeded_rng(engine, 44);
   check_rng_clean(rng);
   bool ok = randompack_int(x, N, 0, INT_MAX - 2, rng);

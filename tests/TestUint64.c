@@ -13,9 +13,9 @@
 static void draw_bounded_randoms(char *engine, uint64_t *x, int len, uint64_t bound,
                                  int seed) {
   randompack_rng *rng = create_seeded_rng(engine, seed);
-  xCheck(rng);
+  ASSERT(rng);
   bool ok = randompack_uint64(x, len, bound, rng);
-  xCheck(ok);
+  ASSERT(ok);
   randompack_free(rng);
 }
 
@@ -31,22 +31,22 @@ static void draw_unbounded_randoms(char *engine, uint64_t *x, int len, int seed)
       randompack_3fry_key key;
       for (int i = 0; i < LEN(key.v); i++) key.v[i] = rand_splitmix64(&sm);
       ok = randompack_uint64_3fry(x, len, ctr, key);
-      xCheck(ok);
+      ASSERT(ok);
       print64("First draw from threefry", x[0]);
     }
     else {
       randompack_philox_key key;
       for (int i = 0; i < LEN(key.v); i++) key.v[i] = rand_splitmix64(&sm);
       ok = randompack_uint64_philox(x, len, ctr, key);
-      xCheck(ok);
+      ASSERT(ok);
       print64("First draw from philox", x[0]);
     }
   }
   else {
     randompack_rng *rng = create_seeded_rng(engine, seed);
-    xCheck(rng);
+    ASSERT(rng);
     ok = randompack_uint64(x, len, 0, rng);
-    xCheck(ok);
+    ASSERT(ok);
     randompack_free(rng);
   }
 }
@@ -76,7 +76,7 @@ static void test_unbounded_nonzero(char *engine) {
 static void test_balanced_counts(char *engine) {
   uint64_t *x;
   int n = N_BAL_CNTS;
-  xCheck(ALLOC(x, n));  
+  TEST_ALLOC(x, n);  
   uint64_t bounds[] = {5, 10};
   for (int b = 0; b < LEN(bounds); b++) {
     uint64_t bound = bounds[b];
@@ -96,7 +96,7 @@ static inline bool bitset64(uint64_t x, int b) {
 static void test_balanced_bits(char *engine) {
   uint64_t *x;
   int n = N_BAL_BITS;
-  xCheck(ALLOC(x, n));
+  TEST_ALLOC(x, n);
   draw_unbounded_randoms(engine, x, n, 45);
   int ones[64] = {0};
   for (int i = 0; i < n; i++) {

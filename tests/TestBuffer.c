@@ -8,11 +8,11 @@
 #include "xCheck.h"
 
 static void test_split_u64(char *engine) {
-  const int n = BUFFSIZE + 13;
-  const int n1 = BUFFSIZE - 3;
+  const int n = BUFSIZE + 13;
+  const int n1 = BUFSIZE - 3;
   uint64_t *a, *b;
-  xCheck(ALLOC(a, n));
-  xCheck(ALLOC(b, n));
+  TEST_ALLOC(a, n);
+  TEST_ALLOC(b, n);
   randompack_rng *r1 = create_seeded_rng(engine, 7);
   randompack_rng *r2 = create_seeded_rng(engine, 7);
   xCheck(r1 && r2);
@@ -27,11 +27,11 @@ static void test_split_u64(char *engine) {
 }
 
 static void test_unaligned_u16(char *engine) {
-  const int n = BUFFSIZE*5;
+  const int n = BUFSIZE*5;
   uint8_t toss[5];
   uint16_t *a, *b;
-  xCheck(ALLOC(a, n));
-  xCheck(ALLOC(b, n));
+  TEST_ALLOC(a, n);
+  TEST_ALLOC(b, n);
   randompack_rng *r1 = create_seeded_rng(engine, 11);
   randompack_rng *r2 = create_seeded_rng(engine, 11);
   xCheck(r1 && r2);
@@ -47,11 +47,11 @@ static void test_unaligned_u16(char *engine) {
 }
 
 static void test_unaligned_u32(char *engine) {
-  const int n = BUFFSIZE*3;
+  const int n = BUFSIZE*3;
   uint8_t toss[5];
   uint32_t *a, *b;
-  xCheck(ALLOC(a, n));
-  xCheck(ALLOC(b, n));
+  TEST_ALLOC(a, n);
+  TEST_ALLOC(b, n);
   randompack_rng *r1 = create_seeded_rng(engine, 13);
   randompack_rng *r2 = create_seeded_rng(engine, 13);
   xCheck(r1 && r2);

@@ -9,7 +9,7 @@
 #include "TestUtil.h"
 #include "xCheck.h"
 
-enum { STATE_MIN_NEED_TEST = 64 }; // The tests version of STATE_MIN_NEED of randompack.c
+enum { STATE_MIN_NEED_TEST = 64 + 8*BUFSIZE }; // The tests version of STATE_MIN_NEED
 
 // --- helpers -------------------------------------------------------------
 static engine_table_entry *find_engine_meta(const char *name) {
@@ -40,7 +40,7 @@ static uint8_t *serialize_rng(randompack_rng *rng, int *len) {
   bool ok = randompack_serialize(0, len, rng);
   check_success(ok, rng);
   uint8_t *buf = 0;
-  xCheck(ALLOC(buf, *len));
+  TEST_ALLOC(buf, *len);
   ok = randompack_serialize(buf, len, rng);
   check_success(ok, rng);
   return buf;
@@ -69,7 +69,7 @@ static void draw_mix(randompack_rng *rng,
 static void test_sys_rejected(void) {
   int need = 0;
   randompack_rng *rng = randompack_create("system");
-  xCheck(rng != 0);
+  ASSERT(rng);
   bool ok = randompack_serialize(0, &need, rng);
   check_failure(ok, rng);
   uint8_t buf[STATE_MIN_NEED_TEST];
@@ -84,7 +84,7 @@ static void test_sys_rejected(void) {
 static void test_engine_mismatch_rejected(void) {
   randompack_rng *r1 = randompack_create("chacha20");
   randompack_rng *r2 = randompack_create("xoshiro256++");
-  xCheck(r1 && r2);
+  ASSERT(r1 && r2);
   engine_table_entry *m = find_engine_meta("chacha20");
   uint64_t state[8];
   make_state(state, m->state_words, r1->engine);
@@ -101,7 +101,7 @@ static void test_engine_mismatch_rejected(void) {
 
 static void test_corrupt_header_rejected(void) {
   randompack_rng *rng = randompack_create("xoshiro256++");
-  xCheck(rng != 0);
+  ASSERT(rng);
   engine_table_entry *m = find_engine_meta("xoshiro256++");
   uint64_t state[8];
   make_state(state, m->state_words, rng->engine);
@@ -129,7 +129,7 @@ static void test_serialize_roundtrip_and_truncation(void) {
     xCheck(m != 0);
     randompack_rng *r1 = randompack_create(engines[i]);
     randompack_rng *r2 = randompack_create(engines[i]);
-    xCheck(r1 && r2);
+    ASSERT(r1 && r2);
     uint64_t state[8];
     make_state(state, m->state_words, r1->engine);
     bool ok = randompack_set_state(state, m->state_words, r1);
@@ -137,7 +137,7 @@ static void test_serialize_roundtrip_and_truncation(void) {
     int need = 0;
     ok = randompack_serialize(0, &need, r1);
     check_success(ok, r1);
-    xCheck(need == STATE_MIN_NEED_TEST + 8*m->extra_words);
+    xCheck(need == STATE_MIN_NEED_TEST);
     uint8_t *buf = serialize_rng(r1, &need);
     uint32_t u32a[23], u32b[23];
     double   za[11],  zb[11];
@@ -149,14 +149,33 @@ static void test_serialize_roundtrip_and_truncation(void) {
     xCheck(equal_vec32(u32a, u32b, 23));
     xCheck(equal_vecd_bits(za, zb, 11));
     xCheck(equal_vec64(u64a, u64b, 17));
-    if (m->extra_words > 0) {
-      ok = randompack_deserialize(buf, STATE_MIN_NEED_TEST, r2);
-      check_failure(ok, r2);
-    }
     FREE(buf);
     randompack_free(r1);
     randompack_free(r2);
   }
+}
+
+static void test_buffer_serialized(void) {
+  uint32_t a[4], b[4];
+  randompack_rng *r1 = create_seeded_rng("xoshiro256++", 5);
+  randompack_rng *r2 = randompack_create("xoshiro256++");
+  randompack_rng *r3 = create_seeded_rng("xoshiro256++", 5);
+  xCheck(r1 && r2 && r3);
+  bool ok = randompack_uint32(a, 2, 0, r1);
+  check_success(ok, r1);
+  int len = 0;
+  uint8_t *buf = serialize_rng(r1, &len);
+  ok = randompack_deserialize(buf, len, r2);
+  check_success(ok, r2);
+  ok = randompack_uint32(a + 2, 2, 0, r2);
+  check_success(ok, r2);
+  ok = randompack_uint32(b, 4, 0, r3);
+  check_success(ok, r3);
+  xCheck(equal_vec32(a, b, 4));
+  FREE(buf);
+  randompack_free(r1);
+  randompack_free(r2);
+  randompack_free(r3);
 }
 // --- entry point ---------------------------------------------------------
 void TestSerialize(void) {
@@ -164,4 +183,5 @@ void TestSerialize(void) {
   test_engine_mismatch_rejected();
   test_corrupt_header_rejected();
   test_serialize_roundtrip_and_truncation();
+  test_buffer_serialized();
 }
