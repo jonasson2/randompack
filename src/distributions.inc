@@ -83,26 +83,8 @@ static inline void rand_normal(double *x, int n, randompack_rng *rng) {
 }
 
 static inline void rand_exp(double *x, int n, randompack_rng *rng) {
-  align64(rng);               // make sure we're on a word boundary
-  int i = 0;
-
-  while (i < n) {
-    fill_buf_if_empty(rng);
-
-    int avail = BUFSIZE - rng->buf_word;
-    int take = n - i;
-    if (take > avail) take = avail;
-
-    uint64_t *p = rng->buf + rng->buf_word;
-
-    for (int j = 0; j < take; j++) {
-      uint64_t v = p[j];
-      double u = (double)(v >> 11) * 0x1.0p-53;
-      x[i + j] = -log1p(-u);
-    }
-
-    rng->buf_word += take;
-    i += take;
+  for (int i = 0; i < n; i++) {
+    x[i] = random_standard_exponential(rng);
   }
 }
 
