@@ -5,6 +5,7 @@ test_sources = files(
   'TestPerm.c',
   'TestSample.c',
   'TestNormal.c',
+  'TestExp.c',
   'TestU01.c',
   'TestMvn.c',
   'TestUint8.c',

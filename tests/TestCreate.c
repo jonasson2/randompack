@@ -58,11 +58,10 @@ static void test_bad_engine_name(void) {
   xCheck(err && err[0]); // non-null, non-blank
   bool ok = randompack_uint64(0, 1, 0, rng); // null output buffer
   check_failure(ok, rng);
-  char *err2 = randompack_last_error(rng);
   printS("create_seeded_rng with engine", "garbage");
   printS("last error", err);
   printMsg("randompack_uint64 with null output buffer");
-  printS("last error", err2);
+  printS("last error", randompack_last_error(rng));
   randompack_free(rng);
 }
 

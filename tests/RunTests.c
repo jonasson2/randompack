@@ -85,6 +85,7 @@ int main(int argc, char **argv) {
   run_test("Sample",   TestSample); // ditto
   run_test("U01",      TestU01);
   run_test("Normal",   TestNormal);
+  run_test("Exp",      TestExp);
   run_test("Mvn",      TestMvn);
   // TODO: Timing
   // Next: exp, t, gamma, beta... 

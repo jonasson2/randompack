@@ -43,6 +43,24 @@ static void CheckSeedSeqFe128Pool(std::vector<uint32_t> x) {
       throw std::runtime_error(msg.str());
     }
   }
+
+  std::vector<uint32_t> out_cpp(8);
+  ss_cpp.generate(out_cpp.begin(), out_cpp.end());
+
+  uint32_t out_c[8];
+  seed_seq_fe128_generate(&ss_c, out_c, 8);
+
+  for (int i = 0; i < 8; i++) {
+    uint32_t a = out_cpp[i];
+    uint32_t b = out_c[i];
+    if (a != b) {
+      std::ostringstream msg;
+      msg << "seed_seq_fe128 generate mismatch at i=" << i
+          << " (cpp=0x" << std::hex << a
+          << ", c=0x"   << std::hex << b << ")";
+      throw std::runtime_error(msg.str());
+    }
+  }
 }
 
 static void RunSeedSeqFe128PoolTests() {

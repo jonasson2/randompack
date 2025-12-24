@@ -18,10 +18,12 @@
 extern int TESTVERBOSITY;
 
 static void msg(char *message) {
-  if (TESTVERBOSITY >= 2) {
-    printMsg("");
-    printMsgUpper(message);
+  if (TESTVERBOSITY < 2) {
+    (void)message;
+    return;
   }
+  printMsg("");
+  printMsgUpper(message);
 }
 
 static void test_range(int m, int n, double A[], int k, double Y[]) {

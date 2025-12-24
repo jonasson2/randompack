@@ -1,7 +1,8 @@
 // -*- C -*-
-// Timing benchmark: uint64 throughput (GB/s) for randompack engines.
+// Timing benchmark: throughput (GB/s) across distributions for randompack engines.
 
 #include <inttypes.h>
+#include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -9,84 +10,238 @@
 #include <string.h>
 #include <time.h>
 
+#include "Util.h"
 #include "randompack.h"
 #include "randompack_config.h"
+#include "reference_rng.h"
+
+#define K 1024
+#define M (K*K)
+#define G (K*M)
+
+enum {
+  DIST_UINT64,
+  DIST_U01,
+  DIST_NORMAL,
+  DIST_EXP,
+  DIST_COUNT
+};
 
 typedef struct {
-  const char *name;
-  double gbps;
-  bool ok;
+  char *name;
+  double gbps[DIST_COUNT];
+  double secs[DIST_COUNT];
+  bool ok[DIST_COUNT];
 } row_t;
 
-static uint64_t now_ns(void) {
-#if defined(CLOCK_MONOTONIC_RAW)
-  const clockid_t clk = CLOCK_MONOTONIC_RAW;
-#else
-  const clockid_t clk = CLOCK_MONOTONIC;
-#endif
-  struct timespec ts;
-  clock_gettime(clk, &ts);
-  return (uint64_t)ts.tv_sec*1000000000ull + (uint64_t)ts.tv_nsec;
+static volatile uint64_t sink;
+
+static inline void consume_double(double x) {
+  uint64_t u;
+  memcpy(&u, &x, sizeof(u));   // bitwise, no FP work
+  sink ^= u;
 }
 
-static double time_engine(const char *engine, int seed, int n_total, int chunk) {
+static double bench_randompack(char *engine, int seed, int n_total, int chunk,
+  int dist, double *secs) {
   randompack_rng *rng = randompack_create(engine);
-  TEST_ALLOC(buf, chunk);
-  uint64_t t0 = now_ns();
-  ...
-  uint64_t t1 = now_ns();
-  double dt = (double)(t1 - t0)*1e-9;          // seconds
-  double bytes = 8.0*(double)n_total;
-  return (bytes/1e9)/dt;                       // GB/s (decimal)
+  ASSERT(rng);
+  ASSERT(randompack_seed(seed, 0, 0, rng));
+  double t0 = get_time();
+  if (dist == DIST_UINT64) {
+    uint64_t *buf;
+    TEST_ALLOC(buf, chunk);
+    int produced = 0;
+    while (produced < n_total) {
+      int take = n_total - produced;
+      if (take > chunk) take = chunk;
+      bool ok = randompack_uint64(buf, take, 0, rng);
+      ASSERT(ok);
+      produced += take;
+    }
+    FREE(buf);
+  }
+  else {
+    double *buf;
+    TEST_ALLOC(buf, chunk);
+    int produced = 0;
+    while (produced < n_total) {
+      int take = n_total - produced;
+      if (take > chunk) take = chunk;
+      bool ok = false;
+      if (dist == DIST_U01) ok = randompack_u01(buf, take, rng);
+      else if (dist == DIST_NORMAL) ok = randompack_norm(buf, take, rng);
+      else if (dist == DIST_EXP) ok = randompack_exp(buf, take, rng);
+      else ASSERT(false);
+      ASSERT(ok);
+      consume_double(buf[take-1]);
+      produced += take;
+    }
+    FREE(buf);
+  }
+  double t1 = get_time();
+  randompack_free(rng);
+  double dt = t1 - t0;
+  if (secs) *secs = dt;
+  double bytes = 8.0*n_total;
+  return (bytes/1e9)/dt; // GB/s (decimal)
 }
 
-static int cmp_desc(const void *a, const void *b) {
-  const row_t *ra = (const row_t *)a;
-  const row_t *rb = (const row_t *)b;
-  if (ra->ok != rb->ok) return ra->ok ? -1 : 1;
-  if (!ra->ok) return strcmp(ra->name, rb->name);
-  if (ra->gbps < rb->gbps) return 1;
-  if (ra->gbps > rb->gbps) return -1;
-  return strcmp(ra->name, rb->name);
+static volatile uint64_t direct_sink;
+
+typedef void (*fill_x256pp_double)(double *buf, int n, uint64_t *s0,
+  uint64_t *s1, uint64_t *s2, uint64_t *s3, uint64_t *accum);
+
+typedef void (*fill_x256pp_u64)(uint64_t *buf, int n, uint64_t *s0,
+  uint64_t *s1, uint64_t *s2, uint64_t *s3, uint64_t *accum);
+
+static double bench_direct_x256pp_double(int n_total, double *secs,
+  fill_x256pp_double fill) {
+  uint64_t s0 = 1, s1 = 2, s2 = 3, s3 = 4;
+  uint64_t accum = 0;
+  double *buf = 0;
+  TEST_ALLOC(buf, BUFSIZE);
+  double t0 = get_time();
+  int produced = 0;
+  while (produced < n_total) {
+    int take = n_total - produced;
+    if (take > BUFSIZE) take = BUFSIZE;
+    fill(buf, take, &s0, &s1, &s2, &s3, &accum);
+    produced += take;
+  }
+  double t1 = get_time();
+  direct_sink ^= accum ^ s0 ^ s1 ^ s2 ^ s3;
+  FREE(buf);
+  double dt = t1 - t0;
+  if (secs) *secs = dt;
+  double bytes = 8.0*n_total;
+  return (bytes/1e9)/dt;
 }
 
-int main(void) {
+static double bench_direct_x256pp_u64fill(int n_total, double *secs,
+  fill_x256pp_u64 fill) {
+  uint64_t s0 = 1, s1 = 2, s2 = 3, s3 = 4;
+  uint64_t accum = 0;
+  uint64_t *buf = 0;
+  TEST_ALLOC(buf, BUFSIZE);
+  double t0 = get_time();
+  int produced = 0;
+  while (produced < n_total) {
+    int take = n_total - produced;
+    if (take > BUFSIZE) take = BUFSIZE;
+    fill(buf, take, &s0, &s1, &s2, &s3, &accum);
+    produced += take;
+  }
+  double t1 = get_time();
+  direct_sink ^= accum ^ s0 ^ s1 ^ s2 ^ s3;
+  FREE(buf);
+  double dt = t1 - t0;
+  if (secs) *secs = dt;
+  double bytes = 8.0*n_total;
+  return (bytes/1e9)/dt;
+}
+
+static double bench_direct_x256pp_exp(int n_total, double *secs) {
+  return bench_direct_x256pp_double(n_total, secs, fill_x256pp_exp);
+}
+
+static double bench_direct_x256pp_norm(int n_total, double *secs) {
+  return bench_direct_x256pp_double(n_total, secs, fill_x256pp_norm_polar);
+}
+
+static double bench_direct_x256pp_u64(int n_total, double *secs) {
+  return bench_direct_x256pp_u64fill(n_total, secs, fill_x256pp_u64);
+}
+
+static double bench_direct_x256pp_u01(int n_total, double *secs) {
+  return bench_direct_x256pp_double(n_total, secs, fill_x256pp_u01);
+}
+
+static void print_cell(double secs, bool ok, int n_total) {
+  if (!ok) printf(" %8s", "n/a");
+  else printf(" %8.2f", secs * 1.0e9 / n_total);
+}
+
+int main(int argc, char **argv) {
   // Adjust if you want longer/shorter runs.
-  const int seed = 7;
-  const int n_total = (1<<27) / 10;   // shorter run while debugging
-  const int chunk   = 1<<12;
-
-  // Engine names must match what randompack_create expects in your build.
-  const char *engines[] = {
-    "xorshift128+",
-    "xoshiro256++",
-    "xoshiro256**",
-    "pcg64",
-    "philox",
-    "chacha20",
-    "system",
-  };
-  const int m = (int)(sizeof(engines)/sizeof(engines[0]));
-  row_t rows[32];
-  int k = 0;
-
-  rows[k].name = "xoshiro256** (direct)";
-  rows[k].gbps = bench_x256ss(seed, n_total);
-  rows[k].ok = rows[k].gbps >= 0.0;
-  k++;
-
-  for (int i = 0; i < m; i++) {
-    rows[k].name = engines[i];
-    rows[k].gbps = bench_engine(engines[i], seed, n_total, chunk);
-    rows[k].ok = rows[k].gbps >= 0.0;
-    k++;
+  int seed = 7;
+  int n_total = M/8;
+  int chunk   = 256;
+  if (argc > 1) {
+    int v = atoi(argv[1]);
+    if (v > 0) chunk = v;
   }
 
-  qsort(rows, (size_t)k, sizeof(rows[0]), cmp_desc);
+  double t1 = get_time();
+  warmup_cpu(100);
+  double t2 = get_time();
+  printf("warm-up time:     %.6f s\n", t2 - t1);
+  printf("latency:          ns/value\n");
 
-  printf("\n%-16s %7s\n", "Engine", "GB/s");
-  for (int i = 0; i < k; i++) {
-    printf("%-16s %7.2f\n", rows[i].name, rows[i].gbps);
+  row_t rows[32];
+
+  char *dist_names[DIST_COUNT] = {
+    "uint64",
+    "u01",
+    "normal",
+    "exp",
+  };
+
+  struct {
+    char *name;
+    bool direct;
+  } engines[] = {
+    { "xoshiro256++ (direct)", true  },
+    { "xoshiro256++",          false },
+    { "xoshiro256**",          false },
+    { "xorshift128+",          false },
+    { "pcg64",                 false },
+    { "philox",                false },
+    { "system",                false },
+    { "chacha20",              false },
+  };
+  int n_engines = LEN(engines);
+
+  for (int i = 0; i < n_engines; i++) {
+    rows[i].name = engines[i].name;
+    for (int j = 0; j < DIST_COUNT; j++) {
+      double secs = 0.0;
+      double gbps = -1.0;
+      if (engines[i].direct) {
+        if (j == DIST_UINT64) {
+          gbps = bench_direct_x256pp_u64(n_total, &secs);
+        }
+        else if (j == DIST_U01) {
+          gbps = bench_direct_x256pp_u01(n_total, &secs);
+        }
+        else if (j == DIST_NORMAL) {
+          gbps = bench_direct_x256pp_norm(n_total, &secs);
+        }
+        else if (j == DIST_EXP) {
+          gbps = bench_direct_x256pp_exp(n_total, &secs);
+        }
+      }
+      else {
+        gbps = bench_randompack(engines[i].name, seed, n_total, chunk,
+          j, &secs);
+      }
+      rows[i].gbps[j] = gbps;
+      rows[i].secs[j] = secs;
+      rows[i].ok[j] = gbps >= 0;
+    }
+  }
+
+  printf("\n%-22s", "Engine");
+  for (int j = 0; j < DIST_COUNT; j++) {
+    printf(" %8s", dist_names[j]);
+  }
+  printf("\n");
+  for (int i = 0; i < n_engines; i++) {
+    printf("%-22s", rows[i].name);
+    for (int j = 0; j < DIST_COUNT; j++) {
+      print_cell(rows[i].secs[j], rows[i].ok[j], n_total);
+    }
+    printf("\n");
   }
   printf("\n");
 

@@ -15,6 +15,7 @@ void TestUint16(void);
 void TestUint32(void);
 void TestUint64(void);
 void TestNormal(void);
+void TestExp(void);
 void TestHelpers(void);
 void TestSeed(void);
 void TestSetState(void);

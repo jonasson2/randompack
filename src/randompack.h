@@ -65,6 +65,10 @@ bool randompack_sample( // Sample without replacement from 0..n-1, false on erro
   randompack_rng *rng   // in/out  Random number generator
 );
 
+double randompack_u01_draw( // Draw a single uniform random from [0,1)
+  randompack_rng *rng   // in/out  Random number generator
+);
+
 bool randompack_u01( // Generate uniform random numbers in [0,1), false on error
   double x[],           // out     n-vector: uniform random numbers in [0,1)
   size_t n,             // in      Number of variates
@@ -73,6 +77,12 @@ bool randompack_u01( // Generate uniform random numbers in [0,1), false on error
 
 bool randompack_norm( // Generate standard normal random numbers N(0,1), false on error
   double x[],           // out     n-vector: standard normal random numbers
+  size_t n,             // in      Number of variates
+  randompack_rng *rng   // in/out  Random number generator
+);
+
+bool randompack_exp( // Generate standard exponential random numbers, false on error
+  double x[],           // out     n-vector: standard exponential random numbers
   size_t n,             // in      Number of variates
   randompack_rng *rng   // in/out  Random number generator
 );

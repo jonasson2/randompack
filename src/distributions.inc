@@ -11,7 +11,9 @@ static int LastNonzeroColumn(int m, int n, double A[]) {
   return k + 2;
 }
 
-#include "zmgd.inc"   // static zmgd() lives here
+//#include "zmgd.inc"   // static zmgd() lives here
+#include "random_standard_normal.inc"
+#include "random_standard_exponential.inc"
 
 static void rand_dble(double x[], size_t n, randompack_rng *rng) {
   size_t i;
@@ -25,53 +27,98 @@ static void rand_dble(double x[], size_t n, randompack_rng *rng) {
     }
   }
   else {
-    for (i = 0; i < n; i++) {
-      uint64_t v = draw_u64(rng);
-      x[i] = (double)(v >> 11) * 0x1.0p-53;
+    align64(rng);
+    i = 0;
+    while (i < n) {
+      fill_buf_if_empty(rng);
+      int take = min((int)(n - i), BUFSIZE - rng->buf_word);
+      for (int j = 0; j < take; j++) {
+        uint64_t v = rng->buf[rng->buf_word + j];
+        x[i + j] = (double)(v >> 11) * 0x1.0p-53;
+      }
+      rng->buf_word += take;
+      i += take;
     }
   }
 }
 
-static void rand_normal_polar(double x[], size_t n, randompack_rng *rng) {
-  // Normal random numbers from N(0,1); uses polar method.
-  double u=0.0, v=0.0, uv[2], s=0.0, R;
-  if (n <= 0) return;
-  size_t k = 0;
-  if (rng->spare_norm == rng->spare_norm) {
-    x[k++] = rng->spare_norm;
-    rng->spare_norm = NAN;
-    if (k >= n) return;
-  }
-  while (k + 1 < n) {
-    do {
-      rand_dble(uv, 2, rng);
-      u = uv[0]*2.0 - 1.0;
-      v = uv[1]*2.0 - 1.0;
-      s = u*u + v*v;
-    } while (s <= 0.0 || s >= 1.0);
-    R = sqrt(-2.0*log(s)/s);
-    x[k++] = u*R;
-    x[k++] = v*R;
-  }
-  if (k < n) {
-    do {
-      rand_dble(uv, 2, rng);
-      u = uv[0]*2.0 - 1.0;
-      v = uv[1]*2.0 - 1.0;
-      s = u*u + v*v;
-    } while (s <= 0.0 || s >= 1.0);
-    R = sqrt(-2.0*log(s)/s);
-    x[k] = u*R;
-    rng->spare_norm = v*R;
+// static void rand_normal_polar(double x[], size_t n, randompack_rng *rng) {
+//   // Normal random numbers from N(0,1); uses polar method.
+//   double u=0.0, v=0.0, uv[2], s=0.0, R;
+//   if (n <= 0) return;
+//   size_t k = 0;
+//   if (rng->spare_norm == rng->spare_norm) {
+//     x[k++] = rng->spare_norm;
+//     rng->spare_norm = NAN;
+//     if (k >= n) return;
+//   }
+//   while (k + 1 < n) {
+//     do {
+//       rand_dble(uv, 2, rng);
+//       u = uv[0]*2.0 - 1.0;
+//       v = uv[1]*2.0 - 1.0;
+//       s = u*u + v*v;
+//     } while (s <= 0.0 || s >= 1.0);
+//     R = sqrt(-2.0*log(s)/s);
+//     x[k++] = u*R;
+//     x[k++] = v*R;
+//   }
+//   if (k < n) {
+//     do {
+//       rand_dble(uv, 2, rng);
+//       u = uv[0]*2.0 - 1.0;
+//       v = uv[1]*2.0 - 1.0;
+//       s = u*u + v*v;
+//     } while (s <= 0.0 || s >= 1.0);
+//     R = sqrt(-2.0*log(s)/s);
+//     x[k] = u*R;
+//     rng->spare_norm = v*R;
+//   }
+// }
+
+static inline void rand_normal(double *x, int n, randompack_rng *rng) {
+  for (int i=0; i<n; i++) {
+    x[i] = random_standard_normal(rng);
   }
 }
 
-static void rand_normal(double x[], size_t n, randompack_rng *rng) {
-  if (rng->spare_norm == INFINITY)
-	 for (size_t i = 0; i < n; i++) x[i] = zmgd(rng, rng); // ziggurat
-  else
-	 rand_normal_polar(x, n, rng);
+static inline void rand_exp(double *x, int n, randompack_rng *rng) {
+  align64(rng);               // make sure we're on a word boundary
+  int i = 0;
+
+  while (i < n) {
+    fill_buf_if_empty(rng);
+
+    int avail = BUFSIZE - rng->buf_word;
+    int take = n - i;
+    if (take > avail) take = avail;
+
+    uint64_t *p = rng->buf + rng->buf_word;
+
+    for (int j = 0; j < take; j++) {
+      uint64_t v = p[j];
+      double u = (double)(v >> 11) * 0x1.0p-53;
+      x[i + j] = -log1p(-u);
+    }
+
+    rng->buf_word += take;
+    i += take;
+  }
 }
+
+// static inline void rand_exp(double *x, int n, randompack_rng *rng) {
+//   for (int i=0; i<n; i++) {
+//     double u = randompack_u01_draw(rng);     // uses (v >> 11)*2^-53
+//     x[i] = -log1p(-u);
+//   }
+// }
+
+// static void rand_normal(double x[], size_t n, randompack_rng *rng) {
+//   if (rng->spare_norm == INFINITY)
+// 	 for (size_t i = 0; i < n; i++) x[i] = zmgd(rng, rng); // ziggurat
+//   else
+// 	 rand_normal_polar(x, n, rng);
+// }
 
 static void rand_uint64(uint64_t bound, uint64_t x[], size_t n, randompack_rng *rng) {
   // Sets x to n random integers in {0, 1,..., bound-1}

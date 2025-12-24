@@ -48,35 +48,46 @@ static inline uint8_t draw_byte(randompack_rng *rng) {
   return b;
 }
 
-static inline uint16_t rand_u16(randompack_rng *rng) {
-  align16(rng);
-  fill_buf_if_empty(rng);
-  uint64_t w = rng->buf[rng->buf_word];
-  uint16_t x = (uint16_t)(w >> (8*rng->buf_byte));
-  rng->buf_byte += 2;
-  if (rng->buf_byte == 8) {
-    rng->buf_byte = 0;
-    rng->buf_word++;
+static inline uint32_t draw_u32(randompack_rng *rng) {
+  int w = rng->buf_word;
+  int b = rng->buf_byte;
+  b = (b + 3)/4*4;
+  if (b == 8) { // Align to next 32-bit boundary
+    b = 0;
+    w++;
   }
+  if (w >= BUFSIZE) { // Refill if needed
+    rng->fill(rng);
+    w = 0;
+    b = 0;
+  }
+  uint64_t word = rng->buf[w];
+  uint32_t x = (b == 0) ? (uint32_t)word : (word >> 32);
+  b += 4;
+  if (b == 8) { // Advance by one 32-bit chunk
+    b = 0;
+    w++;
+  }
+  rng->buf_word = w;
+  rng->buf_byte = b;
   return x;
 }
 
-static inline uint32_t draw_u32(randompack_rng *rng) {
-  align32(rng);
-  fill_buf_if_empty(rng);
-  uint64_t w = rng->buf[rng->buf_word];
-  if (rng->buf_byte) { // buf_byte == 4 => high 32 bits
-    rng->buf_byte = 0;
-    rng->buf_word++;
-    return (uint32_t)(w >> 32);
+static inline uint64_t draw_u64(randompack_rng *rng) { // Fast single word
+  int w = rng->buf_word;
+  int b = rng->buf_byte;
+  if (b != 0) {
+    b = 0;
+    w++;
   }
-  rng->buf_byte = 4;   // low 32 bits
-  return (uint32_t)w;
-}
-
-static inline uint64_t draw_u64(randompack_rng *rng) {
-  fill_buf_if_empty(rng);
-  return rng->buf[rng->buf_word++];
+  if (w >= BUFSIZE) {
+    rng->fill(rng);
+    w = 0;
+    b = 0;
+  }
+  rng->buf_word = w + 1;
+  rng->buf_byte = b;
+  return rng->buf[w];
 }
 
 // Copy n fresh uint16 draws into out using the shared byte buffer.

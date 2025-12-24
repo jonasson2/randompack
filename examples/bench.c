@@ -4,124 +4,126 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
-#include <assert.h>
 
-typedef struct { uint64_t s[4]; } xoshiro256ss_state;
-
+#include "Util.h"
 #include "randompack.h"
 #include "randompack_config.h"
+#include "pcg64.h"
 
-static inline uint64_t rotl(uint64_t x, int k) {
-  return (x << k) | (x >> (64 - k));
+static inline pcg_ulong_t splitmix128(uint64_t *state) {
+  uint64_t lo = rand_splitmix64(state);
+  uint64_t hi = rand_splitmix64(state);
+  return ((pcg_ulong_t)hi << 64) | lo;
 }
 
-static inline uint64_t xoshiro256ss(xoshiro256ss_state *state) {
-  uint64_t result = rotl(state->s[1]*5, 7)*9;
-  uint64_t t = state->s[1] << 17;
-  state->s[2] ^= state->s[0];
-  state->s[3] ^= state->s[1];
-  state->s[1] ^= state->s[2];
-  state->s[0] ^= state->s[3];
-  state->s[2] ^= t;
-  state->s[3] = rotl(state->s[3], 45);
-  return result;
-}
-
-static inline void fill_local(uint64_t *out, int n, xoshiro256ss_state *state) {
-  uint64_t s0 = state->s[0], s1 = state->s[1], s2 = state->s[2], s3 = state->s[3];
+static inline void pcg64_local(uint64_t *restrict out, int n,
+  pcg64_t *state) {
+  uint64_t mul = 15750249268501108917ULL;
+  pcg_ulong_t st = state->state;
+  pcg_ulong_t inc = state->inc;
   for (int i = 0; i < n; i++) {
-    uint64_t t = s1 << 17;
-    uint64_t result = rotl(s1*5, 7)*9;
-    s2 ^= s0;
-    s3 ^= s1;
-    s1 ^= s2;
-    s0 ^= s3;
-    s2 ^= t;
-    s3 = rotl(s3, 45);
-    out[i] = result;
+    pcg_ulong_t s = st;
+    st = s*mul + inc;
+    uint64_t hi = s >> 64;
+    uint64_t lo = s | 1;
+    hi ^= hi >> 32;
+    hi *= mul;
+    hi ^= hi >> 48;
+    hi *= lo;
+    out[i] = hi;
   }
-  state->s[0] = s0;
-  state->s[1] = s1;
-  state->s[2] = s2;
-  state->s[3] = s3;
+  state->state = st;
+  state->inc = inc;
 }
 
-void xoshiro256ss_init(xoshiro256ss_state *state, uint64_t seed) {
-  state->s[0] = seed;
-  state->s[1] = seed*0x9e3779b97f4a7c15;
-  state->s[2] = seed + 0x6a09e667f3bcc908;
-  state->s[3] = seed ^ 0xbb67ae8584caa73b;
-  for (int i = 0; i < 16; i++) xoshiro256ss(state);
+void pcg64_init(pcg64_t *state, uint64_t seed) {
+  uint64_t sm = seed;
+  state->state = splitmix128(&sm);
+  state->inc = splitmix128(&sm) | 1;
 }
 
-static double get_time(void) {
-  struct timespec ts;
-  clock_gettime(CLOCK_MONOTONIC, &ts);
-  return (double)ts.tv_sec + (double)ts.tv_nsec/1e9;
+static double bench_randompack(int nbuf, int reps, int seed) {
+  double t0, t1;
+  randompack_rng *rng = randompack_create("pcg64_dxsm");
+  ASSERT(rng);
+  ASSERT(randompack_seed(seed, 0, 0, rng));
+  uint64_t *buf;
+  TEST_ALLOC(buf, nbuf);
+  t0 = get_time();
+  uint64_t s = 0;
+  for (int rep = 0; rep < reps; rep++) {
+	 randompack_uint64(buf, nbuf, 0, rng);
+  }
+  printf("s = %d", (int)s);
+  t1 = get_time();
+  FREE(buf);
+  randompack_free(rng);
+  return t1 - t0;
 }
 
 static void benchmark_bulk_array(int nbuf, int reps) {
   double t1, t2, t3, t4;
-  xoshiro256ss_state state;
-  xoshiro256ss_init(&state, 12345);
-  randompack_rng *rng = randompack_create("xoshiro256**");
-  assert(rng);
+  pcg64_t state;
+  pcg64_init(&state, 12345);
+  int rp_seed = 12345;
   uint64_t spin = 0, last = 0;
   double p = 0.0;
-  bool ok;
-  uint64_t *buf;
-  assert(ALLOC(buf, nbuf));
+  uint64_t *buf = 0, *buf2 = 0;
+  TEST_ALLOC(buf, nbuf);
+  TEST_ALLOC(buf2, nbuf);
 
-  int warmupreps = max(1, (int)1e8/nbuf);
-
-  // Long warmup to get CPU to full speed (especially important on ARM)
   t1 = get_time();
-  for (int w = 0; w < warmupreps; w++) {
-    fill_local(buf, nbuf, &state);
-    spin = buf[nbuf - 1];
-  }
+  warmup_cpu(100);
   t2 = get_time();
 
-  // Benchmark local xoshiro256**
-  for (int rep = 0; rep < reps; rep++) {
-    fill_local(buf, nbuf, &state);
-    last ^= buf[nbuf-1];
-  }
-  t3 = get_time();
-
   // Benchmark randompack
+  double rp_dt = bench_randompack(nbuf, reps, rp_seed);
+  t3 = t2 + rp_dt;
+
+  // Benchmark local pcg64_dxsm
   for (int rep = 0; rep < reps; rep++) {
-    ok = randompack_uint64(buf, nbuf, 0, rng);
-    assert(ok);
-    last ^= buf[nbuf - 1];
+    pcg64_local(buf, nbuf, &state);
+    //last ^= buf[nbuf-1];
   }
+  last ^= buf[nbuf-1];
   t4 = get_time();
 
   double total_bytes = 8.0*nbuf*reps;
-  double randompackspeed = total_bytes/1e9/(t3 - t2);
-  double localspeed = total_bytes/1e9/(t4 - t3);
-  printf("spin + last = %" PRIu64 "\n", (uint64_t)(spin + last));
+  double local_dt = t4 - t3;
+  double randompackspeed = total_bytes/1e9/rp_dt;
+  double localspeed = total_bytes/1e9/local_dt;
+  double t5 = get_time();
+  for (int rep = 0; rep < reps; rep++) memcpy(buf2, buf, nbuf*8);
+  double t6 = get_time();
+  double memcpy_dt = t6 - t5;
+  double memcpy_speed = total_bytes/1e9/memcpy_dt;
+  printf("spin + last = %" PRIu64 "\n", spin + last);
   printf("p = %.4f\n", p);
-  printf("warm-up time:     %.2f s\n", t2 - t1);
+  printf("warm-up time:     %.6f s\n", t2 - t1);
   printf("randompack speed: %.2f GB/s\n", randompackspeed);
   printf("local fn speed:   %.2f GB/s\n", localspeed);
-  printf("randompack time:  %.2f s\n", t3 - t2);
-  printf("local fn time:    %.2f s\n", t4 - t3);
+  printf("memcpy speed:     %.2f GB/s\n", memcpy_speed);
+  printf("randompack time:  %.6f s\n", rp_dt);
+  printf("local fn time:    %.6f s\n", local_dt);
+  printf("memcpy time:      %.6f s\n", memcpy_dt);
   FREE(buf);
-  randompack_free(rng);
+  FREE(buf2);
 }
 
 int main(int argc, char **argv) {
-  int nbuf = argc > 1 ? (int)strtoull(argv[1], 0, 10) : 1000000;
-  if (nbuf <= 0) nbuf = (int)1e6;
-  const long long ntotal = (long long)1e9;
+  const int K = 1024, M = K*K; 
+  int nbuf = argc > 1 ? strtoull(argv[1], 0, 10) : 256;
+  if (nbuf <= 0) nbuf = 256;
+  long long ntotal = argc > 2 ? strtoull(argv[2], 0, 10) : 256*M;
+  if (ntotal < nbuf) ntotal = nbuf;
   int reps = ntotal/nbuf;
-  if (argc > 2) reps = (int)strtoull(argv[2], 0, 10);
   if (reps < 1) reps = 1;
+  ntotal = (long long)reps*nbuf;
   printf("nbuf:   %d K\n", nbuf/1000);
   printf("reps:   %d K\n", reps/1000);
-  printf("ntotal: %d G\n", (int)(ntotal/1e9));
+  printf("ntotal: %.0f\n", ntotal/1e9);
   benchmark_bulk_array(nbuf, reps);
   return 0;
 }

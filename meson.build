@@ -6,13 +6,22 @@ project('randompack', 'c', 'fortran', 'cpp',
     'warning_level=3',
     'buildtype=debug',
     'default_library=both',
+    'b_lto=true',
   ]
 )
 
+fc = meson.get_compiler('fortran')
 add_project_arguments('-Wno-do-subscript', language : 'fortran')
+add_project_arguments(fc.get_supported_arguments(['-Wno-function-elimination']),
+  language : 'fortran')
 
 buildtype = get_option('buildtype')
 host_system = host_machine.system()
+
+if buildtype == 'release'
+  add_project_arguments(['-mtune=native', '-fomit-frame-pointer'],
+    language : 'c')
+endif
 
 # Get user-specified BLAS order or use platform defaults
 blas_order_option = get_option('blas_order')
@@ -84,7 +93,8 @@ endif
 #   blas_dep = declare_dependency()  # no BLAS, for symbol inspection
 
 # Your own headers live in src/ for now
-inc = include_directories('src')
+inc = include_directories('src', 'common')
+common_util = files('common/Util.c')
 
 subdir('src')
 subdir('tests')

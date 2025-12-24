@@ -3,12 +3,12 @@
 // See RandomNumbers.h for further information, including parameter descriptions
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <stdint.h>
 #include <math.h>
 #include <stdbool.h>
 #include <string.h>
 #include <time.h>
-#include <assert.h>
 #include "randompack.h"
 #include "randompack_config.h"
 #include "BlasGateway.h"
@@ -64,9 +64,12 @@ typedef struct {
 #include "distributions.inc"
 
 #ifdef HAVE128 // Thin wrapper
+// Unused helper; keep for reference but disable to avoid warnings.
+#if 0
 static uint64_t next_pcg64(randompack_rng *rng) {
   return pcg64_random_fast(&rng->state.pcg);
 }
+#endif
 #else
 #define next_pcg64 0
 #endif
@@ -138,26 +141,9 @@ bool randompack_seed(int seed, uint32_t *spawn_key, int nkey, randompack_rng *rn
 		return false;
 	 }
 	 rng_entry *ent = find_entry(rng->engine);
-	 assert(ent);
     copy32(rng->state.u32, w, ent->state_words*2);
-    // if (rng->engine == CHACHA20) {
-    //   key256_t key;
-    //   nonce96_t nonce;
-    //   copy32(key,   w + 0, 8);
-    //   copy32(nonce, w + 8, 3);
-    //   ChaCha20_init(ctx, key, nonce, 0);
-    // }
-    // else {
-      // copy32(rng->state.u64, w, 8);
-      // if (rng->engine == PHILOX) {
-      //   philox_state *st = (philox_state *)rng->extra_state;
-      //   copy32(&st->key, w + 8, 4);
-      //   st->idx = 4;
-      // }
-      // else
-        if (rng->state.u64[0] == 0) { // the xo-family needs a nonzero state
-        rng->state.u64[0] = 1;
-      // }
+	 if (rng->state.u64[0] == 0) { // the xo-family needs a nonzero state
+		rng->state.u64[0] = 1;
     }
   }
   rng->buf_word = BUFSIZE;
@@ -168,6 +154,13 @@ bool randompack_seed(int seed, uint32_t *spawn_key, int nkey, randompack_rng *rn
 
 randompack_rng *randompack_create(const char *engine) {
   randompack_rng *rng;
+  #if defined(RANDOMPACK_NEED_RUNTIME_ENDIAN_CHECK)
+  uint32_t endian = 1;
+  if (*(uint8_t *)&endian != 1) {
+    fputs("randompack: big-endian platforms are not supported\n", stderr);
+    abort();
+  }
+  #endif
   // Create engine
   if (!ALLOC(rng, 1)) return 0;
   rng->last_error = 0;
@@ -184,7 +177,7 @@ randompack_rng *randompack_create(const char *engine) {
     return rng;
   }
   rng_entry *ent = find_entry(rng->engine);
-  assert(ent);
+  (void)ent;
   if (rng->engine == PARKMILLER) {
     uint64_t x;
     uint32_t s;
@@ -308,7 +301,6 @@ bool randompack_set_state(uint64_t state[], int nstate, randompack_rng *rng) {
     return false;
   }
   rng_entry *ent = find_entry(rng->engine);
-  assert(ent);
   if (rng->engine == SYS) {
     rng->last_error = "randompack_set_state: not supported for system-csprng";
     return false;
@@ -359,6 +351,10 @@ bool randompack_set_norm_method(char *method, randompack_rng *rng) {
   return true;
 } 
 
+double randompack_u01_draw(randompack_rng *rng) {
+  return (draw_u64(rng) >> 11) * 0x1.0p-53;
+}
+
 bool randompack_u01(double x[], size_t len, randompack_rng *rng) {
   if (!rng) return false;
   if (!x || len < 0)
@@ -394,16 +390,16 @@ bool randompack_int(int x[], size_t len, int m, int n, randompack_rng *rng) {
   return true;
 }
 
-bool randompack_uint32(uint32_t x[], size_t len, uint32_t bound, randompack_rng *rng) {
+bool randompack_uint8(uint8_t x[], size_t len, uint8_t bound, randompack_rng *rng) {
   if (!rng) return false;
   if (!x || len < 0)
-    rng->last_error = "randompack_uint32: invalid arguments";
+    rng->last_error = "randompack_uint8: invalid arguments";
   else if (rng->engine == PARKMILLER)
-    rng->last_error = "randompack_uint32: Park-Miller does not support uint32 randoms";
+    rng->last_error = "randompack_uint8: Park-Miller does not support uint8 randoms";
   else
     rng->last_error = 0;
   if (rng->last_error) return false;  
-  rand_uint32(bound, x, len, rng);
+  rand_uint8(bound, x, len, rng);
   return true;
 }
 
@@ -420,16 +416,16 @@ bool randompack_uint16(uint16_t x[], size_t len, uint16_t bound, randompack_rng 
   return true;
 }
 
-bool randompack_uint8(uint8_t x[], size_t len, uint8_t bound, randompack_rng *rng) {
+bool randompack_uint32(uint32_t x[], size_t len, uint32_t bound, randompack_rng *rng) {
   if (!rng) return false;
   if (!x || len < 0)
-    rng->last_error = "randompack_uint8: invalid arguments";
+    rng->last_error = "randompack_uint32: invalid arguments";
   else if (rng->engine == PARKMILLER)
-    rng->last_error = "randompack_uint8: Park-Miller does not support uint8 randoms";
+    rng->last_error = "randompack_uint32: Park-Miller does not support uint32 randoms";
   else
     rng->last_error = 0;
   if (rng->last_error) return false;  
-  rand_uint8(bound, x, len, rng);
+  rand_uint32(bound, x, len, rng);
   return true;
 }
 
@@ -495,6 +491,17 @@ bool randompack_norm(double x[], size_t len, randompack_rng *rng) {
     rng->last_error = 0;
   if (rng->last_error) return false;
   rand_normal(x, len, rng);
+  return true;
+}
+
+bool randompack_exp(double x[], size_t len, randompack_rng *rng) {
+  if (!rng) return false;
+  if (!x || len < 0)
+    rng->last_error = "invalid arguments to randompack_exp";
+  else
+    rng->last_error = 0;
+  if (rng->last_error) return false;
+  rand_exp(x, len, rng);
   return true;
 }
 

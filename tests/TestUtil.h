@@ -2,20 +2,9 @@
 #ifndef TEST_UTIL_H
 #define TEST_UTIL_H
 
-#include <stdio.h>
-#include <stdlib.h>
-
+#include "Util.h"
 #include "randompack.h"
 #include "randompack_config.h"
-
-#define ASSERT(e) do { \
-  if (!(e)) { \
-    fprintf(stderr, "ASSERT failed %s:%d: %s\n", __FILE__, __LINE__, #e); \
-    abort(); \
-  } \
-} while (0)
-
-#define TEST_ALLOC(p, n) ASSERT(ALLOC((p), (n)))
 
 //------------------------------------------------------------------------------
 // Engine name tables used by tests
