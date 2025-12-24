@@ -24,86 +24,68 @@ static inline uint64_t x256pp_next(uint64_t *s0, uint64_t *s1, uint64_t *s2,
   return result;
 }
 
-static inline double x256pp_u01(uint64_t *s0, uint64_t *s1, uint64_t *s2,
-  uint64_t *s3, uint64_t *accum) {
+static inline double x256pp_u01(uint64_t *s0, uint64_t *s1, uint64_t *s2, uint64_t *s3) {
   uint64_t result = x256pp_next(s0, s1, s2, s3);
-  *accum ^= result;
   return (double)(result >> 11) * 0x1.0p-53;
 }
 
-static inline double x256pp_exponential(uint64_t *s0, uint64_t *s1,
-  uint64_t *s2, uint64_t *s3, uint64_t *accum) {
-  double u = x256pp_u01(s0, s1, s2, s3, accum);
+static inline double x256pp_exponential(uint64_t *s0, uint64_t *s1, uint64_t *s2, uint64_t
+													 *s3) {
+  double u = x256pp_u01(s0, s1, s2, s3);
   return -log1p(-u);
 }
 
-static inline void fill_x256pp_u64(uint64_t *buf, int n, uint64_t *s0,
-  uint64_t *s1, uint64_t *s2, uint64_t *s3, uint64_t *accum) {
+static inline void fill_x256pp_u64(uint64_t *buf, int n, uint64_t *s0, uint64_t *s1,
+											  uint64_t *s2, uint64_t *s3) {
   for (int i = 0; i < n; i++) {
     uint64_t v = x256pp_next(s0, s1, s2, s3);
-    *accum ^= v;
     buf[i] = v;
   }
 }
 
 static inline void fill_x256pp_u01(double *buf, int n, uint64_t *s0,
-  uint64_t *s1, uint64_t *s2, uint64_t *s3, uint64_t *accum) {
+  uint64_t *s1, uint64_t *s2, uint64_t *s3) {
   for (int i = 0; i < n; i++) {
     uint64_t v = x256pp_next(s0, s1, s2, s3);
-    *accum ^= v;
     buf[i] = (double)(v >> 11) * 0x1.0p-53;
   }
 }
 
 static inline void fill_x256pp_exp(double *buf, int n, uint64_t *s0,
-  uint64_t *s1, uint64_t *s2, uint64_t *s3, uint64_t *accum) {
+  uint64_t *s1, uint64_t *s2, uint64_t *s3) {
   for (int i = 0; i < n; i++) {
-    buf[i] = x256pp_exponential(s0, s1, s2, s3, accum);
+    buf[i] = x256pp_exponential(s0, s1, s2, s3);
   }
 }
 
 static inline void fill_x256pp_norm_polar(double *buf, int n, uint64_t *s0,
-  uint64_t *s1, uint64_t *s2, uint64_t *s3, uint64_t *accum) {
+  uint64_t *s1, uint64_t *s2, uint64_t *s3) {
   int i = 0;
-
   while (i + 1 < n) {
     double u, v, s;
     uint64_t r1, r2;
-
     do {
       r1 = x256pp_next(s0, s1, s2, s3);
       r2 = x256pp_next(s0, s1, s2, s3);
-      *accum ^= (r1 ^ r2);
-
       // u,v in (-1,1): 2*u01-1 from top 53 bits
       u = 2.0*(double)(r1 >> 11) * 0x1.0p-53 - 1.0;
       v = 2.0*(double)(r2 >> 11) * 0x1.0p-53 - 1.0;
-
       s = u*u + v*v;
     } while (s >= 1.0 || s == 0.0);
-
-    // m = sqrt(-2 log(s) / s)
     double m = sqrt((-2.0*log(s))/s);
-
     buf[i++] = u*m;
     buf[i++] = v*m;
   }
-
   if (i < n) {
     double u, v, s;
     uint64_t r1, r2;
-
     do {
       r1 = x256pp_next(s0, s1, s2, s3);
       r2 = x256pp_next(s0, s1, s2, s3);
-      *accum ^= (r1 ^ r2);
-
       u = 2.0*(double)(r1 >> 11) * 0x1.0p-53 - 1.0;
       v = 2.0*(double)(r2 >> 11) * 0x1.0p-53 - 1.0;
-
       s = u*u + v*v;
     } while (s >= 1.0 || s == 0.0);
-
     double m = sqrt((-2.0*log(s))/s);
     buf[i] = u*m;
   }
