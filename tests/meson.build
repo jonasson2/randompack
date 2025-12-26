@@ -6,6 +6,7 @@ test_sources = files(
   'TestSample.c',
   'TestNormal.c',
   'TestExp.c',
+  'TestGamma.c',
   'TestU01.c',
   'TestMvn.c',
   'TestUint8.c',
@@ -22,6 +23,8 @@ test_sources = files(
 extra_util = files(
   'xCheck.c',
   'TestUtil.c',
+  'incbet.c',
+  'igam.c',
 )
 
 run_tests = executable(

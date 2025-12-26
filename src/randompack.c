@@ -357,7 +357,7 @@ double randompack_u01_draw(randompack_rng *rng) {
 
 bool randompack_u01(double x[], size_t len, randompack_rng *rng) {
   if (!rng) return false;
-  if (!x || len < 0)
+  if (!x)
     rng->last_error = "invalid arguments to randompack_u01";
   else
     rng->last_error = 0;
@@ -370,7 +370,7 @@ bool randompack_u01(double x[], size_t len, randompack_rng *rng) {
 bool randompack_int(int x[], size_t len, int m, int n, randompack_rng *rng) {
   if (!rng) return false;
   int64_t span = (int64_t)n - (int64_t)m;
-  if (!x || len < 0)
+  if (!x)
     rng->last_error = "invalid arguments to randompack_int";
   else if (m > n)
     rng->last_error = "randompack_int: m must be <= n";
@@ -392,7 +392,7 @@ bool randompack_int(int x[], size_t len, int m, int n, randompack_rng *rng) {
 
 bool randompack_uint8(uint8_t x[], size_t len, uint8_t bound, randompack_rng *rng) {
   if (!rng) return false;
-  if (!x || len < 0)
+  if (!x)
     rng->last_error = "randompack_uint8: invalid arguments";
   else if (rng->engine == PARKMILLER)
     rng->last_error = "randompack_uint8: Park-Miller does not support uint8 randoms";
@@ -405,7 +405,7 @@ bool randompack_uint8(uint8_t x[], size_t len, uint8_t bound, randompack_rng *rn
 
 bool randompack_uint16(uint16_t x[], size_t len, uint16_t bound, randompack_rng *rng) {
   if (!rng) return false;
-  if (!x || len < 0)
+  if (!x)
     rng->last_error = "randompack_uint16: invalid arguments";
   else if (rng->engine == PARKMILLER)
     rng->last_error = "randompack_uint16: Park-Miller does not support uint16 randoms";
@@ -418,7 +418,7 @@ bool randompack_uint16(uint16_t x[], size_t len, uint16_t bound, randompack_rng 
 
 bool randompack_uint32(uint32_t x[], size_t len, uint32_t bound, randompack_rng *rng) {
   if (!rng) return false;
-  if (!x || len < 0)
+  if (!x)
     rng->last_error = "randompack_uint32: invalid arguments";
   else if (rng->engine == PARKMILLER)
     rng->last_error = "randompack_uint32: Park-Miller does not support uint32 randoms";
@@ -431,7 +431,7 @@ bool randompack_uint32(uint32_t x[], size_t len, uint32_t bound, randompack_rng 
 
 bool randompack_uint64(uint64_t x[], size_t len, uint64_t bound, randompack_rng *rng) {
   if (!rng) return false;
-  if (!x || len < 0)
+  if (!x)
     rng->last_error = "invalid arguments to randompack_uint64";
   else if (rng->engine == PARKMILLER)
     rng->last_error = "randompack_uint64: Park-Miller does not support uint64 randoms";
@@ -445,7 +445,7 @@ bool randompack_uint64(uint64_t x[], size_t len, uint64_t bound, randompack_rng 
 
 bool randompack_perm(int x[], int len, randompack_rng *rng) {
   if (!rng) return false;
-  if (!x || len < 0)
+  if (!x)
     rng->last_error = "invalid arguments to randompack_perm";
   else if (len > INT_MAX - 1)
     rng->last_error = "randompack_perm: len must be <= 2^31 - 2";
@@ -458,7 +458,7 @@ bool randompack_perm(int x[], int len, randompack_rng *rng) {
 
 bool randompack_sample(int x[], int len, int k, randompack_rng *rng) {
   if (!rng) return false;
-  if (!x || len < 0 || k < 0 || k > len)
+  if (!x || k < 0 || k > len)
     rng->last_error = "invalid arguments to randompack_sample";
   else if (len > INT_MAX - 1)
     rng->last_error = "randompack_sample: len must be <= 2^31 - 2";	 
@@ -471,7 +471,7 @@ bool randompack_sample(int x[], int len, int k, randompack_rng *rng) {
 
 bool randompack_uint64_3fry(uint64_t x[], size_t len, randompack_counter ctr,
                             randompack_3fry_key key) {
-  if (!x || len < 0) return false;
+  if (!x) return false;
   rand_3fry_64bits(x, len, ctr, key);
   return true;
 }
@@ -485,7 +485,7 @@ bool randompack_uint64_philox(uint64_t x[], size_t len, randompack_counter ctr,
 
 bool randompack_norm(double x[], size_t len, randompack_rng *rng) {
   if (!rng) return false;
-  if (!x || len < 0)
+  if (!x)
     rng->last_error = "invalid arguments to randompack_norm";
   else
     rng->last_error = 0;
@@ -494,14 +494,26 @@ bool randompack_norm(double x[], size_t len, randompack_rng *rng) {
   return true;
 }
 
-bool randompack_exp(double x[], size_t len, randompack_rng *rng) {
+bool randompack_exp(double x[], size_t len, double scale, randompack_rng *rng) {
   if (!rng) return false;
-  if (!x || len < 0)
+  if (!x || scale <= 0) {
     rng->last_error = "invalid arguments to randompack_exp";
-  else
-    rng->last_error = 0;
-  if (rng->last_error) return false;
-  rand_exp(x, len, rng);
+	 return false;
+  }
+  rng->last_error = 0;
+  rand_exp(x, len, scale, rng);
+  return true;
+}
+
+bool randompack_gamma(double x[], size_t len, double shape, double scale,
+  randompack_rng *rng) {
+  if (!rng) return false;
+  if (!x || shape <= 0 || scale <= 0) {
+    rng->last_error = "invalid arguments to randompack_gamma";
+    return false;
+  }
+  rng->last_error = 0;
+  rand_gamma(x, len, shape, scale, rng);
   return true;
 }
 

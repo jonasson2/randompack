@@ -90,6 +90,10 @@ static inline uint64_t draw_u64(randompack_rng *rng) { // Fast single word
   return rng->buf[w];
 }
 
+static inline double draw_u01(randompack_rng *rng) {
+  return (draw_u64(rng) >> 11) * 0x1.0p-53;
+}
+
 // Copy n fresh uint16 draws into out using the shared byte buffer.
 static inline void draw_u16_copy(uint16_t *out, size_t n, randompack_rng *rng) {
   align16(rng);

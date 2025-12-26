@@ -140,40 +140,13 @@ void cov(char *transp, int m, int n, double X[], double C[]) {
   FREE(mu);
 }
 
-bool check_meanvar(double *x, int n, double mu, double sigma2, double std_mu,
-						 double std_sigma2) {
-  double xbar = mean(x, n);
-  double s2 = var(x, n, xbar);
-  double meantol = 7*std_mu;
-  double vartol = 7*std_sigma2;
-  if (fabs(xbar - mu) >= meantol) return false;
-  if (fabs(s2 - sigma2) >= vartol) return false;
-  return true;
-}
-
-bool check_skew(double *x, int n, double xbar, double s2, double skew, double skew_std) {
-  double skew_hat;
-  double tol = 7*skew_std;
-  skew_hat = skewness(x, n, xbar, s2);
-  printD("skew lower bound", skew - tol);
-  printD("skew upper bound", skew + tol);
-  printD("skew observed", skew_hat);
-  if (fabs(skew_hat - skew) >= tol) return false;
-  return true;
-}
-
-bool check_kurt(double *x, int n, double xbar, double s2, double kurt, double kurt_std) {
-  double kurt_hat;
-  double tol = 7*kurt_std;
-  kurt_hat = kurtosis(x, n, xbar, s2);
-  if (fabs(kurt_hat - kurt) >= tol) return false;
-  return true;
-}
-
 // Inverse normal CDF. Translation of PPND16 in AS241 (Wichura, 1988), public domain.
-#include <math.h>
-
-double probit(double p) { // Return NAN if p <= 0 or p >= 1
+double probit(double p) { // Return NAN if p < 0 or p > 1
+  if (p < 0 || p > 1) return NAN;
+  if (p == 0) return -DBL_MAX;  // New in the translation
+  if (p == 1) return  DBL_MAX;  //
+  p = fmax(p, nextafter(0, 1)); //
+  p = fmin(p, nextafter(1, 0)); //
   // Constants
   const double split1 = 0.425, split2 = 5.0, const1 = 0.180625, const2 = 1.6;
   const double
@@ -235,6 +208,87 @@ double probit(double p) { // Return NAN if p <= 0 or p >= 1
     if (q < 0.0) x = -x;
     return x;
   }
+}
+
+double normcdf(double x) {
+  return 0.5*erfc(-x/sqrt(2.0));
+}
+
+double normccdf(double x) {
+  return 0.5*erfc(x/sqrt(2.0));
+}
+
+double chi2_cdf(double x, int nu) {
+  if (x <= 0.0) return 0.0;
+  return igam(0.5*nu, 0.5*x);
+}
+
+double chi2_ccdf(double x, int nu) {
+  if (x <= 0.0) return 1.0;
+  return igamc(0.5*nu, 0.5*x);
+}
+
+double gamma_cdf(double x, double shape, double scale) {
+  if (x <= 0.0) return 0.0;
+  return igam(shape, x/scale);
+}
+
+double gamma_cdfc(double x, double shape, double scale) {
+  if (x <= 0.0) return 1.0;
+  return igamc(shape, x/scale);
+}
+
+bool check_meanvar(double *x, int n) {
+  // Mean and variance test for a standard normal x
+  if (n <= 1) return true;
+  double mu = 0, sigma = 1, xbar, s2, xbarstd, zstat, p_mean, t, p_var;
+  xbar = mean(x, n);
+  s2 = var(x, n, xbar);
+  xbarstd = sigma/sqrt(n);
+  zstat = fabs(xbar - mu)/xbarstd;
+  p_mean = 2.0*normccdf(zstat); // Mean test: (xbar - mu)/(sigma/sqrt(n)) ~ N(0,1)
+  t = n*s2;                     // Variance test: n*s2 ~ chi^2_{n-1}
+  p_var = 2.0*fmin(chi2_cdf(t, n - 1), chi2_ccdf(t, n - 1));
+  return p_mean >= TEST_P_VALUE && p_var >= TEST_P_VALUE;
+}
+
+bool check_skewkurt(double *x, int n, double skew, double kurt) {
+  // Skewness and kurtosis tests for a standard normal x
+  if (n <= 3) return true;
+  double xbar, s2, skew_hat, kurt_hat, skew_std, kurt_std, z_skew, z_kurt, p_skew, p_kurt;
+  xbar = mean(x, n);
+  s2 = var(x, n, xbar);
+  skew_hat = skewness(x, n, xbar, s2);
+  kurt_hat = kurtosis(x, n, xbar, s2);
+  skew_std = sqrt(6.0/n);
+  kurt_std = sqrt(24.0/n);
+  z_skew = fabs(skew_hat - skew)/skew_std;
+  z_kurt = fabs(kurt_hat - kurt)/kurt_std;
+  p_skew = 2.0*normccdf(z_skew);
+  p_kurt = 2.0*normccdf(z_kurt);
+  return p_skew >= TEST_P_VALUE && p_kurt >= TEST_P_VALUE;
+}
+
+bool check_u01_meanvar(double *x, int n) {
+  // Mean/variance test for U01 via probit -> N(0,1)
+  if (n <= 1) return true;
+  double *z;
+  TEST_ALLOC(z, n);
+  for (int i = 0; i < n; i++) z[i] = probit(x[i]);
+  bool ok = check_meanvar(z, n);
+  FREE(z);
+  return ok;
+}
+
+bool check_u01_skewkurt(double *x, int n) {
+  // Skewness/kurtosis test for U01 via probit -> N(0,1) (normal approximation)
+  if (n <= 3) return true;
+  double *z;
+  TEST_ALLOC(z, n);
+  for (int i = 0; i < n; i++) z[i] = probit(x[i]);
+  bool ok = check_skewkurt(z, n, 0.0, 3.0);
+  FREE(z);
+  return ok;
 }
 
 //------------------------------------------------------------------------------
@@ -310,32 +364,36 @@ double minvd(double *x, int n) {
 //------------------------------------------------------------------------------
 
 bool check_balanced_counts(int *counts, int n) {
-  double q = TEST_P_VALUE;
-  double mean, std, z, r, N = 0;
+  // Pearson chi-square goodness-of-fit for Multinomial(N; 1/n,...,1/n)
+  if (n <= 1) return true;
+  double N = 0.0;
   for (int i = 0; i < n; i++) N += counts[i];
-  mean = (double)N/n;
-  std = sqrt((double)N*(n - 1)/(n*n));
-  r = q/n/2;
-  z = probit(1 - r);
-  printD("counts allowed deviation", std*z);
+  if (N <= 0.0) return true;
+  double mean = N/n;
+  double x2 = 0.0;
+  for (int i = 0; i < n; i++) {
+    double d = counts[i] - mean;
+    x2 += d*d/mean;
+  }
+  double p = chi2_ccdf(x2, n - 1); // upper tail
+  printD("balanced counts p-value", p);
   printIVS("counts", counts, n);
-  for (int i = 0; i < n; i++)
-    if (fabs(counts[i] - mean) > std*z) return false;
-  return true;
+  return p >= TEST_P_VALUE;
 }
 
 bool check_balanced_bits(int *ones, int N, int B) {
-  double q = TEST_P_VALUE;
-  double r, mean, std, z;
-  mean = (double)N/2;
-  std = sqrt((double)N/4);
-  r = q/B/2;
-  z = probit(1 - r);
-  printD("bit allowed deviation", std*z);
+  // Pearson chi-square goodness-of-fit for B Bernoulli(0.5) variables
+  if (B <= 1 || N <= 0) return true;
+  double mean = (double)N/2.0;
+  double x2 = 0.0;
+  for (int b = 0; b < B; b++) {
+    double d = ones[b] - mean;
+    x2 += d*d/mean;
+  }
+  double p = chi2_ccdf(x2, B - 1); // upper tail
+  printD("balanced bits p-value", p);
   printIVS("bit-ones", ones, B);
-  for (int b = 0; b < B; b++)
-    if (fabs(ones[b] - mean) > std*z) return false;
-  return true;
+  return p >= TEST_P_VALUE;
 }
 
 void check_rng_clean(randompack_rng *rng) {
@@ -360,4 +418,35 @@ randompack_rng *create_seeded_rng(const char *engine, int seed) {
   randompack_rng *rng = randompack_create(engine);
   if (rng) randompack_seed(seed, 0, 0, rng);
   return rng;
+}
+
+bool check_u01_minmax(double *x, int n) {
+  if (n <= 0) return true;
+  const double q = TEST_P_VALUE;
+  double lo = q/2/n;      // ≈ Betainv(q/2, 1, n)
+  double hi = log(2/q)/n; // ≈ Betainv(1-q/2, n, 1)
+  double xmin = minvd(x, n);
+  double xmax = maxvd(x, n);
+  if (xmin < lo || xmin > hi) return false;
+  if (1 - xmax < lo || 1 - xmax > hi) return false;
+  return true;
+}
+
+bool check_u01_distribution(double *u, int n) {
+  if (n <= 1) return true;
+  int nbins = min(500, max(20, (int)sqrt(n)));
+  ASSERT(n/nbins >= 20);
+  int *counts;
+  TEST_ALLOC(counts, nbins);
+  for (int b = 0; b < nbins; b++) counts[b] = 0;
+  xCheck(check_u01_meanvar(u, n));
+  xCheck(check_u01_skewkurt(u, n));
+  xCheck(check_u01_minmax(u, n));
+  for (int i = 0; i < n; i++) {
+    int b = min(nbins - 1, (int)(nbins*u[i]));
+    counts[b]++;
+  }
+  bool ok = check_balanced_counts(counts, nbins);
+  FREE(counts);
+  return ok;
 }

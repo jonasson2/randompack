@@ -81,9 +81,18 @@ bool randompack_norm( // Generate standard normal random numbers N(0,1), false o
   randompack_rng *rng   // in/out  Random number generator
 );
 
-bool randompack_exp( // Generate standard exponential random numbers, false on error
-  double x[],           // out     n-vector: standard exponential random numbers
+bool randompack_exp( // Generate exponential random numbers, false on error
+  double x[],           // out     n-vector: exponential random numbers
   size_t n,             // in      Number of variates
+  double scale,         // in      Scale parameter (1.0 → standard exponential)
+  randompack_rng *rng   // in/out  Random number generator
+);
+
+bool randompack_gamma( // Generate gamma random numbers, false on error
+  double x[],           // out     n-vector: gamma random numbers
+  size_t n,             // in      Number of variates
+  double shape,         // in      Shape parameter (> 0)
+  double scale,         // in      Scale parameter (> 0)
   randompack_rng *rng   // in/out  Random number generator
 );
 

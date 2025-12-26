@@ -82,10 +82,11 @@ static inline void rand_normal(double *x, int n, randompack_rng *rng) {
   }
 }
 
-static inline void rand_exp(double *x, int n, randompack_rng *rng) {
-  for (int i = 0; i < n; i++) {
-    x[i] = random_standard_exponential(rng);
-  }
+static inline void rand_exp(double *x, int n, double scale, randompack_rng *rng) {
+  if (scale == 1)
+	 for (int i = 0; i < n; i++) x[i] = random_standard_exponential(rng);
+  else
+	 for (int i = 0; i < n; i++) x[i] = random_standard_exponential(rng)*scale;
 }
 
 // static inline void rand_exp(double *x, int n, randompack_rng *rng) {
@@ -302,6 +303,55 @@ static void rand_sample(int p[], size_t n, int k, randompack_rng *rng) {
     rand_int_pm_compatible(i+1, &r, 1, rng);
     if (r < k) p[r] = i;
   }
+}
+
+// -*- C -*-
+// Gamma RNG (shape, scale): Marsaglia–Tsang for shape>=1, boost trick for shape<1.
+
+#include <math.h>
+#include <stdbool.h>
+#include <stddef.h>
+
+#include "randompack.h"
+#include "randompack_config.h"
+
+static inline double gamma_shape1(double shape, randompack_rng *rng) {
+  double d = shape - 1.0/3.0;
+  double c = 1.0/sqrt(9.0*d);
+  for (;;) {
+    double z = random_standard_normal(rng);
+    double v = 1.0 + c*z;
+    if (v <= 0.0)
+      continue;
+    double v3 = v*v*v;
+    double u = draw_u01(rng);
+    if (u <= 0.0)
+      continue;
+    double z2 = z*z;
+    double z4 = z2*z2;
+    if (u < 1.0 - 0.0331*z4)
+      return d*v3;
+    if (log(u) < 0.5*z2 + d*(1.0 - v3 + log(v3)))
+      return d*v3;
+  }
+}
+
+static inline double gamma_shape(double shape, randompack_rng *rng) {
+  if (shape >= 1.0)
+    return gamma_shape1(shape, rng);
+  double u = draw_u01(rng);
+  while (u <= 0.0)
+    u = draw_u01(rng);
+  double g = gamma_shape1(shape + 1.0, rng);
+  return g*exp(log(u)/shape);
+}
+
+static void rand_gamma(double x[], size_t len, double shape, double scale,
+							  randompack_rng *rng) {
+  if (scale == 1)
+	 for (size_t i=0; i<len; i++) x[i] = gamma_shape(shape, rng);
+  else
+	 for (size_t i=0; i<len; i++) x[i] = gamma_shape(shape, rng)*scale;
 }
 
 static bool rand_mvn(char transp, double mu[], double Sig[], int d, size_t n,
