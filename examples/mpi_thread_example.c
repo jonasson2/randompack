@@ -26,12 +26,12 @@ typedef struct {
 } task;
 
 static int worker(void *arg) {
-  task *t = (task *)arg;
+  task *t = arg;
 
   randompack_rng *rng = randompack_create(0);
   if (!rng) return 1;
 
-  uint32_t spawn_key[2] = {(uint32_t)t->rank, (uint32_t)t->tid};
+  uint32_t spawn_key[2] = {t->rank, t->tid};
   randompack_seed(seed, spawn_key, 2, rng);
 
   double m = 0.0;

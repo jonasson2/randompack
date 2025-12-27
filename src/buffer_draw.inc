@@ -39,7 +39,7 @@ static inline void fill_buf_if_empty(randompack_rng *rng) {
 static inline uint8_t draw_byte(randompack_rng *rng) {
   if (rng->buf_word >= BUFSIZE) fill_buf(rng);
   uint64_t w = rng->buf[rng->buf_word];
-  uint8_t b = (uint8_t)(w >> (8 * rng->buf_byte));
+  uint8_t b = w >> (8 * rng->buf_byte);
   rng->buf_byte++;
   if (rng->buf_byte >= 8) {
     rng->buf_byte = 0;
@@ -62,7 +62,7 @@ static inline uint32_t draw_u32(randompack_rng *rng) {
     b = 0;
   }
   uint64_t word = rng->buf[w];
-  uint32_t x = (b == 0) ? (uint32_t)word : (word >> 32);
+  uint32_t x = (b == 0) ? word : (word >> 32);
   b += 4;
   if (b == 8) { // Advance by one 32-bit chunk
     b = 0;
@@ -110,7 +110,7 @@ static inline void draw_u16_copy(uint16_t *out, size_t n, randompack_rng *rng) {
     pos16 += take;
     rng->buf_word = pos16/4;
     rng->buf_byte = (pos16 & 3)*2;
-    i += (size_t)take;
+    i += take;
   }
 }
 
@@ -125,7 +125,7 @@ static inline void draw_u32_copy(uint32_t *out, size_t n, randompack_rng *rng) {
     int avail = 2*BUFSIZE - pos32;
     size_t rem = n - i;
     int take = avail;
-    if (rem < (size_t)avail) take = rem;
+    if (rem < (size_t)avail) take = (int)rem;
     copy32(out + i, buf32 + pos32, take);
     pos32 += take;
     rng->buf_word = pos32/2;

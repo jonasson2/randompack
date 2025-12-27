@@ -58,7 +58,7 @@ bool crypto_random(void *buffer, size_t size) {
   int fd = open("/dev/urandom", O_RDONLY);
   if (fd < 0) return false;
 
-  unsigned char *buf = (unsigned char *)buffer;
+  unsigned char *buf = buffer;
   size_t remaining = size;
   
   while (remaining > 0) {

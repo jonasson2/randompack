@@ -75,9 +75,49 @@ bool randompack_u01( // Generate uniform random numbers in [0,1), false on error
   randompack_rng *rng   // in/out  Random number generator
 );
 
+bool randompack_unif( // Generate uniform random numbers in [a,b], false on error
+  double x[],           // out     n-vector: uniform random numbers in [a,b]
+  size_t n,             // in      Number of variates
+  double a,             // in      Minimum (a < b)
+  double b,             // in      Maximum (a < b)
+  randompack_rng *rng   // in/out  Random number generator
+);
+
 bool randompack_norm( // Generate standard normal random numbers N(0,1), false on error
   double x[],           // out     n-vector: standard normal random numbers
   size_t n,             // in      Number of variates
+  randompack_rng *rng   // in/out  Random number generator
+);
+
+bool randompack_normal( // Generate normal random numbers N(mu,sigma), false on error
+  double x[],           // out     n-vector: normal random numbers
+  size_t n,             // in      Number of variates
+  double mu,            // in      Mean
+  double sigma,         // in      Standard deviation (> 0)
+  randompack_rng *rng   // in/out  Random number generator
+);
+
+bool randompack_lognormal( // Generate lognormal random numbers, false on error
+  double x[],              // out     n-vector: lognormal random numbers
+  size_t n,                // in      Number of variates
+  double mu,               // in      Mean of underlying normal
+  double sigma,            // in      Std dev of underlying normal (> 0)
+  randompack_rng *rng      // in/out  Random number generator
+);
+
+bool randompack_gumbel( // Generate Gumbel random numbers, false on error
+  double x[],           // out     n-vector: Gumbel random numbers
+  size_t n,             // in      Number of variates
+  double mu,            // in      Location parameter
+  double beta,          // in      Scale parameter (> 0)
+  randompack_rng *rng   // in/out  Random number generator
+);
+
+bool randompack_pareto( // Generate Pareto (Type I) random numbers, false on error
+  double x[],           // out     n-vector: Pareto random numbers
+  size_t n,             // in      Number of variates
+  double xm,            // in      Minimum (scale) parameter (> 0)
+  double alpha,         // in      Shape parameter (> 0)
   randompack_rng *rng   // in/out  Random number generator
 );
 
@@ -90,6 +130,44 @@ bool randompack_exp( // Generate exponential random numbers, false on error
 
 bool randompack_gamma( // Generate gamma random numbers, false on error
   double x[],           // out     n-vector: gamma random numbers
+  size_t n,             // in      Number of variates
+  double shape,         // in      Shape parameter (> 0)
+  double scale,         // in      Scale parameter (> 0)
+  randompack_rng *rng   // in/out  Random number generator
+);
+
+bool randompack_chi2( // Generate chi-square random numbers, false on error
+  double x[],           // out     n-vector: chi-square random numbers
+  size_t n,             // in      Number of variates
+  double nu,            // in      Degrees of freedom (> 0)
+  randompack_rng *rng   // in/out  Random number generator
+);
+
+bool randompack_beta( // Generate beta random numbers, false on error
+  double x[],           // out     n-vector: beta random numbers
+  size_t n,             // in      Number of variates
+  double a,             // in      Shape parameter a (> 0)
+  double b,             // in      Shape parameter b (> 0)
+  randompack_rng *rng   // in/out  Random number generator
+);
+
+bool randompack_t( // Generate Student t random numbers, false on error
+  double x[],           // out     n-vector: Student t random numbers
+  size_t n,             // in      Number of variates
+  double nu,            // in      Degrees of freedom (> 0)
+  randompack_rng *rng   // in/out  Random number generator
+);
+
+bool randompack_f( // Generate F random numbers, false on error
+  double x[],           // out     n-vector: F random numbers
+  size_t n,             // in      Number of variates
+  double nu1,           // in      Numerator degrees of freedom (> 0)
+  double nu2,           // in      Denominator degrees of freedom (> 0)
+  randompack_rng *rng   // in/out  Random number generator
+);
+
+bool randompack_weibull( // Generate Weibull random numbers, false on error
+  double x[],           // out     n-vector: Weibull random numbers
   size_t n,             // in      Number of variates
   double shape,         // in      Shape parameter (> 0)
   double scale,         // in      Scale parameter (> 0)
@@ -180,30 +258,14 @@ bool randompack_set_state( // Set engine state array directly
   randompack_rng *rng     // in/out  target RNG
 );
 
-bool randompack_set_norm_method( // Set algorithm used for random normals
-  char *method,          // in      "polar" or "default" (for ziggurat)
-  randompack_rng *rng    // in      Random number generator
-);
+//========================================================================================
+// Single precision (float) versions of the randompack distributions
+//========================================================================================
 
-// NOTE 1: Sig, X and L are stored columnwise in Fortran fashion.
-// NOTE 2: There are situations when Sig is indefinite but close to being positive
-//         definite, for example due to rounding errors. To remedy this a pivoted
-//         Cholesky factorization of Sig is employed, which may return an L matrix
-//         which is not lower and has some trailing columns 0, but does satisfy
-//         L·L' = Sig, and can thus be used to generate vectors with the right
-//         distribution.
-// NOTE 3: In case the calling program needs the Cholesky factor of Sig this may
-//         be returned in L by letting it be a d × d array instead of 0 in the
-//         call.
-// NOTE 4: When randompack_mvn is to be called multiple times for the same
-//         covariance it is possible to save execution time by reusing the
-//         Cholesky factorization of Sig on all calls but the first. Specify Sig
-//         and return L on the first call, and let Sig be null and specify L on
-//         subsequent calls. If both Sig and L are null, the function exits with
-//         ok = 0.
-// NOTE 5: The seed type int is 32 bits; only the lower 31 bits are used for Park-Miller
-//         seeding.
-// NOTE 6: To use the thread-randomize feature set the seed to -thread_id to mix the
-//         thread-id with system entropy.
+bool randompack_u01f( // Generate uniform random floats in [0,1), false on error
+  float x[],            // out     n-vector: uniform random numbers in [0,1)
+  size_t n,             // in      Number of variates
+  randompack_rng *rng   // in/out  Random number generator
+);
 
 #endif /* RANDOMPACK_H */

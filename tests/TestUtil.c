@@ -238,59 +238,6 @@ double gamma_cdfc(double x, double shape, double scale) {
   return igamc(shape, x/scale);
 }
 
-bool check_meanvar(double *x, int n) {
-  // Mean and variance test for a standard normal x
-  if (n <= 1) return true;
-  double mu = 0, sigma = 1, xbar, s2, xbarstd, zstat, p_mean, t, p_var;
-  xbar = mean(x, n);
-  s2 = var(x, n, xbar);
-  xbarstd = sigma/sqrt(n);
-  zstat = fabs(xbar - mu)/xbarstd;
-  p_mean = 2.0*normccdf(zstat); // Mean test: (xbar - mu)/(sigma/sqrt(n)) ~ N(0,1)
-  t = n*s2;                     // Variance test: n*s2 ~ chi^2_{n-1}
-  p_var = 2.0*fmin(chi2_cdf(t, n - 1), chi2_ccdf(t, n - 1));
-  return p_mean >= TEST_P_VALUE && p_var >= TEST_P_VALUE;
-}
-
-bool check_skewkurt(double *x, int n, double skew, double kurt) {
-  // Skewness and kurtosis tests for a standard normal x
-  if (n <= 3) return true;
-  double xbar, s2, skew_hat, kurt_hat, skew_std, kurt_std, z_skew, z_kurt, p_skew, p_kurt;
-  xbar = mean(x, n);
-  s2 = var(x, n, xbar);
-  skew_hat = skewness(x, n, xbar, s2);
-  kurt_hat = kurtosis(x, n, xbar, s2);
-  skew_std = sqrt(6.0/n);
-  kurt_std = sqrt(24.0/n);
-  z_skew = fabs(skew_hat - skew)/skew_std;
-  z_kurt = fabs(kurt_hat - kurt)/kurt_std;
-  p_skew = 2.0*normccdf(z_skew);
-  p_kurt = 2.0*normccdf(z_kurt);
-  return p_skew >= TEST_P_VALUE && p_kurt >= TEST_P_VALUE;
-}
-
-bool check_u01_meanvar(double *x, int n) {
-  // Mean/variance test for U01 via probit -> N(0,1)
-  if (n <= 1) return true;
-  double *z;
-  TEST_ALLOC(z, n);
-  for (int i = 0; i < n; i++) z[i] = probit(x[i]);
-  bool ok = check_meanvar(z, n);
-  FREE(z);
-  return ok;
-}
-
-bool check_u01_skewkurt(double *x, int n) {
-  // Skewness/kurtosis test for U01 via probit -> N(0,1) (normal approximation)
-  if (n <= 3) return true;
-  double *z;
-  TEST_ALLOC(z, n);
-  for (int i = 0; i < n; i++) z[i] = probit(x[i]);
-  bool ok = check_skewkurt(z, n, 0.0, 3.0);
-  FREE(z);
-  return ok;
-}
-
 //------------------------------------------------------------------------------
 // Min/max helpers for scalars and vectors
 //------------------------------------------------------------------------------
@@ -384,7 +331,7 @@ bool check_balanced_counts(int *counts, int n) {
 bool check_balanced_bits(int *ones, int N, int B) {
   // Pearson chi-square goodness-of-fit for B Bernoulli(0.5) variables
   if (B <= 1 || N <= 0) return true;
-  double mean = (double)N/2.0;
+  double mean = N/2.0;
   double x2 = 0.0;
   for (int b = 0; b < B; b++) {
     double d = ones[b] - mean;
@@ -420,6 +367,59 @@ randompack_rng *create_seeded_rng(const char *engine, int seed) {
   return rng;
 }
 
+bool check_meanvar(double *x, int n) {
+  // Mean and variance test for a standard normal x
+  if (n <= 1) return true;
+  double mu = 0, sigma = 1, xbar, s2, xbarstd, zstat, p_mean, t, p_var;
+  xbar = mean(x, n);
+  s2 = var(x, n, xbar);
+  xbarstd = sigma/sqrt(n);
+  zstat = fabs(xbar - mu)/xbarstd;
+  p_mean = 2.0*normccdf(zstat); // Mean test: (xbar - mu)/(sigma/sqrt(n)) ~ N(0,1)
+  t = n*s2;                     // Variance test: n*s2 ~ chi^2_{n-1}
+  p_var = 2.0*fmin(chi2_cdf(t, n - 1), chi2_ccdf(t, n - 1));
+  return p_mean >= TEST_P_VALUE && p_var >= TEST_P_VALUE;
+}
+
+bool check_skewkurt(double *x, int n, double skew, double kurt) {
+  // Skewness and kurtosis tests for a standard normal x
+  if (n <= 3) return true;
+  double xbar, s2, skew_hat, kurt_hat, skew_std, kurt_std, z_skew, z_kurt, p_skew, p_kurt;
+  xbar = mean(x, n);
+  s2 = var(x, n, xbar);
+  skew_hat = skewness(x, n, xbar, s2);
+  kurt_hat = kurtosis(x, n, xbar, s2);
+  skew_std = sqrt(6.0/n);
+  kurt_std = sqrt(24.0/n);
+  z_skew = fabs(skew_hat - skew)/skew_std;
+  z_kurt = fabs(kurt_hat - kurt)/kurt_std;
+  p_skew = 2.0*normccdf(z_skew);
+  p_kurt = 2.0*normccdf(z_kurt);
+  return p_skew >= TEST_P_VALUE && p_kurt >= TEST_P_VALUE;
+}
+
+bool check_u01_meanvar(double *x, int n) {
+  // Mean/variance test for U01 via probit -> N(0,1)
+  if (n <= 1) return true;
+  double *z;
+  TEST_ALLOC(z, n);
+  for (int i = 0; i < n; i++) z[i] = probit(x[i]);
+  bool ok = check_meanvar(z, n);
+  FREE(z);
+  return ok;
+}
+
+bool check_u01_skewkurt(double *x, int n) {
+  // Skewness/kurtosis test for U01 via probit -> N(0,1) (normal approximation)
+  if (n <= 3) return true;
+  double *z;
+  TEST_ALLOC(z, n);
+  for (int i = 0; i < n; i++) z[i] = probit(x[i]);
+  bool ok = check_skewkurt(z, n, 0.0, 3.0);
+  FREE(z);
+  return ok;
+}
+
 bool check_u01_minmax(double *x, int n) {
   if (n <= 0) return true;
   const double q = TEST_P_VALUE;
@@ -432,9 +432,8 @@ bool check_u01_minmax(double *x, int n) {
   return true;
 }
 
-bool check_u01_distribution(double *u, int n) {
-  if (n <= 1) return true;
-  int nbins = min(500, max(20, (int)sqrt(n)));
+void check_u01_distribution(double *u, int n) {
+  int nbins = min(500, max(20, sqrt(n)));
   ASSERT(n/nbins >= 20);
   int *counts;
   TEST_ALLOC(counts, nbins);
@@ -443,10 +442,17 @@ bool check_u01_distribution(double *u, int n) {
   xCheck(check_u01_skewkurt(u, n));
   xCheck(check_u01_minmax(u, n));
   for (int i = 0; i < n; i++) {
-    int b = min(nbins - 1, (int)(nbins*u[i]));
+    int b = min(nbins - 1, nbins*u[i]);
     counts[b]++;
   }
-  bool ok = check_balanced_counts(counts, nbins);
+  xCheck(check_balanced_counts(counts, nbins));
   FREE(counts);
-  return ok;
+}
+
+void check_u01_distributionf(float *x, int n) {
+  double *y;
+  TEST_ALLOC(y, n);
+  for (int i=0; i<n; i++) y[i] = x[i];
+  check_u01_distribution(y, n);
+  FREE(y);
 }

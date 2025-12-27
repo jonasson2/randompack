@@ -66,7 +66,7 @@ static void test_balanced_bits(char *engine) {
   check_success(ok, rng);
   int ones[31] = {0};
   for (int i=0; i<N; i++) {
-    uint32_t u = (uint32_t)x[i];
+    uint32_t u = x[i];
     for (int b=0; b<31; b++) {
       if (u & (1u << b)) ones[b]++;
     }

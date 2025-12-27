@@ -16,12 +16,12 @@ typedef struct {
 } job;
 
 static int worker(void *arg) {
-  job *j = (job *)arg;
+  job *j = arg;
 
   randompack_rng *rng = randompack_create(0); // default engine
   assert(rng);
 
-  uint32_t key[1] = {(uint32_t)j->i};
+  uint32_t key[1] = {j->i};
   randompack_seed_spawn(seed, key, 1, rng);
 
   randompack_u01(j->x, n, rng);
@@ -35,7 +35,7 @@ int main(void) {
 
   double *x[M];
   for (int i=0; i<M; i++) {
-    x[i] = malloc((size_t)n*sizeof(double));
+    x[i] = malloc(n*sizeof(double));
     assert(x[i]);
   }
 

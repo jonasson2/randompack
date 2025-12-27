@@ -37,7 +37,7 @@ static void parse_hex_bytes(const char *s, uint8_t *out, int n) {
   for (int i = 0; i < n; i++) {
     unsigned int x;
     xCheck(sscanf(s, "%2x", &x) == 1);
-    out[i] = (uint8_t)x;
+    out[i] = x;
     s += 2;
     if (*s == ' ') s++;
   }
@@ -45,8 +45,8 @@ static void parse_hex_bytes(const char *s, uint8_t *out, int n) {
 
 static uint32_t pack32le(uint8_t *b) {
   uint32_t w0 = b[0];
-  uint32_t w1 = (uint32_t)b[1] << 8;
-  uint32_t w2 = (uint32_t)b[2] << 16;
+  uint32_t w1 = b[1] << 8;
+  uint32_t w2 = b[2] << 16;
   uint32_t w3 = (uint32_t)b[3] << 24;
   return w0 | w1 | w2 | w3;
 }
@@ -58,7 +58,7 @@ static void build_chacha_state(uint64_t *state, uint8_t *key, uint8_t *nonce,
   for (int i = 0; i < 3; i++) w[8 + i] = pack32le(nonce + 4*i);
   w[11] = counter;
   for (int i = 0; i < 6; i++) {
-    state[i] = (uint64_t)w[2*i];
+    state[i] = w[2*i];
     state[i] |= (uint64_t)w[2*i + 1] << 32;
   }
 }

@@ -30,7 +30,7 @@ static bool pcg_supported(void) {
 
 static void make_state(uint64_t *s, int n, rng_engine e) {
   for (int i=0; i<n; i++)
-    s[i] = (uint64_t)(i + 1);
+    s[i] = i + 1;
   // PCG increment must be odd
   if (e == PCG64)
     s[2] |= 1ULL;
@@ -49,8 +49,8 @@ static uint8_t *serialize_rng(randompack_rng *rng, int *len) {
 static bool equal_vecd_bits(double *a, double *b, int n) {
   uint64_t ua[32], ub[32];
   xCheck(n <= LEN(ua));
-  memcpy(ua, a, (size_t)n*sizeof(double));
-  memcpy(ub, b, (size_t)n*sizeof(double));
+  memcpy(ua, a, n*sizeof(double));
+  memcpy(ub, b, n*sizeof(double));
   return equal_vec64(ua, ub, n);
 }
 

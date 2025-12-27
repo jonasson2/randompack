@@ -73,8 +73,8 @@ static const char *resolve_engine(const char *opt) {
   if (!opt) return 0;
   char t[16];
   int i;
-  for (i = 0; opt[i] && i + 1 < (int)sizeof t; i++)
-    t[i] = (char)tolower((unsigned char)opt[i]);
+  for (i = 0; opt[i] && (size_t)(i + 1) < sizeof t; i++)
+    t[i] = tolower((unsigned char)opt[i]);
   t[i] = 0;
   if (!strcmp(t, "x128")) return "x128+";
   if (!strcmp(t, "x*")) return "x256**";
@@ -115,7 +115,7 @@ int main(int argc, char **argv) {
     rngseed = ParkMiller ? 42 : 0;  // PM→42, others→randomize (0)
   }
   else {
-    rngseed = (uint64_t)seed;
+    rngseed = seed;
   }
 
   randompack_rng *rng = randompack_create(rngtype);

@@ -84,12 +84,20 @@ int main(int argc, char **argv) {
   run_test("Perm",     TestPerm);   // Make the 10000 a constant
   run_test("Sample",   TestSample); // ditto
   run_test("U01",      TestU01);
+  run_test("Unif",     TestUnif);
   run_test("Normal",   TestNorm);
+  run_test("NormalMS", TestNormal);
   run_test("Exp",      TestExp);
+  run_test("Lognormal",TestLognormal);
+  run_test("Gumbel",   TestGumbel);
+  run_test("Pareto",   TestPareto);
   run_test("Gamma",    TestGamma);
+  run_test("Chi2",     TestChi2);
+  run_test("Beta",     TestBeta);
+  run_test("T",        TestT);
+  run_test("F",        TestF);
+  run_test("Weibull",  TestWeibull);
   run_test("Mvn",      TestMvn);
-  // TODO: Timing
-  // Next: exp, t, gamma, beta... 
   vprint(table_fmt, "TOTAL", NTOTAL - NFAIL, NFAIL);
   return (NFAIL > 0);
 }

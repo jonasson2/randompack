@@ -84,7 +84,7 @@ static void test_balanced_counts(char *engine) {
     draw_bounded_randoms(engine, x, n, bound, 42);
 	 xCheck(maxv64(x, n) < bound);
     for (int i = 0; i < n; i++) counts[x[i]]++;
-    xCheckMsg(check_balanced_counts(counts, (int)bound), engine);
+    xCheckMsg(check_balanced_counts(counts, bound), engine);
   }
   FREE(x);
 }

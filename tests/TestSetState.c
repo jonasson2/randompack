@@ -64,8 +64,8 @@ static void test_invalid_args(void) {
 
 static void test_pm_range(void) {
   uint64_t bad0[] = {0};
-  uint64_t bad_hi[] = {(uint64_t)mersenne8};
-  uint64_t good[] = {(uint64_t)(mersenne8 - 1)};
+  uint64_t bad_hi[] = {mersenne8};
+  uint64_t good[] = {mersenne8 - 1};
   randompack_rng *rng = make_rng("park-miller");
 
   bool ok = randompack_set_state(bad0, 1, rng);
@@ -111,7 +111,7 @@ static void draw_uints(randompack_rng *rng, uint64_t *x, int n, bool use_int) {
     xCheck(n <= LEN(xi));
     bool ok = randompack_int(xi, n, 0, INT_MAX - 2, rng);
     check_success(ok, rng);
-    for (int i = 0; i < n; i++) x[i] = (uint64_t)xi[i];
+    for (int i = 0; i < n; i++) x[i] = xi[i];
   }
   else {
     bool ok = randompack_uint64(x, n, 0, rng);

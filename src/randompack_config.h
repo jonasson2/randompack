@@ -37,9 +37,9 @@ _Static_assert(sizeof(long long) == 8, "randompack requires 64-bit long long");
 static inline int min(int m, int n) { return m < n ? m : n; }
 static inline int max(int m, int n) { return m > n ? m : n; }
 
-static inline void copy16(void *dst, void *src, int n) { memcpy(dst, src, (size_t)n*2); }
-static inline void copy32(void *dst, void *src, int n) { memcpy(dst, src, (size_t)n*4); }
-static inline void copy64(void *dst, void *src, int n) { memcpy(dst, src, (size_t)n*8); }
+static inline void copy16(void *dst, void *src, int n) { memcpy(dst, src, n*2); }
+static inline void copy32(void *dst, void *src, int n) { memcpy(dst, src, n*4); }
+static inline void copy64(void *dst, void *src, int n) { memcpy(dst, src, n*8); }
 #ifndef BUFSIZE
 #define BUFSIZE 256
 #endif

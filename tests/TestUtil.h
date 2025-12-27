@@ -7,12 +7,28 @@
 #include "randompack_config.h"
 #include "cephes.h"
 
-// –––––––––––––––––––––––––––––––––––––––––––
-// Macros to check determinism, e.g.:
-//   TEST_DETERMINISM0("pcg64", u01)
-//   TEST_DETERMINISM1("pcg64", exp, 2)
-//   TEST_DETERMINISM2("pcg64", gamma, 0.5, 2)
-// –––––––––––––––––––––––––––––––––––––––––––
+#define CHECK_VEC_EQUAL(TYPE, a, b, n) do {        \
+  bool same = true;                                \
+  for (int i = 0; i < (n); i++) {                  \
+    if ((a)[i] != (b)[i]) {                        \
+      same = false;                                \
+      break;                                       \
+    }                                              \
+  }                                                \
+  xCheck(same);                                    \
+ } while (0)
+
+#define CHECK_VEC_DIFFERENT(TYPE, a, b, n) do { \
+  bool diff = false;                            \
+  for (int i = 0; i < (n); i++) {               \
+    if ((a)[i] != (b)[i]) {                     \
+      diff = true;                              \
+      break;                                    \
+    }                                           \
+  }                                             \
+  xCheck(diff);                                 \
+ } while (0)
+
 #define DRAW(engine, seed, CALL) do {									\
 	randompack_rng *rng = create_seeded_rng((engine), (seed));	\
 	check_rng_clean(rng);													\
@@ -21,86 +37,97 @@
 	randompack_free(rng);													\
  } while (0)
 
-#define TEST_DETERMINISM0(engine, FUNC) do {										\
-	double a[3], b[3], c[3];															\
-	int n = 3;																				\
-	DRAW((engine), 42, randompack_##FUNC(a, n, rng));							\
-	DRAW((engine), 42, randompack_##FUNC(b, n, rng));							\
-	DRAW((engine), 43, randompack_##FUNC(c, n, rng));							\
-	xCheckMsg(equal_vecd(a, b, 3), (engine));										\
-	xCheckMsg(a[0] != c[0] || a[1] != c[1] || a[2] != c[2], (engine));	\
+#define TEST_DETERMINISM0(engine, TYPE, FUNC) do {		\
+	TYPE x[3], y[3], z[3];										\
+	int n = LEN(x);												\
+	DRAW((engine), 42, randompack_##FUNC(x, n, rng));	\
+	DRAW((engine), 42, randompack_##FUNC(y, n, rng));	\
+	DRAW((engine), 43, randompack_##FUNC(z, n, rng));	\
+	CHECK_VEC_EQUAL(TYPE, x, y, n);							\
+	CHECK_VEC_DIFFERENT(TYPE, x, z, n);						\
  } while (0)
 
-#define TEST_DETERMINISM1(engine, FUNC, p1) do {								\
-	double a[3], b[3], c[3];															\
-	int n = 3;																				\
-	DRAW((engine), 42, randompack_##FUNC(a, n, (p1), rng));					\
-	DRAW((engine), 42, randompack_##FUNC(b, n, (p1), rng));					\
-	DRAW((engine), 43, randompack_##FUNC(c, n, (p1), rng));					\
-	xCheckMsg(equal_vecd(a, b, 3), (engine));										\
-	xCheckMsg(a[0] != c[0] || a[1] != c[1] || a[2] != c[2], (engine));	\
+#define TEST_DETERMINISM1(engine, TYPE, FUNC, p1) do {		\
+	TYPE x[3], y[3], z[3];												\
+	int n = LEN(x);														\
+	DRAW((engine), 42, randompack_##FUNC(x, n, (p1), rng));	\
+	DRAW((engine), 42, randompack_##FUNC(y, n, (p1), rng));	\
+	DRAW((engine), 43, randompack_##FUNC(z, n, (p1), rng));	\
+	CHECK_VEC_EQUAL(TYPE, x, y, n);									\
+	CHECK_VEC_DIFFERENT(TYPE, x, z, n);								\
  } while (0)
 
-#define TEST_DETERMINISM2(engine, FUNC, p1, p2) do {							\
-	double a[3], b[3], c[3];															\
-	int n = 3;																				\
-	DRAW((engine), 42, randompack_##FUNC(a, n, (p1), (p2), rng));			\
-	DRAW((engine), 42, randompack_##FUNC(b, n, (p1), (p2), rng));			\
-	DRAW((engine), 43, randompack_##FUNC(c, n, (p1), (p2), rng));			\
-	xCheckMsg(equal_vecd(a, b, 3), (engine));										\
-	xCheckMsg(a[0] != c[0] || a[1] != c[1] || a[2] != c[2], (engine));	\
+#define TEST_DETERMINISM2(engine, TYPE, FUNC, p1, p2) do {			\
+	TYPE x[3], y[3], z[3];														\
+	int n = LEN(x);																\
+	DRAW((engine), 42, randompack_##FUNC(x, n, (p1), (p2), rng));	\
+	DRAW((engine), 42, randompack_##FUNC(y, n, (p1), (p2), rng));	\
+	DRAW((engine), 43, randompack_##FUNC(z, n, (p1), (p2), rng));	\
+	CHECK_VEC_EQUAL(TYPE, x, y, n);											\
+	CHECK_VEC_DIFFERENT(TYPE, x, z, n);										\
  } while (0)
 
-#define TEST_EDGE_CASES0(engine, FUNC) do {								\
-	double buf[4] = {0.1, 0.2, 0.3};											\
-	double orig[4] = {0.1, 0.2, 0.3};										\
-	bool ok;																			\
-	randompack_rng *rng = create_seeded_rng((engine), 123);			\
-	ok = randompack_##FUNC(buf, 0, rng); check_success(ok, rng);	\
-	xCheck(equal_vecd(buf, orig, 4));										\
-	ok = randompack_##FUNC(0, 4, rng); check_failure(ok, rng);		\
-	ok = randompack_##FUNC(buf, 4, 0); xCheck(!ok);						\
-	randompack_free(rng);														\
+#define TEST_EDGE_CASES0(engine, TYPE, FUNC) do {							\
+	TYPE buf[3] = {1, 2, 3};														\
+	TYPE orig[3] = {1, 2, 3};														\
+	bool ok;																				\
+	randompack_rng *rng = create_seeded_rng((engine), 123);				\
+	ok = randompack_##FUNC(buf, 0, rng); check_success(ok, rng);		\
+	CHECK_VEC_EQUAL(TYPE, buf, orig, LEN(buf));								\
+	ok = randompack_##FUNC(0, LEN(buf), rng); check_failure(ok, rng);	\
+	ok = randompack_##FUNC(buf, LEN(buf), 0); xCheck(!ok);				\
+	randompack_free(rng);															\
  } while (0)
 
-#define TEST_EDGE_CASES1(engine, FUNC, p1) do {									\
-	double buf[4] = {0.1, 0.2, 0.3};													\
-	double orig[4] = {0.1, 0.2, 0.3};												\
-	bool ok;																					\
-	randompack_rng *rng = create_seeded_rng((engine), 123);					\
-	ok = randompack_##FUNC(buf, 0, (p1), rng); check_success(ok, rng);	\
-	xCheck(equal_vecd(buf, orig, 4));												\
-	ok = randompack_##FUNC(0, 4, (p1), rng); check_failure(ok, rng);		\
-	ok = randompack_##FUNC(buf, 4, (p1), 0); xCheck(!ok);						\
-	randompack_free(rng);																\
+#define TEST_EDGE_CASES1(engine, TYPE, FUNC, p1) do {								\
+	TYPE buf[3] = {1, 2, 3};																\
+	TYPE orig[3] = {1, 2, 3};																\
+	bool ok;																						\
+	randompack_rng *rng = create_seeded_rng((engine), 123);						\
+	ok = randompack_##FUNC(buf, 0, (p1), rng); check_success(ok, rng);		\
+	CHECK_VEC_EQUAL(TYPE, buf, orig, LEN(buf));										\
+	ok = randompack_##FUNC(0, LEN(buf), (p1), rng); check_failure(ok, rng);	\
+	ok = randompack_##FUNC(buf, LEN(buf), (p1), 0); xCheck(!ok);				\
+	randompack_free(rng);																	\
  } while (0)
 
-#define TEST_EDGE_CASES2(engine, FUNC, p1, p2) do {									\
-	double buf[4] = {0.1, 0.2, 0.3};															\
-	double orig[4] = {0.1, 0.2, 0.3};														\
-	bool ok;																							\
-	randompack_rng *rng = create_seeded_rng((engine), 123);							\
-	ok = randompack_##FUNC(buf, 0, (p1), (p2), rng); check_success(ok, rng);	\
-	xCheck(equal_vecd(buf, orig, 4));														\
-	ok = randompack_##FUNC(0, 4, (p1), (p2), rng); check_failure(ok, rng);		\
-	ok = randompack_##FUNC(buf, 4, (p1), (p2), 0); xCheck(!ok);						\
-	randompack_free(rng);																		\
+#define TEST_EDGE_CASES2(engine, TYPE, FUNC, p1, p2) do {							  \
+	TYPE buf[4] = {1, 2, 3};																	  \
+	TYPE orig[4] = {1, 2, 3};																	  \
+	bool ok;																							  \
+	randompack_rng *rng = create_seeded_rng((engine), 123);							  \
+	ok = randompack_##FUNC(buf, 0, (p1), (p2), rng); check_success(ok, rng);	  \
+	CHECK_VEC_EQUAL(TYPE, buf, orig, LEN(buf));											  \
+	ok = randompack_##FUNC(0, LEN(buf), (p1), (p2), rng); check_failure(ok, rng);	\
+	ok = randompack_##FUNC(buf, LEN(buf), (p1), (p2), 0); xCheck(!ok);			  \
+	randompack_free(rng);																		  \
  } while (0)
 
-#define TEST_ILLEGAL_PARAMS1(engine, FUNC, bad1) do {        \
-  double buf[4];                                             \
-  randompack_rng *rng = create_seeded_rng((engine), 123);    \
-  bool ok = randompack_##FUNC(buf, 4, (bad1), rng);          \
-  check_failure(ok, rng);                                    \
-  randompack_free(rng);                                      \
-} while (0)
+#define TEST_ILLEGAL_PARAMS1(TYPE, engine, FUNC, bad1) do {	\
+	TYPE buf[4];															\
+	randompack_rng *rng = create_seeded_rng((engine), 123);	\
+	bool ok = randompack_##FUNC(buf, LEN(buf), (bad1), rng);	\
+	check_failure(ok, rng);												\
+	randompack_free(rng);												\
+ } while (0)
 
-#define TEST_ILLEGAL_PARAMS2(engine, FUNC, bad1, bad2) do {  \
-  double buf[4];                                             \
-  randompack_rng *rng = create_seeded_rng((engine), 123);    \
-  bool ok = randompack_##FUNC(buf, 4, (bad1), (bad2), rng);  \
-  check_failure(ok, rng);                                    \
-  randompack_free(rng);                                      \
+#define TEST_ILLEGAL_PARAMS2(TYPE, engine, FUNC, bad1, bad2) do {		\
+	TYPE buf[4];																		\
+	randompack_rng *rng = create_seeded_rng((engine), 123);				\
+	bool ok = randompack_##FUNC(buf, LEN(buf), (bad1), (bad2), rng);  \
+	check_failure(ok, rng);															\
+	randompack_free(rng);															\
+ } while (0)
+
+#define TEST_SUPPORT(TYPE, x, n, a, b) do {		\
+	TYPE xmin = (x)[0];									\
+	TYPE xmax = (x)[0];									\
+	for (int i=1; i<(n); i++) {						\
+	  TYPE xi = (x)[i];									\
+	  if (xi < xmin) xmin = xi;						\
+	  if (xi > xmax) xmax = xi;						\
+	}															\
+	xCheck(xmin >= (a) && xmax <= (b));				\
  } while (0)
 
 //------------------------------------------------------------------------------
@@ -150,7 +177,8 @@ static engine_table_entry engine_table[] = {
 enum {
   N_BAL_CNTS = 500000,
   N_BAL_BITS = 40000,
-  N_statistics = 100000
+  N_STAT_FAST = 100000,
+  N_STAT_SLOW = 20000
 };
 static const double TEST_P_VALUE = 1e-12;
 
@@ -188,6 +216,8 @@ bool check_meanvar(double *x, int n);
 bool check_skewkurt(double *x, int n, double skew, double kurt);
 bool check_u01_meanvar(double *x, int n);
 bool check_u01_skewkurt(double *x, int n);
+double normcdf(double x);
+double normccdf(double x);
 double probit(double p);
 double chi2_cdf(double x, int nu);
 double chi2_ccdf(double x, int nu);
@@ -226,5 +256,6 @@ void check_failure(bool ok, randompack_rng *rng);  // !ok and last_error ≠ ""
 
 randompack_rng *create_seeded_rng(const char *engine, int seed);
 
-bool check_u01_distribution(double *u, int n);
+void check_u01_distribution(double *u, int n);
+void check_u01_distributionf(float *u, int n);
 #endif

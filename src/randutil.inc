@@ -12,10 +12,10 @@ static void entropy_fill(randompack_rng *rng, void *buffer, size_t len) {
     struct timespec ts;
     uint64_t x;
     timespec_get(&ts, TIME_UTC);
-    x = (uint64_t)ts.tv_sec;
+    x = ts.tv_sec;
     x ^= ((uint64_t)ts.tv_nsec << 32);
-    x ^= (uint64_t)(uintptr_t)rng;
-    fill_bytes(buffer, (int)len, &x);
+    x ^= (uintptr_t)rng;
+    fill_bytes(buffer, len, &x);
   }
 }
 
@@ -50,7 +50,7 @@ static bool seed_seq_seed(uint32_t *w, int nw, uint32_t seed32, uint32_t *spawn_
   if (!ALLOC(seq, nseq)) return false;
   seq[0] = TAG0;
   seq[1] = seed32;
-  seq[2] = (uint32_t)(nkey + 1);
+  seq[2] = nkey + 1;
   seq[3] = TAG1;
   if (nkey > 0) copy32(seq + 4, spawn_key, nkey);
   seed_seq_fe128 ss;
@@ -61,10 +61,10 @@ static bool seed_seq_seed(uint32_t *w, int nw, uint32_t seed32, uint32_t *spawn_
 }
 
 static inline void store_le32(uint8_t *dst, uint32_t x) {
-  dst[0] = (uint8_t)(x);
-  dst[1] = (uint8_t)(x >> 8);
-  dst[2] = (uint8_t)(x >> 16);
-  dst[3] = (uint8_t)(x >> 24);
+  dst[0] = x;
+  dst[1] = x >> 8;
+  dst[2] = x >> 16;
+  dst[3] = x >> 24;
 }
 
 static void set_state(uint64_t *state, int nstate, randompack_rng *rng) {  
@@ -86,7 +86,7 @@ static void set_state(uint64_t *state, int nstate, randompack_rng *rng) {
   //   for (int i=0; i<3; i++) store_le32(&nonce[4*i], w[8 + i]);  // ditto    
   //   ChaCha20_init(ctx, key, nonce, w[11]);
   // }
-  if (rng->engine == PARKMILLER) rng->state.u32[0] = (uint32_t)state[0];
+  if (rng->engine == PARKMILLER) rng->state.u32[0] = state[0];
   // else {
   // 	 int ncore = min(nstate, 4), nextra = nstate - 4;
   // 	 copy64(rng->state.u64, state, ncore);

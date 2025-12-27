@@ -1,5 +1,6 @@
 // -*- C -*-
-// Basic tests for randompack_norm: determinism, edge cases, and simple stats.
+// Tests for randompack_normal, N(mu,sigma): determinism, edge cases, and PIT->U01 checks.
+
 #include <math.h>
 #include <stdbool.h>
 
@@ -9,40 +10,33 @@
 #include "printX.h"
 #include "xCheck.h"
 
-// Helper: check max absolute value drawn:
-bool check_normal_max(double *x, int n) {
-  // [zlo, zhi] is the (1-q) confidence interval for max|x|; fairly easy to derive
-  double q, zlo, zhi, M;
-  q = TEST_P_VALUE;
-  zlo = probit((1 + pow(q/2, 1.0/n))/2);
-  zhi = -probit(q/4/n);
-  M = fmax(maxvd(x, n), -minvd(x, n));
-  printD("normal max observed", M);
-  printD("  lower confidence bound", zlo);
-  printD("  upper confidence bound", zhi);
-  return (zlo <= M && M <= zhi);
-}
-
 static void test_basic(char *engine) {
-  TEST_DETERMINISM0(engine, norm);
-  TEST_EDGE_CASES0(engine, norm);
+  double mu = 0;
+  double sigma = 1;
+  TEST_DETERMINISM2(engine, double, normal, mu, sigma);
+  TEST_EDGE_CASES2(engine, double, normal, mu, sigma);
+  TEST_ILLEGAL_PARAMS2(double, engine, normal, mu, 0);
+  TEST_ILLEGAL_PARAMS2(double, engine, normal, mu, -1);
 }
 
-static void test_statistics(char *engine) {
-  int N = N_statistics;
-  double *x;
+static void test_PIT(char *engine, double mu, double sigma) {
+  int N = N_STAT_FAST;
+  double *x, *u;
   TEST_ALLOC(x, N);
-  DRAW(engine, 7, randompack_norm(x, N, rng));
-  xCheck(check_meanvar(x, N));
-  xCheck(check_skewkurt(x, N, 0, 3));
-  xCheck(check_normal_max(x, N));
+  TEST_ALLOC(u, N);
+  DRAW(engine, 42, randompack_normal(x, N, mu, sigma, rng));
+  for (int i = 0; i < N; i++) u[i] = normcdf((x[i] - mu)/sigma);
+  check_u01_distribution(u, N);
+  FREE(u);
   FREE(x);
 }
 
-void TestNorm(void) {
+void TestNormal(void) {
   for (int i = 0; i < LEN(engines); i++) {
     char *e = engines[i];
     test_basic(e);
-    test_statistics(e);
+    test_PIT(e, 0, 1);
+    test_PIT(e, 1, 2);
+    test_PIT(e, -3, 0.5);
   }
 }

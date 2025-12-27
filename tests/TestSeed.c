@@ -8,11 +8,11 @@
 #include "xCheck.h"
 
 static void draw_stream(char *engine, uint64_t *x, int n,
-                        int seed, const uint32_t *spawn_key, int nkey) {
+                        int seed, uint32_t *spawn_key, int nkey) {
   randompack_rng *rng = randompack_create(engine);
   ASSERT(rng);
   check_rng_clean(rng);
-  bool ok = randompack_seed(seed, (uint32_t *)spawn_key, nkey, rng);
+  bool ok = randompack_seed(seed, spawn_key, nkey, rng);
   check_success(ok, rng);
   ok = randompack_uint64(x, n, 0, rng);
   check_success(ok, rng);
@@ -20,17 +20,17 @@ static void draw_stream(char *engine, uint64_t *x, int n,
 }
 
 static void draw_stream_reseed_same_rng(char *engine, uint64_t *x, uint64_t *y, int n,
-                                        int seed, const uint32_t *spawn_key, int nkey) {
+                                        int seed, uint32_t *spawn_key, int nkey) {
   randompack_rng *rng = randompack_create(engine);
   ASSERT(rng);
   check_rng_clean(rng);
-  bool ok = randompack_seed(seed, (uint32_t *)spawn_key, nkey, rng);
+  bool ok = randompack_seed(seed, spawn_key, nkey, rng);
   check_success(ok, rng);
   ok = randompack_uint64(x, n, 0, rng);
   check_success(ok, rng);
 
   // Reseed the same RNG and confirm we restart the stream.
-  ok = randompack_seed(seed, (uint32_t *)spawn_key, nkey, rng);
+  ok = randompack_seed(seed, spawn_key, nkey, rng);
   check_success(ok, rng);
   ok = randompack_uint64(y, n, 0, rng);
   check_success(ok, rng);
@@ -40,7 +40,7 @@ static void draw_stream_reseed_same_rng(char *engine, uint64_t *x, uint64_t *y, 
 static void test_seed_determinism(void) {
   // Park-Miller supports seed-only; determinism with a spawn key is tested for
   // the seed-sequence engines below.
-  const char *engines_seq[] = {
+  char *engines_seq[] = {
     "xorshift128+",
     "xoshiro256**",
     "xoshiro256++",
@@ -55,12 +55,12 @@ static void test_seed_determinism(void) {
   // Seed-sequence determinism (same key, same seed)
   for (int i = 0; i < LEN(engines_seq); i++) {
     uint64_t x[LEN_STREAM], y[LEN_STREAM], z[LEN_STREAM], r[LEN_STREAM];
-    draw_stream((char *)engines_seq[i], x, LEN_STREAM, 42, key, LEN(key));
-    draw_stream((char *)engines_seq[i], y, LEN_STREAM, 42, key, LEN(key));
+    draw_stream(engines_seq[i], x, LEN_STREAM, 42, key, LEN(key));
+    draw_stream(engines_seq[i], y, LEN_STREAM, 42, key, LEN(key));
     xCheck(equal_vec64(x, y, LEN_STREAM));
-    draw_stream((char *)engines_seq[i], z, LEN_STREAM, 43, key, LEN(key));
+    draw_stream(engines_seq[i], z, LEN_STREAM, 43, key, LEN(key));
     xCheck(everywhere_different(x, z, LEN_STREAM));
-    draw_stream_reseed_same_rng((char *)engines_seq[i], x, r, LEN_STREAM, 42, key, LEN(key));
+    draw_stream_reseed_same_rng(engines_seq[i], x, r, LEN_STREAM, 42, key, LEN(key));
     xCheck(equal_vec64(x, r, LEN_STREAM));
   }
 }
@@ -68,7 +68,7 @@ static void test_seed_determinism(void) {
 static void test_spawn_key_separation(void) {
   // These tests target the "structural collision" class: [] vs [0], etc.
   // Skip Park-Miller because it does not support spawn_key.
-  const char *engines[] = {
+  char *engines[] = {
     "xorshift128+",
     "xoshiro256**",
     "xoshiro256++",
@@ -86,13 +86,13 @@ static void test_spawn_key_separation(void) {
       uint64_t a[LEN_STREAM], b[LEN_STREAM];
 
       // seed, key=[]  vs  seed, key=[0]
-      draw_stream((char *)engines[i], a, LEN_STREAM, seed, 0, 0);
-      draw_stream((char *)engines[i], b, LEN_STREAM, seed, k0, 1);
+      draw_stream(engines[i], a, LEN_STREAM, seed, 0, 0);
+      draw_stream(engines[i], b, LEN_STREAM, seed, k0, 1);
       xCheck(everywhere_different(a, b, LEN_STREAM));
 
       // seed, key=[3,2,1]  vs  seed, key=[3,2,1,0]
-      draw_stream((char *)engines[i], a, LEN_STREAM, seed, k321, 3);
-      draw_stream((char *)engines[i], b, LEN_STREAM, seed, k3210, 4);
+      draw_stream(engines[i], a, LEN_STREAM, seed, k321, 3);
+      draw_stream(engines[i], b, LEN_STREAM, seed, k3210, 4);
       xCheck(everywhere_different(a, b, LEN_STREAM));
     }
   }

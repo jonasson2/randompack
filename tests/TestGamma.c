@@ -13,22 +13,23 @@
 static void test_basic(char *engine) {
   double scale = 1;
   double shape = 1;
-  TEST_DETERMINISM2(engine, gamma, shape, scale);
-  TEST_EDGE_CASES2(engine, gamma, shape, scale);
-  TEST_ILLEGAL_PARAMS2(engine, gamma, 0, 1);
-  TEST_ILLEGAL_PARAMS2(engine, gamma, -1, 1);
-  TEST_ILLEGAL_PARAMS2(engine, gamma, 0.7, 0);
-  TEST_ILLEGAL_PARAMS2(engine, gamma, 0.7, -1);
+  TEST_DETERMINISM2(engine, double, gamma, shape, scale);
+  TEST_EDGE_CASES2(engine, double, gamma, shape, scale);
+  TEST_ILLEGAL_PARAMS2(double, engine, gamma, 0, 1);
+  TEST_ILLEGAL_PARAMS2(double, engine, gamma, -1, 1);
+  TEST_ILLEGAL_PARAMS2(double, engine, gamma, 0.7, 0);
+  TEST_ILLEGAL_PARAMS2(double, engine, gamma, 0.7, -1);
 }
 
 static void test_PIT(char *engine, double shape, double scale) {
-  enum { N = 20000 };
+  int N = N_STAT_SLOW;
   double *x, *u;
   TEST_ALLOC(x, N);
   TEST_ALLOC(u, N);
   DRAW(engine, 42, randompack_gamma(x, N, shape, scale, rng));
+  TEST_SUPPORT(double, x, N, 0, INFINITY);
   for (int i = 0; i < N; i++) u[i] = gamma_cdf(x[i], shape, scale);
-  xCheck(check_u01_distribution(u, N));
+  check_u01_distribution(u, N);
   FREE(u);
   FREE(x);
 }

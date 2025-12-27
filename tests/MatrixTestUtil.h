@@ -34,7 +34,7 @@ static inline double relabsdiff(double a[], double b[], int n) {
   return r;
 }
 
-static inline void setzero(int n, double *x) { memset(x, 0, (size_t)n*sizeof(double)); }
+static inline void setzero(int n, double *x) { memset(x, 0, n*sizeof(double)); }
 
 static inline void subtracttranspose(int m, int n, double A[], int ldA, double B[], int ldB) {
   // B := B - A^T where A is n×m, B is m×n

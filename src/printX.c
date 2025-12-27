@@ -66,7 +66,7 @@ void printI(const char *name, int i) { // print named int
 
 void print64(const char *name, uint64_t x) {
   if (noprint) return;
-  printf("%s = %" PRIu64 "\n", name, (unsigned long long)x);
+  printf("%s = %" PRIu64 "\n", name, x);
   fflush(0);
 }
 
@@ -188,8 +188,8 @@ void printMP(const char *name, const double *ap, int nr, int nc,
              const double A[], int ldA) {
   // print submatrix
   char s[100];
-  int r = (int)((ap-A) % ldA);
-  int c = (int)((ap-A) / ldA);
+  int r = (ap-A) % ldA;
+  int c = (ap-A) / ldA;
   sprintf(s, "%s[%d:%d,%d:%d]", name, r, r+nr-1, c, c+nc-1);
   printMat("N", s, ap, ldA, nr, nc);
 }

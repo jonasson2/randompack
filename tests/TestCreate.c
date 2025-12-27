@@ -87,7 +87,7 @@ static void test_default_engine_matches_x256pp(void) {
 #ifndef HAVE128
 static void test_pcg64_unavailable(void) {
   char *names[] = { "pcg64_dxsm", "pcg64" };
-  for (int i = 0; i < (int)(sizeof names/sizeof names[0]); i++) {
+  for (int i = 0; i < LEN(names); i++) {
     randompack_rng *rng = create_seeded_rng(names[i], 123);
     ASSERT(rng);
     char *err = randompack_last_error(rng);
@@ -106,7 +106,7 @@ static void test_pcg64_unavailable(void) {
 // output, and set no error.
 static void test_system_engine(void) {
   char *names[] = { "system", "system-csprng" };
-  for (int i = 0; i < (int)(sizeof names/sizeof names[0]); i++) {
+  for (int i = 0; i < LEN(names); i++) {
     randompack_rng *rng = create_seeded_rng(names[i], 0);
     check_rng_clean(rng);
     uint64_t x[2] = {0, 0};

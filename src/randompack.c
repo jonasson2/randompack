@@ -62,6 +62,7 @@ typedef struct {
 #include "buffer_draw.inc"
 #include "randutil.inc"
 #include "distributions.inc"
+#include "distrib_float.inc"
 
 #ifdef HAVE128 // Thin wrapper
 // Unused helper; keep for reference but disable to avoid warnings.
@@ -115,7 +116,7 @@ static bool select_engine(const char *s, randompack_rng *rng) {
 
 bool randompack_seed(int seed, uint32_t *spawn_key, int nkey, randompack_rng *rng)  {
   if (!rng) return false;
-  uint32_t seed32 = (uint32_t)seed;
+  uint32_t seed32 = seed;
   rng->last_error = 0;
   if (rng->engine == PARKMILLER) {
     if (nkey != 0 || spawn_key != 0) {
@@ -182,7 +183,7 @@ randompack_rng *randompack_create(const char *engine) {
     uint64_t x;
     uint32_t s;
     entropy_fill(rng, &x, sizeof x);
-    s = (uint32_t)(x % (uint32_t)mersenne8);
+    s = x % mersenne8;
     if (s == 0) s = 1;
     rng->state.u32[0] = s;
     rng->buf_word = BUFSIZE;
@@ -271,7 +272,7 @@ bool randompack_deserialize(uint8_t *buf, int len, randompack_rng *rng) {
     rng->last_error = "randompack_deserialize: system-csprng not supported";
     return false;
   }
-  if (rng->engine != INVALID && rng->engine != (rng_engine)blob.engine) {
+  if (rng->engine != INVALID && rng->engine != blob.engine) {
     rng->last_error = "randompack_deserialize: engine mismatch";
     return false;
   }
@@ -322,7 +323,8 @@ bool randompack_set_state(uint64_t state[], int nstate, randompack_rng *rng) {
     rng->last_error = "randompack_set_state: pcg64 increment must be odd";
     return false;
   }
-  if (rng->engine == PARKMILLER && (state[0] < 1 || state[0] >= (uint64_t)mersenne8)) {
+  if (rng->engine == PARKMILLER &&
+      (state[0] < 1 || state[0] >= (uint64_t)mersenne8)) {
     rng->last_error = "randompack_set_state: Park-Miller state out of range";
     return false;
   }
@@ -362,7 +364,6 @@ bool randompack_u01(double x[], size_t len, randompack_rng *rng) {
   else
     rng->last_error = 0;
   if (rng->last_error) return false;
-  
   rand_dble(x, len, rng);
   return true;
 }
@@ -374,18 +375,18 @@ bool randompack_int(int x[], size_t len, int m, int n, randompack_rng *rng) {
     rng->last_error = "invalid arguments to randompack_int";
   else if (m > n)
     rng->last_error = "randompack_int: m must be <= n";
-  else if (rng->engine == PARKMILLER && span > (int64_t)INT_MAX - 2)
+  else if (rng->engine == PARKMILLER && span > INT_MAX - 2)
     rng->last_error = "randompack_int: for Park-Miller, n - m must be < 2^31 - 2";
-  else if (span > (int64_t)INT_MAX)
+  else if (span > INT_MAX)
     rng->last_error = "randompack_int: n - m must be < 2^31";
   else
     rng->last_error = 0;
   if (rng->last_error) return false;
   
   if (rng->engine == PARKMILLER)
-    PM_rand_int((int)(span + 1), x, len, rng);
+    PM_rand_int(span + 1, x, len, rng);
   else
-    rand_uint32((uint32_t)(span + 1), (uint32_t*)x, len, rng);
+    rand_uint32(span + 1, (uint32_t*)x, len, rng);
   for (size_t i = 0; i < len; i++) x[i] += m;
   return true;
 }
@@ -483,14 +484,90 @@ bool randompack_uint64_philox(uint64_t x[], size_t len, randompack_counter ctr,
   return true;
 }
 
-bool randompack_norm(double x[], size_t len, randompack_rng *rng) {
+bool randompack_unif(double x[], size_t len, double a, double b,
+  randompack_rng *rng) {
+  if (!rng) return false;
+  if (!x || !(a < b)) {
+    rng->last_error = "invalid arguments to randompack_unif";
+    return false;
+  }
+  rng->last_error = 0;
+  rand_dble(x, len, rng); // x in [0,1)
+  double w = b - a;
+  for (size_t i = 0; i < len; i++) x[i] = fmin(b, a + w*x[i]);
+  return true;
+}
+
+bool randompack_norm(double x[], size_t len, randompack_rng *rng) { // standard normal
   if (!rng) return false;
   if (!x)
     rng->last_error = "invalid arguments to randompack_norm";
   else
     rng->last_error = 0;
   if (rng->last_error) return false;
-  rand_normal(x, len, rng);
+  rand_norm(x, len, rng);
+  return true;
+}
+
+bool randompack_normal(double x[], size_t len, double mu, double sigma, randompack_rng
+							  *rng) { // general normal
+  if (!rng) return false;
+  if (!x || sigma <= 0) {
+    rng->last_error = "invalid arguments to randompack_normal";
+    return false;
+  }
+  rng->last_error = 0;
+  rand_norm(x, len, rng);     // generate N(0,1)
+  if (mu != 0 || sigma != 1)
+    for (size_t i = 0; i < len; i++) x[i] = mu + sigma*x[i];
+  return true;
+}
+
+bool randompack_lognormal(double x[], size_t len, double mu, double sigma,
+  randompack_rng *rng) {
+  if (!rng) return false;
+  if (!x || sigma <= 0) {
+    rng->last_error = "invalid arguments to randompack_lognormal";
+    return false;
+  }
+  rng->last_error = 0;
+  rand_norm(x, len, rng); // N(0,1)
+  for (size_t i = 0; i < len; i++) {
+    x[i] = exp(mu + sigma*x[i]);
+  }
+  return true;
+}
+
+bool randompack_gumbel(double x[], size_t len, double mu, double beta,
+  randompack_rng *rng) {
+  if (!rng) return false;
+  if (!x || beta <= 0.0) {
+    rng->last_error = "invalid arguments to randompack_gumbel";
+    return false;
+  }
+  rng->last_error = 0;
+  rand_dble(x, len, rng); // x in [0,1)
+  for (size_t i = 0; i < len; i++) {
+    double u = x[i];
+    while (u <= 0.0) u = draw_u01(rng);
+    x[i] = mu - beta*log(-log(u));
+  }
+  return true;
+}
+
+bool randompack_pareto(double x[], size_t len, double xm, double alpha, randompack_rng
+                       *rng) {
+  if (!rng) return false;
+  if (!x || xm <= 0 || alpha <= 0) {
+    rng->last_error = "invalid arguments to randompack_pareto";
+    return false;
+  }
+  rng->last_error = 0;
+  for (size_t i = 0; i < len; i++) {
+    double u = draw_u01(rng);
+    while (u <= 0.0) u = draw_u01(rng); // "no" rejects
+    x[i] = xm * exp(-log(u)/alpha);
+  }
   return true;
 }
 
@@ -517,6 +594,77 @@ bool randompack_gamma(double x[], size_t len, double shape, double scale,
   return true;
 }
 
+bool randompack_chi2(double x[], size_t len, double nu, randompack_rng *rng) {
+  if (!rng) return false;
+  if (!x || nu <= 0) {
+    rng->last_error = "invalid arguments to randompack_chi2";
+    return false;
+  }
+  rng->last_error = 0;
+  rand_gamma(x, len, 0.5*nu, 2, rng);
+  return true;
+}
+
+bool randompack_beta(double x[], size_t len, double a, double b,
+  randompack_rng *rng) {
+  if (!rng) return false;
+  if (!x || a <= 0 || b <= 0) {
+    rng->last_error = "invalid arguments to randompack_beta";
+    return false;
+  }
+  rng->last_error = 0;
+  rand_beta(x, len, a, b, rng);
+  return true;
+}
+
+bool randompack_t(double x[], size_t len, double nu, randompack_rng *rng) {
+  if (!rng) return false;
+  if (!x || nu <= 0) {
+    rng->last_error = "invalid arguments to randompack_t";
+    return false;
+  }
+  rng->last_error = 0;
+  for (size_t i = 0; i < len; i++) {
+    double z, u;
+    rand_norm(&z, 1, rng);
+    rand_gamma(&u, 1, 0.5*nu, 2, rng);
+    x[i] = z/sqrt(u/nu);
+  }
+  return true;
+}
+
+bool randompack_f(double x[], size_t len, double nu1, double nu2,
+  randompack_rng *rng) {
+  if (!rng) return false;
+  if (!x || nu1 <= 0 || nu2 <= 0) {
+    rng->last_error = "invalid arguments to randompack_f";
+    return false;
+  }
+  rng->last_error = 0;
+  for (size_t i = 0; i < len; i++) {
+    double x1 = gamma_shape(nu1/2, rng); // scale = 1
+    double x2 = gamma_shape(nu2/2, rng);
+    x[i] = (x1*nu2)/(x2*nu1);
+  }
+  return true;
+}
+
+bool randompack_weibull(double x[], size_t len, double shape, double scale,
+  randompack_rng *rng) {
+  if (!rng) return false;
+  if (!x || shape <= 0 || scale <= 0) {
+    rng->last_error = "invalid arguments to randompack_weibull";
+    return false;
+  }
+  rng->last_error = 0;
+  rand_dble(x, len, rng); // x in [0,1)
+  for (size_t i = 0; i < len; i++) {
+    double u = x[i];
+    x[i] = scale*pow(-log1p(-u), 1.0/shape);
+  }
+  return true;
+}
+
 bool randompack_mvn(char *transp, double mu[], double Sig[], int d, size_t n, double X[],
                     int ldX, double L[], randompack_rng *rng) {
   if (!rng) return false;
@@ -526,7 +674,8 @@ bool randompack_mvn(char *transp, double mu[], double Sig[], int d, size_t n, do
     rng->last_error = "randompack_mvn: transp must begin with 'N' or 'T'";
   else if ((!X && n > 0) || d <= 0 || n < 0 || (ldX <= 0 && X))
     rng->last_error = "randompack_mvn: invalid arguments";
-  else if (X && n > 0 && (size_t)ldX < ((transp[0] == 'N') ? n : d))
+  else if (X && n > 0 && (size_t)ldX <
+           ((transp[0] == 'N') ? n : (size_t)d))
     rng->last_error = "randompack_mvn: invalid arguments";
   else
     rng->last_error = 0;
@@ -539,3 +688,8 @@ bool randompack_mvn(char *transp, double mu[], double Sig[], int d, size_t n, do
   }
   else return true;
 }
+
+// ––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+// Include file with single precision (float) random generators
+// ––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+#include "randompack_float.inc"

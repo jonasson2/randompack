@@ -19,10 +19,10 @@ static void rand_dble(double x[], size_t n, randompack_rng *rng) {
   size_t i;
   // Random uniform double
   if (rng->engine == PARKMILLER) {
-    const double maxrand = 1.0 + (double)mersenne8;
+    const double maxrand = 1.0 + mersenne8;
     for (i = 0; i < n; i++) {
       uint32_t u = PM_rand_bits(rng);
-      double r = (double)u;
+      double r = u;
       x[i] = r / maxrand;
     }
   }
@@ -31,10 +31,10 @@ static void rand_dble(double x[], size_t n, randompack_rng *rng) {
     i = 0;
     while (i < n) {
       fill_buf_if_empty(rng);
-      int take = min((int)(n - i), BUFSIZE - rng->buf_word);
+      int take = min(n - i, BUFSIZE - rng->buf_word);
       for (int j = 0; j < take; j++) {
         uint64_t v = rng->buf[rng->buf_word + j];
-        x[i + j] = (double)(v >> 11) * 0x1.0p-53;
+        x[i + j] = (v >> 11) * 0x1.0p-53;
       }
       rng->buf_word += take;
       i += take;
@@ -42,51 +42,19 @@ static void rand_dble(double x[], size_t n, randompack_rng *rng) {
   }
 }
 
-// static void rand_normal_polar(double x[], size_t n, randompack_rng *rng) {
-//   // Normal random numbers from N(0,1); uses polar method.
-//   double u=0.0, v=0.0, uv[2], s=0.0, R;
-//   if (n <= 0) return;
-//   size_t k = 0;
-//   if (rng->spare_norm == rng->spare_norm) {
-//     x[k++] = rng->spare_norm;
-//     rng->spare_norm = NAN;
-//     if (k >= n) return;
-//   }
-//   while (k + 1 < n) {
-//     do {
-//       rand_dble(uv, 2, rng);
-//       u = uv[0]*2.0 - 1.0;
-//       v = uv[1]*2.0 - 1.0;
-//       s = u*u + v*v;
-//     } while (s <= 0.0 || s >= 1.0);
-//     R = sqrt(-2.0*log(s)/s);
-//     x[k++] = u*R;
-//     x[k++] = v*R;
-//   }
-//   if (k < n) {
-//     do {
-//       rand_dble(uv, 2, rng);
-//       u = uv[0]*2.0 - 1.0;
-//       v = uv[1]*2.0 - 1.0;
-//       s = u*u + v*v;
-//     } while (s <= 0.0 || s >= 1.0);
-//     R = sqrt(-2.0*log(s)/s);
-//     x[k] = u*R;
-//     rng->spare_norm = v*R;
-//   }
-// }
-
-static inline void rand_normal(double *x, int n, randompack_rng *rng) {
-  for (int i=0; i<n; i++) {
+static inline void rand_norm(double *x, size_t n, randompack_rng *rng) {
+  for (size_t i = 0; i < n; i++) {
     x[i] = random_standard_normal(rng);
   }
 }
 
-static inline void rand_exp(double *x, int n, double scale, randompack_rng *rng) {
-  if (scale == 1)
-	 for (int i = 0; i < n; i++) x[i] = random_standard_exponential(rng);
-  else
-	 for (int i = 0; i < n; i++) x[i] = random_standard_exponential(rng)*scale;
+static inline void rand_exp(double *x, size_t n, double scale, randompack_rng *rng) {
+  if (scale == 1.0) {
+    for (size_t i = 0; i < n; i++) x[i] = random_standard_exponential(rng);
+  }
+  else {
+    for (size_t i = 0; i < n; i++) x[i] = random_standard_exponential(rng)*scale;
+  }
 }
 
 // static inline void rand_exp(double *x, int n, randompack_rng *rng) {
@@ -96,11 +64,11 @@ static inline void rand_exp(double *x, int n, double scale, randompack_rng *rng)
 //   }
 // }
 
-// static void rand_normal(double x[], size_t n, randompack_rng *rng) {
+// static void rand_norm(double x[], size_t n, randompack_rng *rng) {
 //   if (rng->spare_norm == INFINITY)
 // 	 for (size_t i = 0; i < n; i++) x[i] = zmgd(rng, rng); // ziggurat
 //   else
-// 	 rand_normal_polar(x, n, rng);
+// 	 rand_norm_polar(x, n, rng);
 // }
 
 static void rand_uint64(uint64_t bound, uint64_t x[], size_t n, randompack_rng *rng) {
@@ -112,39 +80,39 @@ static void rand_uint64(uint64_t bound, uint64_t x[], size_t n, randompack_rng *
   size_t i = 0;
   uint64_t R;
   if (bound <= UINT8_MAX) {
-    uint8_t r, b = (uint8_t)bound, thresh = (1u<<8) % b;
+    uint8_t r, b = bound, thresh = (1u<<8) % b;
     while (i < n) {
       R = draw_u64(rng);
       for (int j = 0; j < 8; j++) {
-        r = (uint8_t)R;
-        if (r >= thresh) x[i++] = (uint64_t)(r % b);
+        r = R;
+        if (r >= thresh) x[i++] = r % b;
         if (i>=n) break;
         R >>= 8;
       }
     }
   }
-  else if (bound <= (uint64_t)UINT16_MAX) {
-    uint16_t r, b = (uint16_t)bound, thresh = (1u<<16) % b;
+  else if (bound <= UINT16_MAX) {
+    uint16_t r, b = bound, thresh = (1u<<16) % b;
     while (i < n) {
       R = draw_u64(rng);
       for (int j = 0; j < 4; j++) {
-        r = (uint16_t)R;
-        if (r >= thresh) x[i++] = (uint64_t)(r % b);
+        r = R;
+        if (r >= thresh) x[i++] = r % b;
         if (i>=n) break;
         R >>= 16;
       }
     }
   }
-  else if (bound <= (uint64_t)UINT32_MAX) {
-    uint32_t r, b = (uint32_t)bound, M = (uint32_t)0-b, thresh = M % b;
+  else if (bound <= UINT32_MAX) {
+    uint32_t r, b = bound, M = 0-b, thresh = M % b;
     while (i < n) {
       R = draw_u64(rng);
-      r = (uint32_t)R;
-      if (r >= thresh) x[i++] = (uint64_t)(r % b);
+      r = R;
+      if (r >= thresh) x[i++] = r % b;
       if (i>=n) break;
       R >>= 32;
-      r = (uint32_t)R;
-      if (r >= thresh) x[i++] = (uint64_t)(r % b);
+      r = R;
+      if (r >= thresh) x[i++] = r % b;
     }
   }
   else {
@@ -165,40 +133,40 @@ static void rand_uint32(uint32_t bound, uint32_t x[], size_t n, randompack_rng *
   size_t i = 0;
   int j;
   uint64_t R;
-  if (bound <= (uint32_t)UINT8_MAX) {
-    uint8_t r, b = (uint8_t)bound, thresh = (1u<<8) % b;
+  if (bound <= UINT8_MAX) {
+    uint8_t r, b = bound, thresh = (1u<<8) % b;
     while (i < n) {
       R = draw_u64(rng);
       for (j = 0; j < 8; j++) {
-        r = (uint8_t)R;
-        if (r >= thresh) x[i++] = (uint32_t)(r % b);
+        r = R;
+        if (r >= thresh) x[i++] = r % b;
         if (i>=n) break;
         R >>= 8;
       }
     }
   }
-  else if (bound <= (uint32_t)UINT16_MAX) {
-    uint16_t r, b = (uint16_t)bound, thresh = (1u<<16) % b;
+  else if (bound <= UINT16_MAX) {
+    uint16_t r, b = bound, thresh = (1u<<16) % b;
     while (i < n) {
       R = draw_u64(rng);
       for (j = 0; j < 4; j++) {
-        r = (uint16_t)R;
-        if (r >= thresh) x[i++] = (uint32_t)(r % b);
+        r = R;
+        if (r >= thresh) x[i++] = r % b;
         if (i>=n) break;
         R >>= 16;
       }
     }
   }
   else {
-    uint32_t r, b = (uint32_t)bound, M = 0-b, thresh = M % b;
+    uint32_t r, b = bound, M = 0-b, thresh = M % b;
     while (i < n) {
       R = draw_u64(rng);
-      r = (uint32_t)R;
-      if (r >= thresh) x[i++] = (uint32_t)(r % b);
+      r = R;
+      if (r >= thresh) x[i++] = r % b;
       if (i>=n) break; // process left (high) half of R
       R >>= 32;
-      r = (uint32_t)R;
-      if (r >= thresh) x[i++] = (uint32_t)(r % b);
+      r = R;
+      if (r >= thresh) x[i++] = r % b;
     }
   }
 }
@@ -212,25 +180,25 @@ static void rand_uint16(uint16_t bound, uint16_t x[], size_t n, randompack_rng *
   size_t i = 0;
   int j;
   uint64_t R;
-  if (bound <= (uint16_t)UINT8_MAX) {
-    uint8_t r, b = (uint8_t)bound, thresh = (1u<<8) % b;
+  if (bound <= UINT8_MAX) {
+    uint8_t r, b = bound, thresh = (1u<<8) % b;
     while (i < n) {
       R = draw_u64(rng);
       for (j = 0; j < 8; j++) {
-        r = (uint8_t)R;
-        if (r >= thresh) x[i++] = (uint16_t)(r % b);
+        r = R;
+        if (r >= thresh) x[i++] = r % b;
         if (i>=n) break;
         R >>= 8;
       }
     }
   }
   else {
-    uint16_t r, b = (uint16_t)bound, thresh = (1u<<16) % b;
+    uint16_t r, b = bound, thresh = (1u<<16) % b;
     while (i < n) {
       R = draw_u64(rng);
       for (j = 0; j < 4; j++) {
-        r = (uint16_t)R;
-        if (r >= thresh) x[i++] = (uint16_t)(r % b);
+        r = R;
+        if (r >= thresh) x[i++] = r % b;
         if (i>=n) break;
         R >>= 16;
       }
@@ -248,12 +216,12 @@ static void rand_uint8(uint8_t bound, uint8_t x[], size_t n, randompack_rng *rng
   size_t i = 0;
   int j;
   uint64_t R;
-  uint8_t r, b = (uint8_t)bound, thresh = (1u<<8) % b;
+  uint8_t r, b = bound, thresh = (1u<<8) % b;
   while (i < n) {
 	 R = draw_u64(rng);
 	 for (j = 0; j < 8; j++) {
-		r = (uint8_t)R;
-		if (r >= thresh) x[i++] = (uint8_t)(r % b);
+		r = R;
+		if (r >= thresh) x[i++] = r % b;
 		if (i>=n) break;
 		R >>= 8;
 	 }
@@ -277,7 +245,7 @@ static void rand_int_pm_compatible(int bound, int x[], size_t n, randompack_rng 
   if (rng->engine == PARKMILLER)
     PM_rand_int(bound, x, n, rng);
   else
-    rand_uint32((uint32_t) bound, (uint32_t*) x, n, rng);
+    rand_uint32(bound, (uint32_t*) x, n, rng);
 }
 
 static void rand_perm(int p[], int n, randompack_rng *rng) {
@@ -290,7 +258,7 @@ static void rand_perm(int p[], int n, randompack_rng *rng) {
   }
 }
 
-static void rand_sample(int p[], size_t n, int k, randompack_rng *rng) {
+static void rand_sample(int p[], int n, int k, randompack_rng *rng) {
   // Select k values from 0..n-1, c.f. reservoir sampling on Wikipedia
   int r;
   p[0] = 0;
@@ -299,7 +267,7 @@ static void rand_sample(int p[], size_t n, int k, randompack_rng *rng) {
     if (r != i) p[i] = p[r];
     p[r] = i;
   }
-  for (size_t i=k; i<n; i++) {
+  for (int i = k; i < n; i++) {
     rand_int_pm_compatible(i+1, &r, 1, rng);
     if (r < k) p[r] = i;
   }
@@ -346,14 +314,43 @@ static inline double gamma_shape(double shape, randompack_rng *rng) {
   return g*exp(log(u)/shape);
 }
 
-static void rand_gamma(double x[], size_t len, double shape, double scale,
-							  randompack_rng *rng) {
+static void rand_gamma(double x[], size_t len, double shape, double scale, randompack_rng
+							  *rng) {
   if (scale == 1)
 	 for (size_t i=0; i<len; i++) x[i] = gamma_shape(shape, rng);
   else
 	 for (size_t i=0; i<len; i++) x[i] = gamma_shape(shape, rng)*scale;
 }
 
+static void rand_beta(double x[], size_t len, double a, double b, randompack_rng *rng) {
+  for (size_t i=0; i<len; i++) {
+    for (;;) {
+      double ga = gamma_shape(a, rng);
+      double gb = gamma_shape(b, rng);
+      double s = ga + gb;
+      if (s > 0) {
+        x[i] = ga/s;
+        break;
+      }
+    }
+  }
+}
+
+// NOTE 1: There are situations when Sig is indefinite but close to being positive
+//         definite, for example due to rounding errors. To remedy this a pivoted
+//         Cholesky factorization of Sig is employed, which may return an L matrix
+//         which is not lower and has some trailing columns 0, but does satisfy
+//         L·L' = Sig, and can thus be used to generate vectors with the right
+//         distribution.
+// NOTE 2: In case the calling program needs the Cholesky factor of Sig this may
+//         be returned in L by letting it be a d × d array instead of 0 in the
+//         call.
+// NOTE 3: When randompack_mvn is to be called multiple times for the same
+//         covariance it is possible to save execution time by reusing the
+//         Cholesky factorization of Sig on all calls but the first. Specify Sig
+//         and return L on the first call, and let Sig be null and specify L on
+//         subsequent calls. If both Sig and L are null, the function exits with
+//         ok = 0.
 static bool rand_mvn(char transp, double mu[], double Sig[], int d, size_t n,
                      double X[], int ldX, double L[], randompack_rng *rng) {
   int info, rank;
@@ -395,18 +392,18 @@ static bool rand_mvn(char transp, double mu[], double Sig[], int d, size_t n,
   if (rank == d) {
     if (TRAN) {
       for (size_t i = 0; i < n; i++)
-        rand_normal(X + i*ldX, d, rng);
+        rand_norm(X + i*ldX, d, rng);
       trmm("Left", "Lower", "NoT", "NotUdia", d, n, 1.0, L, d, X, ldX);
     }
     else {
       for (int i = 0; i < d; i++)
-        rand_normal(X + i*ldX, n, rng);
+        rand_norm(X + i*ldX, n, rng);
       trmm("Right", "Lower", "T", "NotUdia", n, d, 1.0, L, d, X, ldX);
     }
   }
   else { // Singular Sig, use workspace for the N(0,1) randoms
     if (!ALLOC(Wrk, n*rank)) goto fail;
-    rand_normal(Wrk, n*rank, rng);
+    rand_norm(Wrk, n*rank, rng);
     if (TRAN)
       gemm("NoT", "NoT", d, n, rank, 1.0, L, d, Wrk, rank, 0.0, X, ldX);
     else

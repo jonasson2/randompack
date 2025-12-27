@@ -6,14 +6,17 @@
 //
 // Macros for randompack compatibility:
 #define bitgen_t randompack_rng
+#define next_uint32 draw_u32
 #define next_uint64 draw_u64
+#define next_float(rng) ((draw_u32(rng) >> 8) * (float)0x1.0p-24)
 #define next_double(rng) ((draw_u64(rng) >> 11) * 0x1.0p-53)
-//#define next_double randompack_u01_draw
 #define npy_log1p log1p
+#define npy_log1pf log1pf
 
 double random_standard_exponential(bitgen_t *bitgen_state);
+float random_standard_exponential_f(bitgen_t *bitgen_state);
 
-static double standard_exponential_unlikely(bitgen_t *bitgen_state,
+static inline double standard_exponential_unlikely(bitgen_t *bitgen_state,
                                                 uint8_t idx, double x) {
   if (idx == 0) {
     /* Switch to 1.0 - U to avoid log(0.0), see GH 13361 */
@@ -27,7 +30,21 @@ static double standard_exponential_unlikely(bitgen_t *bitgen_state,
   }
 }
 
-double random_standard_exponential(bitgen_t *bitgen_state) {
+static inline float standard_exponential_unlikely_f(bitgen_t *bitgen_state,
+                                                 uint8_t idx, float x) {
+  if (idx == 0) {
+    /* Switch to 1.0 - U to avoid log(0.0), see GH 13361 */
+    return ziggurat_exp_r_f - npy_log1pf(-next_float(bitgen_state));
+  } else if ((fe_float[idx - 1] - fe_float[idx]) * next_float(bitgen_state) +
+                 fe_float[idx] <
+             expf(-x)) {
+    return x;
+  } else {
+    return random_standard_exponential_f(bitgen_state);
+  }
+}
+
+static inline double random_standard_exponential(bitgen_t *bitgen_state) {
   uint64_t ri;
   uint8_t idx;
   double x;
@@ -40,4 +57,19 @@ double random_standard_exponential(bitgen_t *bitgen_state) {
     return x; /* 98.9% of the time we return here 1st try */
   }
   return standard_exponential_unlikely(bitgen_state, idx, x);
+}
+
+static inline float random_standard_exponential_f(bitgen_t *bitgen_state) {
+  uint32_t ri;
+  uint8_t idx;
+  float x;
+  ri = next_uint32(bitgen_state);
+  ri >>= 1;
+  idx = ri & 0xFF;
+  ri >>= 8;
+  x = ri * we_float[idx];
+  if (ri < ke_float[idx]) {
+    return x; /* 98.9% of the time we return here 1st try */
+  }
+  return standard_exponential_unlikely_f(bitgen_state, idx, x);
 }

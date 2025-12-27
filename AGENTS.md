@@ -14,19 +14,24 @@ CORE C STYLE
 - Pointer form: int *x. Prefer i++ in loops.  
 - Max line length 90; no spaces around * or /, spaces around comparison operators
 - Use bool/true/false; prefer 0 over NULL and '\0'
-- Don't use (int) cast unless necessary
+- Don't use any casts unless necessary
 - Prefer brackets around sizeof argument
 - Never use const unless absolutely necessary
+- Use "size_t len" for the lengths of the drawn vectors in randompack.c and 
+    distributions.c. 
+- Use "int" for all other index and size variables when bounds are known to be small
+- Always use int constants for whole number doubles and let C convert them to double
 
 ---------------------------
 ARCHITECTURE
 ---------------------------
 - Public header: randompack.h
-- Use macros and helpers from randompack_config.h:
--    STRSET, STRSETF, LEN, CLEAR, ALLOC, FREE, imin, imax 
-- Sources under src/, tests live in tests/, examples in examples/
-- Meson/Ninja drive builds
 - Single file build (via includes)
+- Sources under src/, tests live in tests/, examples in examples/
+- Use macros and helpers from randompack_config.h:
+-    STRSET, STRSETF, LEN, CLEAR, ALLOC, FREE, min, max
+- In tests, use utilities declared/defined in TestUtil.h
+- Meson/Ninja drive builds
 
 ---------------------------
 OUTPUT
@@ -36,3 +41,5 @@ OUTPUT
 - Provide concrete answers or code following the rules above.
 - Stroustrup braces also on function signature lines
 - Use 0 instead of NULL
+- No unnecessary casts
+- Prefer 0, 1, 2, 3 to 0.0, 1.0, 2.0, 3.0 in double initializations.
