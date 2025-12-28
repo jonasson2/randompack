@@ -84,7 +84,4 @@ void TestInt(void) {
     test_seed_changes_output(e);
     test_balanced_bits(e);
   }
-  test_edge_cases("park-miller", INT_MAX - 2);
-  test_seed_changes_output("park-miller");
-  test_balanced_bits("park-miller");
 }

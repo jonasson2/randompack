@@ -98,23 +98,7 @@ static void test_spawn_key_separation(void) {
   }
 }
 
-static void test_parkmiller_rejects_spawn_key(void) {
-  // Requires the Park-Miller branch to reject any (spawn_key,nkey) != (0,0).
-  randompack_rng *rng = randompack_create("park-miller");
-  ASSERT(rng);
-  check_rng_clean(rng);
-  uint32_t key[] = {1u};
-  bool ok = randompack_seed(42, key, 1, rng);
-  check_failure(ok, rng);
-
-  // Also reject spawn_key non-null even when nkey == 0 (policy: must be 0,0).
-  ok = randompack_seed(42, key, 0, rng);
-  check_failure(ok, rng);
-  randompack_free(rng);
-}
-
 void TestSeed(void) {
   test_seed_determinism();
   test_spawn_key_separation();
-  test_parkmiller_rejects_spawn_key();
 }

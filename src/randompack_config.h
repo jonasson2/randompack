@@ -52,7 +52,6 @@ static inline uint64_t rand_splitmix64(uint64_t *x) {
   return z ^ (z >> 31);
 }
 
-static int mersenne8 = 2147483647;  // 2^31-1
 
 #ifdef __unix__
   #include <unistd.h>

@@ -17,28 +17,17 @@ static int LastNonzeroColumn(int m, int n, double A[]) {
 
 static void rand_dble(double x[], size_t n, randompack_rng *rng) {
   size_t i;
-  // Random uniform double
-  if (rng->engine == PARKMILLER) {
-    const double maxrand = 1.0 + mersenne8;
-    for (i = 0; i < n; i++) {
-      uint32_t u = PM_rand_bits(rng);
-      double r = u;
-      x[i] = r / maxrand;
+  align64(rng);
+  i = 0;
+  while (i < n) {
+    fill_buf_if_empty(rng);
+    int take = min(n - i, BUFSIZE - rng->buf_word);
+    for (int j = 0; j < take; j++) {
+      uint64_t v = rng->buf[rng->buf_word + j];
+      x[i + j] = (v >> 11) * 0x1.0p-53;
     }
-  }
-  else {
-    align64(rng);
-    i = 0;
-    while (i < n) {
-      fill_buf_if_empty(rng);
-      int take = min(n - i, BUFSIZE - rng->buf_word);
-      for (int j = 0; j < take; j++) {
-        uint64_t v = rng->buf[rng->buf_word + j];
-        x[i + j] = (v >> 11) * 0x1.0p-53;
-      }
-      rng->buf_word += take;
-      i += take;
-    }
+    rng->buf_word += take;
+    i += take;
   }
 }
 
@@ -228,24 +217,9 @@ static void rand_uint8(uint8_t bound, uint8_t x[], size_t n, randompack_rng *rng
   }
 }
 
-static void PM_rand_int(int bound, int x[], size_t n, randompack_rng *rng) {
-  if (bound <= 0 || bound >= mersenne8) return;
-  int thresh = (mersenne8 - 1) % bound;
-  for (size_t i = 0; i < n; i++) {
-    int r;
-    do {
-      r = PM_rand_bits(rng) - 1; // r in [0, 2^31 - 3]
-    } while (r < thresh);
-    x[i] = r % bound;
-  }
-}
-
 static void rand_int_pm_compatible(int bound, int x[], size_t n, randompack_rng *rng) {
   // Sets x to integers in [0, bound), where 1 <= bound <= INT32_MAX - 2.
-  if (rng->engine == PARKMILLER)
-    PM_rand_int(bound, x, n, rng);
-  else
-    rand_uint32(bound, (uint32_t*) x, n, rng);
+  rand_uint32(bound, (uint32_t*)x, n, rng);
 }
 
 static void rand_perm(int p[], int n, randompack_rng *rng) {

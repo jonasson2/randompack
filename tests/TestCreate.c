@@ -1,6 +1,6 @@
 // -*- C -*-
 // Tests for create_seeded_rng and engine-name handling (aliases, defaults, system CSPRNG,
-// Park-Miller behavior, and error reporting).
+// and error reporting).
 #include <stdint.h>
 #include <stdbool.h>
 #include "randompack_config.h"
@@ -118,41 +118,6 @@ static void test_system_engine(void) {
   }
 }
 
-// Park-Miller supports only int draws; uint64 requests must fail.
-static void test_park_miller(void) {
-  randompack_rng *rng = create_seeded_rng("park-miller", 123);
-  check_rng_clean(rng);
-  uint64_t x = 0;
-  bool ok = randompack_uint64(&x, 1, 0, rng);
-  check_failure(ok, rng);
-  randompack_free(rng);
-}
-
-// Park-Miller determinism for seeds: same seed => same int, different seed => different
-// int (using full and abbrev engine names).
-static void test_park_miller_determinism(void) {
-  int a = 0;
-  int b = 0;
-  int c = 0;
-  randompack_rng *r1 = create_seeded_rng("park-miller", 42);
-  randompack_rng *r2 = create_seeded_rng("pm", 42);
-  randompack_rng *r3 = create_seeded_rng("pm", 43);
-  check_rng_clean(r1);
-  check_rng_clean(r2);
-  check_rng_clean(r3);
-  bool ok1 = randompack_int(&a, 1, 0, 100, r1);
-  bool ok2 = randompack_int(&b, 1, 0, 100, r2);
-  bool ok3 = randompack_int(&c, 1, 0, 100, r3);
-  check_success(ok1, r1);
-  check_success(ok2, r2);
-  check_success(ok3, r3);
-  xCheck(a == b);
-  xCheck(a != c);
-  randompack_free(r1);
-  randompack_free(r2);
-  randompack_free(r3);
-}
-
 void TestCreate(void) {
   test_determinism();
   test_engine_aliases();
@@ -160,8 +125,6 @@ void TestCreate(void) {
   test_null_engine_name();
   test_default_engine_matches_x256pp();
   test_system_engine();
-  test_park_miller();
-  test_park_miller_determinism();
 #ifndef HAVE128
   test_pcg64_unavailable();
 #endif

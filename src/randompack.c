@@ -19,7 +19,6 @@ typedef struct randompack_rng randompack_rng;
 
 typedef enum {
   INVALID,
-  PARKMILLER,
   X128P,
   X256SS,
   X256PP,
@@ -76,7 +75,6 @@ static uint64_t next_pcg64(randompack_rng *rng) {
 #endif
 
 static rng_entry rng_table[] = {
-  { "park-miller",   "pm",       PARKMILLER, 1, 0             },
   { "xorshift128+",  "x128+",    X128P,      2, fill_x128p    },
   { "xoshiro256**",  "x256**",   X256SS,     4, fill_x256ss   },
   { "xoshiro256++",  "x256++",   X256PP,     4, fill_x256pp   },
@@ -118,34 +116,21 @@ bool randompack_seed(int seed, uint32_t *spawn_key, int nkey, randompack_rng *rn
   if (!rng) return false;
   uint32_t seed32 = seed;
   rng->last_error = 0;
-  if (rng->engine == PARKMILLER) {
-    if (nkey != 0 || spawn_key != 0) {
-      rng->last_error = "randompack_seed: spawn_key not supported for Park-Miller";
-      return false;
-    }
-    uint32_t s = seed32 % mersenne8;
-    if (s == 0) s = 1;
-    rng->state.u32[0] = s;
-    rng->buf_word = BUFSIZE;
-    rng->buf_byte = 0;
-    (void)PM_rand_bits(rng); // burn-in
+  // Use Melissa O'Neill's seed sequence
+  if (nkey < 0 || (nkey > 0 && !spawn_key)) {
+    rng->last_error = "randompack_seed: invalid spawn_key arguments";
+    return false;
   }
-  else {  // Use Melissa O'Neill's seed sequence
-    if (nkey < 0 || (nkey > 0 && !spawn_key)) {
-      rng->last_error = "randompack_seed: invalid spawn_key arguments";
-      return false;
-    }
-    uint32_t w[16];
-	 bool ok = seed_seq_seed(w, 16, seed32, spawn_key, nkey);
-	 if (!ok) {
-		rng->last_error = "randompack_seed: allocation failed";
-		return false;
-	 }
-	 rng_entry *ent = find_entry(rng->engine);
-    copy32(rng->state.u32, w, ent->state_words*2);
-	 if (rng->state.u64[0] == 0) { // the xo-family needs a nonzero state
-		rng->state.u64[0] = 1;
-    }
+  uint32_t w[16];
+  bool ok = seed_seq_seed(w, 16, seed32, spawn_key, nkey);
+  if (!ok) {
+    rng->last_error = "randompack_seed: allocation failed";
+    return false;
+  }
+  rng_entry *ent = find_entry(rng->engine);
+  copy32(rng->state.u32, w, ent->state_words*2);
+  if (rng->state.u64[0] == 0) { // the xo-family needs a nonzero state
+    rng->state.u64[0] = 1;
   }
   rng->buf_word = BUFSIZE;
   rng->buf_byte = 0;
@@ -179,19 +164,7 @@ randompack_rng *randompack_create(const char *engine) {
   }
   rng_entry *ent = find_entry(rng->engine);
   (void)ent;
-  if (rng->engine == PARKMILLER) {
-    uint64_t x;
-    uint32_t s;
-    entropy_fill(rng, &x, sizeof x);
-    s = x % mersenne8;
-    if (s == 0) s = 1;
-    rng->state.u32[0] = s;
-    rng->buf_word = BUFSIZE;
-    rng->buf_byte = 0;
-  }
-  else {
-    rand_randomize(rng);
-  }
+  rand_randomize(rng);
   return rng;
 }
 
@@ -323,11 +296,6 @@ bool randompack_set_state(uint64_t state[], int nstate, randompack_rng *rng) {
     rng->last_error = "randompack_set_state: pcg64 increment must be odd";
     return false;
   }
-  if (rng->engine == PARKMILLER &&
-      (state[0] < 1 || state[0] >= (uint64_t)mersenne8)) {
-    rng->last_error = "randompack_set_state: Park-Miller state out of range";
-    return false;
-  }
   set_state(state, nstate, rng);
   return true;
 }
@@ -375,18 +343,13 @@ bool randompack_int(int x[], size_t len, int m, int n, randompack_rng *rng) {
     rng->last_error = "invalid arguments to randompack_int";
   else if (m > n)
     rng->last_error = "randompack_int: m must be <= n";
-  else if (rng->engine == PARKMILLER && span > INT_MAX - 2)
-    rng->last_error = "randompack_int: for Park-Miller, n - m must be < 2^31 - 2";
   else if (span > INT_MAX)
     rng->last_error = "randompack_int: n - m must be < 2^31";
   else
     rng->last_error = 0;
   if (rng->last_error) return false;
   
-  if (rng->engine == PARKMILLER)
-    PM_rand_int(span + 1, x, len, rng);
-  else
-    rand_uint32(span + 1, (uint32_t*)x, len, rng);
+  rand_uint32(span + 1, (uint32_t*)x, len, rng);
   for (size_t i = 0; i < len; i++) x[i] += m;
   return true;
 }
@@ -395,8 +358,6 @@ bool randompack_uint8(uint8_t x[], size_t len, uint8_t bound, randompack_rng *rn
   if (!rng) return false;
   if (!x)
     rng->last_error = "randompack_uint8: invalid arguments";
-  else if (rng->engine == PARKMILLER)
-    rng->last_error = "randompack_uint8: Park-Miller does not support uint8 randoms";
   else
     rng->last_error = 0;
   if (rng->last_error) return false;  
@@ -408,8 +369,6 @@ bool randompack_uint16(uint16_t x[], size_t len, uint16_t bound, randompack_rng 
   if (!rng) return false;
   if (!x)
     rng->last_error = "randompack_uint16: invalid arguments";
-  else if (rng->engine == PARKMILLER)
-    rng->last_error = "randompack_uint16: Park-Miller does not support uint16 randoms";
   else
     rng->last_error = 0;
   if (rng->last_error) return false;  
@@ -421,8 +380,6 @@ bool randompack_uint32(uint32_t x[], size_t len, uint32_t bound, randompack_rng 
   if (!rng) return false;
   if (!x)
     rng->last_error = "randompack_uint32: invalid arguments";
-  else if (rng->engine == PARKMILLER)
-    rng->last_error = "randompack_uint32: Park-Miller does not support uint32 randoms";
   else
     rng->last_error = 0;
   if (rng->last_error) return false;  
@@ -434,8 +391,6 @@ bool randompack_uint64(uint64_t x[], size_t len, uint64_t bound, randompack_rng 
   if (!rng) return false;
   if (!x)
     rng->last_error = "invalid arguments to randompack_uint64";
-  else if (rng->engine == PARKMILLER)
-    rng->last_error = "randompack_uint64: Park-Miller does not support uint64 randoms";
   else
     rng->last_error = 0;
   if (rng->last_error) return false;

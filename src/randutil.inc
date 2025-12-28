@@ -86,7 +86,6 @@ static void set_state(uint64_t *state, int nstate, randompack_rng *rng) {
   //   for (int i=0; i<3; i++) store_le32(&nonce[4*i], w[8 + i]);  // ditto    
   //   ChaCha20_init(ctx, key, nonce, w[11]);
   // }
-  if (rng->engine == PARKMILLER) rng->state.u32[0] = state[0];
   // else {
   // 	 int ncore = min(nstate, 4), nextra = nstate - 4;
   // 	 copy64(rng->state.u64, state, ncore);

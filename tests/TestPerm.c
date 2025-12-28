@@ -26,7 +26,7 @@ static void test_perm_api(void) {
   int len, lens[] = {1, 2, 3, 10};
   int perm[10];
   bool ok;
-  char *engines[] = {"xoshiro256++", "park-miller", "pcg64"};
+  char *engines[] = {"xoshiro256++", "pcg64"};
   for (int i = 0; i < LEN(engines); i++) {
 	 randompack_rng *rng = create_seeded_rng(engines[i], 77);
 	 ok = randompack_perm(perm, 0, rng);
