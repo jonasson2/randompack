@@ -46,20 +46,6 @@ static inline void rand_exp(double *x, size_t n, double scale, randompack_rng *r
   }
 }
 
-// static inline void rand_exp(double *x, int n, randompack_rng *rng) {
-//   for (int i=0; i<n; i++) {
-//     double u = randompack_u01_draw(rng);     // uses (v >> 11)*2^-53
-//     x[i] = -log1p(-u);
-//   }
-// }
-
-// static void rand_norm(double x[], size_t n, randompack_rng *rng) {
-//   if (rng->spare_norm == INFINITY)
-// 	 for (size_t i = 0; i < n; i++) x[i] = zmgd(rng, rng); // ziggurat
-//   else
-// 	 rand_norm_polar(x, n, rng);
-// }
-
 static void rand_uint64(uint64_t bound, uint64_t x[], size_t n, randompack_rng *rng) {
   // Sets x to n random integers in {0, 1,..., bound-1}
   if (bound == 0) {
