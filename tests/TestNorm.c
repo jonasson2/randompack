@@ -26,16 +26,26 @@ bool check_normal_max(double *x, int n) {
 static void test_basic(char *engine) {
   TEST_DETERMINISM0(engine, double, norm);
   TEST_EDGE_CASES0(engine, double, norm);
+  TEST_DETERMINISM0(engine, float, normf);
+  TEST_EDGE_CASES0(engine, float, normf);
 }
 
 static void test_statistics(char *engine) {
   int N = N_STAT_FAST;
   double *x;
+  float *y;
   TEST_ALLOC(x, N);
+  TEST_ALLOC(y, N);
   DRAW(engine, 7, randompack_norm(x, N, rng));
   xCheck(check_meanvar(x, N));
   xCheck(check_skewkurt(x, N, 0, 3));
   xCheck(check_normal_max(x, N));
+  DRAW(engine, 7, randompack_normf(y, N, rng));
+  for (int i = 0; i < N; i++) x[i] = y[i];
+  xCheck(check_meanvar(x, N));
+  xCheck(check_skewkurt(x, N, 0, 3));
+  xCheck(check_normal_max(x, N));
+  FREE(y);
   FREE(x);
 }
 

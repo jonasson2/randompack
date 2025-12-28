@@ -12,21 +12,36 @@
 
 static void test_basic(char *engine) {
   double scale = 1;
+  float scale_f = 1.0f;
   TEST_DETERMINISM1(engine, double, exp, scale);
   TEST_EDGE_CASES1(engine, double, exp, scale);
+  TEST_DETERMINISM1(engine, float, expf, scale_f);
+  TEST_EDGE_CASES1(engine, float, expf, scale_f);
   TEST_ILLEGAL_PARAMS1(double, engine, exp, 0);
   TEST_ILLEGAL_PARAMS1(double, engine, exp, -1);
+  TEST_ILLEGAL_PARAMS1(float, engine, expf, 0);
+  TEST_ILLEGAL_PARAMS1(float, engine, expf, -1);
 }
 
 static void test_PIT(char *engine, double scale) {
   int N = N_STAT_FAST;
   double *x, *u;
+  float *y, *v;
+  float scale_f = scale;
   TEST_ALLOC(x, N);
   TEST_ALLOC(u, N);
+  TEST_ALLOC(y, N);
+  TEST_ALLOC(v, N);
   DRAW(engine, 7, randompack_exp(x, N, scale, rng));
+  DRAW(engine, 7, randompack_expf(y, N, scale_f, rng));
   TEST_SUPPORT(double, x, N, 0, INFINITY);
+  TEST_SUPPORT(float, y, N, 0, INFINITY);
   for (int i = 0; i < N; i++) u[i] = 1 - exp(-x[i]/scale);
+  for (int i = 0; i < N; i++) v[i] = 1.0f - expf(-y[i]/scale_f);
   check_u01_distribution(u, N);
+  check_u01_distributionf(v, N);
+  FREE(v);
+  FREE(y);
   FREE(u);
   FREE(x);
 }

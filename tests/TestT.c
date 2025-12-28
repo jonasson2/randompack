@@ -20,21 +20,36 @@ static double t_cdf(double x, double nu) {
 
 static void test_basic(char *engine) {
   double nu = 5;
+  float nu_f = 5.0f;
   TEST_DETERMINISM1(engine, double, t, nu);
   TEST_EDGE_CASES1(engine, double, t, nu);
+  TEST_DETERMINISM1(engine, float, tf, nu_f);
+  TEST_EDGE_CASES1(engine, float, tf, nu_f);
   TEST_ILLEGAL_PARAMS1(double, engine, t, 0);
   TEST_ILLEGAL_PARAMS1(double, engine, t, -1);
+  TEST_ILLEGAL_PARAMS1(float, engine, tf, 0);
+  TEST_ILLEGAL_PARAMS1(float, engine, tf, -1);
 }
 
 static void test_PIT(char *engine, double nu) {
   int N = N_STAT_SLOW;
   double *x, *u;
+  float *y, *v;
+  float nu_f = nu;
   TEST_ALLOC(x, N);
   TEST_ALLOC(u, N);
+  TEST_ALLOC(y, N);
+  TEST_ALLOC(v, N);
   DRAW(engine, 42, randompack_t(x, N, nu, rng));
+  DRAW(engine, 42, randompack_tf(y, N, nu_f, rng));
   for (int i = 0; i < N; i++)
     u[i] = t_cdf(x[i], nu);
+  for (int i = 0; i < N; i++)
+    v[i] = (float)t_cdf((double)y[i], nu_f);
   check_u01_distribution(u, N);
+  check_u01_distributionf(v, N);
+  FREE(v);
+  FREE(y);
   FREE(u);
   FREE(x);
 }

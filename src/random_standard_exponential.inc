@@ -13,8 +13,8 @@
 #define npy_log1p log1p
 #define npy_log1pf log1pf
 
-double random_standard_exponential(bitgen_t *bitgen_state);
-float random_standard_exponential_f(bitgen_t *bitgen_state);
+static inline double random_standard_exponential(bitgen_t *bitgen_state);
+static inline float random_standard_exponential_f(bitgen_t *bitgen_state);
 
 static inline double standard_exponential_unlikely(bitgen_t *bitgen_state,
                                                 uint8_t idx, double x) {
