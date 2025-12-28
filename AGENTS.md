@@ -6,7 +6,8 @@ Always obey the rules below.
 CORE C STYLE
 ---------------------------
 - ISO C11 only; no compiler extensions
-- Indent 2 spaces; 
+- Indent 2 spaces
+- No blank lines except between function definitions/declarations
 - Stroustrup braces
 - Open brace ({) on same line as function definition 
 - else on a new line

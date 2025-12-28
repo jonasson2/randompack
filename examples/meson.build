@@ -25,3 +25,15 @@ timing = executable(
   ['Timing.c'] + common_util,
   dependencies : [randompack_dep],
 )
+
+time_engines = executable(
+  'TimeEngines',
+  ['TimeEngines.c', 'TimeUtil.c'] + common_util,
+  dependencies : [randompack_dep],
+)
+
+time_distributions = executable(
+  'TimeDistributions',
+  ['TimeDistributions.c', 'TimeUtil.c'] + common_util,
+  dependencies : [randompack_dep],
+)
