@@ -8,7 +8,6 @@ static bool serialize(uint8_t *buf, int need, randompack_rng *rng) {
 
   // Copy core 64-bit state
   copy64(blob.state_u64, rng->state.u64, LEN(rng->state.u64));
-  blob.spare_norm = rng->spare_norm;
   blob.buf_word   = rng->buf_word;
   blob.buf_byte   = rng->buf_byte;
   blob.reserved0  = 0;
@@ -25,6 +24,5 @@ static bool deserialize(rng_blob *blob, rng_entry *ent, randompack_rng *rng) {
   copy64(rng->buf, blob->buf, BUFSIZE);
   rng->buf_word = blob->buf_word;
   rng->buf_byte = blob->buf_byte;
-  rng->spare_norm = blob->spare_norm;
   return true;
 }

@@ -43,7 +43,6 @@ struct randompack_rng {
   int buf_word;
   int buf_byte;
   engine_fill fill;
-  double spare_norm;
   char *last_error;
   uint64_t buf[BUFSIZE];
 };
@@ -134,7 +133,6 @@ bool randompack_seed(int seed, uint32_t *spawn_key, int nkey, randompack_rng *rn
   }
   rng->buf_word = BUFSIZE;
   rng->buf_byte = 0;
-  rng->spare_norm = INFINITY;
   return true;
 }
 
@@ -150,7 +148,6 @@ randompack_rng *randompack_create(const char *engine) {
   // Create engine
   if (!ALLOC(rng, 1)) return 0;
   rng->last_error = 0;
-  rng->spare_norm = INFINITY; // Use ziggurat iff INFINITY
   rng->engine = INVALID;
   rng->buf_word = BUFSIZE;
   rng->buf_byte = 0;
@@ -177,7 +174,6 @@ typedef struct {
   uint32_t version;
   uint32_t engine;
   uint64_t state_u64[4];
-  double spare_norm;
   uint32_t buf_word;
   uint32_t buf_byte;
   uint32_t reserved0;
@@ -189,7 +185,6 @@ enum {
   STATE_NEED =
   sizeof(uint32_t)*2
   + sizeof(((rng_blob *)0)->state_u64)
-  + sizeof(double)
   + sizeof(uint32_t)*4
   + sizeof(((rng_blob *)0)->buf)
 };
@@ -304,22 +299,6 @@ char *randompack_last_error(randompack_rng *rng) {
   if (!rng) return 0;
   return rng->last_error;
 }
-
-bool randompack_set_norm_method(char *method, randompack_rng *rng) {
-  if (!rng) return false;
-  rng->last_error = 0;
-  char t[10];
-  STRSET(t, method);
-  for (int i=0; t[i]; i++) t[i] = TOLOWER(t[i]);
-  if (!strcmp(method, "polar"))
-	 rng->spare_norm = NAN;  // Codes polar
-  else if (!strcmp(method, "default"))
-	 rng->spare_norm = INFINITY;
-  else
-	 rng->last_error = "randompack_set_norm_method: invalid method argument";
-  if (rng->last_error) return false;
-  return true;
-} 
 
 double randompack_u01_draw(randompack_rng *rng) {
   return (draw_u64(rng) >> 11) * 0x1.0p-53;

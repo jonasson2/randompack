@@ -31,7 +31,6 @@ static void rand_randomize(randompack_rng *rng) {
   }
   rng->buf_word = BUFSIZE;
   rng->buf_byte = 0;
-  rng->spare_norm = NAN;
   rng->last_error = 0;
 }
 
@@ -63,6 +62,5 @@ static bool seed_seq_seed(uint32_t *w, int nw, uint32_t seed32, uint32_t *spawn_
 static void set_state(uint64_t *state, int nstate, randompack_rng *rng) {  
   rng->buf_word = BUFSIZE;
   rng->buf_byte = 0;
-  rng->spare_norm = INFINITY;
   copy64(rng->state.u64, state, nstate);
 }

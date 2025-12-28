@@ -9,7 +9,7 @@
 #include "TestUtil.h"
 #include "xCheck.h"
 
-enum { STATE_MIN_NEED_TEST = 64 + 8*BUFSIZE }; // The tests version of STATE_MIN_NEED
+enum { STATE_MIN_NEED_TEST = 56 + 8*BUFSIZE }; // The tests version of STATE_MIN_NEED
 
 // --- helpers -------------------------------------------------------------
 static engine_table_entry *find_engine_meta(const char *name) {
