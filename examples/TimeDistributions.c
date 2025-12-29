@@ -73,7 +73,8 @@ typedef enum {
   LOGNORMAL,
   GUMBEL,
   PARETO,
-  EXP,
+  EXP1,
+  EXP2,
   GAMMA,
   CHI2,
   BETA,
@@ -99,7 +100,8 @@ static bool fill_dist(double out[], int n, double param[], randompack_rng *rng) 
     case LOGNORMAL: return randompack_lognormal(out, len, param[1], param[2], rng);
     case GUMBEL:    return randompack_gumbel   (out, len, param[1], param[2], rng);
     case PARETO:    return randompack_pareto   (out, len, param[1], param[2], rng);
-    case EXP:       return randompack_exp      (out, len, param[1],           rng);
+    case EXP1:      return randompack_exp      (out, len, param[1],           rng);
+    case EXP2:      return randompack_exp      (out, len, param[1],           rng);
     case GAMMA:     return randompack_gamma    (out, len, param[1], param[2], rng);
     case CHI2:      return randompack_chi2     (out, len, param[1],           rng);
     case BETA:      return randompack_beta     (out, len, param[1], param[2], rng);
@@ -136,19 +138,20 @@ int main(int argc, char **argv) {
   warmup_cpu(100);
   dist_spec dists[] = {
     { U01,       "u01",            0, { 0, 0} },
-    { UNIF,      "unif(0,1)",      2, { 0, 1} },
+    { UNIF,      "unif(2,5)",      2, { 2, 5} },
     { NORM,      "norm",           0, { 0, 0} },
-    { NORMAL,    "normal(0,1)",    2, { 0, 1} },
+    { NORMAL,    "normal(2,3)",    2, { 2, 3} },
     { LOGNORMAL, "lognormal(0,1)", 2, { 0, 1} },
     { GUMBEL,    "gumbel(0,1)",    2, { 0, 1} },
     { PARETO,    "pareto(1,2)",    2, { 1, 2} },
-    { EXP,       "exp(1)",         1, { 1, 0} },
-    { GAMMA,     "gamma(2,1)",     2, { 2, 1} },
+    { EXP1,      "exp(1)",         1, { 1, 0} },
+    { EXP2,      "exp(2)",         1, { 2, 0} },
+    { GAMMA,     "gamma(2,3)",     2, { 2, 3} },
     { CHI2,      "chi2(5)",        1, { 5, 0} },
     { BETA,      "beta(2,5)",      2, { 2, 5} },
     { T,         "t(10)",          1, {10, 0} },
     { F,         "F(5,10)",        2, { 5,10} },
-    { WEIBULL,   "weibull(2,1)",   2, { 2, 1} },
+    { WEIBULL,   "weibull(2,3)",   2, { 2, 3} },
   };
   printf("engine:           %s\n", engine);
   printf("time per value:   ns/value\n");

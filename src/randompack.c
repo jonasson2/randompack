@@ -497,11 +497,9 @@ bool randompack_pareto(double x[], size_t len, double xm, double alpha, randompa
     return false;
   }
   rng->last_error = 0;
-  for (size_t i = 0; i < len; i++) {
-    double u = draw_u01(rng);
-    while (u <= 0.0) u = draw_u01(rng); // "no" rejects
-    x[i] = xm * exp(-log(u)/alpha);
-  }
+  rand_exp(x, len, 1, rng);
+  for (size_t i = 0; i < len; i++)
+    x[i] = xm*exp(x[i]/alpha);
   return true;
 }
 
@@ -583,19 +581,20 @@ bool randompack_f(double x[], size_t len, double nu1, double nu2,
   return true;
 }
 
+// -*- C -*-
 bool randompack_weibull(double x[], size_t len, double shape, double scale,
   randompack_rng *rng) {
-  if (!rng) return false;
+  if (!rng)
+    return false;
   if (!x || shape <= 0 || scale <= 0) {
     rng->last_error = "invalid arguments to randompack_weibull";
     return false;
   }
   rng->last_error = 0;
-  rand_dble(x, len, rng); // x in [0,1)
-  for (size_t i = 0; i < len; i++) {
-    double u = x[i];
-    x[i] = scale*pow(-log1p(-u), 1.0/shape);
-  }
+  rand_exp(x, len, 1, rng); // x[i] = E ~ Exp(1) using ziggurat exponential
+  double inv_shape = 1/shape;
+  for (size_t i = 0; i < len; i++)
+    x[i] = scale*pow(x[i], inv_shape);
   return true;
 }
 

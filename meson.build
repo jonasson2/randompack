@@ -6,7 +6,7 @@ project('randompack', 'c', 'fortran', 'cpp',
     'warning_level=3',
     'buildtype=debug',
     'default_library=both',
-    'b_lto=true',
+    #'b_lto=true',
   ]
 )
 
@@ -19,8 +19,8 @@ buildtype = get_option('buildtype')
 host_system = host_machine.system()
 
 if buildtype == 'release'
-  add_project_arguments(['-mtune=native', '-fomit-frame-pointer'],
-    language : 'c')
+  # add_project_arguments(['-mtune=native', '-fomit-frame-pointer'],
+  #   language : 'c')
 endif
 
 # Get user-specified BLAS order or use platform defaults

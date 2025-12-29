@@ -14,7 +14,7 @@
 #include "Util.h"
 #include "randompack.h"
 #include "randompack_config.h"
-#include "reference_rng.h"
+//#include "reference_rng.h"
 
 enum {
   DIST_UINT64,
@@ -119,7 +119,7 @@ int main(int argc, char **argv) {
   row_t rows[32];
   char *dist_names[DIST_COUNT] = { "uint64", "u01", "normal", "exp" };
   struct { char *name; bool reference; } engines[] = {
-    { "xoshiro256++ (reference)", true  },
+    //{ "xoshiro256++ (reference)", true  },
     { "xoshiro256++",             false },
     { "xoshiro256**",             false },
     { "xorshift128+",             false },
@@ -134,19 +134,19 @@ int main(int argc, char **argv) {
     for (int d=0; d<DIST_COUNT; d++) {
       double ns = 0.0;
       bool ok = true;
-      if (engines[i].reference) {
-        if (d == DIST_UINT64)
-          BENCH_REFERENCE_TO(ns, uint64_t, chunk, bench_time, reps, fill_x256pp_u64);
-        else if (d == DIST_U01)
-          BENCH_REFERENCE_TO(ns, double, chunk, bench_time, reps, fill_x256pp_u01);
-        else if (d == DIST_NORMAL)
-          BENCH_REFERENCE_TO(ns, double, chunk, bench_time, reps, fill_x256pp_norm_polar);
-        else if (d == DIST_EXP)
-          BENCH_REFERENCE_TO(ns, double, chunk, bench_time, reps, fill_x256pp_exp);
-        else
-          ok = false;
-      }
-      else
+      // if (engines[i].reference) {
+      //   if (d == DIST_UINT64)
+      //     BENCH_REFERENCE_TO(ns, uint64_t, chunk, bench_time, reps, fill_x256pp_u64);
+      //   else if (d == DIST_U01)
+      //     BENCH_REFERENCE_TO(ns, double, chunk, bench_time, reps, fill_x256pp_u01);
+      //   else if (d == DIST_NORMAL)
+      //     BENCH_REFERENCE_TO(ns, double, chunk, bench_time, reps, fill_x256pp_norm_polar);
+      //   else if (d == DIST_EXP)
+      //     BENCH_REFERENCE_TO(ns, double, chunk, bench_time, reps, fill_x256pp_exp);
+      //   else
+      //     ok = false;
+      // }
+      // else
         ns = bench_randompack_ns(engines[i].name, seed, chunk, d, bench_time, reps);
       rows[i].ns[d] = ns;
       rows[i].ok[d] = ok && (ns > 0.0);
