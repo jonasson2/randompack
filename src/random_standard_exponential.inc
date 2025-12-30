@@ -20,35 +20,55 @@ static inline void rand_expf(float *x, size_t len, bitgen_t *bitgen_state);
 
 // Following four functions (including the two commented out ones) are copied verbatim
 // from NumPy, except for marked changes
+
+
 static inline double standard_exponential_unlikely(bitgen_t *bitgen_state,
-                                                uint8_t idx, double x) {
-  if (idx == 0) {
-    /* Switch to 1.0 - U to avoid log(0.0), see GH 13361 */
-    return ziggurat_exp_r - npy_log1p(-next_double(bitgen_state));
-  } else if ((fe_double[idx - 1] - fe_double[idx]) * next_double(bitgen_state) +
-                 fe_double[idx] <
-             exp(-x)) {
-    return x;
-  } else {
-	 rand_exp(&x, 1, bitgen_state);  // change by KJ
-	 return x;                       //
-	 // return random_standard_exponential(bitgen_state);
+                                                    uint8_t idx, double x) {
+  while (true) { // added loop to replace recursion
+    if (idx == 0) {
+      /* Switch to 1.0 - U to avoid log(0.0), see GH 13361 */
+      return ziggurat_exp_r - npy_log1p(-next_double(bitgen_state));
+    }
+    else if ((fe_double[idx - 1] - fe_double[idx])*next_double(bitgen_state) +
+             fe_double[idx] < exp(-x)) {
+      return x;
+    }
+    else { 
+      // Replaced calling rand_exp with the following:
+      uint64_t ri = next_uint64(bitgen_state);
+      ri >>= 3;
+      idx = ri & 0xFF;
+      ri >>= 8;
+      x = ri*we_double[idx];
+      if (ri < ke_double[idx]) {
+        return x;
+      }
+    }
   }
 }
 
 static inline float standard_exponential_unlikely_f(bitgen_t *bitgen_state,
-                                                 uint8_t idx, float x) {
-  if (idx == 0) {
-    /* Switch to 1.0 - U to avoid log(0.0), see GH 13361 */
-    return ziggurat_exp_r_f - npy_log1pf(-next_float(bitgen_state));
-  } else if ((fe_float[idx - 1] - fe_float[idx]) * next_float(bitgen_state) +
-                 fe_float[idx] <
-             expf(-x)) {
-    return x;
-  } else {
-	 rand_expf(&x, 1, bitgen_state);  // change by KJ
-	 return x;                       //
-    // return random_standard_exponential_f(bitgen_state);
+                                                    uint8_t idx, float x) {
+  while (true) { // added loop to replace recursion
+    if (idx == 0) {
+      /* Switch to 1.0 - U to avoid log(0.0), see GH 13361 */
+      return ziggurat_exp_r_f - npy_log1pf(-next_float(bitgen_state));
+    }
+    else if ((fe_float[idx - 1] - fe_float[idx])*next_float(bitgen_state) +
+             fe_float[idx] < expf(-x)) {
+      return x;
+    }
+    else {
+      // Replaced calling rand_expf with the following:
+      uint32_t ri = next_uint32(bitgen_state);
+      ri >>= 1;
+      idx = ri & 0xFF;
+      ri >>= 8;
+      x = ri*we_float[idx];
+      if (ri < ke_float[idx]) {
+        return x;
+      }
+    }
   }
 }
 
@@ -66,22 +86,6 @@ static inline float standard_exponential_unlikely_f(bitgen_t *bitgen_state,
 //   }
 //   return standard_exponential_unlikely(bitgen_state, idx, x);
 // }
-
-// static inline float random_standard_exponential_f(bitgen_t *bitgen_state) {
-//   uint32_t ri;
-//   uint8_t idx;
-//   float x;
-//   ri = next_uint32(bitgen_state);
-//   ri >>= 1;
-//   idx = ri & 0xFF;
-//   ri >>= 8;
-//   x = ri * we_float[idx];
-//   if (ri < ke_float[idx]) {
-//     return x; /* 98.9% of the time we return here 1st try */
-//   }
-//   return standard_exponential_unlikely_f(bitgen_state, idx, x);
-// }
-
 
 // Following randompack functions add a loop to fill buf, but otherwise the code is
 // unchanged

@@ -83,7 +83,7 @@ def make_dists() -> List[Dist]:
   def f_5_10(rng: np.random.Generator, n: int) -> None:
     rng.f(5.0, 10.0, n)
 
-  def weibull_2_1(rng: np.random.Generator, n: int) -> None:
+  def weibull_2_3(rng: np.random.Generator, n: int) -> None:
     # Weibull with shape k=2, scale=3.
     rng.weibull(2.0, n) * 3.0
 
@@ -103,7 +103,7 @@ def make_dists() -> List[Dist]:
     Dist("beta(2,5)", beta_2_5),
     Dist("t(10)", t_10),
     Dist("F(5,10)", f_5_10),
-    Dist("weibull(2,1)", weibull_2_1),
+    Dist("weibull(2,3)", weibull_2_3),
   ]
 
 

@@ -1,4 +1,5 @@
 // -*- mode: c; -*-
+#include <float.h>
 
 static int LastNonzeroColumn(int m, int n, double A[]) {
   // If they are all zero, return 0.
@@ -31,7 +32,7 @@ static void rand_dble(double x[], size_t n, randompack_rng *rng) {
   }
 }
 
-static void rand_float(float x[], size_t n, randompack_rng *rng) {
+static inline void rand_float(float x[], size_t n, randompack_rng *rng) {
   for (size_t i = 0; i < n; i++)
 	 x[i] = U32_TO_FLOAT(draw_u32(rng));
 }
@@ -278,8 +279,10 @@ static inline void fill_beta(double *x, size_t len, double a, double b, randompa
   while (i < len) {
     int n = min(64, len - i);
     fill_gamma(gb, n, b, 1.0, rng);
-    for (int j=0; j<n; j++)
-		x[i + j] /= (x[i + j] + gb[j]);
+    for (int j = 0; j < n; j++) {
+      double y = x[i + j] / (x[i + j] + gb[j]);      
+		x[i + j] = fmax(fmin(y, 1 - DBL_EPSILON), DBL_MIN);
+    }
     i += n;
   }
 }

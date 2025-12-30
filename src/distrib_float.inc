@@ -48,8 +48,10 @@ static inline void fill_betaf(float *x, size_t len, float a, float b,
   while (i < len) {
     int n = min(64, len - i);
     fill_gammaf(gb, n, b, 1.0f, rng);
-    for (int j = 0; j < n; j++)
-      x[i + j] /= (x[i + j] + gb[j]);
+    for (int j = 0; j < n; j++) {
+      float y = x[i + j] / (x[i + j] + gb[j]);      
+		x[i + j] = fmaxf(fminf(y, 1 - FLT_EPSILON), FLT_MIN);
+    }
     i += n;
   }
 }
