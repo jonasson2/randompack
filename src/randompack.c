@@ -60,7 +60,6 @@ typedef struct {
 #include "buffer_draw.inc"
 #include "randutil.inc"
 #include "distributions.inc"
-#include "distrib_float.inc"
 
 #ifdef HAVE128 // Thin wrapper
 // Unused helper; keep for reference but disable to avoid warnings.
@@ -440,6 +439,7 @@ bool randompack_norm(double x[], size_t len, randompack_rng *rng) { // standard 
     rng->last_error = 0;
   if (rng->last_error) return false;
   rand_norm(x, len, rng);
+  // rand_norm(x, len, rng);
   return true;
 }
 
@@ -481,11 +481,8 @@ bool randompack_gumbel(double x[], size_t len, double mu, double beta,
   }
   rng->last_error = 0;
   rand_dble(x, len, rng); // x in [0,1)
-  for (size_t i = 0; i < len; i++) {
-    double u = x[i];
-    while (u <= 0.0) u = draw_u01(rng);
-    x[i] = mu - beta*log(-log(u));
-  }
+  for (size_t i=0; i<len; i++)
+    x[i] = mu - beta*log(-log(x[i]));
   return true;
 }
 
@@ -497,7 +494,7 @@ bool randompack_pareto(double x[], size_t len, double xm, double alpha, randompa
     return false;
   }
   rng->last_error = 0;
-  rand_exp(x, len, 1, rng);
+  rand_exp(x, len, rng);
   for (size_t i = 0; i < len; i++)
     x[i] = xm*exp(x[i]/alpha);
   return true;
@@ -510,7 +507,8 @@ bool randompack_exp(double x[], size_t len, double scale, randompack_rng *rng) {
 	 return false;
   }
   rng->last_error = 0;
-  rand_exp(x, len, scale, rng);
+  rand_exp(x, len, rng);
+  if (scale != 1) for (size_t i = 0; i < len; i++) x[i] *= scale;
   return true;
 }
 
@@ -522,7 +520,7 @@ bool randompack_gamma(double x[], size_t len, double shape, double scale,
     return false;
   }
   rng->last_error = 0;
-  rand_gamma(x, len, shape, scale, rng);
+  fill_gamma(x, len, shape, scale, rng);
   return true;
 }
 
@@ -533,7 +531,7 @@ bool randompack_chi2(double x[], size_t len, double nu, randompack_rng *rng) {
     return false;
   }
   rng->last_error = 0;
-  rand_gamma(x, len, 0.5*nu, 2, rng);
+  fill_gamma(x, len, 0.5*nu, 2, rng);
   return true;
 }
 
@@ -545,7 +543,7 @@ bool randompack_beta(double x[], size_t len, double a, double b,
     return false;
   }
   rng->last_error = 0;
-  rand_beta(x, len, a, b, rng);
+  fill_beta(x, len, a, b, rng);
   return true;
 }
 
@@ -556,12 +554,7 @@ bool randompack_t(double x[], size_t len, double nu, randompack_rng *rng) {
     return false;
   }
   rng->last_error = 0;
-  for (size_t i = 0; i < len; i++) {
-    double z, u;
-    rand_norm(&z, 1, rng);
-    rand_gamma(&u, 1, 0.5*nu, 2, rng);
-    x[i] = z/sqrt(u/nu);
-  }
+  fill_t(x, len, nu, rng);
   return true;
 }
 
@@ -573,11 +566,7 @@ bool randompack_f(double x[], size_t len, double nu1, double nu2,
     return false;
   }
   rng->last_error = 0;
-  for (size_t i = 0; i < len; i++) {
-    double x1 = gamma_shape(nu1/2, rng); // scale = 1
-    double x2 = gamma_shape(nu2/2, rng);
-    x[i] = (x1*nu2)/(x2*nu1);
-  }
+  fill_f(x, len, nu1, nu2, rng);
   return true;
 }
 
@@ -591,7 +580,7 @@ bool randompack_weibull(double x[], size_t len, double shape, double scale,
     return false;
   }
   rng->last_error = 0;
-  rand_exp(x, len, 1, rng); // x[i] = E ~ Exp(1) using ziggurat exponential
+  rand_exp(x, len, rng); // x[i] = E ~ Exp(1) using ziggurat exponential
   double inv_shape = 1/shape;
   for (size_t i = 0; i < len; i++)
     x[i] = scale*pow(x[i], inv_shape);

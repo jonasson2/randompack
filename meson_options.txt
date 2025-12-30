@@ -3,3 +3,9 @@ option('blas_order',
   value: 'auto',
   description: 'Comma-separated list of BLAS libraries to search for (e.g., "mkl,openblas,accelerate") or "auto" for platform default'
 )
+
+option('perf',
+  type: 'boolean',
+  value: false,
+  description: 'Enable performance tuning flags (requires -Db_lto=true)'
+)

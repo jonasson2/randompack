@@ -50,4 +50,6 @@ double time_double( // Benchmark double fill amortizing time-keeping overhead, r
   randompack_rng *rng        // RNG handle
 );
 
+double time_norm(int chunk, double bench_time, randompack_rng *rng);
+
 #endif

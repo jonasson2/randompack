@@ -29,7 +29,8 @@ bool randompack_expf(float x[], size_t len, float scale, randompack_rng *rng) {
     return false;
   }
   rng->last_error = 0;
-  rand_expf(x, len, scale, rng);
+  rand_expf(x, len, rng);
+  if (scale != 1.0f) for (size_t i = 0; i < len; i++) x[i] *= scale;
   return true;
 }
 
@@ -98,11 +99,9 @@ bool randompack_paretof(float x[], size_t len, float xm, float alpha,
     return false;
   }
   rng->last_error = 0;
-  for (size_t i = 0; i < len; i++) {
-    float u = (float)draw_u01(rng);
-    while (u <= 0.0f) u = (float)draw_u01(rng);
-    x[i] = xm*expf(-logf(u)/alpha);
-  }
+  rand_expf(x, len, rng);
+  for (size_t i = 0; i < len; i++)
+    x[i] = xm*expf(x[i]/alpha);
   return true;
 }
 
@@ -114,15 +113,7 @@ bool randompack_gammaf(float x[], size_t len, float shape, float scale,
     return false;
   }
   rng->last_error = 0;
-  double sh = shape;
-  if (scale == 1.0f) {
-    for (size_t i = 0; i < len; i++) x[i] = (float)gamma_shape(sh, rng);
-  }
-  else {
-    double sc = scale;
-    for (size_t i = 0; i < len; i++)
-      x[i] = (float)(gamma_shape(sh, rng)*sc);
-  }
+  fill_gammaf(x, len, shape, scale, rng);
   return true;
 }
 
@@ -133,11 +124,7 @@ bool randompack_chi2f(float x[], size_t len, float nu, randompack_rng *rng) {
     return false;
   }
   rng->last_error = 0;
-  double nud = nu;
-  for (size_t i = 0; i < len; i++) {
-    double g = gamma_shape(0.5*nud, rng);
-    x[i] = (float)(g*2.0);
-  }
+  fill_gammaf(x, len, 0.5f*nu, 2.0f, rng);
   return true;
 }
 
@@ -149,22 +136,7 @@ bool randompack_betaf(float x[], size_t len, float a, float b,
     return false;
   }
   rng->last_error = 0;
-  double ad = a;
-  double bd = b;
-  for (size_t i = 0; i < len; i++) {
-    for (;;) {
-      double ga = gamma_shape(ad, rng);
-      double gb = gamma_shape(bd, rng);
-      double s = ga + gb;
-      if (s > 0) {
-        float y = (float)(ga/s);
-        if (y > 0.0f && y < 1.0f) {
-          x[i] = y;
-          break;
-        }
-      }
-    }
-  }
+  fill_betaf(x, len, a, b, rng);
   return true;
 }
 
@@ -175,13 +147,7 @@ bool randompack_tf(float x[], size_t len, float nu, randompack_rng *rng) {
     return false;
   }
   rng->last_error = 0;
-  double nud = nu;
-  for (size_t i = 0; i < len; i++) {
-    double z, u;
-    rand_norm(&z, 1, rng);
-    u = gamma_shape(0.5*nud, rng)*2.0;
-    x[i] = (float)(z/sqrt(u/nud));
-  }
+  fill_tf(x, len, nu, rng);
   return true;
 }
 
@@ -193,13 +159,7 @@ bool randompack_ff(float x[], size_t len, float nu1, float nu2,
     return false;
   }
   rng->last_error = 0;
-  double nu1d = nu1;
-  double nu2d = nu2;
-  for (size_t i = 0; i < len; i++) {
-    double x1 = gamma_shape(nu1d/2.0, rng);
-    double x2 = gamma_shape(nu2d/2.0, rng);
-    x[i] = (float)((x1*nu2d)/(x2*nu1d));
-  }
+  fill_ff(x, len, nu1, nu2, rng);
   return true;
 }
 
@@ -211,11 +171,9 @@ bool randompack_weibullf(float x[], size_t len, float shape, float scale,
     return false;
   }
   rng->last_error = 0;
-  rand_float(x, len, rng); // x in [0,1)
+  rand_expf(x, len, rng);
   float inv_shape = 1.0f/shape;
-  for (size_t i = 0; i < len; i++) {
-    float u = x[i];
-    x[i] = scale*powf(-log1pf(-u), inv_shape);
-  }
+  for (size_t i = 0; i < len; i++)
+    x[i] = scale*powf(x[i], inv_shape);
   return true;
 }

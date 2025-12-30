@@ -11,6 +11,7 @@
 #include "Util.h"
 #include "randompack.h"
 #include "randompack_config.h"
+#include "printX.h"
 
 static void print_help(void) {
   printf("TimeDistributions — time continuous distributions (ns/value)\n");
@@ -113,7 +114,7 @@ static bool fill_dist(double out[], int n, double param[], randompack_rng *rng) 
 }
 
 static void fill_wrapper(double out[], int n, double param[], randompack_rng *rng) {
-  fill_dist(out, n, param, rng);
+  ASSERT(fill_dist(out, n, param, rng));
 }
 
 int main(int argc, char **argv) {
@@ -163,14 +164,11 @@ int main(int argc, char **argv) {
     par[0] = (double)dists[i].id;
     par[1] = dists[i].param[0];
     par[2] = dists[i].param[1];
-    double x[4];
-    bool ok = fill_dist(x, 4, par, rng);
-    double ns = ok ? time_double(chunk, bench_time, fill_wrapper, par, rng) : 0;
+    double x[4], ns;
+    fill_dist(x, 4, par, rng);
+	 ns = time_double(chunk, bench_time, fill_wrapper, par, rng);
     printf("%-18s", dists[i].name);
-    if (!ok || ns <= 0)
-      printf(" %8s\n", "n/a");
-    else
-      printf(" %8.2f\n", ns);
+	 printf(" %8.2f\n", ns);
   }
   randompack_free(rng);
   return 0;

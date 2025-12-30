@@ -6,7 +6,6 @@ project('randompack', 'c', 'fortran', 'cpp',
     'warning_level=3',
     'buildtype=debug',
     'default_library=both',
-    #'b_lto=true',
   ]
 )
 
@@ -17,11 +16,6 @@ add_project_arguments(fc.get_supported_arguments(['-Wno-function-elimination']),
 
 buildtype = get_option('buildtype')
 host_system = host_machine.system()
-
-if buildtype == 'release'
-  # add_project_arguments(['-mtune=native', '-fomit-frame-pointer'],
-  #   language : 'c')
-endif
 
 # Get user-specified BLAS order or use platform defaults
 blas_order_option = get_option('blas_order')
@@ -45,6 +39,22 @@ endif
 
 # Common detection function for all platforms
 cc = meson.get_compiler('c')
+perf = get_option('perf')
+if perf
+  if not get_option('b_lto')
+    error('perf build requires -Db_lto=true')
+  endif
+  perf_args = [
+    '-march=native',
+    '-mtune=native',
+    '-fomit-frame-pointer',
+    '-fno-math-errno'
+  ]
+  add_project_arguments(cc.get_supported_arguments(perf_args), language : 'c')
+  cpp = meson.get_compiler('cpp')
+  add_project_arguments(cpp.get_supported_arguments(perf_args), language : 'cpp')
+endif
+
 blas_dep = disabler()
 blas_found = 'none'
 foreach blas_name : blas_search_order
@@ -62,13 +72,17 @@ foreach blas_name : blas_search_order
     if blas_dep.found()
       blas_found = 'MKL'
     endif
-    
+
   elif blas_name == 'accelerate'
     if host_system == 'darwin'
-      blas_dep = dependency('appleframeworks', modules: 'Accelerate', required: true)
-      blas_found = 'Accelerate'
+      # IMPORTANT: do not make this required:true here, so we can fall back to
+      # OpenBLAS/MKL if Accelerate (or appleframeworks) isn't available.
+      blas_dep = dependency('appleframeworks', modules: 'Accelerate', required: false)
+      if blas_dep.found()
+        blas_found = 'Accelerate'
+      endif
     endif
-    
+
   elif blas_name == 'openblas'
     blas_dep = dependency('openblas', required: false)
     if not blas_dep.found()
@@ -78,6 +92,7 @@ foreach blas_name : blas_search_order
       blas_found = 'OpenBLAS'
     endif
   endif
+
   if blas_dep.found()
     break
   endif
@@ -88,9 +103,6 @@ if blas_dep.found()
 else
   error('No optimized BLAS found, reference implementation not yet available')
 endif
-
-# if blas_option == 'none'
-#   blas_dep = declare_dependency()  # no BLAS, for symbol inspection
 
 # Your own headers live in src/ for now
 inc = include_directories('src', 'common')

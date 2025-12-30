@@ -91,7 +91,11 @@ static inline uint64_t draw_u64(randompack_rng *rng) { // Fast single word
 }
 
 static inline double draw_u01(randompack_rng *rng) {
-  return (draw_u64(rng) >> 11) * 0x1.0p-53;
+  return U64_TO_DOUBLE(draw_u64(rng));
+}
+
+static inline double draw_u01f(randompack_rng *rng) {
+  return U32_TO_FLOAT(draw_u32(rng));
 }
 
 // Copy n fresh uint16 draws into out using the shared byte buffer.

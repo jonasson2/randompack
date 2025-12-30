@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "randompack.h"
 #include "TimeUtil.h"
 #include "Util.h"
 
@@ -69,6 +70,24 @@ double time_double(int chunk, double bench_time, fill_double_fn fill,
   while (t - t0 < bench_time) {
     for (int i = 0; i < reps; i++) {
       fill(buf, chunk, param, rng);
+      consume64(&buf[chunk - 1]);
+    }
+    calls += reps;
+    t = get_time();
+  }
+  FREE(buf);
+  return (calls > 0) ? 1e9*(t - t0)/(calls*chunk) : 0;
+}
+
+double time_norm(int chunk, double bench_time, randompack_rng *rng) {
+  double *buf;
+  TEST_ALLOC(buf, chunk);
+  int reps = max(1, 1000000/chunk);
+  int calls = 0;
+  double t0 = get_time(), t = t0;
+  while (t - t0 < bench_time) {
+    for (int i=0; i<reps; i++) {
+      randompack_norm(buf, (size_t)chunk, rng);
       consume64(&buf[chunk - 1]);
     }
     calls += reps;

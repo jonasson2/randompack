@@ -31,19 +31,9 @@ static void rand_dble(double x[], size_t n, randompack_rng *rng) {
   }
 }
 
-static inline void rand_norm(double *x, size_t n, randompack_rng *rng) {
-  for (size_t i = 0; i < n; i++) {
-    x[i] = random_standard_normal(rng);
-  }
-}
-
-static inline void rand_exp(double *x, size_t n, double scale, randompack_rng *rng) {
-  if (scale == 1.0) {
-    for (size_t i = 0; i < n; i++) x[i] = random_standard_exponential(rng);
-  }
-  else {
-    for (size_t i = 0; i < n; i++) x[i] = random_standard_exponential(rng)*scale;
-  }
+static void rand_float(float x[], size_t n, randompack_rng *rng) {
+  for (size_t i = 0; i < n; i++)
+	 x[i] = U32_TO_FLOAT(draw_u32(rng));
 }
 
 static void rand_uint64(uint64_t bound, uint64_t x[], size_t n, randompack_rng *rng) {
@@ -152,8 +142,7 @@ static void rand_uint16(uint16_t bound, uint16_t x[], size_t n, randompack_rng *
     draw_u16_copy(x, n, rng);
     return;
   }
-  size_t i = 0;
-  int j;
+  size_t i = 0, j;
   uint64_t R;
   if (bound <= UINT8_MAX) {
     uint8_t r, b = bound, thresh = (1u<<8) % b;
@@ -188,8 +177,7 @@ static void rand_uint8(uint8_t bound, uint8_t x[], size_t n, randompack_rng *rng
       x[i] = draw_byte(rng);
     return;
   }
-  size_t i = 0;
-  int j;
+  size_t i = 0, j;
   uint64_t R;
   uint8_t r, b = bound, thresh = (1u<<8) % b;
   while (i < n) {
@@ -243,56 +231,86 @@ static void rand_sample(int p[], int n, int k, randompack_rng *rng) {
 #include "randompack.h"
 #include "randompack_config.h"
 
-static inline double gamma_shape1(double shape, randompack_rng *rng) {
+static inline void fill_gamma_shape1(double *x, size_t len, double shape, randompack_rng *rng) {
   double d = shape - 1.0/3.0;
   double c = 1.0/sqrt(9.0*d);
-  for (;;) {
-    double z = random_standard_normal(rng);
-    double v = 1.0 + c*z;
-    if (v <= 0.0)
-      continue;
-    double v3 = v*v*v;
-    double u = draw_u01(rng);
-    if (u <= 0.0)
-      continue;
-    double z2 = z*z;
-    double z4 = z2*z2;
-    if (u < 1.0 - 0.0331*z4)
-      return d*v3;
-    if (log(u) < 0.5*z2 + d*(1.0 - v3 + log(v3)))
-      return d*v3;
+  rand_norm(x, len, rng);
+  for (size_t i = 0; i < len; i++) {
+    for (;;) {
+      double z = x[i];
+      double v = 1.0 + c*z;
+      if (v > 0.0) {
+        double v3 = v*v*v;
+        double u  = draw_u01(rng);
+        double z2 = z*z;
+        double z4 = z2*z2;
+        if (u < 1.0 - 0.0331*z4 ||
+            log(u) < 0.5*z2 + d*(1.0 - v3 + log(v3))) {
+          x[i] = d*v3;
+          break;
+        }
+      }
+      rand_norm(x+i, 1, rng);
+    }
   }
 }
 
-static inline double gamma_shape(double shape, randompack_rng *rng) {
-  if (shape >= 1.0)
-    return gamma_shape1(shape, rng);
-  double u = draw_u01(rng);
-  while (u <= 0.0)
-    u = draw_u01(rng);
-  double g = gamma_shape1(shape + 1.0, rng);
-  return g*exp(log(u)/shape);
+static inline void fill_gamma(double *x, size_t len, double shape, double scale, randompack_rng *rng) {
+  if (shape >= 1.0) {
+	 fill_gamma_shape1(x, len, shape, rng);
+  }
+  else {
+	 fill_gamma_shape1(x, len, shape + 1, rng);
+	 for (size_t i = 0; i < len; i++) {
+		double u = draw_u01(rng);
+		x[i] *= exp(log(u)/shape);
+	 }
+  }
+  if (scale != 1) for (size_t i = 0; i < len; i++) x[i] *= scale;
 }
 
-static void rand_gamma(double x[], size_t len, double shape, double scale, randompack_rng
-							  *rng) {
-  if (scale == 1)
-	 for (size_t i=0; i<len; i++) x[i] = gamma_shape(shape, rng);
-  else
-	 for (size_t i=0; i<len; i++) x[i] = gamma_shape(shape, rng)*scale;
+static inline void fill_beta(double *x, size_t len, double a, double b, randompack_rng
+									  *rng) {
+// X = Ga/(Ga + Gb) ~ Beta(a,b) if Ga ~ Gamma(a,1) and Gb ~ Gamma(b,1)
+  fill_gamma(x, len, a, 1.0, rng);
+  double gb[64];
+  size_t i = 0;
+  while (i < len) {
+    int n = min(64, len - i);
+    fill_gamma(gb, n, b, 1.0, rng);
+    for (int j=0; j<n; j++)
+		x[i + j] /= (x[i + j] + gb[j]);
+    i += n;
+  }
 }
 
-static void rand_beta(double x[], size_t len, double a, double b, randompack_rng *rng) {
-  for (size_t i=0; i<len; i++) {
-    for (;;) {
-      double ga = gamma_shape(a, rng);
-      double gb = gamma_shape(b, rng);
-      double s = ga + gb;
-      if (s > 0) {
-        x[i] = ga/s;
-        break;
-      }
-    }
+static inline void fill_t(double *x, size_t len, double nu, randompack_rng *rng) {
+  // Z ~ N(0,1), U ~ Gamma(nu/2, 2) independent => X = Z/sqrt(U/nu) ~ t_nu
+  double u[64];
+  rand_norm(x, len, rng);
+  size_t i = 0;
+  while (i < len) {
+    int n = min(64, len - i);
+    fill_gamma(u, n, 0.5*nu, 2.0, rng);
+    for (int j = 0; j < n; j++)
+		x[i + j] /= sqrt(u[j]/nu);
+    i += n;
+  }
+}
+
+static inline void fill_f(double *x, size_t len, double nu1, double nu2, randompack_rng
+                          *rng) {
+  // F(nu1,nu2) via gamma ratio:
+  //   F = (X1*nu2)/(X2*nu1) where X1 ~ Gamma(nu1/2,1), X2 ~ Gamma(nu2/2,1)
+  double x2[64];
+  fill_gamma(x, len, nu1/2.0, 1.0, rng);
+  size_t i = 0;
+  while (i < len) {
+    int n = min(len - i, 64);
+    fill_gamma(x2, n, nu2/2.0, 1.0, rng);
+    for (int j = 0; j < n; j++)
+      x[i + j] = (x[i + j]*nu2)/(x2[j]*nu1);
+    i += n;
   }
 }
 
@@ -385,3 +403,5 @@ fail:
   if (Lalloc && L) FREE(L);
   return false;
 }
+
+#include "distrib_float.inc"
