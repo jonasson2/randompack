@@ -37,7 +37,7 @@ static inline void rand_float(float x[], size_t n, randompack_rng *rng) {
 	 x[i] = U32_TO_FLOAT(draw_u32(rng));
 }
 
-static void rand_uint64(uint64_t bound, uint64_t x[], size_t n, randompack_rng *rng) {
+static void rand_uint64(uint64_t x[], size_t n, uint64_t bound, randompack_rng *rng) {
   // Sets x to n random integers in {0, 1,..., bound-1}
   if (bound == 0) {
 	 draw_u64_copy(x, n, rng);
@@ -90,7 +90,7 @@ static void rand_uint64(uint64_t bound, uint64_t x[], size_t n, randompack_rng *
   }
 }
 
-static void rand_uint32(uint32_t bound, uint32_t x[], size_t n, randompack_rng *rng) {
+static void rand_uint32(uint32_t x[], size_t n, uint32_t bound, randompack_rng *rng) {
   // Sets x to n random integers in {0, 1,..., bound-1}
   if (bound == 0) {
     draw_u32_copy(x, n, rng);
@@ -137,7 +137,7 @@ static void rand_uint32(uint32_t bound, uint32_t x[], size_t n, randompack_rng *
   }
 }
 
-static void rand_uint16(uint16_t bound, uint16_t x[], size_t n, randompack_rng *rng) {
+static void rand_uint16(uint16_t x[], size_t n, uint16_t bound, randompack_rng *rng) {
   // Sets x to n random integers in {0, 1,..., bound-1}
   if (bound == 0) {
     draw_u16_copy(x, n, rng);
@@ -171,7 +171,7 @@ static void rand_uint16(uint16_t bound, uint16_t x[], size_t n, randompack_rng *
   }
 }
 
-static void rand_uint8(uint8_t bound, uint8_t x[], size_t n, randompack_rng *rng) {
+static void rand_uint8(uint8_t x[], size_t n, uint8_t bound, randompack_rng *rng) {
   // Sets x to n random integers in {0, 1,..., bound-1}
   if (bound == 0) {
     for (size_t i = 0; i < n; i++)
@@ -192,34 +192,82 @@ static void rand_uint8(uint8_t bound, uint8_t x[], size_t n, randompack_rng *rng
   }
 }
 
-static void rand_int_pm_compatible(int bound, int x[], size_t n, randompack_rng *rng) {
-  // Sets x to integers in [0, bound), where 1 <= bound <= INT32_MAX - 2.
-  rand_uint32(bound, (uint32_t*)x, n, rng);
+static void rand_int(int bound, int x[], size_t n, randompack_rng *rng) {
+  rand_uint32((uint32_t*)x, n, bound, rng);
 }
 
 static void rand_perm(int p[], int n, randompack_rng *rng) {
   // Fisher-Yates algorithm, stores a random permutation of 0..n-1 in p
   for (int i = 0; i < n; i++) {
     int j;
-    rand_int_pm_compatible(i+1, &j, 1, rng);
+    rand_int(i+1, &j, 1, rng);
     if (j != i) p[i] = p[j];
     p[j] = i;
   }
 }
 
-static void rand_sample(int p[], int n, int k, randompack_rng *rng) {
+static inline bool hashtable_has(int *keys, int mask, int v) {
+  uint32_t h = mix32((uint32_t)v);
+  int i = (int)(h & (uint32_t)mask);
+  for (;;) {
+    int k = keys[i];
+    if (k == -1) return false;
+    if (k == v) return true;
+    i = (i + 1) & mask;
+  }
+}
+
+static inline void hashtable_add(int *keys, int mask, int v) {
+  uint32_t h = mix32((uint32_t)v);
+  int i = (int)(h & (uint32_t)mask);
+  for (;;) {
+    int k = keys[i];
+    if (k == -1 || k == v) { keys[i] = v; return; }
+    i = (i + 1) & mask;
+  }
+}
+
+static void rand_sample_reservoir(int p[], int n, int k, randompack_rng *rng) {
   // Select k values from 0..n-1, c.f. reservoir sampling on Wikipedia
   int r;
   p[0] = 0;
   for (int i = 0; i < k; i++) {
-    rand_int_pm_compatible(i+1, &r, 1, rng);
+    rand_int(i+1, &r, 1, rng);
     if (r != i) p[i] = p[r];
     p[r] = i;
   }
   for (int i = k; i < n; i++) {
-    rand_int_pm_compatible(i+1, &r, 1, rng);
+    rand_int(i+1, &r, 1, rng);
     if (r < k) p[r] = i;
   }
+}
+
+static void rand_sample_floyd(int p[], int n, int k, randompack_rng *rng) {
+  // Floyd: O(k) expected. p[0..k-1] gets k distinct integers from 0..n-1.
+  if (k <= 0) return;
+  int m = 1;
+  while (m < 2*k) m <<= 1;
+  int mask = m - 1;
+  int *keys;
+  if (!ALLOC(keys, m)) {
+    rand_sample_reservoir(p, n, k, rng);
+    return;
+  }
+  for (int i = 0; i < m; i++) keys[i] = -1;
+  int out = 0;
+  for (int j = n - k; j < n; j++) {
+    int t;
+    rand_int(j + 1, &t, 1, rng);
+    int pick = hashtable_has(keys, mask, t) ? j : t;
+    hashtable_add(keys, mask, pick);
+    p[out++] = pick;
+  }
+  FREE(keys);
+}
+
+static void rand_sample(int p[], int n, int k, randompack_rng *rng) {
+  if (k <= n/2) rand_sample_floyd(p, n, k, rng);
+  else rand_sample_reservoir(p, n, k, rng);
 }
 
 // -*- C -*-
@@ -256,7 +304,8 @@ static inline void fill_gamma_shape1(double *x, size_t len, double shape, random
   }
 }
 
-static inline void fill_gamma(double *x, size_t len, double shape, double scale, randompack_rng *rng) {
+static inline void fill_gamma(double *x, size_t len, double shape, double scale,
+                              randompack_rng *rng) {
   if (shape >= 1.0) {
 	 fill_gamma_shape1(x, len, shape, rng);
   }

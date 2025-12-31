@@ -151,46 +151,14 @@ static void TestAgainstNumpyPCG(void) {
 }
 #endif
 
-static void TestPhiloxAgainstRandom123(void) { // Also stateful against stateless
-  // Random123 version 1.14 was downloaded from github.com/DEShawResearch/random123,
-  // and the following C program was then run to obtain randoms with the given state:
-  //
-  // #include "random123/include/Random123/philox.h"
-  // #include <stdio.h>
-  // #include <inttypes.h>
-  //
-  // int main(void) {
-  //   philox4x64_key_t key = {{1, 2}};
-  //   philox4x64_ctr_t ctr = {{1, 2, 3, 4}};
-  //   philox4x64_ctr_t result = philox4x64(ctr, key);
-  //   printf("Draws:\n");
-  //   printf("%" PRIu64 "\n", result.v[0]);
-  //   printf("%" PRIu64 "\n", result.v[1]);
-  //   printf("%" PRIu64 "\n", result.v[2]);
-  //   printf("%" PRIu64 "\n", result.v[3]);
-  //   ctr.v[0]++;
-  //   result = philox4x64(ctr, key);  
-  //   printf("%" PRIu64 "\n", result.v[0]);
-  //   return 0;
-  // }
-
-  randompack_philox_key key = {1, 2};
-  randompack_counter ctr = {1, 2, 3, 4};
-
-  uint64_t x[5], y[5];
-
-  // Call counter-based philox
-  bool ok = randompack_uint64_philox(x, 5, ctr, key);
-  ASSERT(ok);
-
-  // Compare with stateful version
+static void TestPhiloxAgainstRandom123(void) {
+  uint64_t x[5];
   randompack_rng *rng = randompack_create("philox");
   uint64_t state[6] = {1, 2, 3, 4, 1, 2};
-  randompack_set_state(state, 6, rng);
-  randompack_uint64(y, 5, 0, rng);
-  xCheck(equal_vec64(x, y, 5));
-
-  // Compare with Random123
+  bool ok = randompack_set_state(state, 6, rng);
+  check_success(ok, rng);
+  ok = randompack_uint64(x, 5, 0, rng);
+  check_success(ok, rng);
   uint64_t r123[] = {
     15293350248826363405ull,
     16459017380466521836ull,
@@ -199,66 +167,7 @@ static void TestPhiloxAgainstRandom123(void) { // Also stateful against stateles
     14229447488281503856ull
   };
   xCheck(equal_vec64(x, r123, 5));
-
-  printMsg("COMPARISON WITH ORIGINAL PHILOX:");
-  printMsg("Random123 philox draws:");
-  print64("r123[0]", r123[0]);
-  printMsg("...");
-  print64("r123[4]", r123[4]);
-  printMsg("randompack philox draws:");
-  print64("rp[0]", x[0]);
-  printMsg("...");
-  print64("rp[4]", x[4]);
-}
-
-static void TestThreefryAgainstRandom123(void) {
-  // Random123 version 1.14 was downloaded from github.com/DEShawResearch/random123,
-  // and the following C program was then run to obtain randoms with the given state:
-  //
-  // #include "random123/include/Random123/threefry.h"
-  // #include <stdio.h>
-  // #include <inttypes.h>
-  //
-  // int main(void) {
-  //   threefry4x64_key_t key = {{1, 2}};
-  //   threefry4x64_ctr_t ctr = {{1, 2, 3, 4}};
-  //   threefry4x64_ctr_t result = threefry4x64(ctr, key);
-  //   printf("Draws:\n");
-  //   printf("%" PRIu64 "\n", result.v[0]);
-  //   printf("%" PRIu64 "\n", result.v[1]);
-  //   printf("%" PRIu64 "\n", result.v[2]);
-  //   printf("%" PRIu64 "\n", result.v[3]);
-  //   ctr.v[0]++;
-  //   result = threefry4x64(ctr, key);  
-  //   printf("%" PRIu64 "\n", result.v[0]);
-  //   return 0;
-  // }
-
-  randompack_3fry_key key = {1, 2, 3, 4};
-  randompack_counter ctr = {1, 2, 3, 4};
-
-  uint64_t x[5];
-  bool ok = randompack_uint64_3fry(x, 5, ctr, key);
-  ASSERT(ok);
-
-  uint64_t r123[] = {
-    11809167116910720061ull,
-    3692938059179392440ull,
-    2879571537043795855ull,
-    11863350089667317614ull,
-    5432961706470527865ull
-  };
-  xCheck(equal_vec64(x, r123, 5));
-
-  printMsg("COMPARISON WITH ORIGINAL THREEFRY:");
-  printMsg("Random123 threefry draws:");
-  print64("r123[0]", r123[0]);
-  printMsg("...");
-  print64("r123[4]", r123[4]);
-  printMsg("randompack threefry draws:");
-  print64("rp[0]", x[0]);
-  printMsg("...");
-  print64("rp[4]", x[4]);
+  randompack_free(rng);
 }
 
 static void TestXoshiro256ppAgainstRust(void) {
@@ -350,7 +259,6 @@ void TestReference(void) {
   TestChaCha20AgainstRFC8439();
   TestAgainstNumpyPCG();
   TestPhiloxAgainstRandom123();
-  TestThreefryAgainstRandom123();
   TestXoshiro256ppAgainstRust();
   TestXoshiro256ssAgainstRust();
 }

@@ -64,3 +64,17 @@ static void set_state(uint64_t *state, int nstate, randompack_rng *rng) {
   rng->buf_byte = 0;
   copy64(rng->state.u64, state, nstate);
 }
+
+static void philox_set_state(randompack_counter ctr, randompack_philox_key key,
+  randompack_rng *rng) {
+  uint64_t state[6] = {
+    ctr.v[0], ctr.v[1], ctr.v[2], ctr.v[3],
+    key.v[0], key.v[1]
+  };
+  set_state(state, LEN(state), rng);
+}
+
+static void squares_set_state(uint64_t ctr, uint64_t key, randompack_rng *rng) {
+  uint64_t state[2] = {ctr, key};
+  set_state(state, LEN(state), rng);
+}

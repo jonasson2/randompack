@@ -12,9 +12,11 @@
 
 static int engine_nstate(char *engine) {
   if (!strcmp(engine, "xorshift128+")) return 2;
+  if (!strcmp(engine, "squares64")) return 2;
   if (!strcmp(engine, "xoshiro256++")) return 4;
   if (!strcmp(engine, "xoshiro256**")) return 4;
   if (!strcmp(engine, "pcg64") || !strcmp(engine, "pcg64_dxsm")) return 4;
+  if (!strcmp(engine, "cwg128") || !strcmp(engine, "cwg128_64")) return 5;
   if (!strcmp(engine, "philox")) return 6;
   if (!strcmp(engine, "chacha20")) return 6;
   return 0;
@@ -30,9 +32,11 @@ static randompack_rng *make_rng(char *engine) {
 static void test_invalid_args(void) {
   char *engines[] = {
     "xorshift128+",
+    "squares64",
     "xoshiro256++",
     "xoshiro256**",
     "pcg64",
+    "cwg128",
     "philox",
     "chacha20",
   };
@@ -84,6 +88,17 @@ static void test_pcg_inc_odd(void) {
   randompack_free(rng);
 }
 
+static void test_cwg_s_odd(void) {
+  uint64_t even_s[] = {1,2,3,4,6};
+  uint64_t odd_s[] = {1,2,3,4,5};
+  randompack_rng *rng = make_rng("cwg128");
+  bool ok = randompack_set_state(even_s, LEN(even_s), rng);
+  check_failure(ok, rng);
+  ok = randompack_set_state(odd_s, LEN(odd_s), rng);
+  check_success(ok, rng);
+  randompack_free(rng);
+}
+
 static void draw_uints(randompack_rng *rng, uint64_t *x, int n) {
   bool ok = randompack_uint64(x, n, 0, rng);
   check_success(ok, rng);
@@ -92,9 +107,11 @@ static void draw_uints(randompack_rng *rng, uint64_t *x, int n) {
 static void test_determinism(void) {
   enum { K = 20 };
   uint64_t x128[] = {0x0123456789abcdefULL, 0xfedcba9876543210ULL};
+  uint64_t squares[] = {1,2};
   uint64_t x256pp[] = {1,2,3,4};
   uint64_t x256ss[] = {5,6,7,8};
   uint64_t pcg[] = {9,10,11,13};
+  uint64_t cwg[] = {1,2,3,4,5};
   uint64_t philox[] = {1,2,3,4,5,6};
   uint64_t chacha[] = {
     0x0123456789abcdefULL,
@@ -110,9 +127,11 @@ static void test_determinism(void) {
     int nstate;
   } cases[] = {
     {"xorshift128+", x128, LEN(x128)},
+    {"squares64", squares, LEN(squares)},
     {"xoshiro256++", x256pp, LEN(x256pp)},
     {"xoshiro256**", x256ss, LEN(x256ss)},
     {"pcg64", pcg, LEN(pcg)},
+    {"cwg128", cwg, LEN(cwg)},
     {"philox", philox, LEN(philox)},
     {"chacha20", chacha, LEN(chacha)},
   };
@@ -154,10 +173,55 @@ static void test_buf_reset(void) {
   randompack_free(rng);
 }
 
+static void test_philox_set_state(void) {
+  randompack_counter ctr = {{1, 2, 3, 4}};
+  randompack_philox_key key = {{5, 6}};
+  randompack_rng *rng = make_rng("philox");
+  bool ok = randompack_philox_set_state(ctr, key, rng);
+  check_success(ok, rng);
+  uint64_t a[4], b[4];
+  ok = randompack_uint64(a, LEN(a), 0, rng);
+  check_success(ok, rng);
+  ok = randompack_philox_set_state(ctr, key, rng);
+  check_success(ok, rng);
+  ok = randompack_uint64(b, LEN(b), 0, rng);
+  check_success(ok, rng);
+  xCheck(equal_vec64(a, b, LEN(a)));
+  randompack_free(rng);
+  rng = make_rng("squares64");
+  ok = randompack_philox_set_state(ctr, key, rng);
+  check_failure(ok, rng);
+  randompack_free(rng);
+}
+
+static void test_squares64_set_state(void) {
+  uint64_t ctr = 7;
+  uint64_t key = 11;
+  randompack_rng *rng = make_rng("squares64");
+  bool ok = randompack_squares64_set_state(ctr, key, rng);
+  check_success(ok, rng);
+  uint64_t a[4], b[4];
+  ok = randompack_uint64(a, LEN(a), 0, rng);
+  check_success(ok, rng);
+  ok = randompack_squares64_set_state(ctr, key, rng);
+  check_success(ok, rng);
+  ok = randompack_uint64(b, LEN(b), 0, rng);
+  check_success(ok, rng);
+  xCheck(equal_vec64(a, b, LEN(a)));
+  randompack_free(rng);
+  rng = make_rng("philox");
+  ok = randompack_squares64_set_state(ctr, key, rng);
+  check_failure(ok, rng);
+  randompack_free(rng);
+}
+
 void TestSetState(void) {
   test_invalid_args();
   test_xoshiro_nonzero();
   test_pcg_inc_odd();
+  test_cwg_s_odd();
   test_determinism();
   test_buf_reset();
+  test_philox_set_state();
+  test_squares64_set_state();
 }

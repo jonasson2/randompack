@@ -39,12 +39,12 @@ static void test_statistics(char *engine) {
   DRAW(engine, 7, randompack_norm(x, N, rng));
   xCheck(check_meanvar(x, N));
   xCheck(check_skewkurt(x, N, 0, 3));
-  xCheck(check_normal_max(x, N));
+  xCheckMsg(check_normal_max(x, N), engine);
   DRAW(engine, 7, randompack_normf(y, N, rng));
   for (int i = 0; i < N; i++) x[i] = y[i];
   xCheck(check_meanvar(x, N));
   xCheck(check_skewkurt(x, N, 0, 3));
-  xCheck(check_normal_max(x, N));
+  xCheckMsg(check_normal_max(x, N), engine);
   FREE(y);
   FREE(x);
 }

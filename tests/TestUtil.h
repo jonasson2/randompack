@@ -135,23 +135,27 @@
 //------------------------------------------------------------------------------
 static char *engines[] = {
   "xorshift128+",
+  "squares64",
   "xoshiro256**",
   "xoshiro256++",
   "chacha20",
   "philox"
 #ifdef HAVE128
   , "pcg64_dxsm"
+  , "cwg128_64"
 #endif
 };
 
 static char *abbrev[] = {
   "x128+",
+  "squares64",
   "x256**",
   "x256++",
   "chacha20",
   "philox"
 #ifdef HAVE128
   , "pcg64"
+  , "cwg128"
 #endif
 };
 
@@ -162,12 +166,14 @@ typedef struct {
 
 static engine_table_entry engine_table[] = {
   {"xorshift128+",  2},
+  {"squares64",     2},
   {"xoshiro256**",  4},
   {"xoshiro256++",  4},
   {"chacha20",      6},
   {"philox",        6},
 #ifdef HAVE128
   {"pcg64_dxsm",    4},
+  {"cwg128_64",     5},
 #endif
 };
 //------------------------------------------------------------------------------

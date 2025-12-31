@@ -26,7 +26,7 @@
 #include <stddef.h>
 
 typedef struct randompack_rng randompack_rng;
-typedef struct { uint64_t v[4]; } randompack_counter, randompack_3fry_key;
+typedef struct { uint64_t v[4]; } randompack_counter;
 typedef struct { uint64_t v[2]; } randompack_philox_key;
 
 randompack_rng *randompack_create( // Create randomized RNG of given engine type, error→0
@@ -226,20 +226,6 @@ bool randompack_uint64( // Generate uint64 in [0, bound), false on error
   randompack_rng *rng    // in/out  random number generator
 );
 
-bool randompack_uint64_3fry( // Counter based random number generation with "threefry"
-  uint64_t x[],             // out  len-vector of integers (unbounded)
-  size_t len,               // in   number requested
-  randompack_counter ctr,   // in   counter state
-  randompack_3fry_key key   // in   threefry4x64 key
-);
-
-bool randompack_uint64_philox( // Counter based random number generation with "philox"
-  uint64_t x[],             // out  len-vector of integers (unbounded)
-  size_t len,               // in   number requested
-  randompack_counter ctr,   // in   counter state
-  randompack_philox_key key // in   threefry4x64 key
-);
-
 bool randompack_serialize( // Serialize an RNG to an opaque byte buffer
   uint8_t *buf,          // out     buffer for serialization (may be NULL if *len==0)
   int *len,              // in/out  0 → query size; otherwise buffer length
@@ -256,6 +242,18 @@ bool randompack_set_state( // Set engine state array directly
   uint64_t state[],       // in      state words (length depends on engine)
   int nstate,             // in      number of state words provided
   randompack_rng *rng     // in/out  target RNG
+);
+
+bool randompack_philox_set_state( // Set philox counter/key state directly
+  randompack_counter ctr, // in      counter state
+  randompack_philox_key key, // in   key state
+  randompack_rng *rng     // in/out  target RNG
+);
+
+bool randompack_squares64_set_state( // Set squares64 counter/key state directly
+  uint64_t ctr,            // in      counter state
+  uint64_t key,            // in      key state
+  randompack_rng *rng      // in/out  target RNG
 );
 
 //========================================================================================

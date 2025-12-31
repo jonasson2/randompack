@@ -14,12 +14,6 @@ run_cryptorandom = executable(
   dependencies : [randompack_dep],
 )
 
-bench = executable(
-  'bench',
-  ['bench.c'] + common_util,
-  dependencies : [randompack_dep],
-)
-
 timing = executable(
   'Timing',
   ['Timing.c'] + common_util,
@@ -35,5 +29,11 @@ time_engines = executable(
 time_distributions = executable(
   'TimeDistributions',
   ['TimeDistributions.c', 'TimeUtil.c'] + common_util,
+  dependencies : [randompack_dep],
+)
+
+time_integers = executable(
+  'TimeIntegers',
+  ['TimeIntegers.c'] + common_util,
   dependencies : [randompack_dep],
 )

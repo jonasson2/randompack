@@ -50,6 +50,8 @@ double time_double( // Benchmark double fill amortizing time-keeping overhead, r
   randompack_rng *rng        // RNG handle
 );
 
-double time_norm(int chunk, double bench_time, randompack_rng *rng);
+typedef void (*fill_u64_cb)(uint64_t out[], int n, void *ctr, void *key);
+
+double time_u64_cb(int chunk, double bench_time, fill_u64_cb fill, void *ctr, void *key);
 
 #endif

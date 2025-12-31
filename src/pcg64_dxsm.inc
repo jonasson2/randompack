@@ -8,7 +8,7 @@
 // SPDX-License-Identifier: 0BSD OR MIT-0
 
 static inline void
-fill_pcg64_opt(randompack_rng *rng) {
+fill_pcg64(randompack_rng *rng) {
   uint64_t *out = rng->buf;
 
   /* cheap (half-width) multiplier */

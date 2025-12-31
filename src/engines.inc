@@ -4,13 +4,14 @@
 #include "xoshiro256pp.inc"
 #include "xoshiro256ss.inc"
 #include "chachacha.inc"
-#include "counter_based.inc"
 #include "csprng.inc"
+#include "squares64.inc"
 
 #ifdef HAVE128
 #include "pcg64_dxsm.inc"
+#include "cwg128.inc"
 #endif
 
 #ifdef HAVE128MUL
-#include "philox_rng.inc"
+#include "philox4x64.inc"
 #endif

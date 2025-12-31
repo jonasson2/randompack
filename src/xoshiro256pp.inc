@@ -9,9 +9,10 @@ static inline void fill_x256pp(randompack_rng *rng) {
   uint64_t s1 = rng->state.u64[1];
   uint64_t s2 = rng->state.u64[2];
   uint64_t s3 = rng->state.u64[3];
+  uint64_t result, t;
   for (size_t i = 0; i < n; i++) {
-    uint64_t result = ROTL64(s0 + s3, 23) + s0;
-    uint64_t t = s1 << 17;
+    result = ROTL64(s0 + s3, 23) + s0;
+    t = s1 << 17;
     s2 ^= s0;
     s3 ^= s1;
     s1 ^= s2;

@@ -20,35 +20,12 @@ static void draw_bounded_randoms(char *engine, uint64_t *x, int len, uint64_t bo
 }
 
 static void draw_unbounded_randoms(char *engine, uint64_t *x, int len, int seed) {
-  bool fry = !strcmp(engine, "3fry");
-  bool phil = !strcmp(engine, "philox");
   bool ok;
-  if (fry || phil) {
-    randompack_counter ctr;
-    uint64_t sm = (uint32_t)seed;
-    for (int i = 0; i < LEN(ctr.v); i++) ctr.v[i] = rand_splitmix64(&sm);
-    if (fry) {
-      randompack_3fry_key key;
-      for (int i = 0; i < LEN(key.v); i++) key.v[i] = rand_splitmix64(&sm);
-      ok = randompack_uint64_3fry(x, len, ctr, key);
-      ASSERT(ok);
-      print64("First draw from threefry", x[0]);
-    }
-    else {
-      randompack_philox_key key;
-      for (int i = 0; i < LEN(key.v); i++) key.v[i] = rand_splitmix64(&sm);
-      ok = randompack_uint64_philox(x, len, ctr, key);
-      ASSERT(ok);
-      print64("First draw from philox", x[0]);
-    }
-  }
-  else {
-    randompack_rng *rng = create_seeded_rng(engine, seed);
-    ASSERT(rng);
-    ok = randompack_uint64(x, len, 0, rng);
-    ASSERT(ok);
-    randompack_free(rng);
-  }
+  randompack_rng *rng = create_seeded_rng(engine, seed);
+  ASSERT(rng);
+  ok = randompack_uint64(x, len, 0, rng);
+  ASSERT(ok);
+  randompack_free(rng);
 }
 
 static void test_edge_cases(char *engine) {
@@ -115,12 +92,6 @@ void TestUint64(void) {
     test_edge_cases(e);
     test_unbounded_nonzero(e);
     test_balanced_counts(e);
-    test_balanced_bits(e);
-  }
-  char *cb_methods[] = {"3fry", "philox"};
-  for (int i=0; i<LEN(cb_methods); i++) {
-    char *e = cb_methods[i];
-    test_unbounded_nonzero(e);
     test_balanced_bits(e);
   }
 }

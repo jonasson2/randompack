@@ -44,7 +44,7 @@ static inline void copy16(void *dst, void *src, int n) { memcpy(dst, src, n*2); 
 static inline void copy32(void *dst, void *src, int n) { memcpy(dst, src, n*4); }
 static inline void copy64(void *dst, void *src, int n) { memcpy(dst, src, n*8); }
 #ifndef BUFSIZE
-#define BUFSIZE 256
+#define BUFSIZE 64
 #endif
 _Static_assert(BUFSIZE % 8 == 0, "BUFSIZE must be a multiple of 8 uint64 words (64 bytes)");
 
@@ -55,6 +55,14 @@ static inline uint64_t rand_splitmix64(uint64_t *x) {
   return z ^ (z >> 31);
 }
 
+static inline uint32_t mix32(uint32_t x) {
+  x ^= x >> 16;
+  x *= 0x7feb352dU;
+  x ^= x >> 15;
+  x *= 0x846ca68bU;
+  x ^= x >> 16;
+  return x;
+}
 
 #ifdef __unix__
   #include <unistd.h>

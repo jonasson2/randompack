@@ -42,9 +42,11 @@ static void test_seed_determinism(void) {
   // the seed-sequence engines below.
   char *engines_seq[] = {
     "xorshift128+",
+    "squares64",
     "xoshiro256**",
     "xoshiro256++",
     "pcg64_dxsm",
+    "cwg128_64",
     "philox",
     "chacha20",
   };
@@ -70,9 +72,11 @@ static void test_spawn_key_separation(void) {
   // Skip Park-Miller because it does not support spawn_key.
   char *engines[] = {
     "xorshift128+",
+    "squares64",
     "xoshiro256**",
     "xoshiro256++",
     "pcg64_dxsm",
+    "cwg128_64",
     "philox",
     "chacha20",
   };
