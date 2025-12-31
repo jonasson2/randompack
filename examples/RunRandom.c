@@ -121,7 +121,10 @@ int main(int argc, char **argv) {
   randompack_rng *rng = randompack_create(rngtype);
   randompack_seed(rngseed, 0, 0, rng);
   double *x;
-  ALLOC(x, n);
+  if (!ALLOC(x, n)) {
+    fprintf(stderr, "allocation failed\n");
+    return 1;
+  }
 
   if (!randompack_u01(x, n, rng)) {
     fprintf(stderr, "randompack_u01 failed\n");

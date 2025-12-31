@@ -1,10 +1,11 @@
 #ifndef RANDOMPACK_CONFIG_H
 #define RANDOMPACK_CONFIG_H
 
+#include <stdint.h>
 #include <limits.h>
-#include <stdio.h>   // snprintf
-#include <stdlib.h>  // calloc, free
-#include <string.h>  // memset
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 201112L
 #error "_Static_assert requires C11"
@@ -46,8 +47,9 @@ static inline void copy64(void *dst, void *src, int n) { memcpy(dst, src, n*8); 
 #ifndef BUFSIZE
 #define BUFSIZE 64
 #endif
-_Static_assert(BUFSIZE % 8 == 0, "BUFSIZE must be a multiple of 8 uint64 words (64 bytes)");
-
+_Static_assert(BUFSIZE % 8 == 0, "BUFSIZE must be a multiple of 8 (for chacha20)");
+_Static_assert(BUFSIZE <= 512,
+	       "BUFSIZE must be <= 512 to allow BUFSIZE arrays on the stack");
 static inline uint64_t rand_splitmix64(uint64_t *x) {
   uint64_t z = (*x += 0x9E3779B97F4A7C15ULL);
   z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9ULL;

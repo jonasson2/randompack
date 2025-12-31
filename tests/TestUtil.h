@@ -264,4 +264,14 @@ randompack_rng *create_seeded_rng(const char *engine, int seed);
 
 void check_u01_distribution(double *u, int n);
 void check_u01_distributionf(float *u, int n);
+
+#ifndef UNUSED
+#define UNUSED(x) ((void)(x))
+#endif
+
+static inline void testutil_silence_unused(void) {
+  UNUSED(engines);
+  UNUSED(abbrev);
+  UNUSED(engine_table);
+}
 #endif

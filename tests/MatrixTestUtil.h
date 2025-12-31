@@ -9,6 +9,7 @@
 
 #include "BlasGateway.h"
 #include "randompack_config.h"
+#include "TestUtil.h"
 
 static inline void copytranspose(int m, int n, double A[], int ldA, double B[], int ldB) {
   // Set B to the transpose of the m×n matrix A. Matrices must not overlap.
@@ -21,7 +22,7 @@ static inline double relabsdiff(double a[], double b[], int n) {
   // max(relative diff, absolute diff) between vectors a and b
   if (n == 0) return 0.0;
   double *c;
-  ALLOC(c, n);
+  TEST_ALLOC(c, n);
   copy(n, a, 1, c, 1);
   axpy(n, -1.0, b, 1, c, 1);
   int ia = iamax(n, a, 1);

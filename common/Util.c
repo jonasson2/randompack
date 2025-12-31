@@ -16,13 +16,18 @@ double get_time(void) {
   LARGE_INTEGER freq, counter;
   QueryPerformanceFrequency(&freq);
   QueryPerformanceCounter(&counter);
-  return (double)counter.QuadPart/freq.QuadPart;
-#elif defined(_POSIX_MONOTONIC_CLOCK)
+  return (double)counter.QuadPart/(double)freq.QuadPart;
+
+#elif defined(CLOCK_MONOTONIC)
   struct timespec ts;
-  clock_gettime(CLOCK_MONOTONIC, &ts);
-  return ts.tv_sec + ts.tv_nsec/1e9;
+  if (clock_gettime(CLOCK_MONOTONIC, &ts) == 0)
+    return (double)ts.tv_sec + 1e-9*(double)ts.tv_nsec;
+
+  // fall through on error
+  return (double)clock()/CLOCKS_PER_SEC;
+
 #else
-  // Fallback to standard C (lower resolution)
+  // ISO C fallback (not monotonic, but always available)
   return (double)clock()/CLOCKS_PER_SEC;
 #endif
 }
