@@ -9,11 +9,21 @@
 #include <stdexcept>
 #include <sstream>
 #include <iostream>
+#include <random>
 
 // --- Access hack: expose mixer_ for testing only ---
+#if defined(__clang__)
+  #pragma clang diagnostic push
+  #pragma clang diagnostic ignored "-Wkeyword-macro"
+#endif
+
 #define private public
 #include "randutils.hpp"   // Melissa's header as-is
 #undef private
+
+#if defined(__clang__)
+  #pragma clang diagnostic pop
+#endif
 
 extern "C" {
 #include "seed_seq_fe128.inc"
@@ -73,7 +83,7 @@ static void RunSeedSeqFe128PoolTests() {
   CheckSeedSeqFe128Pool({0,1,2,3,4});        // M=5
 
   std::vector<uint32_t> v20;
-  for (uint32_t i=0; i<20; i++)
+  for (uint32_t i = 0; i < 20; i++)
     v20.push_back(i);
   CheckSeedSeqFe128Pool(v20);                // M=20
 
@@ -87,11 +97,11 @@ static void RunSeedSeqFe128PoolTests() {
 
   // ---- C. Random fuzz tests ----
   std::mt19937_64 rng(123456);  // fixed seed for reproducibility
-  for (int t=0; t<1000; t++) {
+  for (int t = 0; t < 1000; t++) {
     int M = rng() % 32;
     std::vector<uint32_t> seeds;
     seeds.reserve(M);
-    for (int i=0; i<M; i++)
+    for (int i = 0; i < M; i++)
       seeds.push_back(uint32_t(rng()));
     CheckSeedSeqFe128Pool(seeds);
   }
