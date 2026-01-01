@@ -233,27 +233,35 @@ bool randompack_serialize( // Serialize an RNG to an opaque byte buffer
 );
 
 bool randompack_deserialize( // Restore an RNG from an opaque byte buffer
-  uint8_t *buf,          // in      buffer with serialization
-  int len,               // in      buffer length
-  randompack_rng *rng    // out     target RNG (must be allocated)
+  uint8_t *buf,           // in      buffer with serialization
+  int len,                // in      buffer length
+  randompack_rng *rng     // out     target RNG (must be allocated)
 );
 
-bool randompack_set_state( // Set engine state array directly
-  uint64_t state[],       // in      state words (length depends on engine)
-  int nstate,             // in      number of state words provided
-  randompack_rng *rng     // in/out  target RNG
+//#ifdef HAVE128
+bool randompack_pcg64_set_state( // Set PCG state and increment
+  __uint128_t state,      // in      PCG state
+  __uint128_t inc,		  // in      PCG increment (must be odd)
+  randompack_rng *rng	  // in/out  target RNG      
 );
+//#endif
 
 bool randompack_philox_set_state( // Set philox counter/key state directly
-  randompack_counter ctr, // in      counter state
-  randompack_philox_key key, // in   key state
-  randompack_rng *rng     // in/out  target RNG
+  randompack_counter ctr,     // in      counter state
+  randompack_philox_key key,  // in      key state
+  randompack_rng *rng         // in/out  target RNG
 );
 
-bool randompack_squares64_set_state( // Set squares64 counter/key state directly
-  uint64_t ctr,            // in      counter state
-  uint64_t key,            // in      key state
-  randompack_rng *rng      // in/out  target RNG
+bool randompack_squares_set_state( // Set squares64 counter/key state directly
+  uint64_t ctr,               // in      counter state
+  uint64_t key,               // in      key state
+  randompack_rng *rng         // in/out  target RNG
+);
+
+bool randompack_set_state( // Set state of general engine directly
+  uint64_t state[],           // in      state words (length depends on engine)
+  int nstate,                 // in      number of state words provided
+  randompack_rng *rng         // in/out  target RNG
 );
 
 //========================================================================================

@@ -3,6 +3,7 @@
 #include "xorshift128p.inc"
 #include "xoshiro256pp.inc"
 #include "xoshiro256ss.inc"
+#include "xoroshiro128pp.inc"
 #include "chachacha.inc"
 #include "csprng.inc"
 #include "squares64.inc"

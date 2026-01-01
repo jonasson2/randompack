@@ -1,0 +1,11 @@
+The PCG (Permuted Congruential Generator) family of RNGs [1] combines a linear
+congruential generator (LCG) with a permutation function that scrambles the
+output to mitigate the statistical weaknesses inherent in basic LCGs.
+Randompack uses the DXSM output permutation, which provides strong scrambling at
+moderate additional cost. This variant was adopted by NumPy in 2019 for its
+default 64-bit PCG generator. It is also available in several other projects
+including the programming languages Rust and Julia.
+
+
+
+[1] Melissa's 2014 report

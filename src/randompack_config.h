@@ -37,6 +37,7 @@ _Static_assert(sizeof(long long) == 8, "randompack requires 64-bit long long");
 #define FREE(p)  do { free(p); (p) = 0; } while (0)
 #define U32_TO_FLOAT(u) (((((u) >> 8) | 1)) * 0x1.0p-24f)
 #define U64_TO_DOUBLE(u) (((((u) >> 11) | 1)) * 0x1.0p-53)
+#define ROTL64(x,k) (((x) << (k)) | ((x) >> (64 - (k))))
 
 static inline int min(int m, int n) { return m < n ? m : n; }
 static inline int max(int m, int n) { return m > n ? m : n; }

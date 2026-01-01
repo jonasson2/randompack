@@ -83,6 +83,7 @@ int main(int argc, char **argv) {
   struct { char *name; } engines[] = {
     { "xoshiro256++" },
     { "xoshiro256**" },
+    { "xoroshiro128++" },
     { "xorshift128+" },
     { "squares64" },
     { "pcg64" },

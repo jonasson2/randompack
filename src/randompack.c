@@ -21,6 +21,7 @@ typedef struct randompack_rng randompack_rng;
 typedef enum {
   INVALID,
   X128P,
+  XORO,
   X256SS,
   X256PP,
   SQUARES,
@@ -39,7 +40,7 @@ struct randompack_rng {
     uint32_t u32[16];
     uint64_t u64[8];
     #ifdef HAVE128
-    pcg64_t pcg;   // <--- add this
+    pcg64_t pcg;
     cwg128_64_t cwg;
     #endif
   } state;
@@ -59,33 +60,26 @@ typedef struct {
   engine_fill fill;
 } rng_entry;
 
-#define ROTL64(x,k) (((x) << (k)) | ((x) >> (64 - (k))))
 #include "engines.inc"
 #include "buffer_draw.inc"
 #include "randutil.inc"
 #include "distributions.inc"
 
-#ifdef HAVE128 // Thin wrapper
-// Unused helper; keep for reference but disable to avoid warnings.
-#if 0
-static uint64_t next_pcg64(randompack_rng *rng) {
-  return pcg64_random_fast(&rng->state.pcg);
-}
-#endif
-#else
+#ifndef HAVE128
 #define next_pcg64 0
 #endif
 
 static rng_entry rng_table[] = {
-  { "xorshift128+",  "x128+",     X128P,      2, fill_x128p   },
-  { "xoshiro256**",  "x256**",    X256SS,     4, fill_x256ss  },
-  { "xoshiro256++",  "x256++",    X256PP,     4, fill_x256pp  },
-  { "squares64",     "squares",   SQUARES,    2, fill_squares },
-  { "pcg64_dxsm",    "pcg64",     PCG64,      4, fill_pcg64   },
-  { "cwg128_64",     "cwg128",    CWG128,  5, fill_cwg128  },
-  { "philox",        "philox",    PHILOX,     6, fill_philox  },
-  { "chacha20",      "chacha20",  CHACHA20,   6, fill_chacha  },
-  { "system-csprng", "system",    SYS,        0, fill_csprng  }
+  { "xorshift128+",  "x128+",     X128P,      2, fill_x128p     },
+  { "xoroshiro128++","xoro++",    XORO,       2, fill_xoro128pp },
+  { "xoshiro256**",  "x256**",    X256SS,     4, fill_x256ss    },
+  { "xoshiro256++",  "x256++",    X256PP,     4, fill_x256pp    },
+  { "squares64",     "squares",   SQUARES,    2, fill_squares   },
+  { "pcg64_dxsm",    "pcg64",     PCG64,      4, fill_pcg64     },
+  { "cwg128_64",     "cwg128",    CWG128,     5, fill_cwg128    },
+  { "philox",        "philox",    PHILOX,     6, fill_philox    },
+  { "chacha20",      "chacha20",  CHACHA20,   6, fill_chacha    },
+  { "system-csprng", "system",    SYS,        0, fill_csprng    }
 };
 
 static rng_entry *find_entry(rng_engine e) {
@@ -295,7 +289,8 @@ bool randompack_set_state(uint64_t state[], int nstate, randompack_rng *rng) {
       "randompack_set_state: CWG128 engine not supported on this platform";
   else if (nstate != ent->state_words)
     rng->last_error = "randompack_set_state: wrong nstate for this engine";
-  else if ((rng->engine == X256SS || rng->engine == X256PP) && allzero64(state, 4))
+  else if ((rng->engine == X256SS || rng->engine == X256PP || rng->engine == XORO ||
+				rng->engine == X128P ) && allzero64(state, 4))
     rng->last_error = "randompack_set_state: xoshiro state must be nonzero";
   else if (rng->engine == PCG64 && (state[2] & 1) == 0)
     rng->last_error = "randompack_set_state: pcg64 increment must be odd";
@@ -305,6 +300,19 @@ bool randompack_set_state(uint64_t state[], int nstate, randompack_rng *rng) {
   set_state(state, nstate, rng);
   return true;
 }
+
+#ifdef HAVE128
+bool randompack_pcg64_set_state(uint128_t state, uint128_t inc, randompack_rng *rng) {
+  if (!rng) return false;
+  rng->last_error = 0;
+  if (rng->engine != PCG64) {
+    rng->last_error = "randompack_pcg64_set_state: engine is not pcg64";
+    return false;
+  }
+  pcg64_set_state(state, inc, rng);
+  return true;
+}
+#endif
 
 bool randompack_philox_set_state(randompack_counter ctr, randompack_philox_key key,
   randompack_rng *rng) {
@@ -318,12 +326,12 @@ bool randompack_philox_set_state(randompack_counter ctr, randompack_philox_key k
   return true;
 }
 
-bool randompack_squares64_set_state(uint64_t ctr, uint64_t key,
+bool randompack_squares_set_state(uint64_t ctr, uint64_t key,
   randompack_rng *rng) {
   if (!rng) return false;
   rng->last_error = 0;
   if (rng->engine != SQUARES) {
-    rng->last_error = "randompack_squares64_set_state: engine is not squares64";
+    rng->last_error = "randompack_squares_set_state: engine is not squares64";
     return false;
   }
   squares_set_state(ctr, key, rng);

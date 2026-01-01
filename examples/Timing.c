@@ -120,15 +120,16 @@ int main(int argc, char **argv) {
   char *dist_names[DIST_COUNT] = { "uint64", "u01", "normal", "exp" };
   struct { char *name; bool reference; } engines[] = {
     //{ "xoshiro256++ (reference)", true  },
-    { "xoshiro256++",             false },
-    { "xoshiro256**",             false },
-    { "xorshift128+",             false },
-    { "squares64",                false },
-    { "pcg64",                    false },
-    { "cwg128",                   false },
-    { "philox",                   false },
-    { "system",                   false },
-    { "chacha20",                 false },
+    { "xoshiro256++",   false },
+    { "xoshiro256**",   false },
+    { "xoroshiro128++", false },
+    { "xorshift128+",   false },
+    { "squares64",      false },
+    { "pcg64",          false },
+    { "cwg128",         false },
+    { "philox",         false },
+    { "system",         false },
+    { "chacha20",       false },
   };
   int n_engines = LEN(engines);
   for (int i=0; i<n_engines; i++) {
