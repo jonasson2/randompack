@@ -1,5 +1,5 @@
 // -*- C -*-
-// TimeDistributions.c: time continuous distributions (ns/value).
+// TimeDistributions.c: time distributions (ns/value), double and float.
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -14,7 +14,7 @@
 #include "printX.h"
 
 static void print_help(void) {
-  printf("TimeDistributions — time continuous distributions (ns/value)\n");
+  printf("TimeDistributions — time distributions (ns/value), double and float\n");
   printf("Usage: TimeDistributions [options]\n\n");
   printf("Options:\n");
   printf("  -h            Show this help message\n");
@@ -117,6 +117,32 @@ static void fill_wrapper(double out[], int n, double param[], randompack_rng *rn
   ASSERT(fill_dist(out, n, param, rng));
 }
 
+static bool fill_distf(float out[], int n, float param[], randompack_rng *rng) {
+  size_t len = (size_t)n;
+  switch ((dist_id)(int)param[0]) {
+    case U01:       return randompack_u01f      (out, len,                     rng);
+    case UNIF:      return randompack_uniff     (out, len, param[1], param[2], rng);
+    case NORM:      return randompack_normf     (out, len,                     rng);
+    case NORMAL:    return randompack_normalf   (out, len, param[1], param[2], rng);
+    case LOGNORMAL: return randompack_lognormalf(out, len, param[1], param[2], rng);
+    case GUMBEL:    return randompack_gumbelf   (out, len, param[1], param[2], rng);
+    case PARETO:    return randompack_paretof   (out, len, param[1], param[2], rng);
+    case EXP1:      return randompack_expf      (out, len, param[1],           rng);
+    case EXP2:      return randompack_expf      (out, len, param[1],           rng);
+    case GAMMA:     return randompack_gammaf    (out, len, param[1], param[2], rng);
+    case CHI2:      return randompack_chi2f     (out, len, param[1],           rng);
+    case BETA:      return randompack_betaf     (out, len, param[1], param[2], rng);
+    case T:         return randompack_tf        (out, len, param[1],           rng);
+    case F:         return randompack_ff        (out, len, param[1], param[2], rng);
+    case WEIBULL:   return randompack_weibullf  (out, len, param[1], param[2], rng);
+  }
+  return false;
+}
+
+static void fill_wrapperf(float out[], int n, float param[], randompack_rng *rng) {
+  ASSERT(fill_distf(out, n, param, rng));
+}
+
 int main(int argc, char **argv) {
   char *engine;
   double bench_time;
@@ -126,14 +152,20 @@ int main(int argc, char **argv) {
     print_help();
     return help ? 0 : 1;
   }
-  randompack_rng *rng = randompack_create(engine);
-  if (!rng) {
+  randompack_rng *rngd = randompack_create(engine);
+  randompack_rng *rngf = randompack_create(engine);
+  if (!rngd || !rngf) {
     fprintf(stderr, "randompack_create failed: %s\n", engine);
+    if (rngd)
+      randompack_free(rngd);
+    if (rngf)
+      randompack_free(rngf);
     return 1;
   }
-  if (!randompack_seed(seed, 0, 0, rng)) {
+  if (!randompack_seed(seed, 0, 0, rngd) || !randompack_seed(seed, 0, 0, rngf)) {
     fprintf(stderr, "randompack_seed failed\n");
-    randompack_free(rng);
+    randompack_free(rngd);
+    randompack_free(rngf);
     return 1;
   }
   warmup_cpu(100);
@@ -158,18 +190,26 @@ int main(int argc, char **argv) {
   printf("time per value:   ns/value\n");
   printf("bench_time:       %.3f s per distribution\n", bench_time);
   printf("chunk:            %d\n\n", chunk);
-  printf("%-18s %8s\n", "Distribution", "ns/value");
+  printf("%-18s %9s %9s\n", "Distribution", "double", "float");
   for (int i = 0; i < LEN(dists); i++) {
     double par[3];
     par[0] = (double)dists[i].id;
     par[1] = dists[i].param[0];
     par[2] = dists[i].param[1];
-    double x[4], ns;
-    fill_dist(x, 4, par, rng);
-	 ns = time_double(chunk, bench_time, fill_wrapper, par, rng);
+    float parf[3];
+    parf[0] = (float)dists[i].id;
+    parf[1] = (float)dists[i].param[0];
+    parf[2] = (float)dists[i].param[1];
+    double x[4];
+    float xf[4];
+    fill_dist(x, 4, par, rngd);
+    fill_distf(xf, 4, parf, rngf);
+    double nsd = time_double(chunk, bench_time, fill_wrapper, par, rngd);
+    double nsf = time_float(chunk, bench_time, fill_wrapperf, parf, rngf);
     printf("%-18s", dists[i].name);
-	 printf(" %8.2f\n", ns);
+    printf(" %9.2f %9.2f\n", nsd, nsf);
   }
-  randompack_free(rng);
+  randompack_free(rngd);
+  randompack_free(rngf);
   return 0;
 }

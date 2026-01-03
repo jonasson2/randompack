@@ -61,6 +61,7 @@ ALWAYS_INLINE static void fill_betaf(float *x, size_t len, float a, float b,
       if (y > hi) y = hi;
       x[i + j] = y;
     }
+    i += n;
   }
 }
 
