@@ -475,7 +475,6 @@ bool randompack_norm(double x[], size_t len, randompack_rng *rng) { // standard 
     rng->last_error = 0;
   if (rng->last_error) return false;
   rand_norm(x, len, rng);
-  // rand_norm(x, len, rng);
   return true;
 }
 

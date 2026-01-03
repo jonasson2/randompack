@@ -15,7 +15,7 @@ static int LastNonzeroColumn(int m, int n, double A[]) {
 //#include "zmgd.inc"   // static zmgd() lives here
 #include "random_standard_norm_exp.inc"
 
-static void rand_dble(double x[], size_t n, randompack_rng *rng) {
+ALWAYS_INLINE static void rand_dble(double x[], size_t n, randompack_rng *rng) {
   size_t i;
   align64(rng);
   i = 0;
@@ -31,7 +31,7 @@ static void rand_dble(double x[], size_t n, randompack_rng *rng) {
   }
 }
 
-static inline void rand_float(float x[], size_t n, randompack_rng *rng) {
+ALWAYS_INLINE static void rand_float(float x[], size_t n, randompack_rng *rng) {
   size_t i;
   uint32_t *buf32 = (uint32_t*)rng->buf.u64;
   align32(rng);
@@ -207,7 +207,7 @@ static void rand_uint8(uint8_t x[], size_t n, uint8_t bound, randompack_rng *rng
   }
 }
 
-static void rand_int(int bound, int x[], size_t n, randompack_rng *rng) {
+ALWAYS_INLINE static void rand_int(int bound, int x[], size_t n, randompack_rng *rng) {
   rand_uint32((uint32_t*)x, n, bound, rng);
 }
 
@@ -295,7 +295,8 @@ static void rand_sample(int p[], int n, int k, randompack_rng *rng) {
 #include "randompack.h"
 #include "randompack_config.h"
 
-static inline void fill_gamma_shape1(double *x, size_t len, double shape, randompack_rng *rng) {
+ALWAYS_INLINE static void fill_gamma_shape1(double *x, size_t len, double shape,
+                                            randompack_rng *rng) {
   double d = shape - 1.0/3.0;
   double c = 1.0/sqrt(9.0*d);
   rand_norm(x, len, rng);
@@ -314,13 +315,13 @@ static inline void fill_gamma_shape1(double *x, size_t len, double shape, random
           break;
         }
       }
-      rand_norm(x+i, 1, rng);
+      x[i] = random_standard_normal(rng);
     }
   }
 }
 
-static inline void fill_gamma(double *x, size_t len, double shape, double scale,
-                              randompack_rng *rng) {
+ALWAYS_INLINE static void fill_gamma(double *x, size_t len, double shape, double scale,
+                                     randompack_rng *rng) {
   if (shape >= 1.0) {
 	 fill_gamma_shape1(x, len, shape, rng);
   }
@@ -334,8 +335,8 @@ static inline void fill_gamma(double *x, size_t len, double shape, double scale,
   if (scale != 1) for (size_t i = 0; i < len; i++) x[i] *= scale;
 }
 
-static inline void fill_beta(double *x, size_t len, double a, double b, randompack_rng
-									  *rng) {
+ALWAYS_INLINE static void fill_beta(double *x, size_t len, double a, double b,
+                                    randompack_rng *rng) {
 // X = Ga/(Ga + Gb) ~ Beta(a,b) if Ga ~ Gamma(a,1) and Gb ~ Gamma(b,1)
   fill_gamma(x, len, a, 1.0, rng);
   double gb[64];
@@ -351,7 +352,7 @@ static inline void fill_beta(double *x, size_t len, double a, double b, randompa
   }
 }
 
-static inline void fill_t(double *x, size_t len, double nu, randompack_rng *rng) {
+ALWAYS_INLINE static void fill_t(double *x, size_t len, double nu, randompack_rng *rng) {
   // Z ~ N(0,1), U ~ Gamma(nu/2, 2) independent => X = Z/sqrt(U/nu) ~ t_nu
   double u[64];
   rand_norm(x, len, rng);
@@ -365,8 +366,8 @@ static inline void fill_t(double *x, size_t len, double nu, randompack_rng *rng)
   }
 }
 
-static inline void fill_f(double *x, size_t len, double nu1, double nu2, randompack_rng
-                          *rng) {
+ALWAYS_INLINE static void fill_f(double *x, size_t len, double nu1, double nu2,
+                                 randompack_rng *rng) {
   // F(nu1,nu2) via gamma ratio:
   //   F = (X1*nu2)/(X2*nu1) where X1 ~ Gamma(nu1/2,1), X2 ~ Gamma(nu2/2,1)
   double x2[64];

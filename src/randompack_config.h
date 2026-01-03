@@ -45,6 +45,18 @@ static inline int max(int m, int n) { return m > n ? m : n; }
 static inline void copy16(void *dst, void *src, int n) { memcpy(dst, src, n*2); }
 static inline void copy32(void *dst, void *src, int n) { memcpy(dst, src, n*4); }
 static inline void copy64(void *dst, void *src, int n) { memcpy(dst, src, n*8); }
+
+#if defined(_MSC_VER)
+  #define ALWAYS_INLINE __forceinline
+  #define NOINLINE __declspec(noinline)
+#elif defined(__clang__) || defined(__GNUC__)
+  #define ALWAYS_INLINE __attribute__((always_inline)) inline
+  #define NOINLINE __attribute__((noinline))
+#else
+  #define ALWAYS_INLINE inline
+  #define NOINLINE
+#endif
+
 #ifndef BUFSIZE
 #define BUFSIZE 64
 #endif

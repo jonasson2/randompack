@@ -20,7 +20,7 @@
 #include "randompack.h"
 #include "ziggurat_constants.h"
 
-static inline double random_standard_normal(bitgen_t *bitgen_state) {
+ALWAYS_INLINE static double random_standard_normal(bitgen_t *bitgen_state) {
   uint64_t r;
   int sign;
   uint64_t rabs;
@@ -55,14 +55,14 @@ static inline double random_standard_normal(bitgen_t *bitgen_state) {
   }
 }
 
-static void rand_norm(double *buf, size_t len, bitgen_t *bitgen_state) {
+ALWAYS_INLINE static void rand_norm(double *buf, size_t len, bitgen_t *bitgen_state) {
   // align64(bitgen_state);
   for (size_t i = 0; i < len; i++) {
     buf[i] = random_standard_normal(bitgen_state);
   }
 }
 
-static inline float random_standard_normal_f(bitgen_t *bitgen_state) {
+ALWAYS_INLINE static float random_standard_normal_f(bitgen_t *bitgen_state) {
   uint32_t r;
   int sign;
   uint32_t rabs;
@@ -96,7 +96,7 @@ static inline float random_standard_normal_f(bitgen_t *bitgen_state) {
   }
 }
 
-static inline void rand_normf(float *buf, size_t len, randompack_rng *rng) {
+ALWAYS_INLINE static void rand_normf(float *buf, size_t len, randompack_rng *rng) {
   enter_u32_mode(rng);
   for (size_t i = 0; i < len; i++) {
     buf[i] = random_standard_normal_f(rng);
@@ -106,9 +106,8 @@ static inline void rand_normf(float *buf, size_t len, randompack_rng *rng) {
 
 // Following four functions (including the two commented out ones) are copied verbatim
 // from NumPy, except for marked changes
-
-static inline double standard_exponential_unlikely(bitgen_t *bitgen_state,
-                                                    uint8_t idx, double x) {
+ALWAYS_INLINE static double standard_exponential_unlikely(bitgen_t *bitgen_state,
+																					  uint8_t idx, double x) {
   while (true) { // added loop to replace recursion
     if (idx == 0) {
       /* Switch to 1.0 - U to avoid log(0.0), see GH 13361 */
@@ -132,8 +131,8 @@ static inline double standard_exponential_unlikely(bitgen_t *bitgen_state,
   }
 }
 
-static inline float standard_exponential_unlikely_f(bitgen_t *bitgen_state,
-                                                    uint8_t idx, float x) {
+ALWAYS_INLINE static float standard_exponential_unlikely_f(bitgen_t *bitgen_state,
+                                                                  uint8_t idx, float x) {
   while (true) { // added loop to replace recursion
     if (idx == 0) {
       /* Switch to 1.0 - U to avoid log(0.0), see GH 13361 */
@@ -159,7 +158,7 @@ static inline float standard_exponential_unlikely_f(bitgen_t *bitgen_state,
 
 // Following randompack functions add a loop to fill buf, but otherwise the code is
 // unchanged
-static inline void rand_exp(double *x, size_t len, bitgen_t *bitgen_state) {
+ALWAYS_INLINE static void rand_exp(double *x, size_t len, bitgen_t *bitgen_state) {
   // align64(bitgen_state);
   for (size_t i=0; i<len; i++) {
     uint64_t ri;
@@ -179,7 +178,7 @@ static inline void rand_exp(double *x, size_t len, bitgen_t *bitgen_state) {
   }
 }
 
-static inline void rand_expf(float *x, size_t len, bitgen_t *bitgen_state) {
+ALWAYS_INLINE static void rand_expf(float *x, size_t len, bitgen_t *bitgen_state) {
   enter_u32_mode(bitgen_state);
   for (size_t i=0; i<len; i++) {
 	 uint32_t ri;
