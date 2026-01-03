@@ -13,7 +13,7 @@ librandompack = static_library(
   'randompack',
   src_files,
   include_directories: inc,
-  dependencies: [blas_dep],
+  dependencies: [blas_dep] + math_deps,
   pic: true,
   install: true,
 )
@@ -21,5 +21,5 @@ librandompack = static_library(
 randompack_dep = declare_dependency(
   link_with: librandompack,
   include_directories: inc,
-  dependencies: [blas_dep],
+  dependencies: [blas_dep] + math_deps,
 )

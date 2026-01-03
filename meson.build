@@ -40,6 +40,12 @@ endif
 # Common detection function for all platforms
 cc = meson.get_compiler('c')
 perf = get_option('perf')
+math_dep = cc.find_library('m', required: false)
+if math_dep.found()
+  math_deps = [math_dep]
+else
+  math_deps = []
+endif
 if perf
   if not get_option('b_lto')
     error('perf build requires -Db_lto=true')
