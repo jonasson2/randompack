@@ -38,7 +38,7 @@ static inline void fill_buf_if_empty(randompack_rng *rng) {
 
 static inline uint8_t draw_byte(randompack_rng *rng) {
   if (rng->buf_word >= BUFSIZE) fill_buf(rng);
-  uint64_t w = rng->buf[rng->buf_word];
+  uint64_t w = rng->buf.u64[rng->buf_word];
   uint8_t b = w >> (8 * rng->buf_byte);
   rng->buf_byte++;
   if (rng->buf_byte >= 8) {
@@ -63,7 +63,7 @@ static inline uint32_t draw_u32(randompack_rng *rng) {
     w = 0;
     b = 0;
   }
-  uint64_t word = rng->buf[w];
+  uint64_t word = rng->buf.u64[w];
   uint32_t x = (b == 0) ? word : (word >> 32);
   b += 4;
   if (b == 8) { // Advance by one 32-bit chunk
@@ -89,7 +89,41 @@ static inline uint64_t draw_u64(randompack_rng *rng) { // Fast single word
   }
   rng->buf_word = w + 1;
   rng->buf_byte = b;
-  return rng->buf[w];
+  return rng->buf.u64[w];
+}
+
+static inline uint64_t draw_u64_fast(randompack_rng *rng) { // Fast single word
+  int w = rng->buf_word;
+  if (w >= BUFSIZE) {
+    rng->fill(rng);
+    w = 0;
+  }
+  rng->buf_word = w + 1;
+  return rng->buf.u64[w];
+}
+
+static inline void enter_u32_mode(randompack_rng *rng) {
+  if (rng->buf_word32 >= 0) return; // already in u32-mode
+  align32(rng);
+  rng->buf_word32 = 2*rng->buf_word + rng->buf_byte/4;
+}
+
+static inline uint32_t draw_u32_fast(randompack_rng *rng) { // Fast single word
+  // draw 32 bit word when alignment is preset
+  int w = rng->buf_word32;
+  if (w >= 2*BUFSIZE) {
+    rng->fill(rng);
+    w = 0;
+  }
+  rng->buf_word32 = w + 1;
+  return rng->buf.u32[w];
+}
+
+static inline void exit_u32_mode(randompack_rng *rng) {
+  if (rng->buf_word32 < 0) return; // not in u32-mode
+  rng->buf_word = rng->buf_word32/2;
+  rng->buf_byte = (rng->buf_word32 & 1)*4;
+  rng->buf_word32 = -1;
 }
 
 static inline double draw_u01(randompack_rng *rng) {
@@ -100,10 +134,14 @@ static inline double draw_u01f(randompack_rng *rng) {
   return U32_TO_FLOAT(draw_u32(rng));
 }
 
+static inline double draw_u01f_fast(randompack_rng *rng) {
+  return U32_TO_FLOAT(draw_u32_fast(rng));
+}
+
 // Copy n fresh uint16 draws into out using the shared byte buffer.
 static inline void draw_u16_copy(uint16_t *out, size_t n, randompack_rng *rng) {
   align16(rng);
-  uint16_t *buf16 = (uint16_t*)rng->buf;
+  uint16_t *buf16 = (uint16_t*)rng->buf.u64;
   size_t i = 0;
   while (i < n) {
     fill_buf_if_empty(rng);
@@ -123,7 +161,7 @@ static inline void draw_u16_copy(uint16_t *out, size_t n, randompack_rng *rng) {
 // Copy n fresh uint32 draws into out using the shared byte buffer.
 static inline void draw_u32_copy(uint32_t *out, size_t n, randompack_rng *rng) {
   align32(rng);
-  uint32_t *buf32 = (uint32_t*)rng->buf;
+  uint32_t *buf32 = (uint32_t*)rng->buf.u64;
   size_t i = 0;
   while (i < n) {
     fill_buf_if_empty(rng);
@@ -147,7 +185,7 @@ static inline void draw_u64_copy(uint64_t *out, size_t n, randompack_rng *rng) {
   while (i < n) {
     fill_buf_if_empty(rng);
     int take = min(n - i, BUFSIZE - rng->buf_word);
-    copy64(out + i, rng->buf + rng->buf_word, take);
+    copy64(out + i, rng->buf.u64 + rng->buf_word, take);
     rng->buf_word += take;
     i += take;
   }

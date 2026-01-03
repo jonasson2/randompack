@@ -13,8 +13,7 @@ static int LastNonzeroColumn(int m, int n, double A[]) {
 }
 
 //#include "zmgd.inc"   // static zmgd() lives here
-#include "random_standard_normal.inc"
-#include "random_standard_exponential.inc"
+#include "random_standard_norm_exp.inc"
 
 static void rand_dble(double x[], size_t n, randompack_rng *rng) {
   size_t i;
@@ -24,7 +23,7 @@ static void rand_dble(double x[], size_t n, randompack_rng *rng) {
     fill_buf_if_empty(rng);
     int take = min(n - i, BUFSIZE - rng->buf_word);
     for (int j = 0; j < take; j++) {
-      uint64_t v = rng->buf[rng->buf_word + j];
+      uint64_t v = rng->buf.u64[rng->buf_word + j];
       x[i + j] = (v >> 11) * 0x1.0p-53;
     }
     rng->buf_word += take;
@@ -34,7 +33,7 @@ static void rand_dble(double x[], size_t n, randompack_rng *rng) {
 
 static inline void rand_float(float x[], size_t n, randompack_rng *rng) {
   size_t i;
-  uint32_t *buf32 = (uint32_t*)rng->buf;
+  uint32_t *buf32 = (uint32_t*)rng->buf.u64;
   align32(rng);
   i = 0;
   while (i < n) {

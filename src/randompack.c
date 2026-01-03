@@ -45,11 +45,15 @@ struct randompack_rng {
     #endif
   } state;
   rng_engine engine;
+  int buf_word32;
   int buf_word;
   int buf_byte;
   engine_fill fill;
   char *last_error;
-  uint64_t buf[BUFSIZE];
+  union {
+    uint32_t u32[2*BUFSIZE];
+    uint64_t u64[BUFSIZE];
+  } buf;
 };
 
 typedef struct {
@@ -130,6 +134,7 @@ bool randompack_seed(int seed, uint32_t *spawn_key, int nkey, randompack_rng *rn
   if (rng->state.u64[0] == 0) { // the xo-family needs a nonzero state
     rng->state.u64[0] = 1;
   }
+  rng->buf_word32 = -1;
   rng->buf_word = BUFSIZE;
   rng->buf_byte = 0;
   return true;
@@ -148,6 +153,7 @@ randompack_rng *randompack_create(const char *engine) {
   if (!ALLOC(rng, 1)) return 0;
   rng->last_error = 0;
   rng->engine = INVALID;
+  rng->buf_word32 = -1;
   rng->buf_word = BUFSIZE;
   rng->buf_byte = 0;
   if (!select_engine(engine, rng)) {
