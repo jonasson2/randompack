@@ -77,8 +77,12 @@ static inline void posv(char *uplo, int n, int nrhs, double a[], int lda, double
 }
 
 static inline void pstrf(char *uplo, int n, double a[], int lda, int piv[], int *rank,
-	   double tol, double work[], int *info) {
+								 double tol, double work[], int *info) {
+#if defined(__APPLE__)
   vpack_dpstrf_(uplo, &n, a, &lda, piv, rank, &tol, work, info, 1);
+#else
+  dpstrf_(uplo, &n, a, &lda, piv, rank, &tol, work, info, 1);
+#endif  
   for (int i=0; i<n; i++) piv[i]--;
 }
 

@@ -1,8 +1,8 @@
 // Include file declaring the reference blas functions
 //
-// Note that vpack_dpstrf_ is used instead of dpstrf_ because the latter routine is
-// faulty in Accelerate; lapack_dpstrf.f with Netlib's official code must be compiled and
-// linked against.
+// Note that vpack_dpstrf_ is used instead of dpstrf_ on Apples because the latter routine
+// is faulty in Accelerate; lapack_dpstrf.f with Netlib's official code must be compiled
+// and linked against.
 
 #ifndef BLASREF_H
 #define BLASREF_H
@@ -41,6 +41,9 @@ void dlaset_(char *uplo, int *m, int *n, double *alpha, double *beta, double a[]
 double dnrm2_(int *n, double x[], int *incx);
 
 void dpotrf_(char *uplo, int *n, double a[], int *lda, int *info, int lenuplo);
+
+void dpstrf_(char *uplo, int *n, double a[], int *lda, int piv[], int *rank, double *tol,
+	     double work[], int *info, int lenuplo);
 
 void vpack_dpstrf_(char *uplo, int *n, double a[], int *lda, int piv[], int *rank,
 	     double *tol, double work[], int *info, int lenuplo);

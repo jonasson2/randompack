@@ -5,6 +5,7 @@ ALWAYS_INLINE static void fill_gamma_shape1f(float *x, size_t len, float shape,
   float d = shape - 1.0f/3.0f;
   float c = 1.0f/sqrtf(9.0f*d);
   rand_normf(x, len, rng);
+  enter_u32_mode(rng);
   for (size_t i = 0; i < len; i++) {
     for (;;) {
       float z = x[i];
@@ -23,28 +24,28 @@ ALWAYS_INLINE static void fill_gamma_shape1f(float *x, size_t len, float shape,
       x[i] = random_standard_normal_f(rng);
     }
   }
+  exit_u32_mode(rng);
 }
 
 ALWAYS_INLINE static void fill_gammaf(float *x, size_t len, float shape, float scale,
   randompack_rng *rng) {
-  enter_u32_mode(rng);
   if (shape >= 1.0f) {
     fill_gamma_shape1f(x, len, shape, rng);
   }
   else {
     fill_gamma_shape1f(x, len, shape + 1.0f, rng);
+	 enter_u32_mode(rng);
     for (size_t i = 0; i < len; i++) {
       float u = draw_u01f_fast(rng);
       x[i] *= expf(logf(u)/shape);
     }
   }
-  if (scale != 1.0f) for (size_t i = 0; i < len; i++) x[i] *= scale;
   exit_u32_mode(rng);
+  if (scale != 1.0f) for (size_t i = 0; i < len; i++) x[i] *= scale;
 }
 
 ALWAYS_INLINE static void fill_betaf(float *x, size_t len, float a, float b,
   randompack_rng *rng) {
-  enter_u32_mode(rng);
   fill_gammaf(x, len, a, 1.0f, rng);
   float gb[64];
   size_t i = 0;
@@ -57,7 +58,6 @@ ALWAYS_INLINE static void fill_betaf(float *x, size_t len, float a, float b,
     }
     i += n;
   }
-  exit_u32_mode(rng);
 }
 
 ALWAYS_INLINE static void fill_tf(float *x, size_t len, float nu, randompack_rng *rng) {

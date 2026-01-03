@@ -1,9 +1,13 @@
 src_files = files(
   'randompack.c',
   'printX.c',
-  'lapack_dpstf2.f',
-  'lapack_dpstrf.f',
 )
+
+if host_machine.system() == 'darwin'
+  src_files += files(
+    'lapack_dpstf2.f',
+    'lapack_dpstrf.f')
+endif
 
 librandompack = static_library(
   'randompack',

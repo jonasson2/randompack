@@ -198,4 +198,3 @@ ALWAYS_INLINE static void rand_expf(float *x, size_t len, bitgen_t *bitgen_state
   }
   exit_u32_mode(bitgen_state);
 }
-
