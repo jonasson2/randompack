@@ -364,6 +364,23 @@ bool randompack_u01(double x[], size_t len, randompack_rng *rng) {
   return true;
 }
 
+bool randompack_unif(double x[], size_t len, double a, double b,
+  randompack_rng *rng) {
+  if (!rng) return false;
+  if (!x || !(a < b)) {
+    rng->last_error = "invalid arguments to randompack_unif";
+    return false;
+  }
+  rng->last_error = 0;
+  rand_dble(x, len, rng); // x in [0,1)
+  double w = b - a;
+  for (size_t i = 0; i < len; i++) {
+    v = a + w*x[i];
+    x[i] = v < b ? v : nextafter(b, a);
+  }
+  return true;
+}
+
 bool randompack_int(int x[], size_t len, int m, int n, randompack_rng *rng) {
   if (!rng) return false;
   int64_t span = (int64_t)n - (int64_t)m;
@@ -450,20 +467,6 @@ bool randompack_sample(int x[], int len, int k, randompack_rng *rng) {
     rng->last_error = 0;
   if (rng->last_error) return false;
   rand_sample(x, len, k, rng);
-  return true;
-}
-
-bool randompack_unif(double x[], size_t len, double a, double b,
-  randompack_rng *rng) {
-  if (!rng) return false;
-  if (!x || !(a < b)) {
-    rng->last_error = "invalid arguments to randompack_unif";
-    return false;
-  }
-  rng->last_error = 0;
-  rand_dble(x, len, rng); // x in [0,1)
-  double w = b - a;
-  for (size_t i = 0; i < len; i++) x[i] = fmin(b, a + w*x[i]);
   return true;
 }
 
