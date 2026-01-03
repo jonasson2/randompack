@@ -43,7 +43,10 @@ bool randompack_uniff(float x[], size_t len, float a, float b, randompack_rng *r
   rng->last_error = 0;
   rand_float(x, len, rng); // x in [0,1)
   float w = b - a;
-  for (size_t i = 0; i < len; i++) x[i] = fminf(b, a + w*x[i]);
+  for (size_t i = 0; i < len; i++) {
+    float v = a + w*x[i];
+    x[i] = v < b ? v : nextafter(b, a);
+  }
   return true;
 }
 

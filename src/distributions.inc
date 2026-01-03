@@ -344,10 +344,15 @@ ALWAYS_INLINE static void fill_beta(double *x, size_t len, double a, double b,
   while (i < len) {
     int n = min(64, len - i);
     fill_gamma(gb, n, b, 1.0, rng);
-    for (int j = 0; j < n; j++) {
-      double y = x[i + j] / (x[i + j] + gb[j]);      
-		x[i + j] = fmax(fmin(y, 1 - DBL_EPSILON), DBL_MIN);
-    }
+	 double hi = 1.0 - DBL_EPSILON;
+	 for (int j = 0; j < n; j++) { // force the beta-draws to (0, 1)
+		double a = x[i + j];
+		double b = gb[j];
+		double y = a / (a + b);
+		if (y < DBL_MIN) y = DBL_MIN;
+		if (y > hi)      y = hi;
+		x[i + j] = y;
+	 }	 
     i += n;
   }
 }

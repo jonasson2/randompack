@@ -145,8 +145,8 @@ double probit(double p) { // Return NAN if p < 0 or p > 1
   if (p < 0 || p > 1) return NAN;
   if (p == 0) return -DBL_MAX;  // New in the translation
   if (p == 1) return  DBL_MAX;  //
-  p = fmax(p, nextafter(0, 1)); //
-  p = fmin(p, nextafter(1, 0)); //
+  p = fmax(p, nextafter(0.0, 1.0)); //
+  p = fmin(p, nextafter(1.0, 0.0)); //
   // Constants
   const double split1 = 0.425, split2 = 5.0, const1 = 0.180625, const2 = 1.6;
   const double

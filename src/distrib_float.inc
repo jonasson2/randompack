@@ -51,12 +51,16 @@ ALWAYS_INLINE static void fill_betaf(float *x, size_t len, float a, float b,
   size_t i = 0;
   while (i < len) {
     int n = min(64, len - i);
-    fill_gammaf(gb, n, b, 1.0f, rng);
+    fill_gammaf(gb, n, b, 1.0f, rng);   
+    float hi = 1.0f - FLT_EPSILON; // restrict draws to (0, 1):
     for (int j = 0; j < n; j++) {
-      float y = x[i + j] / (x[i + j] + gb[j]);      
-		x[i + j] = fmaxf(fminf(y, 1 - FLT_EPSILON), FLT_MIN);
+      float a = x[i + j];
+      float b = gb[j];
+      float y = a / (a + b);
+      if (y < FLT_MIN) y = FLT_MIN;
+      if (y > hi) y = hi;
+      x[i + j] = y;
     }
-    i += n;
   }
 }
 
