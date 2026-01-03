@@ -33,8 +33,24 @@ static void rand_dble(double x[], size_t n, randompack_rng *rng) {
 }
 
 static inline void rand_float(float x[], size_t n, randompack_rng *rng) {
-  for (size_t i = 0; i < n; i++)
-	 x[i] = U32_TO_FLOAT(draw_u32(rng));
+  size_t i;
+  uint32_t *buf32 = (uint32_t*)rng->buf;
+  align32(rng);
+  i = 0;
+  while (i < n) {
+    fill_buf_if_empty(rng);
+    int pos32 = 2*rng->buf_word + rng->buf_byte/4;
+    int avail = 2*BUFSIZE - pos32;
+    size_t rem = n - i;
+    int take = avail;
+    if (rem < (size_t)avail) take = (int)rem;
+    for (int j = 0; j < take; j++)
+      x[i + j] = U32_TO_FLOAT(buf32[pos32 + j]);
+    pos32 += take;
+    rng->buf_word = pos32/2;
+    rng->buf_byte = (pos32 & 1)*4;
+    i += take;
+  }
 }
 
 static void rand_uint64(uint64_t x[], size_t n, uint64_t bound, randompack_rng *rng) {

@@ -32,6 +32,12 @@ time_distributions = executable(
   dependencies : [randompack_dep],
 )
 
+time_float = executable(
+  'TimeFloat',
+  ['TimeFloat.c', 'TimeUtil.c'] + common_util,
+  dependencies : [randompack_dep],
+)
+
 time_integers = executable(
   'TimeIntegers',
   ['TimeIntegers.c'] + common_util,

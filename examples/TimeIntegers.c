@@ -243,18 +243,18 @@ int main(int argc, char **argv) {
   printf("\n%-14s %8s\n", "uint64", "ns/value");
   double ns_u64 = time_uint64_bound(chunk, bench_time, u64_bound, rng);
   printf("%-14s %8.2f\n", "UINT64_MAX/3", ns_u64);
-  printf("\n%-14s %10s %10s\n", "perm n", "ns/perm", "ns/elem");
+  printf("\n%-14s %10s\n", "perm n", "ns/value");
   for (int i = 0; i < LEN(perm_specs); i++) {
     int n = perm_specs[i].n;
     double ns = time_perm(n, bench_time, rng);
-    printf("%-14s %10.2f %10.2f\n", perm_specs[i].label, ns, ns/n);
+    printf("%-14s %10.2f\n", perm_specs[i].label, ns/n);
   }
-  printf("\n%-14s %10s %10s\n", "sample", "ns/sample", "ns/elem");
+  printf("\n%-14s %10s\n", "sample", "ns/value");
   for (int i = 0; i < LEN(sample_specs); i++) {
     int n = sample_specs[i].n;
     int k = sample_specs[i].k;
     double ns = time_sample(n, k, bench_time, rng);
-    printf("%-14s %10.2f %10.2f\n", sample_specs[i].label, ns, ns/k);
+    printf("%-14s %10.2f\n", sample_specs[i].label, ns/k);
   }
   randompack_free(rng);
   return 0;

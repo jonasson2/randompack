@@ -83,11 +83,8 @@ bool randompack_gumbelf(float x[], size_t len, float mu, float beta,
   }
   rng->last_error = 0;
   rand_float(x, len, rng); // x in [0,1)
-  for (size_t i = 0; i < len; i++) {
-    float u = x[i];
-    while (u <= 0.0f) u = (float)draw_u01(rng);
-    x[i] = mu - beta*logf(-logf(u));
-  }
+  for (size_t i = 0; i < len; i++)
+    x[i] = mu - beta*logf(-logf(x[i]));
   return true;
 }
 

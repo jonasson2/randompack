@@ -51,10 +51,12 @@ static inline uint8_t draw_byte(randompack_rng *rng) {
 static inline uint32_t draw_u32(randompack_rng *rng) {
   int w = rng->buf_word;
   int b = rng->buf_byte;
-  b = (b + 3)/4*4;
-  if (b == 8) { // Align to next 32-bit boundary
-    b = 0;
-    w++;
+  if (b != 0 && b != 4) {
+    b = (b + 3)/4*4;
+    if (b == 8) { // Align to next 32-bit boundary
+      b = 0;
+      w++;
+    }
   }
   if (w >= BUFSIZE) { // Refill if needed
     rng->fill(rng);

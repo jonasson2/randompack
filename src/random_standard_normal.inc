@@ -105,6 +105,43 @@ static void rand_norm(double *buf, size_t len, bitgen_t *bitgen_state) {
   }
 }
 
+
+// float random_standard_normal_f(bitgen_t *bitgen_state) {
+//   uint32_t r;
+//   int sign;
+//   uint32_t rabs;
+//   int idx;
+//   float x, xx, yy;
+//   for (;;) {
+//     /* r = n23sb8 */
+//     r = next_uint32(bitgen_state);
+//     idx = r & 0xff;
+//     sign = (r >> 8) & 0x1;
+//     rabs = (r >> 9) & 0x0007fffff;
+//     x = rabs * wi_float[idx];
+//     if (sign & 0x1)
+//       x = -x;
+//     if (rabs < ki_float[idx])
+//       return x; /* # 99.3% of the time return here */
+//     if (idx == 0) {
+//       for (;;) {
+//         /* Switch to 1.0 - U to avoid log(0.0), see GH 13361 */
+//         xx = -ziggurat_nor_inv_r_f * npy_log1pf(-next_float(bitgen_state));
+//         yy = -npy_log1pf(-next_float(bitgen_state));
+//         if (yy + yy > xx * xx)
+//           return ((rabs >> 8) & 0x1) ? -(ziggurat_nor_r_f + xx)
+//                                      : ziggurat_nor_r_f + xx;
+//       }
+//     } else {
+//       if (((fi_float[idx - 1] - fi_float[idx]) * next_float(bitgen_state) +
+//            fi_float[idx]) < exp(-0.5 * x * x))
+//         return x;
+//     }
+//   }
+// }
+
+// Following randompack function adds a loop to fill buf, but otherwise the code is
+// unchanged
 static void rand_normf(float *buf, size_t len, bitgen_t *bitgen_state) {
   uint32_t r;
   int sign;
@@ -124,6 +161,7 @@ static void rand_normf(float *buf, size_t len, bitgen_t *bitgen_state) {
       if (rabs < ki_float[idx]) {
         buf[i] = x;
         break;
+        // return x; /* # 99.3% of the time return here */
       }
       if (idx == 0) {
         for (;;) {
@@ -133,6 +171,8 @@ static void rand_normf(float *buf, size_t len, bitgen_t *bitgen_state) {
           if (yy + yy > xx * xx) {
             buf[i] = ((rabs >> 8) & 0x1) ? -(ziggurat_nor_r_f + xx)
               : ziggurat_nor_r_f + xx;
+            // return ((rabs >> 8) & 0x1) ? -(ziggurat_nor_r_f + xx)
+            //   : ziggurat_nor_r_f + xx;
             break;
           }
         }
@@ -141,6 +181,7 @@ static void rand_normf(float *buf, size_t len, bitgen_t *bitgen_state) {
              fi_float[idx]) < expf(-0.5f * x * x)) {
           buf[i] = x;
           break;
+          //return x;
         }
       }
     }

@@ -37,6 +37,7 @@
 	randompack_free(rng);													\
  } while (0)
 
+// Check same seed => same draws, different seeds => different draws
 #define TEST_DETERMINISM0(engine, TYPE, FUNC) do {		\
 	TYPE x[3], y[3], z[3];										\
 	int n = LEN(x);												\
@@ -67,6 +68,7 @@
 	CHECK_VEC_DIFFERENT(TYPE, x, z, n);										\
  } while (0)
 
+// Check that zero-length buffers work ok, and that null buff and null rng fail
 #define TEST_EDGE_CASES0(engine, TYPE, FUNC) do {							\
 	TYPE buf[3] = {1, 2, 3};														\
 	TYPE orig[3] = {1, 2, 3};														\
@@ -181,7 +183,7 @@ static engine_table_entry engine_table[] = {
 //------------------------------------------------------------------------------
 
 enum {
-  N_BAL_CNTS = 500000,
+  N_BAL_CNTS = 5000000,
   N_BAL_BITS = 40000,
   N_STAT_FAST = 100000,
   N_STAT_SLOW = 20000

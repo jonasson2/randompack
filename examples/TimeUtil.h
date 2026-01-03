@@ -28,6 +28,13 @@ typedef void (*fill_double_fn)( // Callback type: fill out with random doubles
   randompack_rng *rng  // RNG handle
 );
 
+typedef void (*fill_float_fn)( // Callback type: fill out with random floats
+  float out[],         // output buffer (length n)
+  int n,               // number of values to generate
+  float param[],       // parameters (length depends on distribution; may be 0)
+  randompack_rng *rng  // RNG handle
+);
+
 double time_u64( // Benchmark uint64 fill amortizing time-keeping overhead, return ns
   int chunk,             // number of values generated per fill call
   double bench_time,     // repeat until this time (in seconds) has elapsed
@@ -48,6 +55,14 @@ double time_double( // Benchmark double fill amortizing time-keeping overhead, r
   fill_double_fn fill,  // fill callback producing double output
   double param[],            // parameters passed to fill (may be 0)
   randompack_rng *rng        // RNG handle
+);
+
+double time_float( // Benchmark float fill amortizing time-keeping overhead, return ns
+  int chunk,                // number of values generated per fill call
+  double bench_time,        // repeat until this time (in seconds) has elapsed
+  fill_float_fn fill,  // fill callback producing float output
+  float param[],            // parameters passed to fill (may be 0)
+  randompack_rng *rng       // RNG handle
 );
 
 typedef void (*fill_u64_cb)(uint64_t out[], int n, void *ctr, void *key);
