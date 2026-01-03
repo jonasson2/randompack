@@ -136,5 +136,5 @@ options; details are available via the `-h` option.
 - `TimeIntegers` reports time per generated value (in ns) for selected integer
   distributions.
 - `TimeDistributions` reports time per generated value (in ns) for each
-  continuous distribution, using the default engine (`xoshiro256++`).
-- `TimeFloat` reports generation time per value for the single precision versions.
+  continuous distribution in double and float, using the default engine
+  (`xoshiro256++`).

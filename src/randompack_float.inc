@@ -11,6 +11,26 @@ bool randompack_u01f(float x[], size_t len, randompack_rng *rng) {
   return true;
 }
 
+bool randompack_uniff(float x[], size_t len, float a, float b, randompack_rng *rng) {
+  if (!rng) return false;
+  if (!x || !(a < b)) {
+    rng->last_error = "invalid arguments to randompack_uniff";
+    return false;
+  }
+  rng->last_error = 0;
+  rand_float(x, len, rng); // x in [0,1)
+  float w = b - a;
+  for (size_t i = 0; i < len; i++) {
+#if defined(__clang__)
+    x[i] = fminf(a + w*x[i], nextafter(b, a));
+#else
+    float v = a + w*x[i];
+    x[i] = v < b ? v : nextafter(b, a);
+#endif
+  }
+  return true;
+}
+
 bool randompack_normf(float x[], size_t len, randompack_rng *rng) {
   if (!rng) return false;
   if (!x)
@@ -31,22 +51,6 @@ bool randompack_expf(float x[], size_t len, float scale, randompack_rng *rng) {
   rng->last_error = 0;
   rand_expf(x, len, rng);
   if (scale != 1.0f) for (size_t i = 0; i < len; i++) x[i] *= scale;
-  return true;
-}
-
-bool randompack_uniff(float x[], size_t len, float a, float b, randompack_rng *rng) {
-  if (!rng) return false;
-  if (!x || !(a < b)) {
-    rng->last_error = "invalid arguments to randompack_uniff";
-    return false;
-  }
-  rng->last_error = 0;
-  rand_float(x, len, rng); // x in [0,1)
-  float w = b - a;
-  for (size_t i = 0; i < len; i++) {
-    float v = a + w*x[i];
-    x[i] = v < b ? v : nextafter(b, a);
-  }
   return true;
 }
 
