@@ -31,6 +31,10 @@ built using the Meson build system with Ninja as the default backend. The C11
 core is intended to build cleanly on all major platforms and to serve both as a
 reliable standalone library and as a common foundation for language bindings.
 
+The public header file `randompack.h` serves as a compact reference for the C
+API: all user-facing functions are declared there, with comments describing the
+role of each parameter.
+
 ## Distributions
 
 All distributions are implemented independently of the underlying random number
