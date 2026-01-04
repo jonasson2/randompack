@@ -57,6 +57,28 @@ single-precision (float) variants.
 - Pareto
 - multivariate normal (double precision only)
 
+## Random number generators
+
+Randompack offers several underlying random number generators, referred to as
+*engines*. ChaCha20 is provided as a cryptographically secure generator. Philox
+and squares64 are counter-based generators, while the remaining engines are
+state-based. A system-provided generator is also available. When selecting an
+engine the names are case-insensitive.
+
+- xoshiro256++ (default; Vigna and Blackman, 2018–2019)
+- xoshiro256** (Vigna and Blackman, 2018–2019)
+- xoroshiro128++ (Vigna and Blackman, 2016)
+- xorshift128+ (Vigna, 2014)
+- PCG64-DXSM (O’Neill, 2014)
+- cwg128-64 (Działa, 2022)
+- Philox-4×64 (Salmon and Moraes, 2011)
+- squares64 (Widynski, 2021)
+- ChaCha20 (Bernstein, 2008)
+- system (operating-system–provided entropy source)
+
+The generator names can be abbreviated as shown in the RunRandom.c program in
+the examples folder.
+
 ## Support functions
 
 A small set of support functions is provided to
@@ -67,26 +89,13 @@ A small set of support functions is provided to
 - set generator state explicitly
 - serialize and deserialize generator state
 
-State serialization supports checkpointing and allows simulations to be stopped
-and restarted exactly.
-
-## Random number generators
-
-Randompack offers several underlying random number generators, referred to as
-*engines*. ChaCha20 is provided as a cryptographically secure generator. Philox
-and squares64 are counter-based generators, while the remaining engines are
-state-based. A system-provided generator is also available.
-
-- xoshiro256++ (default; Vigna and Blackman, 2018–2019)
-- xoshiro256** (Vigna and Blackman, 2018–2019)
-- xoroshiro128++ (Vigna and Blackman, 2016)
-- xorshift128+ (Vigna, 2014)
-- PCG64-DXSM (O’Neill, 2014)
-- cwg128 (Działa, 2022)
-- Philox 4×64 (Salmon and Moraes, 2011)
-- squares64 (Widynski, 2021)
-- ChaCha20 (Bernstein, 2008)
-- system generator (operating-system–provided entropy source)
+Seeding uses a high-quality seed expansion mechanism based on Melissa O'Neill's
+seed_seq_fe128, also adopted by NumPy to initialize its random number
+generators. The mechanism supports reproducible construction of independent
+substreams via optional spawn keys. For the counter based generators, the
+explicit state setting allows explicit setting of both counter and key. State
+serialization supports checkpointing and allows simulations to be stopped and
+restarted exactly.
 
 ## Verification
 
@@ -165,3 +174,125 @@ configuring the build, for example:
 After installation, Randompack can be used by other projects via pkg-config:
 
         pkg-config --cflags --libs randompack
+
+## C API overview (by example)
+
+The examples subfolodr contains additional example programs.
+
+### Minimal example: N(0,1), automatically randomized rng, default engine
+
+        #include <stdio.h>
+        #include "randompack.h"
+
+        int main(void) {
+          randompack_rng *rng = randompack_create(0);
+          double x[5];
+          randompack_norm(x, 5, rng);
+          for (int i = 0; i < 5; i++) printf("%g\n", x[i]);
+          randompack_free(rng);
+          return 0;
+        }
+
+### N(3,2), PCG64_DXSM engine, seeded with 42
+
+        #include <stdio.h>
+        #include "randompack.h"
+
+        int main(void) {
+          randompack_rng *rng = randompack_create("pcg64_dxsm");
+          randompack_seed(42, 0, 0, rng);
+          double x[5];
+          randompack_normal(x, 5, 3.0, 2.0, rng);
+          for (int i = 0; i < 5; i++) printf("%g\n", x[i]);
+          randompack_free(rng);
+          return 0;
+        }
+
+### Example with full error checking
+        #include <stdio.h>
+        #include "randompack.h"
+
+        int main(void) {
+          bool ok;
+          double x[10];
+          randompack_rng *rng = 0;
+          rng = randompack_create("xoshiro256++");
+          if (!rng) {
+            fprintf(stderr, "rng creation failed\n");
+            return 1;
+          }
+          ok = randompack_seed(12345, 0, 0, rng);
+          if (!ok) goto end;
+          ok = randompack_norm(x, 10, rng);
+          if (!ok) goto end;
+          for (int i = 0; i < 10; i++) printf("% .17g\n", x[i]);
+
+        end:
+          char *msg = randompack_last_error(rng);
+          if (msg)
+            fprintf(stderr, "randompack error: %s\n", msg);
+          randompack_free(rng);
+          return msg ? 1 : 0;
+        }
+
+### Threads example demonstrating spawn key seeding
+
+In this example each thread uses the same base seed but a different spawn key
+(the thread id), producing reproducible independent substreams. Note that the
+example relies on assert() for simplicity – if compiled with -DNDEBUG these
+checks become inactive. The example relies on pthreads, usually not available on
+Windows.
+
+        // Simple pthread example.
+        // Launch M threads. Each thread derives an independent RNG stream from a
+        // common seed via a spawn key and computes max(U(0,1)) over N draws.
+
+        #include <stdint.h>
+        #include <stdio.h>
+        #include <pthread.h>
+
+        #include "randompack.h"
+
+        enum { M = 10, N = 100000 };
+        static int seed = 42;
+
+        typedef struct {
+          int stream_id;
+          double result;
+        } job;
+
+        static void *worker(void *arg) {
+          job *j = arg;
+          randompack_rng *rng = randompack_create(0);
+          if (!rng) return 0;
+          uint32_t spawn_key[1];
+          spawn_key[0] = j->stream_id;
+          if (!randompack_seed(seed, spawn_key, 1, rng)) {
+            randompack_free(rng);
+            return 0;
+          }
+          double m = 0;
+          for (int i = 0; i < N; i++) {
+            double u;
+            randompack_u01(&u, 1, rng);
+            if (u > m) m = u;
+          }
+          j->result = m;
+          randompack_free(rng);
+          return 0;
+        }
+
+        int main(void) {
+          pthread_t th[M];
+          job jobs[M];
+          for (int i = 0; i < M; i++) {
+            jobs[i].stream_id = i;
+            jobs[i].result = 0;
+            pthread_create(&th[i], 0, worker, &jobs[i]);
+          }
+          for (int i = 0; i < M; i++)
+            pthread_join(th[i], 0);
+          for (int i = 0; i < M; i++)
+            printf("stream %d: max = %.6f\n", i, jobs[i].result);
+          return 0;
+        }

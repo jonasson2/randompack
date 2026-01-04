@@ -79,9 +79,9 @@ static rng_entry rng_table[] = {
   { "xoshiro256**",  "x256**",    X256SS,     4, fill_x256ss    },
   { "xoshiro256++",  "x256++",    X256PP,     4, fill_x256pp    },
   { "squares64",     "squares",   SQUARES,    2, fill_squares   },
-  { "pcg64_dxsm",    "pcg64",     PCG64,      4, fill_pcg64     },
-  { "cwg128_64",     "cwg128",    CWG128,     5, fill_cwg128    },
-  { "philox",        "philox",    PHILOX,     6, fill_philox    },
+  { "pcg64-dxsm",    "pcg64",     PCG64,      4, fill_pcg64     },
+  { "cwg128-64",     "cwg128",    CWG128,     5, fill_cwg128    },
+  { "philox-4x64",   "philox",    PHILOX,     6, fill_philox    },
   { "chacha20",      "chacha20",  CHACHA20,   6, fill_chacha    },
   { "system-csprng", "system",    SYS,        0, fill_csprng    }
 };
@@ -142,13 +142,6 @@ bool randompack_seed(int seed, uint32_t *spawn_key, int nkey, randompack_rng *rn
 
 randompack_rng *randompack_create(const char *engine) {
   randompack_rng *rng;
-  // #if defined(RANDOMPACK_NEED_RUNTIME_ENDIAN_CHECK)
-  // uint32_t endian = 1;
-  // if (*(uint8_t *)&endian != 1) {
-  //   fputs("randompack: big-endian platforms are not supported\n", stderr);
-  //   abort();
-  // }
-  // #endif
   // Create engine
   if (!ALLOC(rng, 1)) return 0;
   rng->last_error = 0;

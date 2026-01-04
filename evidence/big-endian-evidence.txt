@@ -1,0 +1,38 @@
+ ./RunTests -v
+
+TEST OF                PASSED   FAILED
+Helpers                     1        0
+Create                     56        0
+Seed                       88        0
+Buffer                    136        0
+SetState                   20        0
+Uint8                      88        0
+Uint16                     88        0
+Uint32                     88        0
+Uint64                     64        0
+Reference                 109        0
+Int                        46        0
+Perm                       34        0
+Sample                     22        0
+U01                       144        0
+Unif                      224        0
+Normal                    112        0
+NormalMS                  256        0
+Exp                       224        0
+Lognormal                 304        0
+Gumbel                    192        0
+Pareto                    304        0
+Gamma                     304        0
+Chi2                      304        0
+Beta                      304        0
+T                         256        0
+F                         304        0
+Weibull                   304        0
+Mvn                        28        0
+TOTAL                    4404        0
+jonasson@saturn:~/randompack/release/tests$ lscpu
+Architecture:                ppc64
+  CPU op-mode(s):            32-bit, 64-bit
+  Byte Order:                Big Endian
+CPU(s):                      4
+  On-line CPU(s) list:       0-3
