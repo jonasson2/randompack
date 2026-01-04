@@ -59,10 +59,25 @@ static bool seed_seq_seed(uint32_t *w, int nw, uint32_t seed32, uint32_t *spawn_
   return true;
 }
 
+static void store_u64_le(uint8_t *dst, uint64_t v) {
+  dst[0] = v;
+  dst[1] = v >> 8;
+  dst[2] = v >> 16;
+  dst[3] = v >> 24;
+  dst[4] = v >> 32;
+  dst[5] = v >> 40;
+  dst[6] = v >> 48;
+  dst[7] = v >> 56;
+}
+
 static void set_state(uint64_t *state, int nstate, randompack_rng *rng) {  
   rng->buf_word = BUFSIZE;
   rng->buf_byte = 0;
-  copy64(rng->state.u64, state, nstate);
+  if (rng->engine == CHACHA20) {
+    for (int i = 0; i < nstate; i++)
+      store_u64_le(rng->state.u8 + 8*i, state[i]);
+  }
+  else copy64(rng->state.u64, state, nstate);
 }
 
 static void philox_set_state(randompack_counter ctr, randompack_philox_key key,
@@ -85,4 +100,3 @@ static void pcg64_set_state(uint128_t pcgstate, uint128_t inc, randompack_rng *r
   copy64(state + 2, &inc, 2);
   set_state(state, LEN(state), rng);
 }
-
