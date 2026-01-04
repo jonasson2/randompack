@@ -38,7 +38,7 @@
 #endif
 
 // Fill buffer with cryptographically secure random bits. True = success, false = failure
-bool crypto_random(void *buffer, size_t size) {
+static bool crypto_random(void *buffer, size_t size) {
   if (!buffer || size == 0) return false;
 
 #if defined(_WIN32)

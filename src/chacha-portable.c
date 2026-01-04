@@ -172,7 +172,7 @@ static void xor_block(uint8_t *restrict dest, const uint8_t *restrict source, co
     }
 }
 
-void chacha20_xor_stream(
+static void chacha20_xor_stream(
         uint8_t *restrict dest, 
         const uint8_t *restrict source, 
         size_t length,

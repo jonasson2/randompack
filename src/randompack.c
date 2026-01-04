@@ -142,13 +142,13 @@ bool randompack_seed(int seed, uint32_t *spawn_key, int nkey, randompack_rng *rn
 
 randompack_rng *randompack_create(const char *engine) {
   randompack_rng *rng;
-  #if defined(RANDOMPACK_NEED_RUNTIME_ENDIAN_CHECK)
-  uint32_t endian = 1;
-  if (*(uint8_t *)&endian != 1) {
-    fputs("randompack: big-endian platforms are not supported\n", stderr);
-    abort();
-  }
-  #endif
+  // #if defined(RANDOMPACK_NEED_RUNTIME_ENDIAN_CHECK)
+  // uint32_t endian = 1;
+  // if (*(uint8_t *)&endian != 1) {
+  //   fputs("randompack: big-endian platforms are not supported\n", stderr);
+  //   abort();
+  // }
+  // #endif
   // Create engine
   if (!ALLOC(rng, 1)) return 0;
   rng->last_error = 0;
