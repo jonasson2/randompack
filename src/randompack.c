@@ -79,11 +79,11 @@ static rng_entry rng_table[] = {
   { "xoshiro256**",  "x256**",    X256SS,     4, fill_x256ss    },
   { "xoshiro256++",  "x256++",    X256PP,     4, fill_x256pp    },
   { "squares64",     "squares",   SQUARES,    2, fill_squares   },
-  { "pcg64-dxsm",    "pcg64",     PCG64,      4, fill_pcg64     },
-  { "cwg128-64",     "cwg128",    CWG128,     5, fill_cwg128    },
-  { "philox-4x64",   "philox",    PHILOX,     6, fill_philox    },
+  { "pcg64_dxsm",    "pcg64",     PCG64,      4, fill_pcg64     },
+  { "cwg128_64",     "cwg128",    CWG128,     5, fill_cwg128    },
+  { "philox_4x64",   "philox",    PHILOX,     6, fill_philox    },
   { "chacha20",      "chacha20",  CHACHA20,   6, fill_chacha    },
-  { "system-csprng", "system",    SYS,        0, fill_csprng    }
+  { "system_csprng", "system",    SYS,        0, fill_csprng    }
 };
 
 static rng_entry *find_entry(rng_engine e) {
@@ -102,7 +102,10 @@ static bool select_engine(const char *s, randompack_rng *rng) {
   }
   char t[64];
   STRSET(t, s);
-  for (int i = 0; t[i]; i++) t[i] = TOLOWER(t[i]);
+  for (int i = 0; t[i]; i++) {
+    t[i] = TOLOWER(t[i]);
+    if (t[i] == '-') t[i] = '_';
+  }
   for (int i = 0; i < LEN(rng_table); i++) {
     if (!strcmp(t, rng_table[i].full) ||
         !strcmp(t, rng_table[i].abbrev)) {
