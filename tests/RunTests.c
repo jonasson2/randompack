@@ -58,7 +58,7 @@ static void run_test(char *name, void (*fn)(void)) {
 }
 
 int main(int argc, char **argv) {
-  char *optstring[10] = ":vh";
+  char *optstring = ":vh";
   int c;
   while ((c = getopt(argc, argv, optstring)) != -1) {
     switch (c) {
