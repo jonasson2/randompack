@@ -15,18 +15,20 @@ _Static_assert(sizeof(int) == 4, "randompack requires 32-bit int");
 _Static_assert(sizeof(void*) == 8, "randompack requires 64-bit pointers");
 _Static_assert(sizeof(long long) == 8, "randompack requires 64-bit long long");
 
-// Endianness check (compile-time) – must be little-endian
-// #if defined(__BYTE_ORDER__) && defined(__ORDER_LITTLE_ENDIAN__) && \
+/*
+Endianness check (compile-time) – must be little-endian
+#if defined(__BYTE_ORDER__) && defined(__ORDER_LITTLE_ENDIAN__) && \
 //   defined(__ORDER_BIG_ENDIAN__)
-//   #if __BYTE_ORDER__ != __ORDER_LITTLE_ENDIAN__
-//     #error "randompack requires a little-endian target"
-//   #endif
-// #elif defined(_WIN32)
-// // Windows on supported targets is little-endian
-// #else
-// // Fallback: unknown at compile time; use runtime check.
-//   #define RANDOMPACK_NEED_RUNTIME_ENDIAN_CHECK 1
-// #endif
+  #if __BYTE_ORDER__ != __ORDER_LITTLE_ENDIAN__
+    #error "randompack requires a little-endian target"
+  #endif
+#elif defined(_WIN32)
+// Windows on supported targets is little-endian
+#else
+// Fallback: unknown at compile time; use runtime check.
+  #define RANDOMPACK_NEED_RUNTIME_ENDIAN_CHECK 1
+#endif
+*/
 
 #define TOLOWER(c) (((c) >= 'A' && (c) <= 'Z') ? ((c)-'A'+'a') : (c))
 #define STRSET(dst, src) snprintf((dst), sizeof(dst), "%s", (src) ? (src) : "")

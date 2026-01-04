@@ -18,6 +18,11 @@ librandompack = static_library(
   install: true,
 )
 
+install_headers(
+  'randompack.h',
+  subdir: 'randompack',
+)
+
 randompack_dep = declare_dependency(
   link_with: librandompack,
   include_directories: inc,

@@ -9,6 +9,8 @@ project('randompack', 'c', 'fortran', 'cpp',
   ]
 )
 
+pkg = import('pkgconfig')
+
 fc = meson.get_compiler('fortran')
 add_project_arguments('-Wno-do-subscript', language : 'fortran')
 add_project_arguments(fc.get_supported_arguments(['-Wno-function-elimination']),
@@ -115,5 +117,15 @@ inc = include_directories('src', 'common')
 common_util = files('common/Util.c')
 
 subdir('src')
+
+pkg.generate(
+  librandompack,
+  name: 'randompack',
+  description: 'High-performance, reproducible random number generation library',
+  version: meson.project_version(),
+  subdirs: 'randompack',
+  requires_private: [],
+)
+
 subdir('tests')
 subdir('examples')
