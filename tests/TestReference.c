@@ -257,6 +257,7 @@ static void TestXoshiro256ssAgainstRust(void) {
 
 void TestReference(void) {
   TestChaCha20AgainstRFC8439();
+  if (!is_little_endian()) return;
   TestAgainstNumpyPCG();
   TestPhiloxAgainstRandom123();
   TestXoshiro256ppAgainstRust();

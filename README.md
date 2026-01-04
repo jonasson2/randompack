@@ -137,3 +137,31 @@ options; details are available via the `-h` option.
 - `TimeDistributions` reports time per generated value (in ns) for each
   continuous distribution in double and float, using the default engine
   (`xoshiro256++`).
+
+## Building and installation
+Randompack relies on the Meson/Ninja build system. Install these programs if
+they are not already available.
+
+To build an optimized release version of Randompack:
+
+        meson setup build --buildtype=release
+        meson compile -C build
+
+To run the test suite:
+
+        meson test -C build
+
+To install the library and headers into the default installation directory
+(usually `/usr/local`):
+
+        sudo meson install -C build
+
+To prescribe a local installation directory, include a --prefix option when
+configuring the build, for example:
+
+        meson setup build --buildtype=release --prefix=$HOME/opt
+        meson install -C build
+
+After installation, Randompack can be used by other projects via pkg-config:
+
+        pkg-config --cflags --libs randompack

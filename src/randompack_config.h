@@ -2,6 +2,7 @@
 #define RANDOMPACK_CONFIG_H
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -43,6 +44,11 @@ Endianness check (compile-time) – must be little-endian
 
 static inline int min(int m, int n) { return m < n ? m : n; }
 static inline int max(int m, int n) { return m > n ? m : n; }
+
+static inline bool is_little_endian(void) {
+  uint32_t one = 1;
+  return *(uint8_t *)&one == 1;
+}
 
 static inline void copy16(void *dst, void *src, int n) { memcpy(dst, src, n*2); }
 static inline void copy32(void *dst, void *src, int n) { memcpy(dst, src, n*4); }

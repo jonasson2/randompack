@@ -28,11 +28,6 @@ static inline uint64_t bswap64(uint64_t x) {
          ((x & 0xFF00000000000000ULL) >> 56);
 }
 
-static inline bool is_little_endian(void) {
-  uint32_t one = 1;
-  return *(uint8_t *)&one == 1;
-}
-
 static inline void fill_chacha(randompack_rng *rng) {
   uint8_t *dst = (uint8_t *)rng->buf.u64;
   uint8_t zeros[BUFSIZE*8] = {0};
