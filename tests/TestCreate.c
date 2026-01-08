@@ -73,21 +73,14 @@ static void test_default_engine_matches_x256pp(void) {
   xCheck(a[0] == b[0]);
 }
 
-#if !HAVE128
-static void test_pcg64_unavailable(void) {
-  char *names[] = { "pcg64", "cwg128" };
-  for (int i = 0; i < LEN(names); i++) {
-    randompack_rng *rng = create_seeded_rng(names[i], 123);
-    ASSERT(rng);
-    char *err = randompack_last_error(rng);
-    xCheck(err && err[0]);
-    uint64_t x = 0;
-    bool ok = randompack_uint64(&x, 1, 0, rng);
-    check_failure(ok, rng);
-    printS("128-bit engine (unavailable)", names[i]);
-    printS("last error", err);
-    randompack_free(rng);
-  }
+#if !HAVE128 || !HAVE128MUL
+static void test_engine_unavailable(char *engine) {
+  // Check that the specified engine results in an invalid RNG
+  randompack_rng *rng = randompack_create(engine);
+  ASSERT(rng);
+  char *err = randompack_last_error(rng);
+  xCheck(err && err[0]);
+  randompack_free(rng);
 }
 #endif
 
@@ -110,6 +103,10 @@ void TestCreate(void) {
   test_default_engine_matches_x256pp();
   test_system_engine();
 #if !HAVE128
-  test_pcg64_unavailable();
+  test_engine_unavailable("pcg64");
+  test_engine_unavailable("cwg128");
+#endif
+#if !HAVE128MUL
+  test_engine_unavailable("philox");
 #endif
 }

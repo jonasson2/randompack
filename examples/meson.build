@@ -34,12 +34,6 @@ time_integers = executable(
   dependencies : [randompack_dep],
 )
 
-count01 = executable(
-  'count01',
-  'count01.c',
-  dependencies : [randompack_dep],
-)
-
 if threads_dep.found() and pthreads_ok
   thread_example = executable(
     'ThreadExample',

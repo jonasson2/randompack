@@ -45,15 +45,31 @@ run_tests = executable(
 
 test('RunTests', run_tests, args : ['-v'])
 
-# test_no128 = executable(
-#   'randompack_tests_no128',
-#   ['TestNo128.c'],
-#   include_directories : [inc],
-#   dependencies : [randompack_no128_dep],
-#   c_args : ['-DRANDOMPACK_NO_INT128'],
-# )
-#
-# test('randompack_tests_no128', test_no128)
+test_no128 = executable(
+  'RunTestNo128',
+  [
+    'RunTestNo128.c',
+    'TestCreate.c',
+    'TestHelpers.c',
+  ] + extra_util,
+  dependencies : [randompack_no128_dep],
+  c_args : ['-DRANDOMPACK_PRETEND_NO128'],
+)
+
+test('RunTestNo128', test_no128, args : ['-v'])
+
+test_pretend_windows = executable(
+  'RunTestPretendWindows',
+  [
+    'RunTestNo128.c',
+    'TestCreate.c',
+    'TestHelpers.c',
+  ] + extra_util,
+  dependencies : [randompack_pretend_windows_dep],
+  c_args : ['-DRANDOMPACK_PRETEND_WINDOWS'],
+)
+
+test('RunTestPretendWindows', test_pretend_windows, args : ['-v'])
 
 seedseq_test = executable(
   'TestSeedSeq',

@@ -84,16 +84,17 @@ static inline uint32_t mix32(uint32_t x) {
   #include <windows.h>
 #endif
 
-#if defined(__SIZEOF_INT128__) && !defined(_MSC_VER) && !defined(RANDOMPACK_NO_INT128)
+#if defined(__SIZEOF_INT128__) && !defined(RANDOMPACK_PRETEND_NO128) \
+    && !defined(RANDOMPACK_PRETEND_WINDOWS)
   #define HAVE128 1
-  typedef __uint128_t uint128_t;
-#endif
-#ifndef HAVE128
-  #define HAVE128 0
-#endif
-
-#if HAVE128 || (defined(_MSC_VER) && defined(_M_X64))
   #define HAVE128MUL 1
+  typedef __uint128_t uint128_t;
+#elif (defined(_MSC_VER) && defined(_M_X64)) || defined(RANDOMPACK_PRETEND_WINDOWS)
+  #define HAVE128 0
+  #define HAVE128MUL 1
+#else
+  #define HAVE128 0
+  #define HAVE128MUL 0
 #endif
 
 #endif

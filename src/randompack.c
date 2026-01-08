@@ -80,7 +80,7 @@ static rng_entry rng_table[] = {
   { "pcg64",    "PCG64-DXSM (O'Neill, 2014)",              PCG64,    4, fill_pcg64     },
   { "cwg128",   "cwg128-64 (Działa, 2022)",                CWG128,   5, fill_cwg128    },
 #endif
-#ifdef HAVE128MUL
+#if HAVE128MUL
   { "philox",   "Philox-4x64 (Salmon & Moraes, 2011)",     PHILOX,   6, fill_philox    },
 #endif
   { "squares",  "squares64 (Widynski, 2021)",              SQUARES,  2, fill_squares   },

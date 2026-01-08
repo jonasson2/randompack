@@ -13,6 +13,6 @@
 #include "cwg128.inc"
 #endif
 
-#ifdef HAVE128MUL
+#if HAVE128MUL
 #include "philox4x64.inc"
 #endif

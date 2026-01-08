@@ -19,11 +19,23 @@ librandompack = static_library(
 )
 
 librandompack_no128 = static_library(
+  # Pretend neither HAVE128 nor HAVE128MUL
   'randompack_no128',
   randompack_src,
   include_directories: inc,
   dependencies: [blas_dep] + math_deps,
-  c_args: ['-DRANDOMPACK_NO_INT128'],
+  c_args: ['-DRANDOMPACK_PRETEND_NO128'],
+  pic: true,
+  install: false,
+)
+
+librandompack_pretend_windows = static_library(
+  # Pretend HAVE128MUL but not HAVE128 (Windows) 
+  'randompack_pretend_windows',
+  randompack_src,
+  include_directories: inc,
+  dependencies: [blas_dep] + math_deps,
+  c_args: ['-DRANDOMPACK_PRETEND_WINDOWS'],
   pic: true,
   install: false,
 )
@@ -41,6 +53,12 @@ randompack_dep = declare_dependency(
 
 randompack_no128_dep = declare_dependency(
   link_with: librandompack_no128,
+  include_directories: inc,
+  dependencies: [blas_dep] + math_deps,
+)
+
+randompack_pretend_windows_dep = declare_dependency(
+  link_with: librandompack_pretend_windows,
   include_directories: inc,
   dependencies: [blas_dep] + math_deps,
 )

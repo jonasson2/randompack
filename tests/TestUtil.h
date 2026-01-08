@@ -141,8 +141,10 @@ static char *engines[] = {
   "x128+",
   "xoro++",
   "squares",
-  "chacha20",
-  "philox"
+  "chacha20"
+#if HAVE128MUL
+  , "philox"
+#endif
 #if HAVE128
   , "pcg64"
   , "cwg128"
@@ -160,7 +162,9 @@ static engine_table_entry engine_table[] = {
   {"x256**",        4},
   {"x256++",        4},
   {"chacha20",      6},
+#if HAVE128MUL
   {"philox",        6},
+#endif
 #if HAVE128
   {"pcg64",         4},
   {"cwg128",        5},

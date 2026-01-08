@@ -18,18 +18,19 @@
 #ifdef _MSC_VER
 #include <intrin.h>
 #endif
-#ifdef HAVE128MUL
+
 typedef randompack_philox_key r123array2x64;
 typedef randompack_counter r123array4x64;
 
 static inline uint64_t mulhilo64(uint64_t a, uint64_t b, uint64_t *hip) {
 #if defined(_MSC_VER)
   return _umul128(a, b, hip);
-#else
-  _Static_assert(HAVE128, "Internal error");
-  uint128_t product = ((uint128_t)a) * ((uint128_t)b);
+#elif defined(__SIZEOF_INT128__)
+  __uint128_t product = ((__uint128_t)a) * ((__uint128_t)b);
   *hip = product >> 64;
   return (uint64_t)product;
+#else
+  #error "philox requires 128-bit multiply support"
 #endif
 }
 
@@ -82,5 +83,3 @@ static inline void fill_philox(randompack_rng *rng) {
   }
   copy64(rng->state.u64, ctr.v, 4);
 }
-
-#endif

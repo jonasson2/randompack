@@ -431,8 +431,8 @@ bool check_u01_minmax(double *x, int n) {
   return true;
 }
 
-// End point checking – that there are not too many PIT U01 values in {0, 1}
-// –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+// PIT test helpers
+// ––––––––––––––––
 static bool check_u01_endpoints(int k0, int k1, size_t n, double p) {
   // k0 = count of u=0, k1 = count of u=1, p = ziggurat probability of u = 0
   double lambda = n*p;
@@ -441,40 +441,8 @@ static bool check_u01_endpoints(int k0, int k1, size_t n, double p) {
   return (pv0 >= TEST_P_VALUE && pv1 >= TEST_P_VALUE);
 }
 
-// PIT test helpers
-// ––––––––––––––––
-// static void dump_u01_summary_ctx(double *u, int n, const char *dist,
-//   const char *engine) {
-//   double xbar = mean(u, n);
-//   double s2 = var(u, n, xbar);
-//   double umin = minvd(u, n);
-//   double umax = maxvd(u, n);
-//   int n0 = 0, n1 = 0;
-//   int i0 = -1, i1 = -1;
-//   for (int i = 0; i < n; i++) {
-//     if (u[i] == 0) {
-//       n0++;
-//       if (i0 < 0) i0 = i;
-//     }
-//     if (u[i] == 1) {
-//       n1++;
-//       if (i1 < 0) i1 = i;
-//     }
-//   }
-//   printf("U01 summary (%s:%s):\n", dist ? dist : "?", engine ? engine : "?");
-//   printf("  n = %d\n", n);
-//   printf("  mean = %.17g\n", xbar);
-//   printf("  var  = %.17g\n", s2);
-//   printf("  min  = %.17g\n", umin);
-//   printf("  max  = %.17g\n", umax);
-//   printf("  count(u==0) = %d first=%d\n", n0, i0);
-//   printf("  count(u==1) = %d first=%d\n", n1, i1);
-//   if (i0 >= 0) printf("  u[first0] = %.17g\n", u[i0]);
-//   if (i1 >= 0) printf("  u[first1] = %.17g\n", u[i1]);
-// }
-
 static void check_u01_distribution_df(double *u, int n, char *dist, char *engine, char *
-										 precision) {
+												  precision) {
   int k0 = 0;
   int k1 = 0;
   int nnz = 0;
@@ -483,6 +451,7 @@ static void check_u01_distribution_df(double *u, int n, char *dist, char *engine
     if (x == 0.0) k0++;
     else if (x == 1.0) k1++;
     else u[nnz++] = x;
+	 // u[nnz++] = x;
   }
   double p; // ziggurat resolution
   if (!strcmp(precision, "float"))
@@ -517,4 +486,3 @@ void check_u01_distributionf(float *u, int n, char *dist, char *engine) {
   check_u01_distribution(y, n, dist, engine);
   FREE(y);
 }
-
