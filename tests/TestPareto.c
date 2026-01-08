@@ -52,8 +52,8 @@ static void test_PIT(char *engine, double xm, double alpha) {
   for (int i = 0; i < N; i++) u[i] = pareto_cdf(x[i], xm, alpha);
   for (int i = 0; i < N; i++)
     v[i] = (float)pareto_cdf((double)y[i], xm_f, alpha_f);
-  check_u01_distribution(u, N);
-  check_u01_distributionf(v, N);
+  check_u01_distribution(u, N, "pareto", engine);
+  check_u01_distributionf(v, N, "paretof", engine);
   FREE(v);
   FREE(y);
   FREE(u);

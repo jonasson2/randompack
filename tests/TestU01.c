@@ -28,8 +28,8 @@ static void test_statistics(char *engine) {
   DRAW(engine, 42, randompack_u01f(y, N, rng));
   TEST_SUPPORT(double, x, N, 0, 1);
   TEST_SUPPORT(float, y, N, 0, 1);
-  check_u01_distribution(x, N);
-  check_u01_distributionf(y, N);
+  check_u01_distribution(x, N, "u01", engine);
+  check_u01_distributionf(y, N, "u01f", engine);
   FREE(y);
   FREE(x);
 }

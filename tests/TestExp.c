@@ -23,11 +23,46 @@ static void test_basic(char *engine) {
   TEST_ILLEGAL_PARAMS1(float, engine, expf, -1);
 }
 
+// static void test_PIT(char *engine, double scale) {
+//   int N = N_STAT_FAST;
+//   double *x, *u;
+//   float *y, *v;
+//   float scale_f = scale;
+//   TEST_ALLOC(x, N);
+//   TEST_ALLOC(u, N);
+//   TEST_ALLOC(y, N);
+//   TEST_ALLOC(v, N);
+//   DRAW(engine, 7, randompack_exp(x, N, scale, rng));
+//   DRAW(engine, 7, randompack_expf(y, N, scale_f, rng));
+//   TEST_SUPPORT(double, x, N, 0, INFINITY);
+//   TEST_SUPPORT(float, y, N, 0, INFINITY);
+//   for (int i = 0; i < N; i++) u[i] = 1 - exp(-x[i]/scale);
+//   for (int i = 0; i < N; i++) {
+//     float yi = y[i];
+//     float ui = 1 - expf(-yi/scale_f);
+//     v[i] = ui;
+//     if (ui == 0 || ui == 1) {
+//       printf("DEBUG expf PIT engine=%s scale=%g i=%d y=%.9g exp(-y)=%.9g u=%.9g\n",
+//              engine, scale_f, i, yi, expf(-yi/scale_f), ui);
+//     }
+//   }
+//   // for (int i = 0; i < N; i++) v[i] = 1.0f - expf(-y[i]/scale_f);
+//   // check_u01_distribution(u, N, "exp", engine);
+//   check_u01_distributionf(v, N, "expf", engine);
+//   FREE(v);
+//   FREE(y);
+//   FREE(u);
+//   FREE(x);
+// }
+
 static void test_PIT(char *engine, double scale) {
   int N = N_STAT_FAST;
   double *x, *u;
   float *y, *v;
   float scale_f = scale;
+  int n0 = 0, n1 = 0;
+  double p = 1.0/16777216;
+  double e = N*p;
   TEST_ALLOC(x, N);
   TEST_ALLOC(u, N);
   TEST_ALLOC(y, N);
@@ -37,9 +72,21 @@ static void test_PIT(char *engine, double scale) {
   TEST_SUPPORT(double, x, N, 0, INFINITY);
   TEST_SUPPORT(float, y, N, 0, INFINITY);
   for (int i = 0; i < N; i++) u[i] = 1 - exp(-x[i]/scale);
-  for (int i = 0; i < N; i++) v[i] = 1.0f - expf(-y[i]/scale_f);
-  check_u01_distribution(u, N);
-  check_u01_distributionf(v, N);
+  for (int i = 0; i < N; i++) {
+    float t = expf(-y[i]/scale_f);
+    v[i] = 1 - t;
+    if (v[i] == 0) n0++;
+    if (v[i] == 1) n1++;
+  }
+  if (n0 > 0 || n1 > 0) {
+    printf("PIT expf endpoints engine=%s scale=%.17g N=%d\n",
+      engine, (double)scale_f, N);
+    printf("  count(u==0)=%d  count(u==1)=%d  expected_each=%.6f\n",
+      n0, n1, e);
+    printf("  p_each=1/2^24=%.17g\n", p);
+  }
+  check_u01_distribution(u, N, "exp", engine);
+  check_u01_distributionf(v, N, "exp", engine);
   FREE(v);
   FREE(y);
   FREE(u);

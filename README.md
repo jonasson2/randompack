@@ -69,19 +69,16 @@ and squares64 are counter-based generators, while the remaining engines are
 state-based. A system-provided generator is also available. When selecting an
 engine the names are case-insensitive.
 
-- xoshiro256++ (default; Vigna and Blackman, 2018–2019)
-- xoshiro256** (Vigna and Blackman, 2018–2019)
-- xoroshiro128++ (Vigna and Blackman, 2016)
-- xorshift128+ (Vigna, 2014)
-- PCG64-DXSM (O’Neill, 2014)
-- cwg128-64 (Działa, 2022)
-- Philox-4×64 (Salmon and Moraes, 2011)
-- squares64 (Widynski, 2021)
-- ChaCha20 (Bernstein, 2008)
-- system (operating-system–provided entropy source)
-
-The generator names can be abbreviated as shown in the RunRandom.c program in
-the examples folder.
+- x256++    xoshiro256++ (default; Vigna and Blackman, 2018)
+- x256**    xoshiro256** (Vigna and Blackman, 2018)
+- xoro++    xoroshiro128++ (Vigna and Blackman, 2016)
+- x128+     xorshift128+ (Vigna, 2014)
+- pcg64     PCG64 DXSM (O’Neill, 2014)
+- cwg128    cwg128-64 (Działa, 2022)
+- philox    Philox-4×64 (Salmon and Moraes, 2011)
+- squares   squares64 (Widynski, 2021)
+- chacha20  ChaCha20 (Bernstein, 2008)
+- system    Operating-system–provided entropy source
 
 ## Support functions
 

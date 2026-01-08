@@ -1,22 +1,4 @@
-// randompack — random number generation utilities for VARMASIM
-//
-// This header provides user-facing functions for generating random values
-// drawn from uniform, normal, and multivariate normal distributions, along
-// with convenience wrappers for creating, seeding, and randomizing RNGs.
-//
-// DEPENDENCIES:
-//   It builds on the low-level RNG framework defined in random.h, which is
-//   included below so that users need not include it themselves (but can
-//   for extra features, e.g. complete control over rng state).
-//
-// INTEGRATION WITH R:
-//   When compiled with -DUSING_R, the default RNG redirects calls to R's
-//   built-in random number generator for reproducibility inside R packages.
-//   Otherwise, the standalone implementation uses Xorshift128+ as the
-//   DEFAULT_RNG and Park–Miller for cross-platform comparison.
-//
-// NOTES:
-//   Implementation details and additional references are in RandomNumbers.c.
+// randompack.h – see the file README.md for help
 
 #ifndef RANDOMPACK_H
 #define RANDOMPACK_H
@@ -42,6 +24,14 @@ bool randompack_seed( // Create RNG with given type and seed, false on error
 
 void randompack_free( // Free an RNG created with randompack_create
   randompack_rng *rng   // in      Random number generator
+);
+
+bool randompack_engines( // Return supported RNG engine names and their descriptions
+  char *engines,      // out     n×eng_maxlen buffer of engine names (0 → query mode)
+  char *descriptions, // out     n×desc_maxlen buffer of descriptions (or 0 in query mode)
+  int *nengines,      // in/out  number of engines (= n, query → fill, non-query → check)
+  int *eng_maxlen,    // in/out  max engine-name length including trailing 0
+  int *desc_maxlen    // in/out  max description length including trailing 0
 );
 
 bool randompack_int( // Generate uniform integers in [m, n], false on error

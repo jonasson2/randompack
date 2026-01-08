@@ -18,7 +18,7 @@ static void print_help(void) {
   printf("Usage: TimeDistributions [options]\n\n");
   printf("Options:\n");
   printf("  -h            Show this help message\n");
-  printf("  -e engine     RNG engine (default xoshiro256++)\n");
+  printf("  -e engine     RNG engine (default x256++)\n");
   printf("  -t seconds    Benchmark time per distribution (default 0.1)\n");
   printf("  -c chunk      Chunk size (values per call, default 1024)\n");
   printf("  -s seed       RNG seed (default 7)\n\n");
@@ -31,7 +31,7 @@ static bool get_options(int argc, char **argv, char **engine, double *bench_time
   opterr = 0;
   optind = 1;
   int opt;
-  *engine = "xoshiro256++";
+  *engine = "x256++";
   *bench_time = 0.1;
   *chunk = 1024;
   *seed = 7;

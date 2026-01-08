@@ -11,8 +11,14 @@
 #define xCheckMsg(e,msg) ((e) ? (void)xCheckOK() : \
   xCheckFunc(#e, __FILE__, __LINE__, __func__, msg))
 
+#define xCheckMsg2(e,msg1,msg2) ((e) ? (void)xCheckOK() : \
+  xCheckFunc2(#e, __FILE__, __LINE__, __func__, (msg1), (msg2)))
+
 void xCheckFunc(char *message, const char *file, int line, const char *func, const
                 char *ctx);
+
+void xCheckFunc2(char *message, const char *file, int line, const char
+                               *func, const char *msg1, const char *msg2);
 
 void xCheckOK(void);
 

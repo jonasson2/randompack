@@ -43,8 +43,8 @@ static void test_PIT(char *engine, double a, double b) {
   float w_f = b_f - a_f;
   for (int i = 0; i < N; i++) u[i] = (x[i] - a)/w;
   for (int i = 0; i < N; i++) v[i] = (y[i] - a_f)/w_f;
-  check_u01_distribution(u, N);
-  check_u01_distributionf(v, N);
+  check_u01_distribution(u, N, "unif", engine);
+  check_u01_distributionf(v, N, "uniff", engine);
   FREE(v);
   FREE(y);
   FREE(u);

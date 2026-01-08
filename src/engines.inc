@@ -8,7 +8,7 @@
 #include "csprng.inc"
 #include "squares64.inc"
 
-#ifdef HAVE128
+#if HAVE128
 #include "pcg64_dxsm.inc"
 #include "cwg128.inc"
 #endif

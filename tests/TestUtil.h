@@ -136,26 +136,14 @@
 // Engine name tables used by tests
 //------------------------------------------------------------------------------
 static char *engines[] = {
-  "xorshift128+",
-  "squares64",
-  "xoshiro256**",
-  "xoshiro256++",
-  "chacha20",
-  "philox"
-#ifdef HAVE128
-  , "pcg64_dxsm"
-  , "cwg128_64"
-#endif
-};
-
-static char *abbrev[] = {
-  "x128+",
-  "squares64",
-  "x256**",
   "x256++",
+  "x256**",
+  "x128+",
+  "xoro++",
+  "squares",
   "chacha20",
   "philox"
-#ifdef HAVE128
+#if HAVE128
   , "pcg64"
   , "cwg128"
 #endif
@@ -167,27 +155,32 @@ typedef struct {
 } engine_table_entry;
 
 static engine_table_entry engine_table[] = {
-  {"xorshift128+",  2},
-  {"squares64",     2},
-  {"xoshiro256**",  4},
-  {"xoshiro256++",  4},
+  {"x128+",         2},
+  {"squares",       2},
+  {"x256**",        4},
+  {"x256++",        4},
   {"chacha20",      6},
   {"philox",        6},
-#ifdef HAVE128
-  {"pcg64_dxsm",    4},
-  {"cwg128_64",     5},
+#if HAVE128
+  {"pcg64",         4},
+  {"cwg128",        5},
 #endif
 };
 //------------------------------------------------------------------------------
 // Global test sizes / sample counts
 //------------------------------------------------------------------------------
 
-enum {
-  N_BAL_CNTS = 5000000,
-  N_BAL_BITS = 40000,
-  N_STAT_FAST = 100000,
-  N_STAT_SLOW = 20000
-};
+// Test sizes (defaults). RunTests may override these at runtime.
+#define N_BAL_CNTS_DEFAULT 5000000
+#define N_BAL_BITS_DEFAULT 40000
+#define N_STAT_FAST_DEFAULT 100000
+#define N_STAT_SLOW_DEFAULT 20000
+
+extern int N_BAL_CNTS;
+extern int N_BAL_BITS;
+extern int N_STAT_FAST;
+extern int N_STAT_SLOW;
+
 static const double TEST_P_VALUE = 1e-12;
 
 //------------------------------------------------------------------------------
@@ -264,8 +257,8 @@ void check_failure(bool ok, randompack_rng *rng);  // !ok and last_error ≠ ""
 
 randompack_rng *create_seeded_rng(const char *engine, int seed);
 
-void check_u01_distribution(double *u, int n);
-void check_u01_distributionf(float *u, int n);
+void check_u01_distribution(double *u, int n, char *dist, char *engine);
+void check_u01_distributionf(float *u, int n, char *dist, char *engine);
 
 #ifndef UNUSED
 #define UNUSED(x) ((void)(x))
@@ -273,7 +266,6 @@ void check_u01_distributionf(float *u, int n);
 
 static inline void testutil_silence_unused(void) {
   UNUSED(engines);
-  UNUSED(abbrev);
   UNUSED(engine_table);
 }
 #endif

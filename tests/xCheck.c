@@ -23,16 +23,26 @@ void xCheckFunc(char *message, const char *file, int line, const char *func, con
   const char *base = basename_path(file);
   if (ctx) {
     char fmt[] = "%s:%d (%s, %s): test failed, %s is false";
-    fprintf(stderr, fmt, base, line, func, ctx, message);
+    printf(fmt, base, line, func, ctx, message);
   }
   else {
     char fmt[] = "%s:%d (%s): test failed, %s is false";
-    fprintf(stderr, fmt, base, line, func, message);
+    printf(fmt, base, line, func, message);
   }
-  fprintf(stderr, "\n");
-  fflush(stderr);
+  printf("\n");
+  fflush(stdout);
   NTOTAL += 1;
   NFAIL += 1;
+}
+
+void xCheckFunc2(char *message, const char *file, int line, const char *func, const char
+					  *msg1, const char *msg2) {
+  char buf[256];
+  if (msg1 && msg2) snprintf(buf, sizeof(buf), "%s:%s", msg1, msg2);
+  else if (msg1) snprintf(buf, sizeof(buf), "%s", msg1);
+  else if (msg2) snprintf(buf, sizeof(buf), "%s", msg2);
+  else buf[0] = 0;
+  xCheckFunc(message, file, line, func, buf[0] ? buf : 0);
 }
 
 void xCheckOK(void) {

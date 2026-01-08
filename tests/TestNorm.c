@@ -1,5 +1,6 @@
 // -*- C -*-
-// Tests for randompack_norm, N(0,1): determinism, edge cases, and simple stats.
+// Tests for randompack_norm, N(0,1): determinism, edge cases, and PIT->U01 checks.
+
 #include <math.h>
 #include <stdbool.h>
 
@@ -11,7 +12,6 @@
 
 // Helper: check max absolute value drawn:
 bool check_normal_max(double *x, int n) {
-  // [zlo, zhi] is the (1-q) confidence interval for max|x|; fairly easy to derive
   double q, zlo, zhi, M;
   q = TEST_P_VALUE;
   zlo = probit((1 + pow(q/2, 1.0/n))/2);
@@ -30,22 +30,26 @@ static void test_basic(char *engine) {
   TEST_EDGE_CASES0(engine, float, normf);
 }
 
-static void test_statistics(char *engine) {
+static void test_PIT(char *engine) {
   int N = N_STAT_FAST;
-  double *x;
-  float *y;
+  double *x, *u;
+  float *y, *v;
   TEST_ALLOC(x, N);
+  TEST_ALLOC(u, N);
   TEST_ALLOC(y, N);
+  TEST_ALLOC(v, N);
   DRAW(engine, 7, randompack_norm(x, N, rng));
-  xCheck(check_meanvar(x, N));
-  xCheck(check_skewkurt(x, N, 0, 3));
-  xCheckMsg(check_normal_max(x, N), engine);
   DRAW(engine, 7, randompack_normf(y, N, rng));
-  for (int i = 0; i < N; i++) x[i] = y[i];
-  xCheck(check_meanvar(x, N));
-  xCheck(check_skewkurt(x, N, 0, 3));
   xCheckMsg(check_normal_max(x, N), engine);
+  for (int i = 0; i < N; i++) u[i] = normcdf(x[i]);
+  for (int i = 0; i < N; i++) v[i] = (float)normcdf(y[i]);
+  check_u01_distribution(u, N, "norm", engine);
+  check_u01_distributionf(v, N, "normf", engine);
+  for (int i = 0; i < N; i++) x[i] = y[i];
+  xCheckMsg(check_normal_max(x, N), engine);
+  FREE(v);
   FREE(y);
+  FREE(u);
   FREE(x);
 }
 
@@ -53,6 +57,6 @@ void TestNorm(void) {
   for (int i = 0; i < LEN(engines); i++) {
     char *e = engines[i];
     test_basic(e);
-    test_statistics(e);
+    test_PIT(e);
   }
 }

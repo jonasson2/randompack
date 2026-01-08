@@ -48,33 +48,6 @@ static inline uint8_t draw_byte(randompack_rng *rng) {
   return b;
 }
 
-static inline uint32_t draw_u32(randompack_rng *rng) {
-  int w = rng->buf_word;
-  int b = rng->buf_byte;
-  if (b != 0 && b != 4) {
-    b = (b + 3)/4*4;
-    if (b == 8) { // Align to next 32-bit boundary
-      b = 0;
-      w++;
-    }
-  }
-  if (w >= BUFSIZE) { // Refill if needed
-    rng->fill(rng);
-    w = 0;
-    b = 0;
-  }
-  uint64_t word = rng->buf.u64[w];
-  uint32_t x = (b == 0) ? word : (word >> 32);
-  b += 4;
-  if (b == 8) { // Advance by one 32-bit chunk
-    b = 0;
-    w++;
-  }
-  rng->buf_word = w;
-  rng->buf_byte = b;
-  return x;
-}
-
 static inline uint64_t draw_u64(randompack_rng *rng) { // Fast single word
   int w = rng->buf_word;
   int b = rng->buf_byte;
@@ -130,11 +103,7 @@ static inline double draw_u01(randompack_rng *rng) {
   return U64_TO_DOUBLE(draw_u64(rng));
 }
 
-static inline double draw_u01f(randompack_rng *rng) {
-  return U32_TO_FLOAT(draw_u32(rng));
-}
-
-static inline double draw_u01f_fast(randompack_rng *rng) {
+static inline float draw_u01f(randompack_rng *rng) {
   return U32_TO_FLOAT(draw_u32_fast(rng));
 }
 

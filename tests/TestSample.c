@@ -12,7 +12,7 @@ static void test_sample_api(void) {
   int sample[10];
   bool *seen;
   TEST_ALLOC(seen, n);
-  randompack_rng *rng = create_seeded_rng("xoshiro256++", 11);
+  randompack_rng *rng = create_seeded_rng("x256++", 11);
   ASSERT(rng);
   bool ok = randompack_sample(sample, n, k, rng);
   check_success(ok, rng);

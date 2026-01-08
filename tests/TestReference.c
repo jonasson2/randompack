@@ -1,5 +1,5 @@
 // -*- C -*-
-// Bit-exact check: compare randompack pcg64_dxsm, philox and xoshiro256{++,**}
+// Bit-exact check: compare randompack pcg64, philox and x256{++,**}
 // against NumPy, Random123, and Rust.
 
 #include <stdint.h>
@@ -90,7 +90,7 @@ static void TestChaCha20AgainstRFC8439(void) {
   randompack_free(rng);
 }
 
-#ifdef HAVE128
+#if HAVE128
 
 static void TestAgainstNumpyPCG(void) {
   // import numpy as np
@@ -135,11 +135,11 @@ static void TestAgainstNumpyPCG(void) {
 
   xCheck(equal_vec64(x, py, 3));
 
-  printMsg("Python pcg64_dxsm draws:");
+  printMsg("Python pcg64 (dxsm) draws:");
   print64("py[0]", py[0]);
   print64("py[1]", py[1]);
   print64("py[2]", py[2]);
-  printMsg("randompack pcg64_dxsm draws:");
+  printMsg("randompack pcg64 draws:");
   print64("rp[0]", x[0]);
   print64("rp[1]", x[1]);
   print64("rp[2]", x[2]);
@@ -189,7 +189,7 @@ static void TestXoshiro256ppAgainstRust(void) {
     2ull,
     9876543210987654321ull
   };
-  randompack_rng *rng = randompack_create("xoshiro256++");
+  randompack_rng *rng = randompack_create("x256++");
   check_rng_clean(rng);
   bool ok = randompack_set_state(state, 4, rng);
   check_success(ok, rng);
@@ -202,12 +202,12 @@ static void TestXoshiro256ppAgainstRust(void) {
     13925222450416462367ULL
   };
   xCheck(equal_vec64(x, rust, 3));
-  printMsg("COMPARISON WITH RUST XOSHIRO256++:");
-  printMsg("Rust xoshiro256++ draws:");
+  printMsg("COMPARISON WITH RUST X256++:");
+  printMsg("Rust x256++ draws:");
   print64("rust[0]", rust[0]);
   print64("rust[1]", rust[1]);
   print64("rust[2]", rust[2]);
-  printMsg("randompack xoshiro256++ draws:");
+  printMsg("randompack x256++ draws:");
   print64("rp[0]", x[0]);
   print64("rp[1]", x[1]);
   print64("rp[2]", x[2]);
@@ -230,7 +230,7 @@ static void TestXoshiro256ssAgainstRust(void) {
   uint64_t state[4] = {
     111111222222333333ull, 444444555555666666ull,
     777777888888999999ull, 888888777777666666ull};
-  randompack_rng *rng = randompack_create("xoshiro256**");
+  randompack_rng *rng = randompack_create("x256**");
   check_rng_clean(rng);
   bool ok = randompack_set_state(state, 4, rng);
   check_success(ok, rng);
@@ -243,12 +243,12 @@ static void TestXoshiro256ssAgainstRust(void) {
     5100482715761765753ull
   };
   xCheck(equal_vec64(x, rust, 3));
-  printMsg("COMPARISON WITH RUST XOSHIRO256**:");
-  printMsg("Rust xoshiro256** draws:");
+  printMsg("COMPARISON WITH RUST X256**:");
+  printMsg("Rust x256** draws:");
   print64("rust[0]", rust[0]);
   print64("rust[1]", rust[1]);
   print64("rust[2]", rust[2]);
-  printMsg("randompack xoshiro256** draws:");
+  printMsg("randompack x256** draws:");
   print64("rp[0]", x[0]);
   print64("rp[1]", x[1]);
   print64("rp[2]", x[2]);

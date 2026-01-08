@@ -47,8 +47,8 @@ static void test_PIT(char *engine, double mu, double sigma) {
   for (int i = 0; i < N; i++) u[i] = lognormal_cdf(x[i], mu, sigma);
   for (int i = 0; i < N; i++)
     v[i] = (float)lognormal_cdf((double)y[i], mu_f, sigma_f);
-  check_u01_distribution(u, N);
-  check_u01_distributionf(v, N);
+  check_u01_distribution(u, N, "lognormal", engine);
+  check_u01_distributionf(v, N, "lognormalf", engine);
   FREE(v);
   FREE(y);
   FREE(u);

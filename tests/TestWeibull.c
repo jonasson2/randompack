@@ -51,8 +51,8 @@ static void test_PIT(char *engine, double shape, double scale) {
   for (int i = 0; i < N; i++) u[i] = weibull_cdf(x[i], shape, scale);
   for (int i = 0; i < N; i++)
     v[i] = (float)weibull_cdf((double)y[i], shape_f, scale_f);
-  check_u01_distribution(u, N);
-  check_u01_distributionf(v, N);
+  check_u01_distribution(u, N, "weibull", engine);
+  check_u01_distributionf(v, N, "weibullf", engine);
   FREE(v);
   FREE(y);
   FREE(u);

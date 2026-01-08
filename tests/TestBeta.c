@@ -31,7 +31,7 @@ static void test_PIT(char *engine, double a, double b) {
   int N = N_STAT_SLOW;
   double *x, *u;
   float *y;
-  double *v;
+  float *v;
   float a_f = a;
   float b_f = b;
   TEST_ALLOC(x, N);
@@ -44,9 +44,9 @@ static void test_PIT(char *engine, double a, double b) {
   TEST_SUPPORT(float, y, N, 0, 1);
   for (int i = 0; i < N; i++) u[i] = incbet(a, b, x[i]);
   for (int i = 0; i < N; i++)
-    v[i] = incbet(a_f, b_f, (double)y[i]);
-  check_u01_distribution(u, N);
-  check_u01_distribution(v, N);
+    v[i] = (float)incbet(a_f, b_f, (double)y[i]);
+  check_u01_distribution(u, N, "beta", engine);
+  check_u01_distributionf(v, N, "betaf", engine);
   FREE(v);
   FREE(y);
   FREE(u);

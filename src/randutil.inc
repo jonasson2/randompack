@@ -94,9 +94,11 @@ static void squares_set_state(uint64_t ctr, uint64_t key, randompack_rng *rng) {
   set_state(state, LEN(state), rng);
 }
 
+#if HAVE128
 static void pcg64_set_state(uint128_t pcgstate, uint128_t inc, randompack_rng *rng) {
   uint64_t state[4];
   copy64(state, &pcgstate, 2);
   copy64(state + 2, &inc, 2);
   set_state(state, LEN(state), rng);
 }
+#endif

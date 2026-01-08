@@ -81,11 +81,11 @@ int main(int argc, char **argv) {
   printf("bench_time:       %.3f s per engine\n", bench_time);
   printf("chunk:            %d\n\n", chunk);
   struct { char *name; } engines[] = {
-    { "xoshiro256++" },
-    { "xoshiro256**" },
-    { "xoroshiro128++" },
-    { "xorshift128+" },
-    { "squares64" },
+    { "x256++" },
+    { "x256**" },
+    { "xoro++" },
+    { "x128+" },
+    { "squares" },
     { "pcg64" },
     { "cwg128" },
     { "philox" },

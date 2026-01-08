@@ -11,12 +11,12 @@
 #include "xCheck.h"
 
 static int engine_nstate(char *engine) {
-  if (!strcmp(engine, "xorshift128+")) return 2;
-  if (!strcmp(engine, "squares64")) return 2;
-  if (!strcmp(engine, "xoshiro256++")) return 4;
-  if (!strcmp(engine, "xoshiro256**")) return 4;
-  if (!strcmp(engine, "pcg64") || !strcmp(engine, "pcg64_dxsm")) return 4;
-  if (!strcmp(engine, "cwg128") || !strcmp(engine, "cwg128_64")) return 5;
+  if (!strcmp(engine, "x128+")) return 2;
+  if (!strcmp(engine, "squares")) return 2;
+  if (!strcmp(engine, "x256++")) return 4;
+  if (!strcmp(engine, "x256**")) return 4;
+  if (!strcmp(engine, "pcg64")) return 4;
+  if (!strcmp(engine, "cwg128")) return 5;
   if (!strcmp(engine, "philox")) return 6;
   if (!strcmp(engine, "chacha20")) return 6;
   return 0;
@@ -31,10 +31,10 @@ static randompack_rng *make_rng(char *engine) {
 
 static void test_invalid_args(void) {
   char *engines[] = {
-    "xorshift128+",
-    "squares64",
-    "xoshiro256++",
-    "xoshiro256**",
+    "x128+",
+    "squares",
+    "x256++",
+    "x256**",
     "pcg64",
     "cwg128",
     "philox",
@@ -59,7 +59,7 @@ static void test_invalid_args(void) {
 
 static void test_xoshiro_nonzero(void) {
   uint64_t zero[] = {0,0,0,0};
-  char *engines[] = {"xoshiro256++", "xoshiro256**"};
+  char *engines[] = {"x256++", "x256**"};
   for (int i = 0; i < LEN(engines); i++) {
     randompack_rng *rng = make_rng(engines[i]);
     bool ok = randompack_set_state(zero, 4, rng);
@@ -117,10 +117,10 @@ static void test_determinism(void) {
     uint64_t *state;
     int nstate;
   } cases[] = {
-    {"xorshift128+", x128, LEN(x128)},
-    {"squares64", squares, LEN(squares)},
-    {"xoshiro256++", x256pp, LEN(x256pp)},
-    {"xoshiro256**", x256ss, LEN(x256ss)},
+    {"x128+", x128, LEN(x128)},
+    {"squares", squares, LEN(squares)},
+    {"x256++", x256pp, LEN(x256pp)},
+    {"x256**", x256ss, LEN(x256ss)},
     {"pcg64", pcg, LEN(pcg)},
     {"cwg128", cwg, LEN(cwg)},
     {"philox", philox, LEN(philox)},
@@ -143,7 +143,7 @@ static void test_determinism(void) {
 
 static void test_buf_reset(void) {
   uint64_t state[] = {1,2,3,4};
-  randompack_rng *rng = make_rng("xoshiro256++");
+  randompack_rng *rng = make_rng("x256++");
   bool ok = randompack_set_state(state, LEN(state), rng);
   check_success(ok, rng);
   uint32_t u0[1];
@@ -173,7 +173,7 @@ static void test_philox_set_state(void) {
   check_success(ok, rng);
   xCheck(equal_vec64(a, b, LEN(a)));
   randompack_free(rng);
-  rng = make_rng("squares64");
+  rng = make_rng("squares");
   ok = randompack_philox_set_state(ctr, key, rng);
   check_failure(ok, rng);
   randompack_free(rng);
@@ -204,7 +204,7 @@ static void test_pcg_set_state(void) {
 static void test_squares_set_state(void) {
   uint64_t ctr = 7;
   uint64_t key = 11;
-  randompack_rng *rng = make_rng("squares64");
+  randompack_rng *rng = make_rng("squares");
   bool ok = randompack_squares_set_state(ctr, key, rng);
   check_success(ok, rng);
   uint64_t a[4], b[4];

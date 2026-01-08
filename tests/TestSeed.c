@@ -1,5 +1,5 @@
 // -*- C -*-
-// Tests for randompack_seed: determinism, spawn_key separation, and Park-Miller behavior.
+// Tests for randompack_seed: determinism, and spawn_key separation
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -38,15 +38,14 @@ static void draw_stream_reseed_same_rng(char *engine, uint64_t *x, uint64_t *y, 
 }
 
 static void test_seed_determinism(void) {
-  // Park-Miller supports seed-only; determinism with a spawn key is tested for
-  // the seed-sequence engines below.
+  // Determinism with a spawn key is tested for the seed-sequence engines below.
   char *engines_seq[] = {
-    "xorshift128+",
-    "squares64",
-    "xoshiro256**",
-    "xoshiro256++",
-    "pcg64_dxsm",
-    "cwg128_64",
+    "x128+",
+    "squares",
+    "x256**",
+    "x256++",
+    "pcg64",
+    "cwg128",
     "philox",
     "chacha20",
   };
@@ -69,14 +68,13 @@ static void test_seed_determinism(void) {
 
 static void test_spawn_key_separation(void) {
   // These tests target the "structural collision" class: [] vs [0], etc.
-  // Skip Park-Miller because it does not support spawn_key.
   char *engines[] = {
-    "xorshift128+",
-    "squares64",
-    "xoshiro256**",
-    "xoshiro256++",
-    "pcg64_dxsm",
-    "cwg128_64",
+    "x128+",
+    "squares",
+    "x256**",
+    "x256++",
+    "pcg64",
+    "cwg128",
     "philox",
     "chacha20",
   };

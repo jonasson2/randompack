@@ -52,8 +52,8 @@ static void test_PIT(char *engine, double nu1, double nu2) {
   for (int i = 0; i < N; i++) u[i] = f_cdf(x[i], nu1, nu2);
   for (int i = 0; i < N; i++)
     v[i] = (float)f_cdf((double)y[i], nu1_f, nu2_f);
-  check_u01_distribution(u, N);
-  check_u01_distributionf(v, N);
+  check_u01_distribution(u, N, "f", engine);
+  check_u01_distributionf(v, N, "ff", engine);
   FREE(v);
   FREE(y);
   FREE(u);

@@ -83,7 +83,7 @@ static void test_sys_rejected(void) {
 
 static void test_engine_mismatch_rejected(void) {
   randompack_rng *r1 = randompack_create("chacha20");
-  randompack_rng *r2 = randompack_create("xoshiro256++");
+  randompack_rng *r2 = randompack_create("x256++");
   ASSERT(r1 && r2);
   engine_table_entry *m = find_engine_meta("chacha20");
   uint64_t state[8];
@@ -100,9 +100,9 @@ static void test_engine_mismatch_rejected(void) {
 }
 
 static void test_corrupt_header_rejected(void) {
-  randompack_rng *rng = randompack_create("xoshiro256++");
+  randompack_rng *rng = randompack_create("x256++");
   ASSERT(rng);
-  engine_table_entry *m = find_engine_meta("xoshiro256++");
+  engine_table_entry *m = find_engine_meta("x256++");
   uint64_t state[8];
   make_state(state, m->state_words, rng->engine);
   bool ok = randompack_set_state(state, m->state_words, rng);
@@ -157,9 +157,9 @@ static void test_serialize_roundtrip_and_truncation(void) {
 
 static void test_buffer_serialized(void) {
   uint32_t a[4], b[4];
-  randompack_rng *r1 = create_seeded_rng("xoshiro256++", 5);
-  randompack_rng *r2 = randompack_create("xoshiro256++");
-  randompack_rng *r3 = create_seeded_rng("xoshiro256++", 5);
+  randompack_rng *r1 = create_seeded_rng("x256++", 5);
+  randompack_rng *r2 = randompack_create("x256++");
+  randompack_rng *r3 = create_seeded_rng("x256++", 5);
   xCheck(r1 && r2 && r3);
   bool ok = randompack_uint32(a, 2, 0, r1);
   check_success(ok, r1);

@@ -45,6 +45,16 @@ run_tests = executable(
 
 test('RunTests', run_tests, args : ['-v'])
 
+# test_no128 = executable(
+#   'randompack_tests_no128',
+#   ['TestNo128.c'],
+#   include_directories : [inc],
+#   dependencies : [randompack_no128_dep],
+#   c_args : ['-DRANDOMPACK_NO_INT128'],
+# )
+#
+# test('randompack_tests_no128', test_no128)
+
 seedseq_test = executable(
   'TestSeedSeq',
   ['TestSeedSeq.cpp'],

@@ -23,9 +23,14 @@ _Static_assert(sizeof(long long) == 8, "randompack requires 64-bit long long");
 #define CLEAR(dst) memset((dst), 0, sizeof(dst))
 #define ALLOC(ptr, count) (((ptr) = calloc((count), sizeof *(ptr))) != 0)
 #define FREE(p)  do { free(p); (p) = 0; } while (0)
-#define U32_TO_FLOAT(u) (((((u) >> 8) | 1)) * 0x1.0p-24f)
-#define U64_TO_DOUBLE(u) (((((u) >> 11) | 1)) * 0x1.0p-53)
+#define U32_TO_FLOAT(u) (((u) >> 8) * 0x1.0p-24f)
+#define U64_TO_DOUBLE(u) (((u) >> 11) * 0x1.0p-53)
 #define ROTL64(x,k) (((x) << (k)) | ((x) >> (64 - (k))))
+#define STRSETN(dst, maxlen, src) /* maxlen includes trailing 0 */   \
+ do {                                                                \
+   if ((dst) && (maxlen) > 0)                                        \
+     snprintf((dst), (size_t)(maxlen), "%s", (src) ? (src) : "");    \
+ } while (0)
 
 static inline int min(int m, int n) { return m < n ? m : n; }
 static inline int max(int m, int n) { return m > n ? m : n; }
@@ -79,9 +84,12 @@ static inline uint32_t mix32(uint32_t x) {
   #include <windows.h>
 #endif
 
-#if defined(__SIZEOF_INT128__) && !defined(_MSC_VER)
+#if defined(__SIZEOF_INT128__) && !defined(_MSC_VER) && !defined(RANDOMPACK_NO_INT128)
   #define HAVE128 1
   typedef __uint128_t uint128_t;
+#endif
+#ifndef HAVE128
+  #define HAVE128 0
 #endif
 
 #if HAVE128 || (defined(_MSC_VER) && defined(_M_X64))

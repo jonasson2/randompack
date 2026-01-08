@@ -32,11 +32,11 @@ double get_time(void) {
 #endif
 }
 
-// Warm up the CPU by drawing n million uint64 randoms with xoshiro256++
+// Warm up the CPU by drawing n million uint64 randoms with x256++
 void warmup_cpu(int n) {
   #define NBUF 1000
   uint64_t buf[NBUF];
-  randompack_rng *rng = randompack_create("xoshiro256++");
+  randompack_rng *rng = randompack_create("x256++");
   ASSERT(rng);
   ASSERT(randompack_seed(1, 0, 0, rng));
   int reps = max(1, n*1000000/NBUF);

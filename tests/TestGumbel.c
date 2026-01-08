@@ -45,8 +45,8 @@ static void test_PIT(char *engine, double mu, double beta) {
     u[i] = gumbel_cdf(x[i], mu, beta);
   for (size_t i = 0; i < N; i++)
     v[i] = (float)gumbel_cdf((double)y[i], mu_f, beta_f);
-  check_u01_distribution(u, N);
-  check_u01_distributionf(v, N);
+  check_u01_distribution(u, N, "gumbel", engine);
+  check_u01_distributionf(v, N, "gumbelf", engine);
   FREE(v);
   FREE(y);
   FREE(u);

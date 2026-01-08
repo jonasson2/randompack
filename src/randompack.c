@@ -12,8 +12,10 @@
 #include "randompack.h"
 #include "randompack_config.h"
 #include "BlasGateway.h"
+#if HAVE128
 #include "cwg128_64.h"
 #include "pcg64.h"
+#endif
 #include "crypto_random.inc"
 
 typedef struct randompack_rng randompack_rng;
@@ -39,7 +41,7 @@ struct randompack_rng {
 	 uint8_t  u8[48];
     uint32_t u32[16];
     uint64_t u64[8];
-    #ifdef HAVE128
+    #if HAVE128
     pcg64_t pcg;
     cwg128_64_t cwg;
     #endif
@@ -57,9 +59,9 @@ struct randompack_rng {
 };
 
 typedef struct {
-  char *full;
-  char *abbrev;
-  rng_engine  engine;
+  char *name;
+  char *description;
+  rng_engine engine;
   int state_words;
   engine_fill fill;
 } rng_entry;
@@ -69,21 +71,21 @@ typedef struct {
 #include "randutil.inc"
 #include "distributions.inc"
 
-#ifndef HAVE128
-#define next_pcg64 0
-#endif
-
 static rng_entry rng_table[] = {
-  { "xorshift128+",  "x128+",     X128P,      2, fill_x128p     },
-  { "xoroshiro128++","xoro++",    XORO,       2, fill_xoro128pp },
-  { "xoshiro256**",  "x256**",    X256SS,     4, fill_x256ss    },
-  { "xoshiro256++",  "x256++",    X256PP,     4, fill_x256pp    },
-  { "squares64",     "squares",   SQUARES,    2, fill_squares   },
-  { "pcg64_dxsm",    "pcg64",     PCG64,      4, fill_pcg64     },
-  { "cwg128_64",     "cwg128",    CWG128,     5, fill_cwg128    },
-  { "philox_4x64",   "philox",    PHILOX,     6, fill_philox    },
-  { "chacha20",      "chacha20",  CHACHA20,   6, fill_chacha    },
-  { "system_csprng", "system",    SYS,        0, fill_csprng    }
+  { "x256++",   "xoshiro256++ (Vigna & Blackman, 2019)",   X256PP,   4, fill_x256pp    },
+  { "x256**",   "xoshiro256** (Vigna & Blackman, 2019)",   X256SS,   4, fill_x256ss    },
+  { "xoro++",   "xoroshiro128++ (Vigna & Blackman, 2016)", XORO,     2, fill_xoro128pp },
+  { "x128+",    "xorshift128+ (Vigna, 2014)",              X128P,    2, fill_x128p     },
+#if HAVE128
+  { "pcg64",    "PCG64-DXSM (O'Neill, 2014)",              PCG64,    4, fill_pcg64     },
+  { "cwg128",   "cwg128-64 (Działa, 2022)",                CWG128,   5, fill_cwg128    },
+#endif
+#ifdef HAVE128MUL
+  { "philox",   "Philox-4x64 (Salmon & Moraes, 2011)",     PHILOX,   6, fill_philox    },
+#endif
+  { "squares",  "squares64 (Widynski, 2021)",              SQUARES,  2, fill_squares   },
+  { "chacha20", "ChaCha20 (Bernstein, 2008)",              CHACHA20, 6, fill_chacha    },
+  { "system",   "Operating system entropy source",        SYS,      0, fill_csprng    }
 };
 
 static rng_entry *find_entry(rng_engine e) {
@@ -107,11 +109,10 @@ static bool select_engine(const char *s, randompack_rng *rng) {
     if (t[i] == '-') t[i] = '_';
   }
   for (int i = 0; i < LEN(rng_table); i++) {
-    if (!strcmp(t, rng_table[i].full) ||
-        !strcmp(t, rng_table[i].abbrev)) {
-    rng->engine = rng_table[i].engine;
-    rng->fill   = rng_table[i].fill;
-     return true;
+    if (!strcmp(t, rng_table[i].name)) {
+      rng->engine = rng_table[i].engine;
+      rng->fill   = rng_table[i].fill;
+      return true;
     }
   }
   return false;  // unknown engine
@@ -123,13 +124,13 @@ bool randompack_seed(int seed, uint32_t *spawn_key, int nkey, randompack_rng *rn
   rng->last_error = 0;
   // Use Melissa O'Neill's seed sequence
   if (nkey < 0 || (nkey > 0 && !spawn_key)) {
-    rng->last_error = "randompack_seed: invalid spawn_key arguments";
+    rng->last_error = "randompack seed: invalid spawn_key arguments";
     return false;
   }
   uint32_t w[16];
   bool ok = seed_seq_seed(w, 16, seed32, spawn_key, nkey);
   if (!ok) {
-    rng->last_error = "randompack_seed: allocation failed";
+    rng->last_error = "randompack seed: allocation failed";
     return false;
   }
   rng_entry *ent = find_entry(rng->engine);
@@ -195,6 +196,30 @@ enum {
   + sizeof(((rng_blob *)0)->buf)
 };
 
+bool randompack_engines(char *engines, char *descriptions, int *nengines,
+  int *eng_maxlen, int *desc_maxlen) {
+  if (!nengines || !eng_maxlen || !desc_maxlen) return false;
+  int n = LEN(rng_table);
+  int emax = 1;
+  int dmax = 1;
+  for (int i = 0; i < n; i++) {
+    int elen = (int)strlen(rng_table[i].name) + 1;
+    int dlen = (int)strlen(rng_table[i].description) + 1;
+    emax = max(emax, elen);
+    dmax = max(dmax, dlen);
+  }
+  *nengines = n;
+  *eng_maxlen = emax;
+  *desc_maxlen = dmax;
+  if (!engines) return true;
+  if (!descriptions) return false;
+  for (int i = 0; i < n; i++) {
+    STRSETN(engines + i*emax, emax, rng_table[i].name);
+    STRSETN(descriptions + i*dmax, dmax, rng_table[i].description);
+  }
+  return true;
+}
+
 #include "serializations.inc"
 
 bool randompack_serialize(uint8_t *buf, int *len, randompack_rng *rng) {
@@ -202,11 +227,11 @@ bool randompack_serialize(uint8_t *buf, int *len, randompack_rng *rng) {
   if (!rng) return false;
   rng->last_error = 0;
   if (rng->engine == SYS) {
-    rng->last_error = "randompack_serialize: system-csprng not supported";
+    rng->last_error = "randompack serialize: system-csprng not supported";
     return false;
   }
   if (!len) {
-    rng->last_error = "randompack_serialize: len is null";
+    rng->last_error = "randompack serialize: len is null";
     return false;
   }
   int need = STATE_NEED;
@@ -215,7 +240,7 @@ bool randompack_serialize(uint8_t *buf, int *len, randompack_rng *rng) {
     return true;
   }
   if (*len < need) {
-    rng->last_error = "randompack_serialize: buffer too small";
+    rng->last_error = "randompack serialize: buffer too small";
     return false;
   }
   serialize(buf, *len, rng);
@@ -227,11 +252,11 @@ bool randompack_deserialize(uint8_t *buf, int len, randompack_rng *rng) {
   if (!rng) return false;
   rng->last_error = 0;
   if (rng->engine == SYS) {
-    rng->last_error = "randompack_deserialize: system-csprng not supported";
+    rng->last_error = "randompack deserialize: system rng not supported on this platform";
     return false;
   }
   if (!buf || len <= 0) {
-    rng->last_error = "randompack_deserialize: invalid arguments";
+    rng->last_error = "randompack deserialize: invalid arguments";
     return false;
   }
   rng_blob blob = {0};
@@ -239,30 +264,30 @@ bool randompack_deserialize(uint8_t *buf, int len, randompack_rng *rng) {
   rng_entry *ent = find_entry(blob.engine);
   int need = STATE_NEED;
   if (blob.version != 1 || !ent || len < need) {
-    rng->last_error = "randompack_deserialize: corrupt state buffer";
+    rng->last_error = "randompack deserialize: corrupt state buffer";
     return false;
   }
   if (blob.engine == SYS) {
-    rng->last_error = "randompack_deserialize: system-csprng not supported";
+    rng->last_error = "randompack deserialize: system-csprng not supported";
     return false;
   }
   if (rng->engine != INVALID && rng->engine != blob.engine) {
-    rng->last_error = "randompack_deserialize: engine mismatch";
+    rng->last_error = "randompack deserialize: engine mismatch";
     return false;
   }
   if (blob.engine == PCG64 && !HAVE128) {
     rng->last_error =
-      "randompack_deserialize: PCG64 engine not supported on this platform";
+      "randompack deserialize: PCG64 engine not supported on this platform";
     return false;
   }
   if (blob.engine == CWG128 && !HAVE128) {
     rng->last_error =
-      "randompack_deserialize: CWG128 engine not supported on this platform";
+      "randompack deserialize: CWG128 engine not supported on this platform";
     return false;
   }
   bool ok = deserialize(&blob, ent, rng);
   if (!ok) {
-    rng->last_error = "randompack_deserialize: allocation failed";
+    rng->last_error = "randompack deserialize: allocation failed";
     return false;
   }
   return true;
@@ -277,38 +302,38 @@ bool randompack_set_state(uint64_t state[], int nstate, randompack_rng *rng) {
   if (!rng) return false;
   rng->last_error = 0;
   if (!state || nstate < 0) {
-    rng->last_error = "randompack_set_state: invalid arguments";
+    rng->last_error = "randompack set_state: invalid arguments";
 	 return false;
   }
   rng_entry *ent = find_entry(rng->engine);
   if (rng->engine == SYS)
-    rng->last_error = "randompack_set_state: not supported for system-csprng";
+    rng->last_error = "randompack set_state: not supported for system-csprng";
   else if (rng->engine == PCG64 && !HAVE128)
     rng->last_error =
-      "randompack_set_state: PCG64 engine not supported on this platform";
+      "randompack set_state: PCG64 engine not supported on this platform";
   else if (rng->engine == CWG128 && !HAVE128)
     rng->last_error =
-      "randompack_set_state: CWG128 engine not supported on this platform";
+      "randompack set_state: CWG128 engine not supported on this platform";
   else if (nstate != ent->state_words)
-    rng->last_error = "randompack_set_state: wrong nstate for this engine";
+    rng->last_error = "randompack set_state: wrong nstate for this engine";
   else if ((rng->engine == X256SS || rng->engine == X256PP || rng->engine == XORO ||
-				rng->engine == X128P ) && allzero64(state, 4))
-    rng->last_error = "randompack_set_state: xoshiro state must be nonzero";
+				rng->engine == X128P ) && allzero64(state, nstate))
+    rng->last_error = "randompack set_state: xoshiro state must be nonzero";
   else if (rng->engine == PCG64 && (state[2] & 1) == 0)
-    rng->last_error = "randompack_set_state: pcg64 increment must be odd";
+    rng->last_error = "randompack set_state: pcg64 increment must be odd";
   else if (rng->engine == CWG128 && (state[4] & 1) == 0)
-    rng->last_error = "randompack_set_state: cwg128 increment must be odd";
+    rng->last_error = "randompack set_state: cwg128 increment must be odd";
   if (rng->last_error) return false;
   set_state(state, nstate, rng);
   return true;
 }
 
-#ifdef HAVE128
+#if HAVE128
 bool randompack_pcg64_set_state(uint128_t state, uint128_t inc, randompack_rng *rng) {
   if (!rng) return false;
   rng->last_error = 0;
   if (rng->engine != PCG64) {
-    rng->last_error = "randompack_pcg64_set_state: engine is not pcg64";
+    rng->last_error = "randompack pcg64_set_state: engine is not pcg64";
     return false;
   }
   pcg64_set_state(state, inc, rng);
@@ -321,7 +346,7 @@ bool randompack_philox_set_state(randompack_counter ctr, randompack_philox_key k
   if (!rng) return false;
   rng->last_error = 0;
   if (rng->engine != PHILOX) {
-    rng->last_error = "randompack_philox_set_state: engine is not philox";
+    rng->last_error = "randompack philox_set_state: engine is not philox";
     return false;
   }
   philox_set_state(ctr, key, rng);
@@ -333,7 +358,7 @@ bool randompack_squares_set_state(uint64_t ctr, uint64_t key,
   if (!rng) return false;
   rng->last_error = 0;
   if (rng->engine != SQUARES) {
-    rng->last_error = "randompack_squares_set_state: engine is not squares64";
+    rng->last_error = "randompack squares_set_state: engine is not squares64";
     return false;
   }
   squares_set_state(ctr, key, rng);
@@ -387,9 +412,9 @@ bool randompack_int(int x[], size_t len, int m, int n, randompack_rng *rng) {
   if (!x)
     rng->last_error = "invalid arguments to randompack_int";
   else if (m > n)
-    rng->last_error = "randompack_int: m must be <= n";
+    rng->last_error = "randompack int: m must be <= n";
   else if (span > INT_MAX)
-    rng->last_error = "randompack_int: n - m must be < 2^31";
+    rng->last_error = "randompack int: n - m must be < 2^31";
   else
     rng->last_error = 0;
   if (rng->last_error) return false;
@@ -402,7 +427,7 @@ bool randompack_int(int x[], size_t len, int m, int n, randompack_rng *rng) {
 bool randompack_uint8(uint8_t x[], size_t len, uint8_t bound, randompack_rng *rng) {
   if (!rng) return false;
   if (!x)
-    rng->last_error = "randompack_uint8: invalid arguments";
+    rng->last_error = "randompack uint8: invalid arguments";
   else
     rng->last_error = 0;
   if (rng->last_error) return false;  
@@ -413,7 +438,7 @@ bool randompack_uint8(uint8_t x[], size_t len, uint8_t bound, randompack_rng *rn
 bool randompack_uint16(uint16_t x[], size_t len, uint16_t bound, randompack_rng *rng) {
   if (!rng) return false;
   if (!x)
-    rng->last_error = "randompack_uint16: invalid arguments";
+    rng->last_error = "randompack uint16: invalid arguments";
   else
     rng->last_error = 0;
   if (rng->last_error) return false;  
@@ -424,7 +449,7 @@ bool randompack_uint16(uint16_t x[], size_t len, uint16_t bound, randompack_rng 
 bool randompack_uint32(uint32_t x[], size_t len, uint32_t bound, randompack_rng *rng) {
   if (!rng) return false;
   if (!x)
-    rng->last_error = "randompack_uint32: invalid arguments";
+    rng->last_error = "randompack uint32: invalid arguments";
   else
     rng->last_error = 0;
   if (rng->last_error) return false;  
@@ -449,7 +474,7 @@ bool randompack_perm(int x[], int len, randompack_rng *rng) {
   if (!x)
     rng->last_error = "invalid arguments to randompack_perm";
   else if (len > INT_MAX - 1)
-    rng->last_error = "randompack_perm: len must be <= 2^31 - 2";
+    rng->last_error = "randompack perm: len must be <= 2^31 - 2";
   else
     rng->last_error = 0;
   if (rng->last_error) return false;
@@ -462,7 +487,7 @@ bool randompack_sample(int x[], int len, int k, randompack_rng *rng) {
   if (!x || k < 0 || k > len)
     rng->last_error = "invalid arguments to randompack_sample";
   else if (len > INT_MAX - 1)
-    rng->last_error = "randompack_sample: len must be <= 2^31 - 2";	 
+    rng->last_error = "randompack sample: len must be <= 2^31 - 2";	 
   else
     rng->last_error = 0;
   if (rng->last_error) return false;
@@ -629,21 +654,21 @@ bool randompack_mvn(char *transp, double mu[], double Sig[], int d, size_t n, do
                     int ldX, double L[], randompack_rng *rng) {
   if (!rng) return false;
   if (!Sig && !L)
-    rng->last_error = "randompack_mvn: either Sig or L must be specified";
+    rng->last_error = "randompack mvn: either Sig or L must be specified";
   else if (!transp || (transp[0] != 'N' && transp[0] != 'T'))
-    rng->last_error = "randompack_mvn: transp must begin with 'N' or 'T'";
+    rng->last_error = "randompack mvn: transp must begin with 'N' or 'T'";
   else if ((!X && n > 0) || d <= 0 || (ldX <= 0 && X))
-    rng->last_error = "randompack_mvn: invalid arguments";
+    rng->last_error = "randompack mvn: invalid arguments";
   else if (X && n > 0 && (size_t)ldX <
            ((transp[0] == 'N') ? n : (size_t)d))
-    rng->last_error = "randompack_mvn: invalid arguments";
+    rng->last_error = "randompack mvn: invalid arguments";
   else
     rng->last_error = 0;
   if (rng->last_error) return false;
 
   bool ok = rand_mvn(transp[0], mu, Sig, d, n, X, ldX, L, rng);
   if (!ok) {
-    rng->last_error = "randompack_mvn: memory allocation failed";
+    rng->last_error = "randompack mvn: memory allocation failed";
     return false;
   }
   else return true;

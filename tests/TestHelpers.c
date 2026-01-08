@@ -32,6 +32,30 @@ static void test_moments(void) {
   xCheck(test_moments_4vec());
 }
 
+static void test_engines(void) {
+  int n = 0;
+  int emax = 0;
+  int dmax = 0;
+  bool ok = randompack_engines(0, 0, &n, &emax, &dmax);
+  xCheck(ok);
+  xCheck(n >= 8);
+  xCheck(emax >= 6);
+  xCheck(dmax >= 20);
+  char *engines = 0;
+  char *descriptions = 0;
+  TEST_ALLOC(engines, n*emax);
+  TEST_ALLOC(descriptions, n*dmax);
+  ok = randompack_engines(engines, descriptions, &n, &emax, &dmax);
+  xCheck(ok);
+  ok = randompack_engines(0, 0, 0, &emax, &dmax);
+  xCheck(!ok);
+  ok = randompack_engines(engines, 0, &n, &emax, &dmax);
+  xCheck(!ok);
+  FREE(engines);
+  FREE(descriptions);
+}
+
 void TestHelpers(void) {
   test_moments();
+  test_engines();
 }

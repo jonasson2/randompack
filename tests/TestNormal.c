@@ -40,8 +40,8 @@ static void test_PIT(char *engine, double mu, double sigma) {
   for (int i = 0; i < N; i++) u[i] = normcdf((x[i] - mu)/sigma);
   for (int i = 0; i < N; i++)
     v[i] = (float)normcdf(((double)y[i] - mu_f)/sigma_f);
-  check_u01_distribution(u, N);
-  check_u01_distributionf(v, N);
+  check_u01_distribution(u, N, "normal", engine);
+  check_u01_distributionf(v, N, "normalf", engine);
   FREE(v);
   FREE(y);
   FREE(u);

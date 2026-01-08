@@ -16,12 +16,6 @@ run_varmasim = executable(
   dependencies : [randompack_dep],
 )
 
-timing = executable(
-  'Timing',
-  ['Timing.c'] + common_util,
-  dependencies : [randompack_dep],
-)
-
 time_engines = executable(
   'TimeEngines',
   ['TimeEngines.c', 'TimeUtil.c'] + common_util,
@@ -37,6 +31,12 @@ time_distributions = executable(
 time_integers = executable(
   'TimeIntegers',
   ['TimeIntegers.c'] + common_util,
+  dependencies : [randompack_dep],
+)
+
+count01 = executable(
+  'count01',
+  'count01.c',
   dependencies : [randompack_dep],
 )
 

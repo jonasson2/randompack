@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <limits.h>
 #include <float.h>
+#include <stdio.h>
 
 #include "TestUtil.h"
 #include "randompack.h"
@@ -11,10 +12,15 @@
 #include "xCheck.h"
 #include "printX.h"
 
-//------------------------------------------------------------------------------
-// Vector equality / difference helpers
-//------------------------------------------------------------------------------
+// Define test sample sizes
+// ––––––––––––––––––––––––
+int N_BAL_CNTS = N_BAL_CNTS_DEFAULT;
+int N_BAL_BITS = N_BAL_BITS_DEFAULT;
+int N_STAT_FAST = N_STAT_FAST_DEFAULT;
+int N_STAT_SLOW = N_STAT_SLOW_DEFAULT;
 
+// Vector equality / difference helpers
+// ––––––––––––––––––––––––––––––––––––
 bool equal_vec(int *a, int *b, int n) {
   for (int i = 0; i < n; i++) if (a[i] != b[i]) return false;
   return true;
@@ -50,10 +56,8 @@ bool everywhere_different(uint64_t *a, uint64_t *b, int n) {
   return true;
 }
 
-//------------------------------------------------------------------------------
 // Approximate equality
-//------------------------------------------------------------------------------
-
+// ––––––––––––––––––––
 int almostSame(double a, double b) {
   return relabsdiff(&a, &b, 1) < 5.0e-14;
 }
@@ -79,10 +83,8 @@ int almostZero(double a[], int n) {
   return fabs(a[ia]) < 5.0e-14;
 }
 
-//------------------------------------------------------------------------------
 // Simple statistics
-//------------------------------------------------------------------------------
-
+// –––––––––––––––––
 double mean(double *x, int n) {
   if (n <= 0) return 0.0;
   double sum = 0.0;
@@ -140,7 +142,8 @@ void cov(char *transp, int m, int n, double X[], double C[]) {
   FREE(mu);
 }
 
-// Inverse normal CDF. Translation of PPND16 in AS241 (Wichura, 1988), public domain.
+// Inverse normal CDF. Translation of PPND16 in AS241 (Wichura, 1988), public domain
+// –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
 double probit(double p) { // Return NAN if p < 0 or p > 1
   if (p < 0 || p > 1) return NAN;
   if (p == 0) return -DBL_MAX;  // New in the translation
@@ -238,10 +241,8 @@ double gamma_cdfc(double x, double shape, double scale) {
   return igamc(shape, x/scale);
 }
 
-//------------------------------------------------------------------------------
 // Min/max helpers for scalars and vectors
-//------------------------------------------------------------------------------
-
+// –––––––––––––––––––––––––––––––––––––––
 uint8_t max8(uint8_t a, uint8_t b) {
   return a > b ? a : b;
 }
@@ -306,10 +307,8 @@ double minvd(double *x, int n) {
   return m;
 }
 
-//------------------------------------------------------------------------------
 // RNG / error-check helpers
-//------------------------------------------------------------------------------
-
+// –––––––––––––––––––––––––
 bool check_balanced_counts(int *counts, int n) {
   // Pearson chi-square goodness-of-fit for Multinomial(N; 1/n,...,1/n)
   if (n <= 1) return true;
@@ -432,27 +431,90 @@ bool check_u01_minmax(double *x, int n) {
   return true;
 }
 
-void check_u01_distribution(double *u, int n) {
-  int nbins = min(500, max(20, sqrt(n)));
-  ASSERT(n/nbins >= 20);
+// End point checking – that there are not too many PIT U01 values in {0, 1}
+// –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+static bool check_u01_endpoints(int k0, int k1, size_t n, double p) {
+  // k0 = count of u=0, k1 = count of u=1, p = ziggurat probability of u = 0
+  double lambda = n*p;
+  double pv0 = (k0 == 0) ? 1.0 : igam((double)k0, lambda);
+  double pv1 = (k1 == 0) ? 1.0 : igam((double)k1, lambda);
+  return (pv0 >= TEST_P_VALUE && pv1 >= TEST_P_VALUE);
+}
+
+// PIT test helpers
+// ––––––––––––––––
+// static void dump_u01_summary_ctx(double *u, int n, const char *dist,
+//   const char *engine) {
+//   double xbar = mean(u, n);
+//   double s2 = var(u, n, xbar);
+//   double umin = minvd(u, n);
+//   double umax = maxvd(u, n);
+//   int n0 = 0, n1 = 0;
+//   int i0 = -1, i1 = -1;
+//   for (int i = 0; i < n; i++) {
+//     if (u[i] == 0) {
+//       n0++;
+//       if (i0 < 0) i0 = i;
+//     }
+//     if (u[i] == 1) {
+//       n1++;
+//       if (i1 < 0) i1 = i;
+//     }
+//   }
+//   printf("U01 summary (%s:%s):\n", dist ? dist : "?", engine ? engine : "?");
+//   printf("  n = %d\n", n);
+//   printf("  mean = %.17g\n", xbar);
+//   printf("  var  = %.17g\n", s2);
+//   printf("  min  = %.17g\n", umin);
+//   printf("  max  = %.17g\n", umax);
+//   printf("  count(u==0) = %d first=%d\n", n0, i0);
+//   printf("  count(u==1) = %d first=%d\n", n1, i1);
+//   if (i0 >= 0) printf("  u[first0] = %.17g\n", u[i0]);
+//   if (i1 >= 0) printf("  u[first1] = %.17g\n", u[i1]);
+// }
+
+static void check_u01_distribution_df(double *u, int n, char *dist, char *engine, char *
+										 precision) {
+  int k0 = 0;
+  int k1 = 0;
+  int nnz = 0;
+  for (int i = 0; i < n; i++) {
+    double x = u[i];
+    if (x == 0.0) k0++;
+    else if (x == 1.0) k1++;
+    else u[nnz++] = x;
+  }
+  double p; // ziggurat resolution
+  if (!strcmp(precision, "float"))
+	 p = ldexp(1.0, -23); // 2^(-23)
+  else
+	 p = ldexp(1.0, -52); // 2^(-52)
+  xCheckMsg2(check_u01_endpoints(k0, k1, n, p), engine, dist);
+  int nbins = min(500, max(20, sqrt(nnz)));
+  ASSERT(nnz/nbins >= 20);
   int *counts;
   TEST_ALLOC(counts, nbins);
   for (int b = 0; b < nbins; b++) counts[b] = 0;
-  xCheck(check_u01_meanvar(u, n));
-  xCheck(check_u01_skewkurt(u, n));
-  xCheck(check_u01_minmax(u, n));
-  for (int i = 0; i < n; i++) {
+  xCheckMsg2(check_u01_meanvar(u, nnz), engine, dist);
+  xCheckMsg2(check_u01_skewkurt(u, nnz), engine, dist);
+  xCheckMsg2(check_u01_minmax(u, nnz), engine, dist);
+  for (int i = 0; i < nnz; i++) {
     int b = min(nbins - 1, nbins*u[i]);
     counts[b]++;
   }
-  xCheck(check_balanced_counts(counts, nbins));
+  xCheckMsg2(check_balanced_counts(counts, nbins), engine, dist);
   FREE(counts);
 }
 
-void check_u01_distributionf(float *x, int n) {
+void check_u01_distribution(double *u, int n, char *dist, char *engine) {
+  check_u01_distribution_df(u, n, dist, engine, "double");
+}
+
+void check_u01_distributionf(float *u, int n, char *dist, char *engine) {
   double *y;
   TEST_ALLOC(y, n);
-  for (int i=0; i<n; i++) y[i] = x[i];
-  check_u01_distribution(y, n);
+  for (int i = 0; i < n; i++) y[i] = u[i];
+  check_u01_distribution(y, n, dist, engine);
   FREE(y);
 }
+

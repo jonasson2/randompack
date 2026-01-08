@@ -46,8 +46,8 @@ static void test_PIT(char *engine, double nu) {
     u[i] = t_cdf(x[i], nu);
   for (int i = 0; i < N; i++)
     v[i] = (float)t_cdf((double)y[i], nu_f);
-  check_u01_distribution(u, N);
-  check_u01_distributionf(v, N);
+  check_u01_distribution(u, N, "t", engine);
+  check_u01_distributionf(v, N, "tf", engine);
   FREE(v);
   FREE(y);
   FREE(u);

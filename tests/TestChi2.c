@@ -39,8 +39,8 @@ static void test_PIT(char *engine, int nu) {
   for (int i = 0; i < N; i++) u[i] = chi2_cdf(x[i], nu);
   for (int i = 0; i < N; i++)
     v[i] = (float)chi2_cdf((double)y[i], nu_f);
-  check_u01_distribution(u, N);
-  check_u01_distributionf(v, N);
+  check_u01_distribution(u, N, "chi2", engine);
+  check_u01_distributionf(v, N, "chi2f", engine);
   FREE(v);
   FREE(y);
   FREE(u);

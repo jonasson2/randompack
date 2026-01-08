@@ -1,6 +1,6 @@
 // -*- C -*-
-// Tests for create_seeded_rng and engine-name handling (aliases, defaults, system CSPRNG,
-// and error reporting).
+// Tests for create_seeded_rng and engine-name handling (defaults, system CSPRNG, and
+// error reporting).
 #include <stdint.h>
 #include <stdbool.h>
 #include "randompack_config.h"
@@ -38,17 +38,6 @@ static void test_determinism(void) {
   }
 }
 
-// Check that abbreviated engine names work
-static void test_engine_aliases(void) {
-  enum { LEN_STREAM = 4, NENGINES = LEN(engines) };
-  uint64_t x[NENGINES][LEN_STREAM], y[NENGINES][LEN_STREAM];
-  for (int i=0; i<NENGINES; i++) {
-    draw_randoms(engines[i], x[i], LEN_STREAM, 42);
-    draw_randoms(abbrev[i], y[i], LEN_STREAM, 42);
-    xCheck(equal_vec64(x[i], y[i], LEN_STREAM));
-  }
-}
-  
 // Unknown engine names should yield a non-null "invalid" rng object with a non-blank
 // last_error. Drawing from an invalid rng must fail and set another non-blank error.
 static void test_bad_engine_name(void) {
@@ -84,9 +73,9 @@ static void test_default_engine_matches_x256pp(void) {
   xCheck(a[0] == b[0]);
 }
 
-#ifndef HAVE128
+#if !HAVE128
 static void test_pcg64_unavailable(void) {
-  char *names[] = { "pcg64_dxsm", "pcg64", "cwg128_64", "cwg128" };
+  char *names[] = { "pcg64", "cwg128" };
   for (int i = 0; i < LEN(names); i++) {
     randompack_rng *rng = create_seeded_rng(names[i], 123);
     ASSERT(rng);
@@ -102,30 +91,25 @@ static void test_pcg64_unavailable(void) {
 }
 #endif
 
-// "system" and "system-csprng" should both map to the system CSPRNG, produce non-trivial
-// output, and set no error.
+// "system" should map to the system CSPRNG, produce non-trivial output, and set no error.
 static void test_system_engine(void) {
-  char *names[] = { "system", "system-csprng" };
-  for (int i = 0; i < LEN(names); i++) {
-    randompack_rng *rng = create_seeded_rng(names[i], 0);
-    check_rng_clean(rng);
-    uint64_t x[2] = {0, 0};
-    bool ok = randompack_uint64(x, 2, 0, rng);
-    check_success(ok, rng);
-    xCheck(x[0] || x[1]);     // must produce something nreon-trivial
-    printS("system engine", names[i]);
-    randompack_free(rng);
-  }
+  randompack_rng *rng = create_seeded_rng("system", 0);
+  check_rng_clean(rng);
+  uint64_t x[2] = {0, 0};
+  bool ok = randompack_uint64(x, 2, 0, rng);
+  check_success(ok, rng);
+  xCheck(x[0] || x[1]);     // must produce something nreon-trivial
+  printS("system engine", "system");
+  randompack_free(rng);
 }
 
 void TestCreate(void) {
   test_determinism();
-  test_engine_aliases();
   test_bad_engine_name();
   test_null_engine_name();
   test_default_engine_matches_x256pp();
   test_system_engine();
-#ifndef HAVE128
+#if !HAVE128
   test_pcg64_unavailable();
 #endif
 }
