@@ -47,8 +47,7 @@ static void test_PIT(char *engine, double scale) {
       printD("  yi", (double)yi);
     }
   }
-  // for (int i = 0; i < N; i++) v[i] = 1.0f - expf(-y[i]/scale_f);
-  // check_u01_distribution(u, N, "exp", engine);
+  check_u01_distribution(u, N, "exp", engine);
   check_u01_distributionf(v, N, "expf", engine);
   FREE(v);
   FREE(y);

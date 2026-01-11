@@ -203,6 +203,7 @@ ALWAYS_INLINE static void rand_exp(double *x, size_t len, bitgen_t *bitgen_state
 #include "zig_new.h"
 
 ALWAYS_INLINE static void rand_expf(float *x, size_t len, randompack_rng *rng) {
+  enter_u32_mode(rng);
   size_t i = 0;
   while (i < len) {
     uint32_t u = draw_u32_fast(rng);
@@ -219,4 +220,5 @@ ALWAYS_INLINE static void rand_expf(float *x, size_t len, randompack_rng *rng) {
       x[i++] = xi;
     }
   }
+  exit_u32_mode(rng);
 }
