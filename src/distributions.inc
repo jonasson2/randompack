@@ -24,7 +24,8 @@ ALWAYS_INLINE static void rand_dble(double x[], size_t n, randompack_rng *rng) {
     int take = min(n - i, BUFSIZE - rng->buf_word);
     for (int j = 0; j < take; j++) {
       uint64_t v = rng->buf.u64[rng->buf_word + j];
-      x[i + j] = (v >> 11) * 0x1.0p-53;
+      double u = (double)(v >> 11) * 0x1.0p-54;
+      x[i + j] = u + (v & 512 ? 0.0 : 0.5);
     }
     rng->buf_word += take;
     i += take;

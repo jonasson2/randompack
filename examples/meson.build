@@ -34,6 +34,12 @@ time_integers = executable(
   dependencies : [randompack_dep],
 )
 
+examine_resolution = executable(
+  'ExamineResolution',
+  'ExamineResolution.c',
+  dependencies : [randompack_dep],
+)
+
 if threads_dep.found() and pthreads_ok
   thread_example = executable(
     'ThreadExample',

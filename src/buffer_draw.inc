@@ -5,29 +5,6 @@ static inline void fill_buf(randompack_rng *rng) {
   rng->buf_byte = 0;
 }
 
-static inline void align16(randompack_rng *rng) { // align to next 2-byte boundary
-  if (rng->buf_byte & 1) rng->buf_byte++;
-  if (rng->buf_byte == 8) {
-    rng->buf_byte = 0;
-    rng->buf_word++;
-  }
-}
-
-static inline void align32(randompack_rng *rng) { // align to next 4-byte boundary
-  rng->buf_byte = (rng->buf_byte + 3)/4*4;
-  if (rng->buf_byte == 8) {
-    rng->buf_byte = 0;
-    rng->buf_word++;
-  }
-}
-
-static inline void align64(randompack_rng *rng) { // align to beginning or word
-  if (rng->buf_byte > 0) {
-    rng->buf_byte = 0;
-    rng->buf_word++;
-  }
-}
-
 static inline void fill_buf_if_empty(randompack_rng *rng) {
   if (rng->buf_word >= BUFSIZE) {
     rng->fill(rng);
@@ -36,7 +13,30 @@ static inline void fill_buf_if_empty(randompack_rng *rng) {
   }
 }
 
-static inline uint8_t draw_byte(randompack_rng *rng) {
+ALWAYS_INLINE static void align16(randompack_rng *rng) { // align to next 2-byte boundary
+  if (rng->buf_byte & 1) rng->buf_byte++;
+  if (rng->buf_byte == 8) {
+    rng->buf_byte = 0;
+    rng->buf_word++;
+  }
+}
+
+ALWAYS_INLINE static void align32(randompack_rng *rng) { // align to next 4-byte boundary
+  rng->buf_byte = (rng->buf_byte + 3)/4*4;
+  if (rng->buf_byte == 8) {
+    rng->buf_byte = 0;
+    rng->buf_word++;
+  }
+}
+
+ALWAYS_INLINE static void align64(randompack_rng *rng) { // align to beginning or word
+  if (rng->buf_byte > 0) {
+    rng->buf_byte = 0;
+    rng->buf_word++;
+  }
+}
+
+ALWAYS_INLINE static uint8_t draw_byte(randompack_rng *rng) {
   if (rng->buf_word >= BUFSIZE) fill_buf(rng);
   uint64_t w = rng->buf.u64[rng->buf_word];
   uint8_t b = w >> (8 * rng->buf_byte);
@@ -48,7 +48,7 @@ static inline uint8_t draw_byte(randompack_rng *rng) {
   return b;
 }
 
-static inline uint64_t draw_u64(randompack_rng *rng) { // Fast single word
+ALWAYS_INLINE static uint64_t draw_u64(randompack_rng *rng) { // Fast single word
   int w = rng->buf_word;
   int b = rng->buf_byte;
   if (b != 0) {
@@ -65,7 +65,7 @@ static inline uint64_t draw_u64(randompack_rng *rng) { // Fast single word
   return rng->buf.u64[w];
 }
 
-static inline uint64_t draw_u64_fast(randompack_rng *rng) { // Fast single word
+ALWAYS_INLINE static uint64_t draw_u64_fast(randompack_rng *rng) { // Fast single word
   int w = rng->buf_word;
   if (w >= BUFSIZE) {
     rng->fill(rng);
@@ -75,13 +75,7 @@ static inline uint64_t draw_u64_fast(randompack_rng *rng) { // Fast single word
   return rng->buf.u64[w];
 }
 
-static inline void enter_u32_mode(randompack_rng *rng) {
-  if (rng->buf_word32 >= 0) return; // already in u32-mode
-  align32(rng);
-  rng->buf_word32 = 2*rng->buf_word + rng->buf_byte/4;
-}
-
-static inline uint32_t draw_u32_fast(randompack_rng *rng) { // Fast single word
+ALWAYS_INLINE static uint32_t draw_u32_fast(randompack_rng *rng) { // Fast single word
   // draw 32 bit word when alignment is preset
   int w = rng->buf_word32;
   if (w >= 2*BUFSIZE) {
@@ -92,19 +86,25 @@ static inline uint32_t draw_u32_fast(randompack_rng *rng) { // Fast single word
   return rng->buf.u32[w];
 }
 
+ALWAYS_INLINE static double draw_u01(randompack_rng *rng) {
+  return U64_TO_DOUBLE(draw_u64(rng));
+}
+
+ALWAYS_INLINE static float draw_u01f(randompack_rng *rng) {
+  return U32_TO_FLOAT(draw_u32_fast(rng));
+}
+
+static inline void enter_u32_mode(randompack_rng *rng) {
+  if (rng->buf_word32 >= 0) return; // already in u32-mode
+  align32(rng);
+  rng->buf_word32 = 2*rng->buf_word + rng->buf_byte/4;
+}
+
 static inline void exit_u32_mode(randompack_rng *rng) {
   if (rng->buf_word32 < 0) return; // not in u32-mode
   rng->buf_word = rng->buf_word32/2;
   rng->buf_byte = (rng->buf_word32 & 1)*4;
   rng->buf_word32 = -1;
-}
-
-static inline double draw_u01(randompack_rng *rng) {
-  return U64_TO_DOUBLE(draw_u64(rng));
-}
-
-static inline float draw_u01f(randompack_rng *rng) {
-  return U32_TO_FLOAT(draw_u32_fast(rng));
 }
 
 // Copy n fresh uint16 draws into out using the shared byte buffer.

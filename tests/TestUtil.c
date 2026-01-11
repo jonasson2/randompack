@@ -4,6 +4,7 @@
 #include <limits.h>
 #include <float.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "TestUtil.h"
 #include "randompack.h"
@@ -49,6 +50,38 @@ bool equal_vec32(uint32_t *a, uint32_t *b, int n) {
 bool equal_vec64(uint64_t *a, uint64_t *b, int n) {
   for (int i = 0; i < n; i++) if (a[i] != b[i]) return false;
   return true;
+}
+
+#include <math.h>
+
+static int cmp_double(const void *a, const void *b) {
+  double da = *(const double *)a;
+  double db = *(const double *)b;
+  int a_nan = isnan(da);
+  int b_nan = isnan(db);
+  if (a_nan || b_nan) return a_nan - b_nan; // non-NaN first, NaN last
+  if (da < db) return -1;
+  if (da > db) return 1;
+  return 0;
+}
+
+void print_lowhigh(char *name, double *x, int n, int ndec) {
+  (void) name; (void) x; (void) n; (void) ndec; // prevent unused warnings
+  if (printIsOff()) return;
+  if (n <= 0) return;
+  int nlow = n < 8 ? n : 8; (void) nlow;
+  int nhigh = n < 8 ? n : 8; (void) nhigh;
+  double *tmp;
+  TEST_ALLOC(tmp, n);
+  for (int i = 0; i < n; i++) tmp[i] = x[i];
+  qsort(tmp, n, sizeof(tmp[0]), cmp_double);
+  int old_ndec = printGetNdec(); (void) old_ndec;
+  printSetNdec(ndec);
+  printMsg(name);
+  printV("  low", tmp, nlow);
+  printV("  high", tmp + n - nhigh, nhigh);
+  printSetNdec(old_ndec);
+  FREE(tmp);
 }
 
 bool everywhere_different(uint64_t *a, uint64_t *b, int n) {
@@ -372,6 +405,7 @@ bool check_meanvar(double *x, int n) {
   double mu = 0, sigma = 1, xbar, s2, xbarstd, zstat, p_mean, t, p_var;
   xbar = mean(x, n);
   s2 = var(x, n, xbar);
+  printD("xbar", xbar);
   xbarstd = sigma/sqrt(n);
   zstat = fabs(xbar - mu)/xbarstd;
   p_mean = 2.0*normccdf(zstat); // Mean test: (xbar - mu)/(sigma/sqrt(n)) ~ N(0,1)
@@ -483,6 +517,6 @@ void check_u01_distributionf(float *u, int n, char *dist, char *engine) {
   double *y;
   TEST_ALLOC(y, n);
   for (int i = 0; i < n; i++) y[i] = u[i];
-  check_u01_distribution(y, n, dist, engine);
+  check_u01_distribution_df(y, n, dist, engine, "float");
   FREE(y);
 }

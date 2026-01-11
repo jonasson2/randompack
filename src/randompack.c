@@ -370,10 +370,6 @@ char *randompack_last_error(randompack_rng *rng) {
   return rng->last_error;
 }
 
-double randompack_u01_draw(randompack_rng *rng) {
-  return (draw_u64(rng) >> 11) * 0x1.0p-53;
-}
-
 bool randompack_u01(double x[], size_t len, randompack_rng *rng) {
   if (!rng) return false;
   if (!x)

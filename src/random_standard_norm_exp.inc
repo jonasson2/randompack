@@ -131,31 +131,6 @@ ALWAYS_INLINE static double standard_exponential_unlikely(bitgen_t *bitgen_state
   }
 }
 
-ALWAYS_INLINE static float standard_exponential_unlikely_f(bitgen_t *bitgen_state,
-                                                                  uint8_t idx, float x) {
-  while (true) { // added loop to replace recursion
-    if (idx == 0) {
-      /* Switch to 1.0 - U to avoid log(0.0), see GH 13361 */
-      return ziggurat_exp_r_f - npy_log1pf(-next_float(bitgen_state));
-    }
-    else if ((fe_float[idx - 1] - fe_float[idx])*next_float(bitgen_state) +
-             fe_float[idx] < expf(-x)) {
-      return x;
-    }
-    else {
-      // Replaced calling rand_expf with the following:
-      uint32_t ri = next_uint32(bitgen_state);
-      ri >>= 1;
-      idx = ri & 0xFF;
-      ri >>= 8;
-      x = ri*we_float[idx];
-      if (ri < ke_float[idx]) {
-        return x;
-      }
-    }
-  }
-}
-
 // Following randompack functions add a loop to fill buf, but otherwise the code is
 // unchanged
 
@@ -179,31 +154,11 @@ ALWAYS_INLINE static void rand_exp(double *x, size_t len, bitgen_t *bitgen_state
   }
 }
 
-ALWAYS_INLINE static void rand_expf(float *x, size_t len, bitgen_t *bitgen_state) {
-  enter_u32_mode(bitgen_state);
-  for (size_t i=0; i<len; i++) {
-	 uint32_t ri;
-	 uint8_t idx;
-	 float xi;
-    ri = next_uint32(bitgen_state);
-	 ri >>= 1;
-	 idx = ri & 0xFF;
-    ri >>= 8;
-    xi = ri * we_float[idx];
-	 if (ri < ke_float[idx]) { // 98.9% of the time
-		x[i] = xi;
-	 }
-	 else { 
-		x[i] = standard_exponential_unlikely_f(bitgen_state, idx, xi);
-	 }
-  }
-  exit_u32_mode(bitgen_state);
-}
-
 // ALWAYS_INLINE static float standard_exponential_unlikely_f(bitgen_t *bitgen_state,
-//   uint8_t idx, float x) {
-//   while (true) {
+//                                                                   uint8_t idx, float x) {
+//   while (true) { // added loop to replace recursion
 //     if (idx == 0) {
+//       /* Switch to 1.0 - U to avoid log(0.0), see GH 13361 */
 //       return ziggurat_exp_r_f - npy_log1pf(-next_float(bitgen_state));
 //     }
 //     else if ((fe_float[idx - 1] - fe_float[idx])*next_float(bitgen_state) +
@@ -211,27 +166,57 @@ ALWAYS_INLINE static void rand_expf(float *x, size_t len, bitgen_t *bitgen_state
 //       return x;
 //     }
 //     else {
-//       uint32_t r = next_uint32(bitgen_state);
-//       uint32_t ri;
-//       idx = r >> 24;
-//       ri = (r >> 1) & 0x007fffff;
+//       // Replaced calling rand_expf with the following:
+//       uint32_t ri = next_uint32(bitgen_state);
+//       ri >>= 1;
+//       idx = ri & 0xFF;
+//       ri >>= 8;
 //       x = ri*we_float[idx];
-//       if (ri < ke_float[idx]) return x;
+//       if (ri < ke_float[idx]) {
+//         return x;
+//       }
 //     }
 //   }
 // }
 
 // ALWAYS_INLINE static void rand_expf(float *x, size_t len, bitgen_t *bitgen_state) {
 //   enter_u32_mode(bitgen_state);
-//   for (size_t i = 0; i < len; i++) {
-//     uint32_t r = next_uint32(bitgen_state);
-//     uint32_t ri;
-//     uint8_t idx = r >> 24;
-//     float xi;
-//     ri = (r >> 1) & 0x007fffff;
-//     xi = ri*we_float[idx];
-//     if (ri < ke_float[idx]) x[i] = xi;
-//     else x[i] = standard_exponential_unlikely_f(bitgen_state, idx, xi);
+//   for (size_t i=0; i<len; i++) {
+// 	 uint32_t ri;
+// 	 uint8_t idx;
+// 	 float xi;
+//     ri = next_uint32(bitgen_state);
+// 	 ri >>= 1;
+// 	 idx = ri & 0xFF;
+//     ri >>= 8;
+//     xi = ri * we_float[idx];
+// 	 if (ri < ke_float[idx]) { // 98.9% of the time
+// 		x[i] = xi;
+// 	 }
+// 	 else { 
+// 		x[i] = standard_exponential_unlikely_f(bitgen_state, idx, xi);
+// 	 }
 //   }
 //   exit_u32_mode(bitgen_state);
 // }
+
+#include "zig_new.h"
+
+ALWAYS_INLINE static void rand_expf(float *x, size_t len, randompack_rng *rng) {
+  size_t i = 0;
+  while (i < len) {
+    uint32_t u = draw_u32_fast(rng);
+    uint8_t idx = (uint8_t)(u >> 24);
+    uint32_t t = u & 0x00FFFFFFu;
+    float xi = t*wehf[idx];         // wehf = we_float/2
+    if (t < ke2f[idx]) x[i++] = xi; // fast accept
+    else if (idx == 0) {            // tail
+      float U = next_float(rng);
+      x[i++] = ziggurat_exp_r_f - log1pf(-U);
+    }
+    else if ((fe_float[idx - 1] - fe_float[idx])*next_float(rng) + fe_float[idx] <
+             expf(-xi)) {           // wedge accept
+      x[i++] = xi;
+    }
+  }
+}

@@ -42,8 +42,9 @@ static void test_PIT(char *engine, double scale) {
     float ui = 1 - expf(-yi/scale_f);
     v[i] = ui;
     if (ui == 0 || ui == 1) {
-      printf("DEBUG expf PIT engine=%s scale=%g i=%d y=%.9g exp(-y)=%.9g u=%.9g\n",
-             engine, scale_f, i, yi, expf(-yi/scale_f), ui);
+      printD("TestPIT hit an endpoint, ui", (double)ui);
+      printS("  engine", engine);
+      printD("  yi", (double)yi);
     }
   }
   // for (int i = 0; i < N; i++) v[i] = 1.0f - expf(-y[i]/scale_f);

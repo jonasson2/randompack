@@ -49,6 +49,7 @@ static void test_PIT(char *engine, double xm, double alpha) {
   DRAW(engine, 42, randompack_paretof(y, N, xm_f, alpha_f, rng));
   TEST_SUPPORT(double, x, N, xm, INFINITY);
   TEST_SUPPORT(float, y, N, xm_f, INFINITY);
+  //print_lowhigh("Pareto draws:", x, N, 6);
   for (int i = 0; i < N; i++) u[i] = pareto_cdf(x[i], xm, alpha);
   for (int i = 0; i < N; i++)
     v[i] = (float)pareto_cdf((double)y[i], xm_f, alpha_f);

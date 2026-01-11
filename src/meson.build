@@ -3,6 +3,9 @@ randompack_src = files(
   'printX.c',
 )
 
+u01_hires = get_option('u01_hires')
+u01_hires_args = u01_hires ? ['-DU01_HIRES'] : []
+
 if host_machine.system() == 'darwin'
   randompack_src += files(
     'lapack_dpstf2.f',
@@ -14,6 +17,7 @@ librandompack = static_library(
   randompack_src,
   include_directories: inc,
   dependencies: [blas_dep] + math_deps,
+  c_args: u01_hires_args,
   pic: true,
   install: true,
 )
@@ -49,6 +53,7 @@ randompack_dep = declare_dependency(
   link_with: librandompack,
   include_directories: inc,
   dependencies: [blas_dep] + math_deps,
+  compile_args: u01_hires_args,
 )
 
 randompack_no128_dep = declare_dependency(

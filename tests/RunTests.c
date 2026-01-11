@@ -86,8 +86,6 @@ int main(int argc, char **argv) {
   if (optind < argc) option_error("Unexpected argument %s", argv[optind]);
   if (TESTVERBOSITY <= 1) printOff();
   vprint("\n");
-  vprint("N_STAT_FAST=%d N_STAT_SLOW=%d N_BAL_CNTS=%d N_BAL_BITS=%d\n",
-    N_STAT_FAST, N_STAT_SLOW, N_BAL_CNTS, N_BAL_BITS);
   vprint(headr_fmt, "TEST OF", "PASSED", "FAILED");
   run_test("Helpers",  TestHelpers);
   run_test("Create",   TestCreate);

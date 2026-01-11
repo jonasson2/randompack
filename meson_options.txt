@@ -9,3 +9,9 @@ option('perf',
   value: false,
   description: 'Enable performance tuning flags (requires -Db_lto=true)'
 )
+
+option('u01_hires',
+  type: 'boolean',
+  value: false,
+  description: 'Build a U01_HIRES variant library'
+)

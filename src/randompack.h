@@ -12,7 +12,7 @@ typedef struct { uint64_t v[4]; } randompack_counter;
 typedef struct { uint64_t v[2]; } randompack_philox_key;
 
 randompack_rng *randompack_create( // Create randomized RNG of given engine type, error→0
-  const char *engine    // in      Engine name (PCG, Xoshiro256++,...)
+  const char *engine    // in      Engine name (Xoshiro256++ [default], PCG,... 0→default)
 );
 
 bool randompack_seed( // Create RNG with given type and seed, false on error
@@ -52,10 +52,6 @@ bool randompack_sample( // Sample without replacement from 0..n-1, false on erro
   int x[],              // out     k-vector of sampled indices
   int n,                // in      Population size
   int k,                // in      Sample size (0 <= k <= n)
-  randompack_rng *rng   // in/out  Random number generator
-);
-
-double randompack_u01_draw( // Draw a single uniform random from [0,1)
   randompack_rng *rng   // in/out  Random number generator
 );
 

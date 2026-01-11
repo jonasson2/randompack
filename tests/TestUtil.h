@@ -221,6 +221,7 @@ bool check_meanvar(double *x, int n);
 bool check_skewkurt(double *x, int n, double skew, double kurt);
 bool check_u01_meanvar(double *x, int n);
 bool check_u01_skewkurt(double *x, int n);
+void print_lowhigh(char *name, double *x, int n, int ndec);
 double normcdf(double x);
 double normccdf(double x);
 double probit(double p);
