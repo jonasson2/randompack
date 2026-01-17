@@ -62,9 +62,9 @@ bool randompack_normalf(float x[], size_t len, float mu, float sigma,
     return false;
   }
   rng->last_error = 0;
-  rand_normf(x, len, rng);
-  if (mu != 0.0f || sigma != 1.0f)
-    for (size_t i = 0; i < len; i++) x[i] = mu + sigma*x[i];
+  rand_normalf(x, len, mu, sigma, rng);
+  // if (mu != 0.0f || sigma != 1.0f)
+  //   for (size_t i = 0; i < len; i++) x[i] = mu + sigma*x[i];
   return true;
 }
 

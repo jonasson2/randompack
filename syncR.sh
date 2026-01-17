@@ -10,11 +10,23 @@ rsync -av --delete \
   --exclude='Makevars' \
   --exclude='.DS_Store' \
   --exclude='meson.build' \
+  --exclude='printX.c' \
+  --exclude='printX.h' \
+  --exclude='*_float.inc' \
+  --exclude='*_float.h' \
   $ROOT/src/ \
   $ROOT/r-package/src/
 
 # COPY LICENSE FILE
 cp -f $ROOT/LICENSE $ROOT/r-package/
+
+# COMMENT OUT ALL FLOAT INCLUDES
+# Find all source files and comment out any #include with *_float.*
+find $ROOT/r-package/src -type f \( -name "*.c" -o -name "*.h" -o -name "*.inc" \) \
+  -exec sed -i.bak 's|^\(#include.*_float\.\)|// \1|' {} \;
+
+# Remove backup files
+rm -f $ROOT/r-package/src/*.bak
 
 # COPY VERSION NUMBER FROM MESON.BUILD TO DESCRIPTION
 ver=$(sed -n "s/.*version[[:space:]]*:[[:space:]]*'\([^']*\)'.*/\1/p" \

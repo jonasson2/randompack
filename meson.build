@@ -49,14 +49,10 @@ else
   math_deps = []
 endif
 if perf
-  if not get_option('b_lto')
-    error('perf build requires -Db_lto=true')
-  endif
   perf_args = [
-    '-march=native',
-    '-mtune=native',
     '-fomit-frame-pointer',
-    '-fno-math-errno'
+    '-fno-math-errno',
+    #'-fno-trapping-math'
   ]
   add_project_arguments(cc.get_supported_arguments(perf_args), language : 'c')
   cpp = meson.get_compiler('cpp')

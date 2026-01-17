@@ -13,7 +13,7 @@ static int LastNonzeroColumn(int m, int n, double A[]) {
 }
 
 //#include "zmgd.inc"   // static zmgd() lives here
-#include "random_standard_norm_exp.inc"
+#include "norm_exp.inc"
 
 ALWAYS_INLINE static void rand_dble(double x[], size_t n, randompack_rng *rng) {
   size_t i;
@@ -478,4 +478,4 @@ fail:
   return false;
 }
 
-#include "distrib_float.inc"
+// #include "distrib_float.inc"
