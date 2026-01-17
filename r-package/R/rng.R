@@ -1,0 +1,205 @@
+#' @include continuous.R discrete.R configure.R
+NULL
+
+#' Create and Use Random Number Generators
+#'
+#' To create a random number generator (RNG) object use `randompack_rng()`,
+#' and to specify the underlying RNG engine use `randompack_rng(engine)` where
+#' `engine` is a character string naming the engine (see Available Engines
+#' below).
+#'
+#' Once created, the RNG object provides methods for drawing samples from
+#' various distributions (e.g., `$normal()`, `$uniform()`, `$int()`). The object
+#' can be configured using configure methods (e.g., `$seed()`, `$randomize()`).
+#' Multiple independent RNG objects can be used for parallel random number
+#' generation across different processes or threads.
+#'
+#' @param engine RNG engine
+#'
+#' @return An RNG object with methods for drawing random variates.
+#'
+#' @section Available Engines:
+#' \tabular{lll}{
+#'   \code{x256++} \tab\tab xoshiro256++ (default; Vigna and Blackman, 2018) \cr
+#'   \code{x256**} \tab\tab xoshiro256** (Vigna and Blackman, 2018) \cr
+#'   \code{xoro++} \tab\tab xoroshiro128++ (Vigna and Blackman, 2016) \cr
+#'   \code{x128+} \tab\tab xorshift128+ (Vigna, 2014) \cr
+#'   \code{pcg64} \tab\tab PCG64 DXSM (O'Neill, 2014) \cr
+#'   \code{cwg128} \tab\tab cwg128-64 (Działa, 2022) \cr
+#'   \code{philox} \tab\tab Philox-4×64 (Salmon and Moraes, 2011) \cr
+#'   \code{squares} \tab\tab squares64 (Widynski, 2021) \cr
+#'   \code{chacha20} \tab\tab ChaCha20 (Bernstein, 2008) \cr
+#'   \code{system} \tab\tab Operating-system-provided entropy source \cr
+#' }
+#' 
+#' @section Continuous distributions:
+#' The RNG object provides methods for generating random variates from common
+#' continuous probability distributions. All methods return a numeric vector
+#' of length `len`.
+#'
+#' \describe{
+#'   \item{`rng$unif(len)`}{Uniform variates on [0,1).}
+#'   \item{`rng$unif(len, a, b)`}{Uniform variates on [a,b) with
+#'     `a < b`.}
+#'   \item{`normal(len)`}{Standard normal variates (mean 0 and standard
+#'     deviation 1).}
+#'   \item{`normal(len, mu, sigma)`}{Normal variates with mean `mu`
+#'     and standard deviation `sigma`.}
+#'   \item{`lognormal(len, mu, sigma)`}{Lognormal variates derived from an
+#'     underlying normal distribution.}
+#'   \item{`exp(len)`}{Standard exponential variates (scale 1).}
+#'   \item{`exp(len, scale)`}{Exponential variates with scale
+#'     `scale`.}
+#'   \item{`gamma(len, shape, scale)`}{Gamma variates with given shape and
+#'     scale.}
+#'   \item{`chi2(len, nu)`}{Chi-square variates with `nu` degrees of
+#'     freedom.}
+#'   \item{`beta(len, a, b)`}{Beta variates with shape parameters `a`
+#'     and `b`.}
+#'   \item{`t(len, nu)`}{Student's t variates with `nu` degrees of
+#'     freedom.}
+#'   \item{`f(len, nu1, nu2)`}{F variates with `nu1` and `nu2`
+#'     degrees of freedom.}
+#'   \item{`gumbel(len, mu, beta)`}{Gumbel variates with location `mu`
+#'     and scale `beta`.}
+#'   \item{`pareto(len, xm, alpha)`}{Pareto variates with minimum value
+#'     `xm` and shape `alpha`.}
+#'   \item{`weibull(len, shape, scale)`}{Weibull variates with given shape
+#'     and scale.}
+#'   \item{`mvn(n, Sigma, mu = NULL)`}{Multivariate normal variates as an
+#'     `n` by `d` matrix, where `d` is the dimension of
+#'     `Sigma`.}
+#' }
+#'
+#' @section Discrete distributions:
+#' The RNG object provides methods for generating random variates from common
+#' discrete distributions and combinatorial constructions.
+#'
+#' \describe{
+#'   \item{`int(len, min, max)`}{Uniform integers on `[min, max]`.}
+#'   \item{`perm(n)`}{Random permutation of `1:n`.}
+#'   \item{`sample(n, k)`}{Sample `k` elements without replacement
+#'     from `1:n`.}
+#'   \item{`raw(len)`}{Generate `len` random bytes as a raw vector.}
+#' }
+#'
+#' @section Configuration and Copying:
+#' Methods for creating, configuring, and managing RNG state. All state-setting
+#' methods accept numeric vectors (double or integer) whose elements must be
+#' nonnegative whole numbers not exceeding \eqn{2^{32}-1}. Where applicable,
+#' shorter vectors are padded with zeros.
+#'
+#' \describe{
+#'   \item{`seed(seed, spawn_key = integer(0))`}{
+#'     Reinitialize the RNG deterministically from `seed` and an optional
+#'     numeric vector `spawn_key`.
+#'   }
+#'   \item{`randomize()`}{Randomize the RNG state from system entropy.}
+#'   \item{`duplicate()`}{Duplicate the RNG, preserving its state.}
+#'   \item{`serialize()`}{Serialize the current RNG state as a raw vector.}
+#'   \item{`deserialize(raw_state)`}{Restore state from a raw vector created
+#'     by `serialize()`.}
+#'   \item{`set_state(state)`}{Set the engine state directly (advanced use).}
+#'   \item{`philox_set_state(counter, key)`}{
+#'     Set the state of the Philox engine. The counter may have length up to 8
+#'     and the key up to 4; shorter vectors are zero-padded.
+#'   }
+#'   \item{`squares_set_state(counter, key)`}{
+#'     Set the state of the Squares engine. The counter and key may each have
+#'     length up to 2; shorter vectors are zero-padded.
+#'   }
+#' }
+#'
+#' @examples
+#' # Create an RNG
+#' rng <- randompack_rng()                    # Default engine (xoshiro256++)
+#' rng_pcg <- randompack_rng("pcg64")         # Specify engine
+#' rng_chacha <- randompack_rng("chacha20")
+#'
+#' # Continuous distributions
+#' x <- rng$unif(5)
+#' x <- rng$normal(100)                    # Standard normal
+#' x <- rng$normal(100, 1, 2)              # N(1,2)
+#' x <- rng$lognormal(5, mu=0, sigma=1)
+#' x <- rng$beta(5, a=2, b=3)
+#' Sigma <- diag(2)
+#' x <- rng$mvn(10, Sigma, mu=c(1,2))
+#'
+#' # Discrete distributions
+#' x <- rng$int(5, min=1, max=10)
+#' x <- rng$perm(5)
+#' x <- rng$sample(10, k=3)
+#' x <- rng$raw(4)
+#'
+#' # Configuration and copying
+#' rng$seed(12345)                          # seed for reproducibility
+#' rng$randomize()                          # randomize from system entropy
+#' rng2 <- rng$duplicate()                  # duplicate with same state
+#' identical(rng$unif(3), rng2$unif(3))     # TRUE
+#' raw_state <- rng$serialize()             # save state
+#' rng3 <- randompack_rng()                 # another default RNG
+#' rng3$deserialize(raw_state)              # restore state
+#' identical(rng$unif(3), rng3$unif(3))     # TRUE
+#' rng_sq <- randompack_rng("squares")      # engine-specific state setting
+#' rng_sq$squares_set_state(2, key=c(3,4))  # counter = (2,0)
+#'
+#' @seealso \code{\link{randompack_engines}} to list all available engines
+#'
+#' @export
+randompack_rng <- function(engine = "x256++") {
+  RandompackRNG$new(engine = engine)
+}
+
+#' Available RNG Engines
+#'
+#' Returns a data frame of supported random number generator engines with 
+#' their descriptions.
+#'
+#' @return A data.frame with columns \code{engine} (short name) and 
+#'   \code{description} (full name and citation).
+#' 
+#' @export
+randompack_engines = function() {
+  out <- .Call("randompack_engines_R", PACKAGE = "randompack")
+  if (is.data.frame(out)) return(out)
+  if (is.list(out) && length(out) == 2L) {
+    return(data.frame(engine = out[[1]], description = out[[2]],
+                      stringsAsFactors = FALSE))
+  }
+  stop("randompack_engines_R returned an unexpected value")
+}
+
+RandompackRNG <- R6::R6Class(
+  "RandompackRNG",
+  public = c(
+    methods_configure,
+    methods_discrete,
+    methods_continuous,
+    list(
+      ptr = NULL,
+      engine = NULL,
+      initialize = function(engine = "") {
+        if (is.null(engine)) engine <- ""
+        if (!is.character(engine) || length(engine) != 1L)
+          stop("engine must be a length-1 character string")
+        self$engine <- engine
+        self$ptr <- .Call("randompack_create_R", engine, PACKAGE = "randompack")
+        reg.finalizer(
+          self,
+          function(e) e$.__enclos_env__$private$finalize(),
+          onexit = TRUE
+        )
+        invisible(self)
+      }
+    )
+  ),
+  private = list(
+    finalize = function() {
+      if (!is.null(self$ptr)) {
+        .Call("randompack_free_R", self$ptr, PACKAGE = "randompack")
+        self$ptr <- NULL
+      }
+      invisible(NULL)
+    }
+  )
+)

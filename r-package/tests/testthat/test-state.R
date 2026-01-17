@@ -1,0 +1,49 @@
+test_that("seed resets RNG deterministically", {
+  rng <- randompack_rng("pcg64")
+  rng$seed(123)
+  a <- rng$unif(5)
+  rng$seed(123)
+  b <- rng$unif(5)
+  expect_identical(a, b)
+})
+
+test_that("randomize runs and allows draws", {
+  rng <- randompack_rng("pcg64")
+  rng$randomize()
+  x <- rng$unif(5)
+  expect_type(x, "double")
+  expect_length(x, 5)
+  expect_true(all(is.finite(x)))
+})
+
+test_that("set_state accepts numeric state words", {
+  rng1 <- randompack_rng("pcg64")
+  rng2 <- randompack_rng("pcg64")
+  state <- c(1, 0, 2, 0, 3, 0, 4, 0)
+  rng1$set_state(state)
+  rng2$set_state(state)
+  expect_identical(rng1$unif(5), rng2$unif(5))
+})
+
+test_that("philox_set_state makes draws repeatable", {
+  engines <- randompack_engines()
+  if (!"philox" %in% engines$engine)
+    skip("philox not available")
+  rng1 <- randompack_rng("philox")
+  rng2 <- randompack_rng("philox")
+  counter <- c(1, 0, 2, 0, 3, 0, 4, 0)
+  key <- c(5, 0, 6, 0)
+  rng1$philox_set_state(counter, key)
+  rng2$philox_set_state(counter, key)
+  expect_identical(rng1$unif(5), rng2$unif(5))
+})
+
+test_that("squares_set_state makes draws repeatable", {
+  rng1 <- randompack_rng("squares")
+  rng2 <- randompack_rng("squares")
+  counter <- c(1, 0)
+  key <- c(2, 0)
+  rng1$squares_set_state(counter, key)
+  rng2$squares_set_state(counter, key)
+  expect_identical(rng1$unif(5), rng2$unif(5))
+})
