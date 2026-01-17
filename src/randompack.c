@@ -50,8 +50,8 @@ struct randompack_rng {
   int buf_word32;
   int buf_word;
   int buf_byte;
-  engine_fill fill;
   char *last_error;
+  engine_fill fill;
   union {
     uint32_t u32[2*BUFSIZE];
     uint64_t u64[BUFSIZE];
@@ -121,7 +121,7 @@ static bool select_engine(const char *s, randompack_rng *rng) {
 bool randompack_seed(int seed, uint32_t *spawn_key, int nkey, randompack_rng *rng)  {
   if (!rng) return false;
   uint32_t seed32 = seed;
-  rng->last_error = 0;
+  init_rng_fields(rng);
   // Use Melissa O'Neill's seed sequence
   if (nkey < 0 || (nkey > 0 && !spawn_key)) {
     rng->last_error = "randompack seed: invalid spawn_key arguments";
@@ -138,9 +138,6 @@ bool randompack_seed(int seed, uint32_t *spawn_key, int nkey, randompack_rng *rn
   if (rng->state.u64[0] == 0) { // the xo-family needs a nonzero state
     rng->state.u64[0] = 1;
   }
-  rng->buf_word32 = -1;
-  rng->buf_word = BUFSIZE;
-  rng->buf_byte = 0;
   return true;
 }
 
@@ -148,11 +145,8 @@ randompack_rng *randompack_create(const char *engine) {
   randompack_rng *rng;
   // Create engine
   if (!ALLOC(rng, 1)) return 0;
-  rng->last_error = 0;
   rng->engine = INVALID;
-  rng->buf_word32 = -1;
-  rng->buf_word = BUFSIZE;
-  rng->buf_byte = 0;
+  init_rng_fields(rng);
   if (!select_engine(engine, rng)) {
     rng->last_error = "unknown engine name (spelling error in requested engine)";
     return rng;
@@ -169,12 +163,33 @@ randompack_rng *randompack_create(const char *engine) {
   rng_entry *ent = find_entry(rng->engine);
   (void)ent;
   rand_randomize(rng);
+  init_rng_fields(rng);
   return rng;
 }
 
 void randompack_free(randompack_rng *rng) {
   if (!rng) return;
   FREE(rng);
+}
+
+randompack_rng *randompack_duplicate(randompack_rng *src) {
+  if (!src) return 0;
+  randompack_rng *dst;
+  if (!ALLOC(dst, 1)) return 0;
+  memcpy(dst, src, sizeof(*dst));
+  dst->last_error = 0;
+  return dst;
+}
+
+bool randompack_randomize(randompack_rng *rng) {
+  if (!rng) return false;
+  if (rng->engine == INVALID) {
+    rng->last_error = "randompack randomize: invalid rng";
+    return false;
+  }
+  rand_randomize(rng);
+  init_rng_fields(rng);
+  return true;
 }
 
 typedef struct {
@@ -247,7 +262,7 @@ bool randompack_serialize(uint8_t *buf, int *len, randompack_rng *rng) {
   return true;
 }
 
-bool randompack_deserialize(uint8_t *buf, int len, randompack_rng *rng) {
+bool randompack_deserialize(const uint8_t *buf, int len, randompack_rng *rng) {
   // Restores the rng state using a buffer obtained with randompack_serialize
   if (!rng) return false;
   rng->last_error = 0;
@@ -384,7 +399,7 @@ bool randompack_u01(double x[], size_t len, randompack_rng *rng) {
 bool randompack_unif(double x[], size_t len, double a, double b,
   randompack_rng *rng) {
   if (!rng) return false;
-  if (!x || !(a < b)) {
+  if (!x || a >= b) {
     rng->last_error = "invalid arguments to randompack_unif";
     return false;
   }

@@ -19,6 +19,13 @@ static void entropy_fill(randompack_rng *rng, void *buffer, size_t len) {
   }
 }
 
+static void init_rng_fields(randompack_rng *rng) {
+  rng->buf_word32 = -1;
+  rng->buf_word = BUFSIZE;
+  rng->buf_byte = 0;
+  rng->last_error = 0;
+}
+
 static void rand_randomize(randompack_rng *rng) {
   if (rng->engine == CHACHA20) {
     entropy_fill(rng, &rng->state.u8[0],  32); // key (8 uints)
@@ -29,9 +36,6 @@ static void rand_randomize(randompack_rng *rng) {
     entropy_fill(rng, rng->state.u64, sizeof(rng->state.u64));
 	 if (rng->state.u64[0] == 0) rng->state.u64[0] = 1;
   }
-  rng->buf_word = BUFSIZE;
-  rng->buf_byte = 0;
-  rng->last_error = 0;
 }
 
 #include "seed_seq_fe128.inc"

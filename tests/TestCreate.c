@@ -96,8 +96,48 @@ static void test_system_engine(void) {
   randompack_free(rng);
 }
 
+static void test_duplicate(void) {
+  randompack_rng *rng1 = create_seeded_rng(0, 123);
+  check_rng_clean(rng1);
+  randompack_rng *rng2 = randompack_duplicate(rng1);
+  ASSERT(rng2);
+  check_rng_clean(rng2);
+  uint64_t a[2], b[2], c[2];
+  bool ok = randompack_uint64(a, 2, 0, rng1);
+  check_success(ok, rng1);
+  ok = randompack_uint64(b, 2, 0, rng2);
+  check_success(ok, rng2);
+  xCheck(equal_vec64(a, b, 2));
+  ok = randompack_uint64(c, 2, 0, rng1);
+  check_success(ok, rng1);
+  ok = randompack_uint64(b, 2, 0, rng2);
+  check_success(ok, rng2);
+  xCheck(equal_vec64(c, b, 2));
+  ok = randompack_uint64(c, 2, 0, rng1);
+  check_success(ok, rng1);
+  xCheck(everywhere_different(c, b, 2));
+  randompack_free(rng2);
+  randompack_free(rng1);
+}
+
+static void test_randomize(void) {
+  randompack_rng *rng = create_seeded_rng(0, 123);
+  check_rng_clean(rng);
+  uint64_t before[4], after[4];
+  bool ok = randompack_uint64(before, 4, 0, rng);
+  check_success(ok, rng);
+  ok = randompack_randomize(rng);
+  check_success(ok, rng);
+  ok = randompack_uint64(after, 4, 0, rng);
+  check_success(ok, rng);
+  xCheck(everywhere_different(before, after, 4));
+  randompack_free(rng);
+}
+
 void TestCreate(void) {
+  test_duplicate();
   test_determinism();
+  test_randomize();
   test_bad_engine_name();
   test_null_engine_name();
   test_default_engine_matches_x256pp();

@@ -40,6 +40,12 @@ examine_resolution = executable(
   dependencies : [randompack_dep],
 )
 
+draw_example = executable(
+  'draw',
+  'draw.c',
+  dependencies : [randompack_dep],
+)
+
 if threads_dep.found() and pthreads_ok
   thread_example = executable(
     'ThreadExample',

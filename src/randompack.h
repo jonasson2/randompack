@@ -15,6 +15,14 @@ randompack_rng *randompack_create( // Create randomized RNG of given engine type
   const char *engine    // in      Engine name (Xoshiro256++ [default], PCG,... 0→default)
 );
 
+randompack_rng *randompack_duplicate( // Clone an RNG (identical engine+state), error → 0
+  randompack_rng *rng   // in      RNG to duplicate
+);
+
+bool randompack_randomize( // Randomize RNG state from system entropy, false on error
+  randompack_rng *rng   // in/out  Random number generator
+);
+
 bool randompack_seed( // Create RNG with given type and seed, false on error
   int seed,             // in      Any integer seed; expanded with a hash to fill state
   uint32_t *spawn_key,  // in      Optional spawn key array (may be 0 if n_key==0)
@@ -219,7 +227,7 @@ bool randompack_serialize( // Serialize an RNG to an opaque byte buffer
 );
 
 bool randompack_deserialize( // Restore an RNG from an opaque byte buffer
-  uint8_t *buf,           // in      buffer with serialization
+  const uint8_t *buf,     // in      buffer with serialization
   int len,                // in      buffer length
   randompack_rng *rng     // out     target RNG (must be allocated)
 );

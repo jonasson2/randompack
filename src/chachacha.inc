@@ -1,5 +1,5 @@
 // -*- C -*-
-#include "chacha-portable.c"
+#include "chacha-portable.inc"
 // Big-endian compatibility helpers for ChaCha20 state and buffer layout.
 static inline uint32_t load_u32_le(uint8_t *src) {
   uint32_t b0 = src[0];

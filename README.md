@@ -4,9 +4,9 @@
 
 Randompack is a library for random number generation written in C. It is
 intended to be robust, portable, and straightforward to use, while placing
-strong emphasis on correctness and reproducibility. Interfaces are provided for
-C, Fortran, R, and Python, with compatible streams across languages under the
-same generator choice and seed. The library provides a range of distributions,
+emphasis on correctness and reproducibility. Interfaces are provided for C,
+Fortran, R, and Python, with compatible streams across languages under the same
+generator choice and seed. The library provides a range of distributions,
 including raw bit-streams, bounded and interval-based integers, permutations and
 sampling without replacement, uniform and normal variates, and several other
 commonly used continuous distributions. All distribution algorithms are

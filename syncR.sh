@@ -14,7 +14,7 @@ rsync -av --delete \
   $ROOT/r-package/src/
 
 # COPY LICENSE FILE
-cp -f $ROOT/LICENSE $ROOT/r-package/inst/
+cp -f $ROOT/LICENSE $ROOT/r-package/
 
 # COPY VERSION NUMBER FROM MESON.BUILD TO DESCRIPTION
 ver=$(sed -n "s/.*version[[:space:]]*:[[:space:]]*'\([^']*\)'.*/\1/p" \
