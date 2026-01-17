@@ -80,6 +80,7 @@ int main(int argc, char **argv) {
       case 'c': N_BAL_CNTS = parse_posint(optarg); break;
       case 'b': N_BAL_BITS = parse_posint(optarg); break;
       case '?': option_error("Unknown option -%c", optopt);
+                // fallthrough
       case ':': option_error("Missing argument for -%c", optopt);
     }
   }
