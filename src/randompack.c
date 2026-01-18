@@ -27,6 +27,7 @@ typedef enum {
   X256SS,
   X256PP,
   SQUARES,
+  SFC64,
   PCG64,
   PHILOX,
   CHACHA20,
@@ -84,6 +85,7 @@ static rng_entry rng_table[] = {
   { "philox",   "Philox-4x64 (Salmon & Moraes, 2011)",     PHILOX,   6, fill_philox    },
 #endif
   { "squares",  "squares64 (Widynski, 2021)",              SQUARES,  2, fill_squares   },
+  { "sfc64",    "sfc64 (Chris Doty-Humphrey, 2013)",       SFC64,    4, fill_sfc64     },
   { "chacha20", "ChaCha20 (Bernstein, 2008)",              CHACHA20, 6, fill_chacha    },
   { "system",   "Operating system entropy source",        SYS,      0, fill_csprng    }
 };

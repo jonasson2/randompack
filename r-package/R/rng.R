@@ -26,6 +26,7 @@ NULL
 #'   \code{x128+} \tab\tab xorshift128+ (Vigna, 2014) \cr
 #'   \code{pcg64} \tab\tab PCG64 DXSM (O'Neill, 2014) \cr
 #'   \code{cwg128} \tab\tab cwg128-64 (Działa, 2022) \cr
+#'   \code{sfc64} \tab\tab sfc64 (Chris Doty-Humphrey, 2013) \cr
 #'   \code{philox} \tab\tab Philox-4×64 (Salmon and Moraes, 2011) \cr
 #'   \code{squares} \tab\tab squares64 (Widynski, 2021) \cr
 #'   \code{chacha20} \tab\tab ChaCha20 (Bernstein, 2008) \cr

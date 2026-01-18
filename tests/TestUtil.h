@@ -141,6 +141,7 @@ static char *engines[] = {
   "x128+",
   "xoro++",
   "squares",
+  "sfc64",
   "chacha20"
 #if HAVE128MUL
   , "philox"
@@ -159,6 +160,7 @@ typedef struct {
 static engine_table_entry engine_table[] = {
   {"x128+",         2},
   {"squares",       2},
+  {"sfc64",         4},
   {"x256**",        4},
   {"x256++",        4},
   {"chacha20",      6},

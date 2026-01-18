@@ -86,6 +86,7 @@ int main(int argc, char **argv) {
     { "xoro++" },
     { "x128+" },
     { "squares" },
+    { "sfc64" },
     { "pcg64" },
     { "cwg128" },
     { "philox" },

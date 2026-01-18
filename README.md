@@ -75,6 +75,7 @@ engine the names are case-insensitive.
 - x128+     xorshift128+ (Vigna, 2014)
 - pcg64     PCG64 DXSM (O’Neill, 2014)
 - cwg128    cwg128-64 (Działa, 2022)
+- sfc64     sfc64 (Chris Doty-Humphrey, 2013)
 - philox    Philox-4×64 (Salmon and Moraes, 2011)
 - squares   squares64 (Widynski, 2021)
 - chacha20  ChaCha20 (Bernstein, 2008)
@@ -109,7 +110,7 @@ Philox is verified against the Random123 reference implementation, ChaCha20
 against the official RFC 8439 test vectors, PCG64 against NumPy, and xoshiro256++
 and xoshiro256** against Rust’s standard implementation. For engines where no
 widely accepted reference streams are readily available (xorshift128+,
-xoroshiro128++, cwg128, and squares64), verification relies on careful
+xoroshiro128++, cwg128, sfc64, and squares64), verification relies on careful
 implementation of the published algorithms together with the distributional
 tests described in the next section.
 

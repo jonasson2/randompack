@@ -13,7 +13,7 @@
 #'
 #' @section Available Engines:
 #' Among the supported underlying random number generators (engines) are
-#' xoshiro256++, xoshiro256**, PCG64 DXSM, Philox-4x64, and ChaCha20.
+#' xoshiro256++, xoshiro256**, PCG64 DXSM, sfc64, Philox-4x64, and ChaCha20.
 #' See \code{\link{randompack_rng}} for a complete list.
 #'
 #' @seealso
