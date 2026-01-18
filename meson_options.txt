@@ -15,3 +15,9 @@ option('u01_hires',
   value: false,
   description: 'Build a U01_HIRES variant library'
 )
+
+option('TestU01',
+  type: 'string',
+  value: '',
+  description: 'Prefix for TestU01 install (enable when non-empty)'
+)

@@ -46,6 +46,32 @@ draw_example = executable(
   dependencies : [randompack_dep],
 )
 
+raw_stream = executable(
+  'RawStream',
+  'RawStream.c',
+  dependencies : [randompack_dep],
+)
+
+testu01_prefix = get_option('TestU01')
+if testu01_prefix != ''
+  testu01_inc = include_directories(join_paths(testu01_prefix, 'include'))
+  testu01_libdir = join_paths(testu01_prefix, 'lib')
+  testu01_libs = [
+    cc.find_library('testu01', dirs: testu01_libdir, required: true,
+      static: true),
+    cc.find_library('probdist', dirs: testu01_libdir, required: true,
+      static: true),
+    cc.find_library('mylib', dirs: testu01_libdir, required: true,
+      static: true),
+  ]
+  testu01_driver = executable(
+    'TestU01Driver',
+    'TestU01Driver.c',
+    dependencies : [randompack_dep] + testu01_libs,
+    include_directories : [testu01_inc],
+  )
+endif
+
 if threads_dep.found() and pthreads_ok
   thread_example = executable(
     'ThreadExample',
