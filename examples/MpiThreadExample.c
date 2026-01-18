@@ -62,6 +62,8 @@ int main(int argc, char **argv) {
   for (int tid = 0; tid < T; tid++) {
     tasks[tid].rank = rank;
     tasks[tid].tid = tid;
+  }
+  for (int tid = 0; tid < T; tid++) {
     if (pthread_create(&th[tid], 0, worker, &tasks[tid]) != 0)
       MPI_Abort(MPI_COMM_WORLD, 2);
   }
