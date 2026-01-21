@@ -80,3 +80,14 @@ His 1981 MSc thesis: "Analysis of the square-the-histogram method for generating
 The method is quite similar to the modern implementation, first described in "The Ziggurat Method for Generating Random Variables" in Journal of statistical software, 2000 by Marsaglia and Tsang.
 
 PIT tests date back to Fisher (1932) "Statistical Methods for Research Workers", 4th edition. Comprehensive 
+
+
+
+ZIGGURAT CONSTANTS IN NUMPY:
+
+The strips are numbered from top to bottom 1, 2,..., 255, 0. 
+fi = bottom of strip i, except f0 = top of strip 1. Also use the notation xi = width of strip i, so (xi, fi) is the bottom right corner of the strip, and set x0=0. We also have xi = wi*2^52 (because wi is the width scaled by 2^{-52}). 
+
+The acceptance test is rabs < ki which must match x < x{i-1} (for the top strip, i=1, everything is accepted, aligns with k1=0), so ki*wi = x{i-1} or ki = 2^52*x{i-1}/x{i}. This holds for i=1...255. 
+
+For the bottom strip, w0 and k0 are determined differently. The area of the rectangle left of x255 is A = f1/x255 and the tail area is B = 1/256 - A. We should accept x with probability A/(A+B) 

@@ -45,7 +45,6 @@ ALWAYS_INLINE static void rand_normf(float *buf, size_t len, randompack_rng *rng
   enter_u32_mode(rng);
   for (size_t i = 0; i < len; i++) {
     for (;;) {
-      /* r = n23sb8 */
       r = next_uint32(rng);
       idx = (int)(r & 0xff);
       r >>= 8;
@@ -66,15 +65,12 @@ ALWAYS_INLINE static void rand_normf(float *buf, size_t len, randompack_rng *rng
                                        :  (ziggurat_nor_r_f + xx);
           break;                    // accepted tail draw
         }
-        continue;                   // tail rejected; try again
       }
-      /* strip rejection test */
-      if (((fi_float[idx - 1] - fi_float[idx]) * next_float(rng) + fi_float[idx]) <
-          expf(-0.5f * x * x)) {
+      else if (((fi_float[idx - 1] - fi_float[idx]) * next_float(rng) + fi_float[idx]) <
+          expf(-0.5f * x * x)) {  // strip rejection test
         buf[i] = x;                 // accepted in the strip test
         break;
       }
-      /* strip rejected; try again */
     }
   }
   exit_u32_mode(rng);
