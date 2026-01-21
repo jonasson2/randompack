@@ -70,7 +70,7 @@ ALWAYS_INLINE static uint64_t draw_u64_fast(randompack_rng *rng, int *w) {
     rng->fill(rng);
     *w = 0;
   }
-  return rng->buf.u64[*w++];
+  return rng->buf.u64[(*w)++];
 }
 
 ALWAYS_INLINE static uint32_t draw_u32_fast(randompack_rng *rng) { // Fast single word
