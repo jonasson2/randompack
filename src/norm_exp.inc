@@ -2,7 +2,6 @@
 // Code copied from NumPy: github.com/numpy/numpy/tree/f6440be7b8,
 //   numpy/random/src/distributions/distributions.c.
 // Copyright (c) NumPy Developers.
-// Licensed under the BSD-3-Clause license; see LICENSE.txt.
 //
 // Only change exp-->expf in the float version (likely a NumPy oversight)
 //

@@ -65,14 +65,12 @@ ALWAYS_INLINE static uint64_t draw_u64(randompack_rng *rng) { // Fast single wor
   return rng->buf.u64[w];
 }
 
-ALWAYS_INLINE static uint64_t draw_u64_fast(randompack_rng *rng) { // Fast single word
-  int w = rng->buf_word;
-  if (w >= BUFSIZE) {
+ALWAYS_INLINE static uint64_t draw_u64_fast(randompack_rng *rng, int *w) {
+  if (*w >= BUFSIZE) {
     rng->fill(rng);
-    w = 0;
+    *w = 0;
   }
-  rng->buf_word = w + 1;
-  return rng->buf.u64[w];
+  return rng->buf.u64[(*w)++];
 }
 
 ALWAYS_INLINE static uint32_t draw_u32_fast(randompack_rng *rng) { // Fast single word
@@ -98,6 +96,15 @@ static inline void enter_u32_mode(randompack_rng *rng) {
   if (rng->buf_word32 >= 0) return; // already in u32-mode
   align32(rng);
   rng->buf_word32 = 2*rng->buf_word + rng->buf_byte/4;
+}
+
+static inline int enter_u64_mode(randompack_rng *rng) {
+  align32(rng);
+  return rng->buf_word;
+}
+
+static inline void exit_u64_mode(randompack_rng *rng, int w) {
+  rng->buf_word = w;
 }
 
 static inline void exit_u32_mode(randompack_rng *rng) {

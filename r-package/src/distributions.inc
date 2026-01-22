@@ -24,8 +24,7 @@ ALWAYS_INLINE static void rand_dble(double x[], size_t n, randompack_rng *rng) {
     int take = min(n - i, BUFSIZE - rng->buf_word);
     for (int j = 0; j < take; j++) {
       uint64_t v = rng->buf.u64[rng->buf_word + j];
-      double u = (double)(v >> 11) * 0x1.0p-54;
-      x[i + j] = u + (v & 512 ? 0.0 : 0.5);
+      x[i + j] = U64_TO_DOUBLE(v);
     }
     rng->buf_word += take;
     i += take;
@@ -56,8 +55,8 @@ ALWAYS_INLINE static void rand_float(float x[], size_t n, randompack_rng *rng) {
 static void rand_uint64(uint64_t x[], size_t n, uint64_t bound, randompack_rng *rng) {
   // Sets x to n random integers in {0, 1,..., bound-1}
   if (bound == 0) {
-	 draw_u64_copy(x, n, rng);
-	 return;
+    draw_u64_copy(x, n, rng);
+    return;
   }
   size_t i = 0;
   uint64_t R;
@@ -198,13 +197,13 @@ static void rand_uint8(uint8_t x[], size_t n, uint8_t bound, randompack_rng *rng
   uint64_t R;
   uint8_t r, b = bound, thresh = (1u<<8) % b;
   while (i < n) {
-	 R = draw_u64(rng);
-	 for (j = 0; j < 8; j++) {
-		r = R;
-		if (r >= thresh) x[i++] = r % b;
-		if (i>=n) break;
-		R >>= 8;
-	 }
+    R = draw_u64(rng);
+    for (j = 0; j < 8; j++) {
+      r = R;
+      if (r >= thresh) x[i++] = r % b;
+      if (i>=n) break;
+      R >>= 8;
+    }
   }
 }
 
@@ -300,14 +299,15 @@ ALWAYS_INLINE static void fill_gamma_shape1(double *x, size_t len, double shape,
                                             randompack_rng *rng) {
   double d = shape - 1.0/3.0;
   double c = 1.0/sqrt(9.0*d);
-  rand_norm(x, len, rng);
+  int w = enter_u64_mode(rng);
+  for (size_t i = 0; i < len; i++) x[i] = draw_norm(rng, &w);
   for (size_t i = 0; i < len; i++) {
     for (;;) {
       double z = x[i];
       double v = 1.0 + c*z;
       if (v > 0.0) {
         double v3 = v*v*v;
-        double u  = draw_u01(rng);
+        double u  = u01(rng, &w);
         double z2 = z*z;
         double z4 = z2*z2;
         if (u < 1.0 - 0.0331*z4 ||
@@ -316,44 +316,45 @@ ALWAYS_INLINE static void fill_gamma_shape1(double *x, size_t len, double shape,
           break;
         }
       }
-      x[i] = random_standard_normal(rng);
+      x[i] = draw_norm(rng, &w);
     }
   }
+  exit_u64_mode(rng, w);
 }
 
 ALWAYS_INLINE static void fill_gamma(double *x, size_t len, double shape, double scale,
                                      randompack_rng *rng) {
   if (shape >= 1.0) {
-	 fill_gamma_shape1(x, len, shape, rng);
+    fill_gamma_shape1(x, len, shape, rng);
   }
   else {
-	 fill_gamma_shape1(x, len, shape + 1, rng);
-	 for (size_t i = 0; i < len; i++) {
-		double u = draw_u01(rng);
-		x[i] *= exp(log(u)/shape);
-	 }
+    fill_gamma_shape1(x, len, shape + 1, rng);
+    for (size_t i = 0; i < len; i++) {
+      double u = draw_u01(rng);
+      x[i] *= exp(log(u)/shape);
+    }
   }
   if (scale != 1) for (size_t i = 0; i < len; i++) x[i] *= scale;
 }
 
 ALWAYS_INLINE static void fill_beta(double *x, size_t len, double a, double b,
                                     randompack_rng *rng) {
-// X = Ga/(Ga + Gb) ~ Beta(a,b) if Ga ~ Gamma(a,1) and Gb ~ Gamma(b,1)
+  // X = Ga/(Ga + Gb) ~ Beta(a,b) if Ga ~ Gamma(a,1) and Gb ~ Gamma(b,1)
   fill_gamma(x, len, a, 1.0, rng);
   double gb[64];
   size_t i = 0;
   while (i < len) {
     int n = min(64, len - i);
     fill_gamma(gb, n, b, 1.0, rng);
-	 double hi = 1.0 - DBL_EPSILON;
-	 for (int j = 0; j < n; j++) { // force the beta-draws to (0, 1)
-		double a = x[i + j];
-		double b = gb[j];
-		double y = a / (a + b);
-		if (y < DBL_MIN) y = DBL_MIN;
-		if (y > hi)      y = hi;
-		x[i + j] = y;
-	 }	 
+    double hi = 1.0 - DBL_EPSILON;
+    for (int j = 0; j < n; j++) { // force the beta-draws to (0, 1)
+      double a = x[i + j];
+      double b = gb[j];
+      double y = a / (a + b);
+      if (y < DBL_MIN) y = DBL_MIN;
+      if (y > hi)      y = hi;
+      x[i + j] = y;
+    }	 
     i += n;
   }
 }
@@ -367,7 +368,7 @@ ALWAYS_INLINE static void fill_t(double *x, size_t len, double nu, randompack_rn
     int n = min(64, len - i);
     fill_gamma(u, n, 0.5*nu, 2.0, rng);
     for (int j = 0; j < n; j++)
-		x[i + j] /= sqrt(u[j]/nu);
+      x[i + j] /= sqrt(u[j]/nu);
     i += n;
   }
 }
@@ -463,13 +464,13 @@ static bool rand_mvn(char transp, double mu[], double Sig[], int d, size_t n,
     FREE(Wrk);
   }
   if (mu) {
-	 size_t i;
+    size_t i;
     if (TRAN) for (i=0; i<n; i++) axpy(d, 1.0, mu, 1, X + i*d, 1); // add mu to each col
     else      for (i=0; i<n; i++) axpy(d, 1.0, mu, 1, X + i, n);   // add mu to each row
   }
   if (Lalloc) FREE(L);
   return true;
-fail:
+ fail:
   FREE(Wrk);
   FREE(A);
   FREE(piv);

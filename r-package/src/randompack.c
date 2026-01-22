@@ -87,7 +87,7 @@ static rng_entry rng_table[] = {
   { "squares",  "squares64 (Widynski, 2021)",              SQUARES,  2, fill_squares   },
   { "sfc64",    "sfc64 (Chris Doty-Humphrey, 2013)",       SFC64,    4, fill_sfc64     },
   { "chacha20", "ChaCha20 (Bernstein, 2008)",              CHACHA20, 6, fill_chacha    },
-  { "system",   "Operating system entropy source",        SYS,      0, fill_csprng    }
+  { "system",   "Operating system entropy source",         SYS,      0, fill_csprng    }
 };
 
 static rng_entry *find_entry(rng_engine e) {

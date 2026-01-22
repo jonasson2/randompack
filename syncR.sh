@@ -18,7 +18,7 @@ rsync -av --delete \
   $ROOT/r-package/src/
 
 # COPY LICENSE FILE
-cp -f $ROOT/LICENSE $ROOT/r-package/
+cp -f $ROOT/LICENSE $ROOT/r-package/LICENSE.md
 
 # COMMENT OUT ALL FLOAT INCLUDES
 # Find all source files and comment out any #include with *_float.*
