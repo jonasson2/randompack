@@ -1,3 +1,0 @@
-“After surveying available ChaCha20/Poly1305 implementations, we selected the portable8439 implementation by Davy Landman, which is a small, portable, RFC 8439-compliant C implementation, written to be endian-safe, alignment-safe, and suitable for embedding. The code is released under CC0 and is used by other projects.”
-makd draw_u64 use the optimized randompack_uint64
-look into the ziggurat drawing int32s

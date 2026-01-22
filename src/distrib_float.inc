@@ -4,15 +4,15 @@ ALWAYS_INLINE static void fill_gamma_shape1f(float *x, size_t len, float shape,
 															randompack_rng *rng) {
   float d = shape - 1.0f/3.0f;
   float c = 1.0f/sqrtf(9.0f*d);
-  enter_u32_mode(rng);
-  for (size_t i = 0; i < len; i++) x[i] = draw_normf(rng);
+  int w = enter_u32_mode(rng);
+  for (size_t i = 0; i < len; i++) x[i] = draw_normf(rng, &w);
   for (size_t i = 0; i < len; i++) {
     for (;;) {
       float z = x[i];
       float v = 1.0f + c*z;
       if (v > 0.0f) {
         float v3 = v*v*v;
-        float u  = u01f(rng);
+        float u  = u01f(rng, &w);
         float z2 = z*z;
         float z4 = z2*z2;
         if (u < 1.0f - 0.0331f*z4 ||
@@ -21,10 +21,10 @@ ALWAYS_INLINE static void fill_gamma_shape1f(float *x, size_t len, float shape,
           break;
         }
       }
-      x[i] = draw_normf(rng);
+      x[i] = draw_normf(rng, &w);
     }
   }
-  exit_u32_mode(rng);
+  exit_u32_mode(rng, w);
 }
 
 ALWAYS_INLINE static void fill_gammaf(float *x, size_t len, float shape, float scale,
@@ -34,13 +34,13 @@ ALWAYS_INLINE static void fill_gammaf(float *x, size_t len, float shape, float s
   }
   else {
     fill_gamma_shape1f(x, len, shape + 1.0f, rng);
-	 enter_u32_mode(rng);
+	 int w = enter_u32_mode(rng);
     for (size_t i = 0; i < len; i++) {
-      float u = draw_u01f(rng);
+      float u = u01f(rng, &w);
       x[i] *= expf(logf(u)/shape);
     }
+	 exit_u32_mode(rng, w);
   }
-  exit_u32_mode(rng);
   if (scale != 1.0f) for (size_t i = 0; i < len; i++) x[i] *= scale;
 }
 

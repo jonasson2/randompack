@@ -48,24 +48,7 @@ ALWAYS_INLINE static uint8_t draw_byte(randompack_rng *rng) {
   return b;
 }
 
-ALWAYS_INLINE static uint64_t draw_u64(randompack_rng *rng) { // Fast single word
-  int w = rng->buf_word;
-  int b = rng->buf_byte;
-  if (b != 0) {
-    b = 0;
-    w++;
-  }
-  if (w >= BUFSIZE) {
-    rng->fill(rng);
-    w = 0;
-    b = 0;
-  }
-  rng->buf_word = w + 1;
-  rng->buf_byte = b;
-  return rng->buf.u64[w];
-}
-
-ALWAYS_INLINE static uint64_t draw_u64_fast(randompack_rng *rng, int *w) {
+ALWAYS_INLINE static uint64_t draw_u64(randompack_rng *rng, int *w) {
   if (*w >= BUFSIZE) {
     rng->fill(rng);
     *w = 0;
@@ -73,29 +56,25 @@ ALWAYS_INLINE static uint64_t draw_u64_fast(randompack_rng *rng, int *w) {
   return rng->buf.u64[(*w)++];
 }
 
-ALWAYS_INLINE static uint32_t draw_u32_fast(randompack_rng *rng) { // Fast single word
-  // draw 32 bit word when alignment is preset
-  int w = rng->buf_word32;
-  if (w >= 2*BUFSIZE) {
+ALWAYS_INLINE static uint32_t draw_u32(randompack_rng *rng, int *w) {
+  if (*w >= 2*BUFSIZE) {
     rng->fill(rng);
-    w = 0;
+    *w = 0;
   }
-  rng->buf_word32 = w + 1;
-  return rng->buf.u32[w];
+  return rng->buf.u32[(*w)++];
 }
 
-ALWAYS_INLINE static double draw_u01(randompack_rng *rng) {
-  return U64_TO_DOUBLE(draw_u64(rng));
+ALWAYS_INLINE static double draw_u01(randompack_rng *rng, int *w) {
+  return U64_TO_DOUBLE(draw_u64(rng, w));
 }
 
-ALWAYS_INLINE static float draw_u01f(randompack_rng *rng) {
-  return U32_TO_FLOAT(draw_u32_fast(rng));
+ALWAYS_INLINE static float u01f(randompack_rng *rng, int *w) {
+  return U32_TO_FLOAT(draw_u32(rng, w));
 }
 
-static inline void enter_u32_mode(randompack_rng *rng) {
-  if (rng->buf_word32 >= 0) return; // already in u32-mode
+static inline int enter_u32_mode(randompack_rng *rng) {
   align32(rng);
-  rng->buf_word32 = 2*rng->buf_word + rng->buf_byte/4;
+  return 2*rng->buf_word + rng->buf_byte/4;
 }
 
 static inline int enter_u64_mode(randompack_rng *rng) {
@@ -107,10 +86,10 @@ static inline void exit_u64_mode(randompack_rng *rng, int w) {
   rng->buf_word = w;
 }
 
-static inline void exit_u32_mode(randompack_rng *rng) {
+static inline void exit_u32_mode(randompack_rng *rng, int w) {
   if (rng->buf_word32 < 0) return; // not in u32-mode
-  rng->buf_word = rng->buf_word32/2;
-  rng->buf_byte = (rng->buf_word32 & 1)*4;
+  rng->buf_word = w/2;
+  rng->buf_byte = (w & 1)*4;
   rng->buf_word32 = -1;
 }
 

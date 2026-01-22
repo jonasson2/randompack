@@ -1,19 +1,10 @@
 // -*- C -*-
 // Code copied from NumPy: github.com/numpy/numpy/tree/f6440be7b8,
 //   numpy/random/src/distributions/distributions.c.
+// and adapted to randompack. No change to computations.
 // Copyright (c) NumPy Developers.
-// Licensed under the BSD-3-Clause license; see LICENSE.txt.
-//
-// Only change exp-->expf in the float version (likely a NumPy oversight)
-//
-// Macros for randompack compatibility:
-//#define randompack_rng randompack_rng
-#define next_uint32 draw_u32_fast
-//#define next_uint64 draw_u64
-#define next_float(rng) U32_TO_FLOAT(draw_u32_fast(rng))
-#define next_double(rng) U64_TO_DOUBLE(draw_u64(rng))
-//#define npy_log1p log1p
-#define npy_log1pf log1pf
+
+
 #define DBL_SIGNBIT 0x8000000000000000ULL
 
 #include <stdint.h>
@@ -21,10 +12,6 @@
 #include <string.h>
 #include "randompack.h"
 #include "ziggurat_constants.h"
-
-ALWAYS_INLINE static double u01(randompack_rng *rng, int *w) {
-  return U64_TO_DOUBLE(draw_u64_fast(rng, w));
-}
 
 static double tail_draw(randompack_rng *rng, uint64_t rabs, int *w) {
   double xx, yy;
@@ -89,7 +76,7 @@ ALWAYS_INLINE static double standard_exponential_unlikely(randompack_rng *rng,
   while (true) { // added loop to replace recursion, to allow speedup.
     if (idx == 0) {
       /* Switch to 1.0 - U to avoid log(0.0), see GH 13361 */
-      return ziggurat_exp_r - log1p(-next_double(rng));
+      return ziggurat_exp_r - log1p(-u01(rng, w));
     }
     else if ((fe_double[idx-1] - fe_double[idx])*u01(rng, w) + fe_double[idx] < exp(-x)) {
       return x;
