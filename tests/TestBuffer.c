@@ -67,10 +67,13 @@ static void test_unaligned_u32(char *engine) {
 }
 
 void TestBuffer(void) {
-  for (int i = 0; i < LEN(engines); i++) {
+  int n = 0;
+  char **engines = get_engines(&n);
+  for (int i = 0; i < n; i++) {
     char *e = engines[i];
     test_split_u64(e);
     test_unaligned_u16(e);
     test_unaligned_u32(e);
   }
+  free_engines(engines, n);
 }

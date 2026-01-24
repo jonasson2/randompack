@@ -24,12 +24,12 @@ static inline uint64_t squares64(uint64_t ctr, uint64_t key) {
    ctr++;                                       \
  } while(0)
 
-static inline void fill_squares(randompack_rng *rng) {
-  uint64_t *out = rng->buf.u64;
+static inline void fill_squares(randompack_rng *rng, size_t len) {
+  uint64_t *out = rng->buf.u64 + rng->buf_word;
   uint64_t ctr = rng->state.u64[0];
   uint64_t key = rng->state.u64[1];
   uint64_t x, y, z, t;
-  for (int i = 0; i < BUFSIZE; i += 4) {
+  for (size_t i = 0; i < len; i += 4) {
     y = x = ctr*key; z = y + key;
     x = x*x + y;  x = (x >> 32) | (x << 32);
     x = x*x + z;  x = (x >> 32) | (x << 32);

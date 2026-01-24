@@ -49,12 +49,12 @@ static void print_help() {
   std::printf("Options:\n");
   std::printf("  -h            Show this help message\n");
   std::printf("  -t seconds    Benchmark time per distribution (default 0.2)\n");
-  std::printf("  -c chunk      Chunk size (default 1024)\n");
+  std::printf("  -c chunk      Chunk size (default 4096)\n");
   std::printf("  -s seed       RNG seed (default 7)\n");
 }
 
 int main(int argc, char **argv) {
-  int chunk = 1024;
+  int chunk = 4096;
   double bench_time = 0.2;
   uint64_t seed = 7;
 

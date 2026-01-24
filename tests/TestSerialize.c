@@ -123,7 +123,9 @@ static void test_corrupt_header_rejected(void) {
 
 static void test_serialize_roundtrip_and_truncation(void) {
   bool pcg_ok = pcg_supported();
-  for (int i=0; i<LEN(engines); i++) {
+  int n = 0;
+  char **engines = get_engines(&n);
+  for (int i=0; i<n; i++) {
     if (!pcg_ok && !strcmp(engines[i], "pcg64")) continue;
     engine_table_entry *m = find_engine_meta(engines[i]);
     xCheck(m != 0);
@@ -153,6 +155,7 @@ static void test_serialize_roundtrip_and_truncation(void) {
     randompack_free(r1);
     randompack_free(r2);
   }
+  free_engines(engines, n);
 }
 
 static void test_buffer_serialized(void) {

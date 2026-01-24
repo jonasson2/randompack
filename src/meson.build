@@ -12,13 +12,22 @@ if host_machine.system() == 'darwin'
     'lapack_dpstrf.f')
 endif
 
-librandompack = static_library(
+librandompack_static = static_library(
   'randompack',
   randompack_src,
   include_directories: inc,
   dependencies: [blas_dep] + math_deps,
   c_args: u01_hires_args,
   pic: true,
+  install: true,
+)
+
+librandompack = shared_library(
+  'randompack',
+  randompack_src,
+  include_directories: inc,
+  dependencies: [blas_dep] + math_deps,
+  c_args: u01_hires_args,
   install: true,
 )
 

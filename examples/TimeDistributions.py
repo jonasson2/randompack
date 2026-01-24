@@ -108,7 +108,7 @@ def make_dists() -> List[Dist]:
 
 
 def main() -> None:
-  chunk = 1024
+  chunk = 4096
   bench_time = 0.2
   seed = 7
 

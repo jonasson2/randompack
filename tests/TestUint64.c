@@ -86,7 +86,9 @@ static void test_balanced_bits(char *engine) {
 }
 
 void TestUint64(void) {
-  for (int i = 0; i < LEN(engines); i++) {
+  int n = 0;
+  char **engines = get_engines(&n);
+  for (int i = 0; i < n; i++) {
     char *e = engines[i];
 	 printS("\nTesting Uint64 with engine", e);
     test_edge_cases(e);
@@ -94,4 +96,5 @@ void TestUint64(void) {
     test_balanced_counts(e);
     test_balanced_bits(e);
   }
+  free_engines(engines, n);
 }

@@ -7,7 +7,7 @@ static bool serialize(uint8_t *buf, int need, randompack_rng *rng) {
   blob.engine  = rng->engine;
 
   // Copy core 64-bit state
-  copy64(blob.state_u64, rng->state.u64, LEN(rng->state.u64));
+  memcpy(blob.state_u64, &rng->state, sizeof(blob.state_u64));
   blob.buf_word   = rng->buf_word;
   blob.buf_byte   = rng->buf_byte;
   blob.reserved0  = 0;
@@ -20,7 +20,7 @@ static bool serialize(uint8_t *buf, int need, randompack_rng *rng) {
 static bool deserialize(rng_blob *blob, rng_entry *ent, randompack_rng *rng) {
   rng->engine = blob->engine;
   rng->fill = ent->fill;
-  copy64(rng->state.u64, blob->state_u64, LEN(rng->state.u64));
+  memcpy(&rng->state, blob->state_u64, sizeof(blob->state_u64));
   copy64(rng->buf.u64, blob->buf, BUFSIZE);
   rng->buf_word = blob->buf_word;
   rng->buf_byte = blob->buf_byte;

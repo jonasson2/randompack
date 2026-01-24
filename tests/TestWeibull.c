@@ -60,11 +60,14 @@ static void test_PIT(char *engine, double shape, double scale) {
 }
 
 void TestWeibull(void) {
-  for (int i = 0; i < LEN(engines); i++) {
+  int n = 0;
+  char **engines = get_engines(&n);
+  for (int i = 0; i < n; i++) {
     char *e = engines[i];
     test_basic(e);
     test_PIT(e, 1, 1);     // reduces to Exp(1)
     test_PIT(e, 0.7, 2);
     test_PIT(e, 3, 0.5);
   }
+  free_engines(engines, n);
 }

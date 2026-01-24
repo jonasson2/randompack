@@ -28,7 +28,7 @@ double time_u64(int chunk, double bench_time, fill_u64_fn fill, randompack_rng *
   uint64_t *buf;
   TEST_ALLOC(buf, chunk);
   int reps = max(1, M/chunk); // ~1e6 values between get_time calls (negligible overhead)
-  int calls = 0;
+  int64_t calls = 0;
   double t0 = get_time(), t = t0;
   while (t - t0 < bench_time) {
     for (int i = 0; i < reps; i++) {
@@ -39,7 +39,7 @@ double time_u64(int chunk, double bench_time, fill_u64_fn fill, randompack_rng *
     t = get_time();
   }
   FREE(buf);
-  return (calls > 0) ? 1e9*(t - t0)/(calls*chunk) : 0;
+  return (calls > 0) ? 1e9*(t - t0)/((double)calls*chunk) : 0;
 }
 
 double time_u64_cb(int chunk, double bench_time, fill_u64_cb fill, void *ctr, void *key) {
@@ -47,7 +47,7 @@ double time_u64_cb(int chunk, double bench_time, fill_u64_cb fill, void *ctr, vo
   uint64_t *buf;
   TEST_ALLOC(buf, chunk);
   int reps = max(1, 1000000/chunk);
-  int calls = 0;
+  int64_t calls = 0;
   double t0 = get_time();
   double t = t0;
   while (t - t0 < bench_time) {
@@ -59,14 +59,14 @@ double time_u64_cb(int chunk, double bench_time, fill_u64_cb fill, void *ctr, vo
     t = get_time();
   }
   FREE(buf);
-  return (calls > 0) ? 1e9*(t - t0)/(calls*chunk) : 0;
+  return (calls > 0) ? 1e9*(t - t0)/((double)calls*chunk) : 0;
 }
 
 double time_u32(int chunk, double bench_time, fill_u32_fn fill, randompack_rng *rng) {
   uint32_t *buf;
   TEST_ALLOC(buf, chunk);
   int reps = max(1, M/chunk); // ~1e6 values between get_time calls (negligible overhead)
-  int calls = 0;
+  int64_t calls = 0;
   double t0 = get_time(), t = t0;
   while (t - t0 < bench_time) {
     for (int i = 0; i < reps; i++) {
@@ -77,7 +77,7 @@ double time_u32(int chunk, double bench_time, fill_u32_fn fill, randompack_rng *
     t = get_time();
   }
   FREE(buf);
-  return (calls > 0) ? 1e9*(t - t0)/(calls*chunk) : 0;
+  return (calls > 0) ? 1e9*(t - t0)/((double)calls*chunk) : 0;
 }
 
 double time_double(int chunk, double bench_time, fill_double_fn fill,
@@ -86,7 +86,7 @@ double time_double(int chunk, double bench_time, fill_double_fn fill,
   TEST_ALLOC(buf, chunk);
   // ~1e6 values between get_time calls (negligible overhead)
   int reps = max(1, 1000000/chunk);
-  int calls = 0;
+  int64_t calls = 0;
   double t0 = get_time(), t = t0;
   while (t - t0 < bench_time) {
     for (int i = 0; i < reps; i++) {
@@ -97,7 +97,7 @@ double time_double(int chunk, double bench_time, fill_double_fn fill,
     t = get_time();
   }
   FREE(buf);
-  return (calls > 0) ? 1e9*(t - t0)/(calls*chunk) : 0;
+  return (calls > 0) ? 1e9*(t - t0)/((double)calls*chunk) : 0;
 }
 
 double time_float(int chunk, double bench_time, fill_float_fn fill,
@@ -106,7 +106,7 @@ double time_float(int chunk, double bench_time, fill_float_fn fill,
   TEST_ALLOC(buf, chunk);
   // ~1e6 values between get_time calls (negligible overhead)
   int reps = max(1, 1000000/chunk);
-  int calls = 0;
+  int64_t calls = 0;
   double t0 = get_time(), t = t0;
   while (t - t0 < bench_time) {
     for (int i = 0; i < reps; i++) {
@@ -117,5 +117,5 @@ double time_float(int chunk, double bench_time, fill_float_fn fill,
     t = get_time();
   }
   FREE(buf);
-  return (calls > 0) ? 1e9*(t - t0)/(calls*chunk) : 0;
+  return (calls > 0) ? 1e9*(t - t0)/((double)calls*chunk) : 0;
 }

@@ -19,14 +19,46 @@ static void entropy_fill(randompack_rng *rng, void *buffer, size_t len) {
   }
 }
 
-static void init_rng_fields(randompack_rng *rng) {
-  rng->buf_word32 = -1;
+static inline void normalize_state(randompack_rng *rng) {
+  // Make state nonzero for xor-family, odd for cwg128 & pcg64.
+  switch (rng->engine) {
+  case X256PP:
+  case X256SS:
+  case XORO:
+  case X128P:
+    if (rng->state.u64[0] == 0) rng->state.u64[0] = 1;
+    break;
+  case CWG128:
+    rng->state.u64[3] |= 1;
+    break;
+  case PCG64:
+#if HAVE128
+    rng->state.cwg.s |= 1;
+#endif
+    break;
+  default:
+    break;
+  }
+}
+
+static inline void fill_stream_states_with_jump(randompack_rng *rng) {
+  if (rng->engine == FAST) {
+	 for (int i = 1; i < 8; i++) {
+		copy64(rng->state.ustream[i], rng->state.ustream[i-1], 4);
+		xoshiro256pp_jump(rng->state.ustream[i]);
+	 }
+  }
+}
+
+static void rand_init(randompack_rng *rng) {
   rng->buf_word = BUFSIZE;
   rng->buf_byte = 0;
   rng->last_error = 0;
+  normalize_state(rng);
+  fill_stream_states_with_jump(rng);
 }
 
-static void rand_randomize(randompack_rng *rng) {
+static void rand_init_randomize(randompack_rng *rng) {
   if (rng->engine == CHACHA20) {
     entropy_fill(rng, &rng->state.u8[0],  32); // key (8 uints)
     entropy_fill(rng, &rng->state.u8[32], 12); // nonce (3 uints)
@@ -34,8 +66,8 @@ static void rand_randomize(randompack_rng *rng) {
   }
   else {
     entropy_fill(rng, rng->state.u64, sizeof(rng->state.u64));
-	 if (rng->state.u64[0] == 0) rng->state.u64[0] = 1;
   }
+  rand_init(rng);
 }
 
 #include "seed_seq_fe128.inc"

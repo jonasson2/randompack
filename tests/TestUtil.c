@@ -5,6 +5,7 @@
 #include <float.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "TestUtil.h"
 #include "randompack.h"
@@ -19,6 +20,49 @@ int N_BAL_CNTS = N_BAL_CNTS_DEFAULT;
 int N_BAL_BITS = N_BAL_BITS_DEFAULT;
 int N_STAT_FAST = N_STAT_FAST_DEFAULT;
 int N_STAT_SLOW = N_STAT_SLOW_DEFAULT;
+char **get_engines(int *n) {
+  int n0 = 0;
+  int emax = 0;
+  int dmax = 0;
+  char *names = 0;
+  char *descriptions = 0;
+  char **engines = 0;
+  if (!n) return 0;
+  *n = 0;
+  bool ok = randompack_engines(0, 0, &n0, &emax, &dmax);
+  ASSERT(ok);
+  ASSERT(n0 > 0 && emax > 0 && dmax > 0);
+  TEST_ALLOC(names, n0*emax);
+  TEST_ALLOC(descriptions, n0*dmax);
+  ok = randompack_engines(names, descriptions, &n0, &emax, &dmax);
+  ASSERT(ok);
+  int m = 0;
+  for (int i = 0; i < n0; i++) {
+    char *name = names + i*emax;
+    if (strcmp(name, "system") != 0) m++;
+  }
+  ASSERT(m > 0);
+  TEST_ALLOC(engines, m);
+  int k = 0;
+  for (int i = 0; i < n0; i++) {
+    char *name = names + i*emax;
+    if (strcmp(name, "system") == 0) continue;
+    int len = (int)strlen(name);
+    char *copy;
+    TEST_ALLOC(copy, len + 1);
+    memcpy(copy, name, len + 1);
+    engines[k++] = copy;
+  }
+  FREE(descriptions);
+  FREE(names);
+  *n = m;
+  return engines;
+}
+void free_engines(char **engines, int n) {
+  if (!engines) return;
+  for (int i = 0; i < n; i++) FREE(engines[i]);
+  FREE(engines);
+}
 
 // Vector equality / difference helpers
 // ––––––––––––––––––––––––––––––––––––

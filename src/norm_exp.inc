@@ -12,6 +12,8 @@
 #include <string.h>
 #include "randompack.h"
 #include "ziggurat_constants.h"
+#undef NDEBUG
+#include "assert.h"
 
 static double tail_draw(randompack_rng *rng, uint64_t rabs, int *w) {
   double xx, yy;
@@ -26,7 +28,7 @@ static double tail_draw(randompack_rng *rng, uint64_t rabs, int *w) {
 }
 
 #define DBL_SIGNBIT 0x8000000000000000ULL
-ALWAYS_INLINE static double flip_sign_if(double x, int sign) {
+ALWAYS_INLINE double flip_sign_if(double x, int sign) {
   uint64_t bits, mask = (uint64_t)0 - (uint64_t)(sign & 1);
   mask &= DBL_SIGNBIT;
   memcpy(&bits, &x, sizeof bits);
@@ -35,14 +37,14 @@ ALWAYS_INLINE static double flip_sign_if(double x, int sign) {
   return x;
 }
 
-ALWAYS_INLINE static double draw_norm(randompack_rng *rng, int *w) {
+ALWAYS_INLINE double draw_norm(randompack_rng *rng, int *w) {
   uint64_t r;
   int sign;
   uint64_t rabs;
   int idx;
   double x;
   for (;;) {
-    r = draw_u64(rng, w);
+    r = draw_u64_nocheck(rng, w);
     idx = r & 0xff;
     r >>= 8;
     sign = r & 0x1;
@@ -53,25 +55,38 @@ ALWAYS_INLINE static double draw_norm(randompack_rng *rng, int *w) {
       return x;
     }
     else if (idx == 0) {
-      return tail_draw(rng, rabs, w);
+      x = tail_draw(rng, rabs, w);
+      make_half_full(rng, w);
+      return x;
     }
     else {
       double h = fi_double[idx - 1] - fi_double[idx];
-      if (h*draw_u01(rng, w) + fi_double[idx] < exp(-x*x/2)) {
+      double y = draw_u01(rng, w);
+      if (h*y + fi_double[idx] < exp(-x*x/2)) {
+        make_half_full(rng, w);
         return x;
       }
     }
+    make_half_full(rng, w);
   }
 }
 
-ALWAYS_INLINE static void rand_norm(double *buf, size_t len, randompack_rng *rng) {
+ALWAYS_INLINE void rand_norm(double *buf, size_t len, randompack_rng *rng) {
   int w = enter_u64_mode(rng);
-  for (size_t i = 0; i < len; i++) buf[i] = draw_norm(rng, &w);
+  size_t i = 0;
+  while (i < len) {
+    make_half_full(rng, &w);
+    int take = min(len - i, BUFSIZE/2);
+    for (int j = 0; j < take; j++) {
+      buf[i + j] = draw_norm(rng, &w);
+    }
+    i += take;
+  }
   exit_u64_mode(rng, w);
 }
 
 // Following four functions are copied from NumPy, except for marked changes
-ALWAYS_INLINE static double standard_exponential_unlikely(randompack_rng *rng,
+ALWAYS_INLINE double standard_exponential_unlikely(randompack_rng *rng,
                                                           uint8_t idx, double x, int *w) {
   while (true) { // added loop to replace recursion, to allow speedup.
     if (idx == 0) {
@@ -95,25 +110,34 @@ ALWAYS_INLINE static double standard_exponential_unlikely(randompack_rng *rng,
   }
 }
 
-ALWAYS_INLINE static void rand_exp(double *x, size_t len, randompack_rng *rng) {
-  // align64(rng);
+ALWAYS_INLINE double draw_exp(randompack_rng *rng, int *w) {
+  uint64_t ri;
+  uint8_t idx;
+  double xi;
+  ri = draw_u64_nocheck(rng, w);
+  ri >>= 3;
+  idx = ri & 0xFF;
+  ri >>= 8;
+  xi = ri * we_double[idx];
+  if (ri >= ke_double[idx]) {
+	 xi = standard_exponential_unlikely(rng, idx, xi, w);
+	 make_half_full(rng, w);
+  }
+  return xi;
+}
+
+ALWAYS_INLINE void rand_exp(double *buf, size_t len, randompack_rng *rng) {
   int w = enter_u64_mode(rng);
-  for (size_t i=0; i<len; i++) {
-    uint64_t ri;
-    uint8_t idx;
-    double xi;
-    ri = draw_u64(rng, &w);
-    ri >>= 3;
-    idx = ri & 0xFF;
-    ri >>= 8;
-    xi = ri * we_double[idx];
-    if (ri < ke_double[idx]) {
-      x[i] = xi;
+  size_t i = 0;
+  while (i < len) {
+    make_half_full(rng, &w);
+    int take = min(len - i, BUFSIZE/2);
+    for (size_t j = i; j < i + take; j++) {
+      buf[j] = draw_exp(rng, &w);
     }
-    else {
-      x[i] = standard_exponential_unlikely(rng, idx, xi, &w);
-    }
+    i += take;
   }
   exit_u64_mode(rng, w);
 }
+
 #include "norm_exp_float.inc"

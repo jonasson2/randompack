@@ -18,7 +18,7 @@ static void print_help(void) {
   printf("Options:\n");
   printf("  -h            Show this help message\n");
   printf("  -t seconds    Benchmark time per engine (default 0.1)\n");
-  printf("  -c chunk      Chunk size (values per fill, default 1024)\n");
+  printf("  -c chunk      Chunk size (values per fill, default 4096)\n");
   printf("  -s seed       RNG seed (default 7)\n\n");
   printf("Notes:\n");
   printf("  Reports GB/s as bytes/ns: uint64 uses 8/ns, uint32 uses 4/ns.\n");
@@ -30,7 +30,7 @@ static bool get_options(int argc, char **argv,
   optind = 1;
   int opt;
   *bench_time = 0.1;
-  *chunk = 1024;
+  *chunk = 4096;
   *seed = 7;
   *help = false;
   while ((opt = getopt(argc, argv, "ht:c:s:")) != -1) {
@@ -80,28 +80,51 @@ int main(int argc, char **argv) {
   printf("throughput:       GB/s (decimal), computed as bytes/ns\n");
   printf("bench_time:       %.3f s per engine\n", bench_time);
   printf("chunk:            %d\n\n", chunk);
-  struct { char *name; } engines[] = {
-    { "x256++" },
-    { "x256**" },
-    { "xoro++" },
-    { "x128+" },
-    { "squares" },
-    { "sfc64" },
-    { "pcg64" },
-    { "cwg128" },
-    { "philox" },
-    { "system" },
-    { "chacha20" },
-  };
+  int n = 0;
+  int emax = 0;
+  int dmax = 0;
+  bool ok = randompack_engines(0, 0, &n, &emax, &dmax);
+  if (!ok) {
+    fprintf(stderr, "randompack_engines query failed\n");
+    return 1;
+  }
+  char *engines = 0;
+  char *descriptions = 0;
+  if (!ALLOC(engines, n*emax) || !ALLOC(descriptions, n*dmax)) {
+    fprintf(stderr, "allocation failed\n");
+    FREE(engines);
+    FREE(descriptions);
+    return 1;
+  }
+  ok = randompack_engines(engines, descriptions, &n, &emax, &dmax);
+  if (!ok) {
+    fprintf(stderr, "randompack_engines fill failed\n");
+    FREE(engines);
+    FREE(descriptions);
+    return 1;
+  }
   printf("%-18s %8s %8s %8s %8s\n", "Engine", "ns64", "GB/s64", "ns32", "GB/s32");
-  for (int i = 0; i < LEN(engines); i++) {
-    randompack_rng *rng = randompack_create(engines[i].name);
-    randompack_seed(seed, 0, 0, rng);
+  for (int i = 0; i < n; i++) {
+    char *name = engines + i*emax;
+    randompack_rng *rng = randompack_create(name);
+    if (!rng) {
+      fprintf(stderr, "randompack_create failed: %s\n", name);
+      continue;
+    }
+    ok = randompack_seed(seed, 0, 0, rng);
+    if (!ok) {
+      ok = randompack_randomize(rng);
+      if (!ok) {
+        fprintf(stderr, "randompack_seed/randomize failed: %s\n", name);
+        randompack_free(rng);
+        continue;
+      }
+    }
     double ns64 = time_u64(chunk, bench_time, fill_u64, rng);
     double gb64 = 8/ns64;
     double ns32 = time_u32(chunk, bench_time, fill_u32, rng);
     double gb32 = 4/ns32;
-    printf("%-18s", engines[i].name);
+    printf("%-18s", name);
 	 printf(" %8.2f", ns64);
 	 printf(" %8.2f", gb64);
 	 printf(" %8.2f", ns32);
@@ -109,5 +132,7 @@ int main(int argc, char **argv) {
     printf("\n");
 	 randompack_free(rng);
   }
+  FREE(engines);
+  FREE(descriptions);
   return 0;
 }

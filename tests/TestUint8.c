@@ -111,7 +111,9 @@ static void test_balanced_bits(char *engine) {
 }
 
 void TestUint8(void) {
-  for (int i = 0; i < LEN(engines); i++) {
+  int n = 0;
+  char **engines = get_engines(&n);
+  for (int i = 0; i < n; i++) {
     char *e = engines[i];
 	 printS("\nTesting Uint8 with engine", e);
     test_edge_cases(e);
@@ -119,4 +121,5 @@ void TestUint8(void) {
     test_balanced_counts(e);
     test_balanced_bits(e);
   }
+  free_engines(engines, n);
 }

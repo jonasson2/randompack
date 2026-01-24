@@ -3,6 +3,7 @@
 // error reporting).
 #include <stdint.h>
 #include <stdbool.h>
+#include <string.h>
 #include "randompack_config.h"
 #include "randompack.h"
 #include "printX.h"
@@ -20,22 +21,40 @@ static void draw_randoms(char *engine, uint64_t *x, int n, uint64_t seed) {
   randompack_free(rng);
 }
 
+static bool is_excluded_engine(const char *engine) {
+  return strcmp(engine, "fast") == 0;
+}
+
 // Check that identical engines agree and different engines differ.
 static void test_determinism(void) {
-  enum { LEN_STREAM = 4, NENGINES = LEN(engines) };
-  uint64_t x[NENGINES][LEN_STREAM], y[NENGINES][LEN_STREAM],
-           z[NENGINES][LEN_STREAM];
-  for (int i=0; i<NENGINES; i++) {
-    draw_randoms(engines[i], x[i], LEN_STREAM, 42);
-    draw_randoms(engines[i], y[i], LEN_STREAM, 42);
-    draw_randoms(engines[i], z[i], LEN_STREAM, 43);
-    xCheck(equal_vec64(x[i], y[i], LEN_STREAM));
-    xCheck(everywhere_different(x[i], z[i], LEN_STREAM));
-    for (int j = i+1; j < NENGINES; j++) { // all the later engines
-      draw_randoms(engines[j], y[j], LEN_STREAM, 42);
-      xCheck(everywhere_different(x[i], y[j], LEN_STREAM));
+  enum { LEN_STREAM = 4 };
+  int n = 0;
+  char **engines = get_engines(&n);
+  uint64_t *x, *y, *z;
+  TEST_ALLOC(x, n*LEN_STREAM);
+  TEST_ALLOC(y, n*LEN_STREAM);
+  TEST_ALLOC(z, n*LEN_STREAM);
+  for (int i=0; i<n; i++) {
+    if (is_excluded_engine(engines[i])) continue;
+    uint64_t *xi = x + i*LEN_STREAM;
+    uint64_t *yi = y + i*LEN_STREAM;
+    uint64_t *zi = z + i*LEN_STREAM;
+    draw_randoms(engines[i], xi, LEN_STREAM, 42);
+    draw_randoms(engines[i], yi, LEN_STREAM, 42);
+    draw_randoms(engines[i], zi, LEN_STREAM, 43);
+    xCheck(equal_vec64(xi, yi, LEN_STREAM));
+    xCheck(everywhere_different(xi, zi, LEN_STREAM));
+    for (int j = i+1; j < n; j++) { // all the later engines
+      if (is_excluded_engine(engines[j])) continue;
+      uint64_t *yj = y + j*LEN_STREAM;
+      draw_randoms(engines[j], yj, LEN_STREAM, 42);
+      xCheck(everywhere_different(xi, yj, LEN_STREAM));
     }
   }
+  FREE(z);
+  FREE(y);
+  FREE(x);
+  free_engines(engines, n);
 }
 
 // Unknown engine names should yield a non-null "invalid" rng object with a non-blank

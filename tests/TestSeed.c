@@ -37,53 +37,30 @@ static void draw_stream_reseed_same_rng(char *engine, uint64_t *x, uint64_t *y, 
   randompack_free(rng);
 }
 
-static void test_seed_determinism(void) {
+static void test_seed_determinism(char **engines, int n) {
   // Determinism with a spawn key is tested for the seed-sequence engines below.
-  char *engines_seq[] = {
-    "x128+",
-    "squares",
-    "x256**",
-    "x256++",
-    "pcg64",
-    "cwg128",
-    "philox",
-    "chacha20",
-  };
-
   enum { LEN_STREAM = 4 };
   uint32_t key[] = {7u, 11u, 13u};
-
   // Seed-sequence determinism (same key, same seed)
-  for (int i = 0; i < LEN(engines_seq); i++) {
+  for (int i = 0; i < n; i++) {
     uint64_t x[LEN_STREAM], y[LEN_STREAM], z[LEN_STREAM], r[LEN_STREAM];
-    draw_stream(engines_seq[i], x, LEN_STREAM, 42, key, LEN(key));
-    draw_stream(engines_seq[i], y, LEN_STREAM, 42, key, LEN(key));
+    draw_stream(engines[i], x, LEN_STREAM, 42, key, LEN(key));
+    draw_stream(engines[i], y, LEN_STREAM, 42, key, LEN(key));
     xCheck(equal_vec64(x, y, LEN_STREAM));
-    draw_stream(engines_seq[i], z, LEN_STREAM, 43, key, LEN(key));
+    draw_stream(engines[i], z, LEN_STREAM, 43, key, LEN(key));
     xCheck(everywhere_different(x, z, LEN_STREAM));
-    draw_stream_reseed_same_rng(engines_seq[i], x, r, LEN_STREAM, 42, key, LEN(key));
+    draw_stream_reseed_same_rng(engines[i], x, r, LEN_STREAM, 42, key, LEN(key));
     xCheck(equal_vec64(x, r, LEN_STREAM));
   }
 }
 
-static void test_spawn_key_separation(void) {
+static void test_spawn_key_separation(char **engines, int n) {
   // These tests target the "structural collision" class: [] vs [0], etc.
-  char *engines[] = {
-    "x128+",
-    "squares",
-    "x256**",
-    "x256++",
-    "pcg64",
-    "cwg128",
-    "philox",
-    "chacha20",
-  };
-
-  enum { LEN_STREAM = 4, NENGINES = LEN(engines) };
+  enum { LEN_STREAM = 4 };
   uint32_t k0[] = {0u};
   uint32_t k321[] = {3u, 2u, 1u};
   uint32_t k3210[] = {3u, 2u, 1u, 0u};
-  for (int i = 0; i < NENGINES; i++) {
+  for (int i = 0; i < n; i++) {
     for (int seed = 0; seed < 4; seed++) {
       uint64_t a[LEN_STREAM], b[LEN_STREAM];
 
@@ -101,6 +78,9 @@ static void test_spawn_key_separation(void) {
 }
 
 void TestSeed(void) {
-  test_seed_determinism();
-  test_spawn_key_separation();
+  int n = 0;
+  char **engines = get_engines(&n);
+  test_seed_determinism(engines, n);
+  test_spawn_key_separation(engines, n);
+  free_engines(engines, n);
 }

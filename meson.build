@@ -50,6 +50,7 @@ else
 endif
 if perf
   perf_args = [
+    '-funroll-loops',
     '-fomit-frame-pointer',
     '-fno-math-errno',
     #'-fno-trapping-math'

@@ -235,7 +235,7 @@ bool randompack_deserialize( // Restore an RNG from an opaque byte buffer
 //#ifdef HAVE128
 bool randompack_pcg64_set_state( // Set PCG state and increment
   __uint128_t state,      // in      PCG state
-  __uint128_t inc,		  // in      PCG increment (must be odd)
+  __uint128_t inc,		  // in      PCG increment (even changed to odd)
   randompack_rng *rng	  // in/out  target RNG      
 );
 //#endif

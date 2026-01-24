@@ -20,7 +20,7 @@ static void print_help(void) {
   printf("  -h            Show this help message\n");
   printf("  -e engine     RNG engine (default x256++)\n");
   printf("  -t seconds    Benchmark time per distribution (default 0.1)\n");
-  printf("  -c chunk      Chunk size (values per call, default 1024)\n");
+  printf("  -c chunk      Chunk size (values per call, default 4096)\n");
   printf("  -s seed       RNG seed (default 7)\n\n");
   printf("Notes:\n");
   printf("  Parameters are fixed to representative values.\n");
@@ -33,7 +33,7 @@ static bool get_options(int argc, char **argv, char **engine, double *bench_time
   int opt;
   *engine = "x256++";
   *bench_time = 0.1;
-  *chunk = 1024;
+  *chunk = 4096;
   *seed = 7;
   *help = false;
   while ((opt = getopt(argc, argv, "he:t:c:s:")) != -1) {

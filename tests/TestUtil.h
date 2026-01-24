@@ -135,25 +135,8 @@
 //------------------------------------------------------------------------------
 // Engine name tables used by tests
 //------------------------------------------------------------------------------
-static char *engines[] = {
-  "x256++",
-  "x256**",
-  "x128+",
-  "xoro++",
-  "squares",
-  "sfc64",
-  "chacha20"
-#if HAVE128MUL
-  , "philox"
-#endif
-#if HAVE128
-  , "pcg64"
-  , "cwg128"
-#endif
-};
-
 typedef struct {
-  const char *name;
+  char *name;
   int state_words;
 } engine_table_entry;
 
@@ -172,6 +155,8 @@ static engine_table_entry engine_table[] = {
   {"cwg128",        5},
 #endif
 };
+char **get_engines(int *n);
+void free_engines(char **engines, int n);
 //------------------------------------------------------------------------------
 // Global test sizes / sample counts
 //------------------------------------------------------------------------------
@@ -272,7 +257,6 @@ void check_u01_distributionf(float *u, int n, char *dist, char *engine);
 #endif
 
 static inline void testutil_silence_unused(void) {
-  UNUSED(engines);
   UNUSED(engine_table);
 }
 #endif

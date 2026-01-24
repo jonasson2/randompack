@@ -11,14 +11,9 @@
 #include "xCheck.h"
 
 static int engine_nstate(char *engine) {
-  if (!strcmp(engine, "x128+")) return 2;
-  if (!strcmp(engine, "squares")) return 2;
-  if (!strcmp(engine, "x256++")) return 4;
-  if (!strcmp(engine, "x256**")) return 4;
-  if (!strcmp(engine, "pcg64")) return 4;
-  if (!strcmp(engine, "cwg128")) return 5;
-  if (!strcmp(engine, "philox")) return 6;
-  if (!strcmp(engine, "chacha20")) return 6;
+  for (int i = 0; i < LEN(engine_table); i++) {
+    if (!strcmp(engine_table[i].name, engine)) return engine_table[i].state_words;
+  }
   return 0;
 }
 
@@ -30,18 +25,10 @@ static randompack_rng *make_rng(char *engine) {
 }
 
 static void test_invalid_args(void) {
-  char *engines[] = {
-    "x128+",
-    "squares",
-    "x256++",
-    "x256**",
-    "pcg64",
-    "cwg128",
-    "philox",
-    "chacha20",
-  };
   uint64_t state[8] = {1,2,3,4,5,6,7,8};
-  for (int i = 0; i < LEN(engines); i++) {
+  int n = 0;
+  char **engines = get_engines(&n);
+  for (int i = 0; i < n; i++) {
     int nstate = engine_nstate(engines[i]);
     randompack_rng *rng = make_rng(engines[i]);
     bool ok = randompack_set_state(0, nstate, rng);
@@ -55,6 +42,7 @@ static void test_invalid_args(void) {
     randompack_free(rng);
     xCheck(!randompack_set_state(state, nstate, 0));
   }
+  free_engines(engines, n);
 }
 
 static void test_xoshiro_nonzero(void) {
@@ -66,28 +54,6 @@ static void test_xoshiro_nonzero(void) {
     check_failure(ok, rng);
     randompack_free(rng);
   }
-}
-
-static void test_pcg_inc_odd(void) {
-  uint64_t even_inc[] = {1,2,4,5};
-  uint64_t odd_inc[] = {1,2,5,6};
-  randompack_rng *rng = make_rng("pcg64");
-  bool ok = randompack_set_state(even_inc, 4, rng);
-  check_failure(ok, rng);
-  ok = randompack_set_state(odd_inc, 4, rng);
-  check_success(ok, rng);
-  randompack_free(rng);
-}
-
-static void test_cwg_s_odd(void) {
-  uint64_t even_s[] = {1,2,3,4,6};
-  uint64_t odd_s[] = {1,2,3,4,5};
-  randompack_rng *rng = make_rng("cwg128");
-  bool ok = randompack_set_state(even_s, LEN(even_s), rng);
-  check_failure(ok, rng);
-  ok = randompack_set_state(odd_s, LEN(odd_s), rng);
-  check_success(ok, rng);
-  randompack_free(rng);
 }
 
 static void draw_uints(randompack_rng *rng, uint64_t *x, int n) {
@@ -225,8 +191,6 @@ static void test_squares_set_state(void) {
 void TestSetState(void) {
   test_invalid_args();
   test_xoshiro_nonzero();
-  test_pcg_inc_odd();
-  test_cwg_s_odd();
   test_determinism();
   test_buf_reset();
   test_philox_set_state();

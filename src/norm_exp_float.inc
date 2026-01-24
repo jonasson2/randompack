@@ -2,7 +2,7 @@
 #include <string.h>
 #include "ziggurat_const_float.h"
 #define FLT_SIGNBIT 0x80000000u
-ALWAYS_INLINE static float flip_sign_if_f(float x, int sign) {
+ALWAYS_INLINE float flip_sign_if_f(float x, int sign) {
   uint32_t bits, mask = (uint32_t)0 - (uint32_t)(sign & 1);
   mask &= FLT_SIGNBIT;
   memcpy(&bits, &x, sizeof bits);
@@ -23,7 +23,7 @@ static float tail_draw_f(randompack_rng *rng, uint32_t rabs, int *w) {
   }
 }
 
-ALWAYS_INLINE static float draw_normf(randompack_rng *rng, int *w) {
+ALWAYS_INLINE float draw_normf(randompack_rng *rng, int *w) {
   uint32_t r;
   int sign;
   uint32_t rabs;
@@ -52,14 +52,14 @@ ALWAYS_INLINE static float draw_normf(randompack_rng *rng, int *w) {
   }
 }
 
-ALWAYS_INLINE static void rand_normf(float *buf, size_t len, randompack_rng *rng) {
+ALWAYS_INLINE void rand_normf(float *buf, size_t len, randompack_rng *rng) {
   int w = enter_u32_mode(rng);
   for (size_t i = 0; i < len; i++) buf[i] = draw_normf(rng, &w);
   exit_u32_mode(rng, w);
 }
 
 #ifndef U01_HIRES
-ALWAYS_INLINE static float standard_exponential_unlikely_f(randompack_rng *rng,
+ALWAYS_INLINE float standard_exponential_unlikely_f(randompack_rng *rng,
                                                            uint8_t idx, float x,
                                                            int *w) {
   while (true) {
@@ -84,7 +84,7 @@ ALWAYS_INLINE static float standard_exponential_unlikely_f(randompack_rng *rng,
   }
 }
 
-ALWAYS_INLINE static void rand_expf(float *x, size_t len, randompack_rng *rng) {
+ALWAYS_INLINE void rand_expf(float *x, size_t len, randompack_rng *rng) {
   int w = enter_u32_mode(rng);
   for (size_t i = 0; i < len; i++) {
     uint32_t ri;
@@ -108,7 +108,7 @@ ALWAYS_INLINE static void rand_expf(float *x, size_t len, randompack_rng *rng) {
 // This version takes the index from the high bits and uses 24 bits for x. Because of that
 // wef must be halved and kef doubled; gensig.c constructs zig_new.h with these.
 #include "zig_new.h"
-ALWAYS_INLINE static void rand_expf(float *x, size_t len, randompack_rng *rng) {
+ALWAYS_INLINE void rand_expf(float *x, size_t len, randompack_rng *rng) {
   int w = enter_u32_mode(rng);
   uint32_t ri;
   uint8_t idx;

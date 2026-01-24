@@ -56,10 +56,13 @@ static void test_PIT(char *engine, double scale) {
 }
 
 void TestExp(void) {
-  for (int i = 0; i < LEN(engines); i++) {
+  int n = 0;
+  char **engines = get_engines(&n);
+  for (int i = 0; i < n; i++) {
     char *e = engines[i];
     test_basic(e);
     test_PIT(e, 1);
     test_PIT(e, 2);
   }
+  free_engines(engines, n);
 }

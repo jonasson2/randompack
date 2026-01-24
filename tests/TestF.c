@@ -61,11 +61,14 @@ static void test_PIT(char *engine, double nu1, double nu2) {
 }
 
 void TestF(void) {
-  for (int i = 0; i < LEN(engines); i++) {
+  int n = 0;
+  char **engines = get_engines(&n);
+  for (int i = 0; i < n; i++) {
     char *e = engines[i];
     test_basic(e);
     test_PIT(e, 1, 1);
     test_PIT(e, 5, 7);
     test_PIT(e, 30, 40);
   }
+  free_engines(engines, n);
 }

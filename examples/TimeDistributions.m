@@ -3,7 +3,7 @@
 
 clear;
 rng(7);                     % fixed seed
-chunk = 1024;
+chunk = 4096;
 bench_time = 0.2;           % seconds per distribution
 reps = max(1, floor(1e6 / chunk));
 

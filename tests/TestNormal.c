@@ -49,11 +49,14 @@ static void test_PIT(char *engine, double mu, double sigma) {
 }
 
 void TestNormal(void) {
-  for (int i = 0; i < LEN(engines); i++) {
+  int n = 0;
+  char **engines = get_engines(&n);
+  for (int i = 0; i < n; i++) {
     char *e = engines[i];
     test_basic(e);
     test_PIT(e, 0, 1);
     test_PIT(e, 1, 2);
     test_PIT(e, -3, 0.5);
   }
+  free_engines(engines, n);
 }

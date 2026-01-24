@@ -26,8 +26,9 @@ static void test_perm_api(void) {
   int len, lens[] = {1, 2, 3, 10};
   int perm[10];
   bool ok;
-  char *engines[] = {"x256++", "squares", "pcg64", "cwg128"};
-  for (int i = 0; i < LEN(engines); i++) {
+  int n = 0;
+  char **engines = get_engines(&n);
+  for (int i = 0; i < n; i++) {
 	 randompack_rng *rng = create_seeded_rng(engines[i], 77);
 	 ok = randompack_perm(perm, 0, rng);
 	 check_success(ok, rng);
@@ -52,6 +53,7 @@ static void test_perm_api(void) {
 	 xCheckMsg(check_balanced_counts(counts, 7), "Permutation");
   }
   randompack_free(rng);
+  free_engines(engines, n);
 }
 
 void TestPerm(void) {

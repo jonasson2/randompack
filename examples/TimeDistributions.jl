@@ -25,7 +25,7 @@ function time_dist!(chunk::Int, reps::Int, bench_time::Float64, fill!::Function)
 end
 
 function main()
-  chunk = 1024
+  chunk = 4096
   bench_time = 0.2
   reps = compute_reps(chunk)
 

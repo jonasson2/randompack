@@ -22,6 +22,12 @@ time_engines = executable(
   dependencies : [randompack_dep],
 )
 
+time_fast = executable(
+  'TimeFast',
+  ['TimeFast.c', 'TimeUtil.c'] + common_util,
+  dependencies : [randompack_dep],
+)
+
 time_distributions = executable(
   'TimeDistributions',
   ['TimeDistributions.c', 'TimeUtil.c'] + common_util,

@@ -55,11 +55,14 @@ static void test_PIT(char *engine, double shape, double scale) {
 }
 
 void TestGamma(void) {
-  for (int i = 0; i < LEN(engines); i++) {
+  int n = 0;
+  char **engines = get_engines(&n);
+  for (int i = 0; i < n; i++) {
     char *e = engines[i];
     test_basic(e);
     test_PIT(e, 0.7, 1);
     test_PIT(e, 2.0, 1);
     test_PIT(e, 0.3, 3);
   }
+  free_engines(engines, n);
 }

@@ -78,10 +78,13 @@ static void test_balanced_bits(char *engine) {
 
 void TestInt(void) {
   test_int_simple();
-  for (int i = 0; i < LEN(engines); i++) {
+  int n = 0;
+  char **engines = get_engines(&n);
+  for (int i = 0; i < n; i++) {
     char *e = engines[i];
     test_edge_cases(e, INT_MAX);
     test_seed_changes_output(e);
     test_balanced_bits(e);
   }
+  free_engines(engines, n);
 }
