@@ -31,25 +31,6 @@ ALWAYS_INLINE void rand_dble(double x[], size_t len, randompack_rng *rng) {
   exit_u64_mode(rng, w);
 }
 
-ALWAYS_INLINE void rand_float(float x[], size_t len, randompack_rng *rng) {
-  int w = enter_u32_mode(rng);
-  size_t i = 0;
-  while (i < len) {
-    if (w >= 2*BUFSIZE) {
-		w = rng->buf_word = 0;
-      rng->fill(rng, BUFSIZE);
-    }
-    int take = min(len - i, 2*BUFSIZE - w);
-    for (int j = 0; j < take; j++) {
-      uint32_t v = rng->buf.u32[w + j];
-      x[i + j] = U32_TO_FLOAT(v);
-    }
-    w += take;
-    i += take;
-  }
-  exit_u32_mode(rng, w);
-}
-
 static void rand_uint64(uint64_t x[], size_t n, uint64_t bound, randompack_rng *rng) {
   // Sets x to n random integers in {0, 1,..., bound-1}
   if (bound == 0) {

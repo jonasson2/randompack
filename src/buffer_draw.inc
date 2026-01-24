@@ -13,9 +13,25 @@ ALWAYS_INLINE void fill_if_empty(randompack_rng *rng, int *w) {
   }
 }
 
+ALWAYS_INLINE void fill_if_empty32(randompack_rng *rng, int *w) {
+  if (*w >= 2*BUFSIZE) {
+    *w = rng->buf_word = rng->buf_byte = 0;
+    rng->fill(rng, BUFSIZE);
+  }
+}
+
 ALWAYS_INLINE void make_half_full(randompack_rng *rng, int *w) {
   if (*w >= BUFSIZE/2) {
-    *w = rng->buf_word = *w - BUFSIZE/2; 
+    *w = rng->buf_word = *w - BUFSIZE/2;
+    rng->fill(rng, BUFSIZE/2);
+  }
+}
+
+ALWAYS_INLINE void make_half_full32(randompack_rng *rng, int *w) {
+  if (*w >= BUFSIZE) {
+    *w -= BUFSIZE;
+    rng->buf_word = *w/2;
+    rng->buf_byte = (*w & 1)*4;
     rng->fill(rng, BUFSIZE/2);
   }
 }
@@ -72,6 +88,10 @@ ALWAYS_INLINE uint32_t draw_u32(randompack_rng *rng, int *w) {
     *w = rng->buf_word = 0;
     rng->fill(rng, BUFSIZE);
   }
+  return rng->buf.u32[(*w)++];
+}
+
+ALWAYS_INLINE uint32_t draw_u32_nocheck(randompack_rng *rng, int *w) {
   return rng->buf.u32[(*w)++];
 }
 
