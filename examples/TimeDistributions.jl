@@ -7,19 +7,45 @@ function compute_reps(chunk::Int)
   return max(1, r)
 end
 
-function time_dist!(chunk::Int, reps::Int, bench_time::Float64, fill!::Function)
+@inline function consume!(sink::Base.RefValue{Float64}, buf::Vector{Float64})
+  n = length(buf)
+  i0 = 1
+  i1 = 1 + (n - 1) ÷ 3
+  i2 = 1 + 2 * ((n - 1) ÷ 3)
+  i3 = n
+  @inbounds sink[] = sink[] + buf[i0] + buf[i1] + buf[i2] + buf[i3]
+  return nothing
+end
+
+function warmup!(seconds::Float64)
+  t0 = time_ns()
+  limit = Int(round(seconds * 1e9))
+  x = 0.0
+  while (time_ns() - t0) < limit
+    @inbounds @simd for i in 1:1024
+      x = x + i
+    end
+  end
+  if x == -1.0
+    println("warmup")
+  end
+  return nothing
+end
+
+function time_dist!(chunk::Int, reps::Int, bench_time::Float64,
+                    fill!::Function, sink::Base.RefValue{Float64})
   calls = 0
   t0 = time_ns()
   t = t0
-  limit = Int(round(bench_time*1e9))
+  limit = Int(round(bench_time * 1e9))
   while (t - t0) < limit
     for _ = 1:reps
       fill!()
+      calls += 1
     end
-    calls += reps
     t = time_ns()
   end
-  total = calls*chunk
+  total = calls * chunk
   total == 0 && return 0.0
   return (t - t0) / total
 end
@@ -29,11 +55,9 @@ function main()
   bench_time = 0.2
   reps = compute_reps(chunk)
 
-  rng = MersenneTwister(7)
   buf = Vector{Float64}(undef, chunk)
   sink = Ref{Float64}(0.0)
 
-  # Pre-create distributions (no allocations inside timing)
   d_logn = LogNormal(0, 1)
   d_exp1 = Exponential(1)
   d_exp2 = Exponential(2)
@@ -44,112 +68,113 @@ function main()
   d_f = FDist(5, 10)
   d_w = Weibull(2, 1)
 
-  # Warmup + JIT compile all paths once
-  rand!(rng, buf)
-  randn!(rng, buf)
-  rand!(rng, d_exp1, buf)
-  rand!(rng, d_w, buf)
+  # Warmup: ensure JIT compile and keep CPU "awake" for at least 0.1s
+  rand!(buf); consume!(sink, buf)
+  randn!(buf); consume!(sink, buf)
+  rand!(d_exp1, buf); consume!(sink, buf)
+  rand!(d_w, buf); consume!(sink, buf)
   begin
     @inbounds for i in 1:chunk
-      buf[i] = 2 + 3*buf[i]
+      buf[i] = 2 + 3 * buf[i]
     end
-    sink[] = buf[end]
+    consume!(sink, buf)
   end
+  warmup!(0.1)
 
   println("Distribution       ns/value")
 
   function run(name::String, fill!::Function)
-    ns = time_dist!(chunk, reps, bench_time, fill!)
+    ns = time_dist!(chunk, reps, bench_time, fill!, sink)
     @printf("%-18s %8.2f\n", name, ns)
   end
 
   run("u01", () -> begin
-    rand!(rng, buf)
-    sink[] = buf[end]
+    rand!(buf)
+    consume!(sink, buf)
   end)
 
   run("unif(2,5)", () -> begin
-    rand!(rng, buf)
+    rand!(buf)
     @inbounds @simd for i in 1:chunk
-      buf[i] = 2 + 3*buf[i]
+      buf[i] = 2 + 3 * buf[i]
     end
-    sink[] = buf[end]
+    consume!(sink, buf)
   end)
 
   run("norm", () -> begin
-    randn!(rng, buf)
-    sink[] = buf[end]
+    randn!(buf)
+    consume!(sink, buf)
   end)
 
   run("normal(2,3)", () -> begin
-    randn!(rng, buf)
+    randn!(buf)
     @inbounds @simd for i in 1:chunk
-      buf[i] = 2 + 3*buf[i]
+      buf[i] = 2 + 3 * buf[i]
     end
-    sink[] = buf[end]
+    consume!(sink, buf)
   end)
 
   run("lognormal(0,1)", () -> begin
-    rand!(rng, d_logn, buf)
-    sink[] = buf[end]
+    rand!(d_logn, buf)
+    consume!(sink, buf)
   end)
 
   run("gumbel(0,1)", () -> begin
-    rand!(rng, buf)
+    rand!(buf)
     @inbounds @simd for i in 1:chunk
       u = buf[i]
       buf[i] = -log(-log(u))
     end
-    sink[] = buf[end]
+    consume!(sink, buf)
   end)
 
   run("pareto(1,2)", () -> begin
-    rand!(rng, buf)
+    rand!(buf)
     @inbounds @simd for i in 1:chunk
       u = buf[i]
       buf[i] = (1 - u)^(-0.5)
     end
-    sink[] = buf[end]
+    consume!(sink, buf)
   end)
 
   run("exp(1)", () -> begin
-    rand!(rng, d_exp1, buf)
-    sink[] = buf[end]
+    rand!(d_exp1, buf)
+    consume!(sink, buf)
   end)
 
   run("exp(2)", () -> begin
-    rand!(rng, d_exp2, buf)
-    sink[] = buf[end]
+    rand!(d_exp2, buf)
+    consume!(sink, buf)
   end)
 
   run("gamma(2,3)", () -> begin
-    rand!(rng, d_gam, buf)
-    sink[] = buf[end]
+    rand!(d_gam, buf)
+    consume!(sink, buf)
   end)
 
   run("chi2(5)", () -> begin
-    rand!(rng, d_chi, buf)
-    sink[] = buf[end]
+    rand!(d_chi, buf)
+    consume!(sink, buf)
   end)
 
   run("beta(2,5)", () -> begin
-    rand!(rng, d_beta, buf)
-    sink[] = buf[end]
+    rand!(d_beta, buf)
+    consume!(sink, buf)
   end)
 
   run("t(10)", () -> begin
-    rand!(rng, d_t, buf)
-    sink[] = buf[end]
+    rand!(d_t, buf)
+    consume!(sink, buf)
   end)
 
   run("F(5,10)", () -> begin
-    rand!(rng, d_f, buf)
-    sink[] = buf[end]
+    rand!(d_f, buf)
+    consume!(sink, buf)
   end)
 
   run("weibull(2,1)", () -> begin
-    rand!(rng, d_w, buf)
-    sink[] = buf[end]
+    rand!(d_w, buf)
+    consume!(sink, buf)
   end)
 
   if sink[] == 123456789

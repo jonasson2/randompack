@@ -19,6 +19,13 @@
   #include <windows.h>
 #endif
 
+// -*- C -*-
+#define _GNU_SOURCE
+#include <errno.h>
+#include <sched.h>
+#include <stdio.h>
+#include <string.h>
+
 // Get current time in seconds (high resolution, monotonic)
 double get_time(void) {
 #ifdef _WIN32

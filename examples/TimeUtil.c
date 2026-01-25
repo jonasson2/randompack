@@ -3,11 +3,27 @@
 
 #include <stdint.h>
 #include <string.h>
+#if defined(__linux__)
+#include <sched.h>
+#include <unistd.h>
+#include <errno.h>
+#include <stdio.h>
+#endif
 #include "randompack.h"
 #include "TimeUtil.h"
 #include "Util.h"
 
 enum { M = 1000000 };
+
+static inline void consume5(const double *buf, int chunk) {
+  static volatile uint64_t sink;
+  uint64_t u;
+  memcpy(&u, &buf[0], sizeof(u)); sink ^= u;
+  memcpy(&u, &buf[chunk/4], sizeof(u)); sink ^= u;
+  memcpy(&u, &buf[chunk/2], sizeof(u)); sink ^= u;
+  memcpy(&u, &buf[3*chunk/4], sizeof(u)); sink ^= u;
+  memcpy(&u, &buf[chunk-1], sizeof(u)); sink ^= u;
+}
 
 static inline void consume64(const void *p) { // to make sure loops are not optimized away
   static volatile uint64_t sink;
@@ -90,7 +106,8 @@ double time_double(int chunk, double bench_time, fill_double_fn fill,
   while (t - t0 < bench_time) {
     for (int i = 0; i < reps; i++) {
       fill(buf, chunk, param, rng);
-      consume64(&buf[chunk - 1]);
+      consume5(buf, chunk);
+      // consume64(&buf[chunk - 1]);
     }
     calls += reps;
     t = get_time();
