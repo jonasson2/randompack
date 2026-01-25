@@ -18,5 +18,6 @@
 
 double get_time(void);
 void warmup_cpu(int n);
+void pin_to_cpu0(void);
 
 #endif
