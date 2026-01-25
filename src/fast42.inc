@@ -1,155 +1,135 @@
 // -*- C -*-
-#if defined(__ARM_NEON) || defined(__ARM_NEON__)
+#if HAVE_NEON
 #include <arm_neon.h>
+#define VEC_T uint64x2_t
+#define VEC_LOAD(p) vld1q_u64((const uint64_t *)(p))
+#define VEC_STORE(p,x) vst1q_u64((uint64_t *)(p),(x))
+#define VEC_ADD(a,b) vaddq_u64((a),(b))
+#define VEC_XOR(a,b) veorq_u64((a),(b))
+#define VEC_SHL17(a) vshlq_n_u64((a),17)
+#define VEC_ROTL23(x) vorrq_u64(vshlq_n_u64((x),23),vshrq_n_u64((x),64-23))
+#define VEC_ROTL45(x) vorrq_u64(vshlq_n_u64((x),45),vshrq_n_u64((x),64-45))
+#define HAVE_VEC 1
 
-static inline uint64x2_t rotl64_23(uint64x2_t x) {
-  return vorrq_u64(vshlq_n_u64(x, 23), vshrq_n_u64(x, 64 - 23));
-}
+#elif HAVE_AVX2
+#include <immintrin.h>
+#define VEC_T __m128i
+#define VEC_LOAD(p) _mm_loadu_si128((const __m128i *)(p))
+#define VEC_STORE(p,x) _mm_storeu_si128((__m128i *)(p),(x))
+#define VEC_ADD(a,b) _mm_add_epi64((a),(b))
+#define VEC_XOR(a,b) _mm_xor_si128((a),(b))
+#define VEC_SHL17(a) _mm_slli_epi64((a),17)
+#define VEC_ROTL23(x) _mm_or_si128(_mm_slli_epi64((x),23),_mm_srli_epi64((x),64-23))
+#define VEC_ROTL45(x) _mm_or_si128(_mm_slli_epi64((x),45),_mm_srli_epi64((x),64-45))
+#define HAVE_VEC 1
 
-static inline uint64x2_t rotl64_45(uint64x2_t x) {
-  return vorrq_u64(vshlq_n_u64(x, 45), vshrq_n_u64(x, 64 - 45));
-}
-
-static inline void fill_fast(randompack_rng *rng, size_t len) {
-  uint64_t *out = rng->buf.u64 + rng->buf_word;
-  size_t n = len;
-  uint64_t a0_[2], a1_[2], a2_[2], a3_[2];
-  uint64_t b0_[2], b1_[2], b2_[2], b3_[2];
-  uint64_t c0_[2], c1_[2], c2_[2], c3_[2];
-  uint64_t d0_[2], d1_[2], d2_[2], d3_[2];
-  a0_[0] = rng->state.ustream[0][0]; a0_[1] = rng->state.ustream[1][0];
-  a1_[0] = rng->state.ustream[0][1]; a1_[1] = rng->state.ustream[1][1];
-  a2_[0] = rng->state.ustream[0][2]; a2_[1] = rng->state.ustream[1][2];
-  a3_[0] = rng->state.ustream[0][3]; a3_[1] = rng->state.ustream[1][3];
-  b0_[0] = rng->state.ustream[2][0]; b0_[1] = rng->state.ustream[3][0];
-  b1_[0] = rng->state.ustream[2][1]; b1_[1] = rng->state.ustream[3][1];
-  b2_[0] = rng->state.ustream[2][2]; b2_[1] = rng->state.ustream[3][2];
-  b3_[0] = rng->state.ustream[2][3]; b3_[1] = rng->state.ustream[3][3];
-  c0_[0] = rng->state.ustream[4][0]; c0_[1] = rng->state.ustream[5][0];
-  c1_[0] = rng->state.ustream[4][1]; c1_[1] = rng->state.ustream[5][1];
-  c2_[0] = rng->state.ustream[4][2]; c2_[1] = rng->state.ustream[5][2];
-  c3_[0] = rng->state.ustream[4][3]; c3_[1] = rng->state.ustream[5][3];
-  d0_[0] = rng->state.ustream[6][0]; d0_[1] = rng->state.ustream[7][0];
-  d1_[0] = rng->state.ustream[6][1]; d1_[1] = rng->state.ustream[7][1];
-  d2_[0] = rng->state.ustream[6][2]; d2_[1] = rng->state.ustream[7][2];
-  d3_[0] = rng->state.ustream[6][3]; d3_[1] = rng->state.ustream[7][3];
-  uint64x2_t a0 = vld1q_u64(a0_);
-  uint64x2_t a1 = vld1q_u64(a1_);
-  uint64x2_t a2 = vld1q_u64(a2_);
-  uint64x2_t a3 = vld1q_u64(a3_);
-  uint64x2_t b0 = vld1q_u64(b0_);
-  uint64x2_t b1 = vld1q_u64(b1_);
-  uint64x2_t b2 = vld1q_u64(b2_);
-  uint64x2_t b3 = vld1q_u64(b3_);
-  uint64x2_t c0 = vld1q_u64(c0_);
-  uint64x2_t c1 = vld1q_u64(c1_);
-  uint64x2_t c2 = vld1q_u64(c2_);
-  uint64x2_t c3 = vld1q_u64(c3_);
-  uint64x2_t d0 = vld1q_u64(d0_);
-  uint64x2_t d1 = vld1q_u64(d1_);
-  uint64x2_t d2 = vld1q_u64(d2_);
-  uint64x2_t d3 = vld1q_u64(d3_);
-  for (size_t i = 0; i < n; i += 8) {
-    uint64x2_t ra = vaddq_u64(rotl64_23(vaddq_u64(a0, a3)), a0);
-    uint64x2_t ta = vshlq_n_u64(a1, 17);
-    a2 = veorq_u64(a2, a0);
-    a3 = veorq_u64(a3, a1);
-    a1 = veorq_u64(a1, a2);
-    a0 = veorq_u64(a0, a3);
-    a2 = veorq_u64(a2, ta);
-    a3 = rotl64_45(a3);
-    uint64x2_t rb = vaddq_u64(rotl64_23(vaddq_u64(b0, b3)), b0);
-    uint64x2_t tb = vshlq_n_u64(b1, 17);
-    b2 = veorq_u64(b2, b0);
-    b3 = veorq_u64(b3, b1);
-    b1 = veorq_u64(b1, b2);
-    b0 = veorq_u64(b0, b3);
-    b2 = veorq_u64(b2, tb);
-    b3 = rotl64_45(b3);
-    uint64x2_t rc = vaddq_u64(rotl64_23(vaddq_u64(c0, c3)), c0);
-    uint64x2_t tc = vshlq_n_u64(c1, 17);
-    c2 = veorq_u64(c2, c0);
-    c3 = veorq_u64(c3, c1);
-    c1 = veorq_u64(c1, c2);
-    c0 = veorq_u64(c0, c3);
-    c2 = veorq_u64(c2, tc);
-    c3 = rotl64_45(c3);
-    uint64x2_t rd = vaddq_u64(rotl64_23(vaddq_u64(d0, d3)), d0);
-    uint64x2_t td = vshlq_n_u64(d1, 17);
-    d2 = veorq_u64(d2, d0);
-    d3 = veorq_u64(d3, d1);
-    d1 = veorq_u64(d1, d2);
-    d0 = veorq_u64(d0, d3);
-    d2 = veorq_u64(d2, td);
-    d3 = rotl64_45(d3);
-    vst1q_u64(out + i, ra);
-    vst1q_u64(out + i + 2, rb);
-    vst1q_u64(out + i + 4, rc);
-    vst1q_u64(out + i + 6, rd);
-  }
-  vst1q_u64(a0_, a0);
-  vst1q_u64(a1_, a1);
-  vst1q_u64(a2_, a2);
-  vst1q_u64(a3_, a3);
-  vst1q_u64(b0_, b0);
-  vst1q_u64(b1_, b1);
-  vst1q_u64(b2_, b2);
-  vst1q_u64(b3_, b3);
-  vst1q_u64(c0_, c0);
-  vst1q_u64(c1_, c1);
-  vst1q_u64(c2_, c2);
-  vst1q_u64(c3_, c3);
-  vst1q_u64(d0_, d0);
-  vst1q_u64(d1_, d1);
-  vst1q_u64(d2_, d2);
-  vst1q_u64(d3_, d3);
-  rng->state.ustream[0][0] = a0_[0]; rng->state.ustream[1][0] = a0_[1];
-  rng->state.ustream[0][1] = a1_[0]; rng->state.ustream[1][1] = a1_[1];
-  rng->state.ustream[0][2] = a2_[0]; rng->state.ustream[1][2] = a2_[1];
-  rng->state.ustream[0][3] = a3_[0]; rng->state.ustream[1][3] = a3_[1];
-  rng->state.ustream[2][0] = b0_[0]; rng->state.ustream[3][0] = b0_[1];
-  rng->state.ustream[2][1] = b1_[0]; rng->state.ustream[3][1] = b1_[1];
-  rng->state.ustream[2][2] = b2_[0]; rng->state.ustream[3][2] = b2_[1];
-  rng->state.ustream[2][3] = b3_[0]; rng->state.ustream[3][3] = b3_[1];
-  rng->state.ustream[4][0] = c0_[0]; rng->state.ustream[5][0] = c0_[1];
-  rng->state.ustream[4][1] = c1_[0]; rng->state.ustream[5][1] = c1_[1];
-  rng->state.ustream[4][2] = c2_[0]; rng->state.ustream[5][2] = c2_[1];
-  rng->state.ustream[4][3] = c3_[0]; rng->state.ustream[5][3] = c3_[1];
-  rng->state.ustream[6][0] = d0_[0]; rng->state.ustream[7][0] = d0_[1];
-  rng->state.ustream[6][1] = d1_[0]; rng->state.ustream[7][1] = d1_[1];
-  rng->state.ustream[6][2] = d2_[0]; rng->state.ustream[7][2] = d2_[1];
-  rng->state.ustream[6][3] = d3_[0]; rng->state.ustream[7][3] = d3_[1];
-}
 #else
+#define HAVE_VEC 0
+#endif
+
+#if HAVE_VEC
+#define FAST_STEP_VEC(s0,s1,s2,s3,outv) do { \
+  VEC_T r_; \
+  VEC_T t_; \
+  r_ = VEC_ADD(VEC_ROTL23(VEC_ADD((s0),(s3))),(s0)); \
+  t_ = VEC_SHL17((s1)); \
+  (s2) = VEC_XOR((s2),(s0)); \
+  (s3) = VEC_XOR((s3),(s1)); \
+  (s1) = VEC_XOR((s1),(s2)); \
+  (s0) = VEC_XOR((s0),(s3)); \
+  (s2) = VEC_XOR((s2),t_); \
+  (s3) = VEC_ROTL45((s3)); \
+  (outv) = r_; \
+} while (0)
 
 static inline void fill_fast(randompack_rng *rng, size_t len) {
   uint64_t *out = rng->buf.u64 + rng->buf_word;
-  size_t n = len;
-  uint64_t s0[8], s1[8], s2[8], s3[8];
-  for (int j = 0; j < 8; j++) {
-    s0[j] = rng->state.ustream[j][0];
-    s1[j] = rng->state.ustream[j][1];
-    s2[j] = rng->state.ustream[j][2];
-    s3[j] = rng->state.ustream[j][3];
+  uint64_t (*s)[4] = rng->state.ustream;
+  uint64_t A0[2], A1[2], A2[2], A3[2];
+  uint64_t B0[2], B1[2], B2[2], B3[2];
+  uint64_t C0[2], C1[2], C2[2], C3[2];
+  uint64_t D0[2], D1[2], D2[2], D3[2];
+  VEC_T a0, a1, a2, a3;
+  VEC_T b0, b1, b2, b3;
+  VEC_T c0, c1, c2, c3;
+  VEC_T d0, d1, d2, d3;
+  A0[0] = s[0][0]; A0[1] = s[1][0];
+  A1[0] = s[0][1]; A1[1] = s[1][1];
+  A2[0] = s[0][2]; A2[1] = s[1][2];
+  A3[0] = s[0][3]; A3[1] = s[1][3];
+  B0[0] = s[2][0]; B0[1] = s[3][0];
+  B1[0] = s[2][1]; B1[1] = s[3][1];
+  B2[0] = s[2][2]; B2[1] = s[3][2];
+  B3[0] = s[2][3]; B3[1] = s[3][3];
+  C0[0] = s[4][0]; C0[1] = s[5][0];
+  C1[0] = s[4][1]; C1[1] = s[5][1];
+  C2[0] = s[4][2]; C2[1] = s[5][2];
+  C3[0] = s[4][3]; C3[1] = s[5][3];
+  D0[0] = s[6][0]; D0[1] = s[7][0];
+  D1[0] = s[6][1]; D1[1] = s[7][1];
+  D2[0] = s[6][2]; D2[1] = s[7][2];
+  D3[0] = s[6][3]; D3[1] = s[7][3];
+  a0 = VEC_LOAD(A0);
+  a1 = VEC_LOAD(A1);
+  a2 = VEC_LOAD(A2);
+  a3 = VEC_LOAD(A3);
+  b0 = VEC_LOAD(B0);
+  b1 = VEC_LOAD(B1);
+  b2 = VEC_LOAD(B2);
+  b3 = VEC_LOAD(B3);
+  c0 = VEC_LOAD(C0);
+  c1 = VEC_LOAD(C1);
+  c2 = VEC_LOAD(C2);
+  c3 = VEC_LOAD(C3);
+  d0 = VEC_LOAD(D0);
+  d1 = VEC_LOAD(D1);
+  d2 = VEC_LOAD(D2);
+  d3 = VEC_LOAD(D3);
+  for (size_t i = 0; i < len; i += 8) {
+    VEC_T ra, rb, rc, rd;
+    FAST_STEP_VEC(a0, a1, a2, a3, ra);
+    FAST_STEP_VEC(b0, b1, b2, b3, rb);
+    FAST_STEP_VEC(c0, c1, c2, c3, rc);
+    FAST_STEP_VEC(d0, d1, d2, d3, rd);
+    VEC_STORE(out + i, ra);
+    VEC_STORE(out + i + 2, rb);
+    VEC_STORE(out + i + 4, rc);
+    VEC_STORE(out + i + 6, rd);
   }
-  for (size_t i = 0; i < n; i += 8) {
-    for (int j = 0; j < 8; j++) {
-      uint64_t r = ROTL(s0[j] + s3[j], 23) + s0[j];
-      uint64_t t = s1[j] << 17;
-      s2[j] ^= s0[j];
-      s3[j] ^= s1[j];
-      s1[j] ^= s2[j];
-      s0[j] ^= s3[j];
-      s2[j] ^= t;
-      s3[j] = ROTL(s3[j], 45);
-      out[i + (size_t)j] = r;
-    }
-  }
-  for (int j = 0; j < 8; j++) {
-    rng->state.ustream[j][0] = s0[j];
-    rng->state.ustream[j][1] = s1[j];
-    rng->state.ustream[j][2] = s2[j];
-    rng->state.ustream[j][3] = s3[j];
-  }
+  VEC_STORE(A0, a0);
+  VEC_STORE(A1, a1);
+  VEC_STORE(A2, a2);
+  VEC_STORE(A3, a3);
+  VEC_STORE(B0, b0);
+  VEC_STORE(B1, b1);
+  VEC_STORE(B2, b2);
+  VEC_STORE(B3, b3);
+  VEC_STORE(C0, c0);
+  VEC_STORE(C1, c1);
+  VEC_STORE(C2, c2);
+  VEC_STORE(C3, c3);
+  VEC_STORE(D0, d0);
+  VEC_STORE(D1, d1);
+  VEC_STORE(D2, d2);
+  VEC_STORE(D3, d3);
+  s[0][0] = A0[0]; s[1][0] = A0[1];
+  s[0][1] = A1[0]; s[1][1] = A1[1];
+  s[0][2] = A2[0]; s[1][2] = A2[1];
+  s[0][3] = A3[0]; s[1][3] = A3[1];
+  s[2][0] = B0[0]; s[3][0] = B0[1];
+  s[2][1] = B1[0]; s[3][1] = B1[1];
+  s[2][2] = B2[0]; s[3][2] = B2[1];
+  s[2][3] = B3[0]; s[3][3] = B3[1];
+  s[4][0] = C0[0]; s[5][0] = C0[1];
+  s[4][1] = C1[0]; s[5][1] = C1[1];
+  s[4][2] = C2[0]; s[5][2] = C2[1];
+  s[4][3] = C3[0]; s[5][3] = C3[1];
+  s[6][0] = D0[0]; s[7][0] = D0[1];
+  s[6][1] = D1[0]; s[7][1] = D1[1];
+  s[6][2] = D2[0]; s[7][2] = D2[1];
+  s[6][3] = D3[0]; s[7][3] = D3[1];
 }
+
+#else // No SIMD
+#include "fast41.inc"
 #endif

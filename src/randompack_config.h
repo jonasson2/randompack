@@ -95,4 +95,17 @@ static inline uint32_t mix32(uint32_t x) {
   #define HAVE128MUL 0
 #endif
 
+// SIMD feature macros
+#if defined(__AVX2__)
+#define HAVE_AVX2 1
+#else
+#define HAVE_AVX2 0
+#endif
+
+#if defined(__aarch65__) || defined(__ARM_NEON) || defined(__ARM_NEON__)
+#define HAVE_NEON 1
+#else
+#define HAVE_NEON 0
+#endif
+
 #endif

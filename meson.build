@@ -41,6 +41,11 @@ endif
 
 # Common detection function for all platforms
 cc = meson.get_compiler('c')
+cpu = host_machine.cpu_family()
+if (cpu == 'x86_64' or cpu == 'x86') and cc.has_argument('-mavx2')
+  add_project_arguments('-mavx2', language: 'c')
+endif
+
 perf = get_option('perf')
 math_dep = cc.find_library('m', required: false)
 if math_dep.found()
@@ -51,7 +56,7 @@ endif
 if perf
   perf_args = [
     '-march=native',
-    ##'-funroll-loops',
+    '-funroll-loops',
   ]
   add_project_arguments(cc.get_supported_arguments(perf_args), language : 'c')
   cpp = meson.get_compiler('cpp')

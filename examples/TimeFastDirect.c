@@ -1,6 +1,5 @@
 // -*- C -*-
 // TimeFastDirect.c: AVX2-only proof-of-concept fast u01 fill (4 streams).
-#include <immintrin.h>
 #include <stdint.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -9,9 +8,9 @@
 #include "Util.h"
 #include "randompack_config.h"
 
-#ifndef __AVX2__
-#error "This file requires AVX2. Compile with -mavx2 or -march=native on AVX2."
-#endif
+#if defined(__linux__) && defined(__AVX2__)
+#include <immintrin.h>
+#include "TimeUtil.h"
 
 typedef struct {
   uint64_t s[4][4];
@@ -123,3 +122,9 @@ int main(void) {
   printf("Time per draw: %.3f ns\n", ns);
   return 0;
 }
+
+#else
+int main(void) {
+  return 0;
+}
+#endif
