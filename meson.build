@@ -50,10 +50,8 @@ else
 endif
 if perf
   perf_args = [
-    '-funroll-loops',
-    '-fomit-frame-pointer',
-    '-fno-math-errno',
-    #'-fno-trapping-math'
+    '-march=native',
+    ##'-funroll-loops',
   ]
   add_project_arguments(cc.get_supported_arguments(perf_args), language : 'c')
   cpp = meson.get_compiler('cpp')
