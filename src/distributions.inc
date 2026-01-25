@@ -19,8 +19,10 @@ static int LastNonzeroColumn(int m, int n, double A[]) {
 // ALWAYS_INLINE void rand_dble(double x[], size_t len, randompack_rng *rng) {
 //   int w = enter_u64_mode(rng);
 //   size_t i = 0, remain, avail, take;
+//   //  for (int j=0; j<BUFSIZE; j++) rng->buf.u64[j] = 12345678901234ULL;
 //   while (i < len) {
 //     fill_if_empty(rng, &w);
+//     //w = 0;
 //     remain = len - i;
 //     avail = (size_t)(BUFSIZE - w);
 //     take = remain < avail ? remain : avail;

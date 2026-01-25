@@ -15,6 +15,9 @@
 
 enum { M = 1000000 };
 
+#include <stdint.h>
+#include <stddef.h>
+
 static inline void consume5(const double *buf, int chunk) {
   static volatile uint64_t sink;
   uint64_t u;
@@ -50,7 +53,7 @@ double time_u64(int chunk, double bench_time, fill_u64_fn fill, randompack_rng *
       fill(buf, chunk, rng);
       consume64(&buf[chunk - 1]);
     }
-    calls += reps;
+	 calls += reps;
     t = get_time();
   }
   FREE(buf);
