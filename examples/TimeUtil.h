@@ -35,6 +35,8 @@ typedef void (*fill_float_fn)( // Callback type: fill out with random floats
   randompack_rng *rng  // RNG handle
 );
 
+void pin_to_cpu0(void);
+
 double time_u64( // Benchmark uint64 fill amortizing time-keeping overhead, return ns
   int chunk,             // number of values generated per fill call
   double bench_time,     // repeat until this time (in seconds) has elapsed

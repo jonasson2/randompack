@@ -3,12 +3,28 @@
 
 #include <stdint.h>
 #include <string.h>
-
+#if defined(__linux__)
+#include <sched.h>
+#include <unistd.h>
+#include <errno.h>
+#include <stdio.h>
+#endif
 #include "randompack.h"
 #include "TimeUtil.h"
 #include "Util.h"
 
 enum { M = 1000000 };
+
+void pin_to_cpu0(void) {
+#if defined(__linux__)
+  cpu_set_t set;
+  CPU_ZERO(&set);
+  CPU_SET(0, &set);
+  if (sched_setaffinity(0, sizeof(set), &set) != 0) {
+    fprintf(stderr, "sched_setaffinity failed: %s\n", strerror(errno));
+  }
+#endif
+}
 
 static inline void consume64(const void *p) { // to make sure loops are not optimized away
   static volatile uint64_t sink;

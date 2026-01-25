@@ -76,6 +76,9 @@ int main(int argc, char **argv) {
     print_help();
     return help ? 0 : 1;
   }
+#if defined(__linux__)
+  pin_to_cpu0();
+#endif
   warmup_cpu(100);
   printf("throughput:       GB/s (decimal), computed as bytes/ns\n");
   printf("bench_time:       %.3f s per engine\n", bench_time);

@@ -192,6 +192,9 @@ int main(int argc, char **argv) {
     print_help();
     return help ? 0 : 1;
   }
+#if defined(__linux__)
+  pin_to_cpu0();
+#endif
   randompack_rng *rng = randompack_create(engine);
   if (!rng) {
     fprintf(stderr, "randompack_create failed: %s\n", engine);
