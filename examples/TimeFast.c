@@ -1,5 +1,5 @@
 // -*- C -*-
-// TimeFast.c: throughput (GB/s) of the fast engine using uint64 and uint32 bulk fill.
+// TimeFast.c: u01 throughput for the fast engine.
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -7,9 +7,10 @@
 #include "Util.h"
 #include "randompack.h"
 #include "randompack_config.h"
-static void fill_u64(uint64_t out[], int n, randompack_rng *rng) {
+static void fill_u01(double out[], int n, double param[], randompack_rng *rng) {
   size_t len = (size_t)n;
-  randompack_uint64(out, len, 0, rng);
+  (void)param;
+  randompack_u01(out, len, rng);
 }
 static void warmup_min_time(double seconds) {
   double t0 = get_time();
@@ -36,8 +37,9 @@ int main(void) {
     }
   }
   warmup_min_time(warmup_time);
-  double ns64 = time_u64(chunk, bench_time, fill_u64, rng);
-  printf("Time per draw: %.3f ns\n", ns64);
+  double param[1] = {0};
+  double ns = time_double(chunk, bench_time, fill_u01, param, rng);
+  printf("Time per draw: %.3f ns\n", ns);
   randompack_free(rng);
   return 0;
 }

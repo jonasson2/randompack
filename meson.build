@@ -111,7 +111,10 @@ endif
 
 # Your own headers live in src/ for now
 inc = include_directories('src', 'common')
-common_util = files('common/Util.c')
+common_util = files(
+  'common/Util.c',
+  'common/getopt.c',
+)
 
 subdir('src')
 

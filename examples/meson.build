@@ -1,7 +1,3 @@
-example_util = files(
-  'getopt.c',
-)
-
 threads_dep = dependency('threads', required: false)
 pthreads_ok = false
 if threads_dep.found()
@@ -12,7 +8,7 @@ mpi_dep = dependency('mpi', required: false)
 
 run_varmasim = executable(
   'RunRandom',
-  ['RunRandom.c'] + example_util,
+  ['RunRandom.c'] + common_util,
   dependencies : [randompack_dep],
 )
 
@@ -54,7 +50,7 @@ draw_example = executable(
 
 raw_stream = executable(
   'RawStream',
-  'RawStream.c',
+  ['RawStream.c'] + common_util,
   dependencies : [randompack_dep],
 )
 
