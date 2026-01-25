@@ -14,41 +14,7 @@ static int LastNonzeroColumn(int m, int n, double A[]) {
 
 //#include "zmgd.inc"   // static zmgd() lives here
 #include "norm_exp.inc"
-
-#define UNROLL 6
-
-ALWAYS_INLINE void rand_dble(double x[], size_t len, randompack_rng *rng) {
-  int w = enter_u64_mode(rng);
-  size_t i = 0, j, remain, avail, take, takemany;
-  while (i < len) {
-    fill_if_empty(rng, &w);
-    remain = len - i;
-    avail = (size_t)(BUFSIZE - w);
-    take = remain < avail ? remain : avail;
-    takemany = (take/UNROLL)*UNROLL;
-    for (j = 0; j < takemany; j += UNROLL) {
-      uint64_t v0 = rng->buf.u64[w + j];
-      uint64_t v1 = rng->buf.u64[w + j + 1];
-      uint64_t v2 = rng->buf.u64[w + j + 2];
-      uint64_t v3 = rng->buf.u64[w + j + 3];
-      uint64_t v4 = rng->buf.u64[w + j + 4];
-      uint64_t v5 = rng->buf.u64[w + j + 5];
-      x[i + (size_t)j] = U64_TO_DOUBLE(v0);
-      x[i + (size_t)j + 1] = U64_TO_DOUBLE(v1);
-      x[i + (size_t)j + 2] = U64_TO_DOUBLE(v2);
-      x[i + (size_t)j + 3] = U64_TO_DOUBLE(v3);
-      x[i + (size_t)j + 4] = U64_TO_DOUBLE(v4);
-      x[i + (size_t)j + 5] = U64_TO_DOUBLE(v5);
-    }
-    for (; j < take; j++) {
-      uint64_t v = rng->buf.u64[w + j];
-      x[i + (size_t)j] = U64_TO_DOUBLE(v);
-    }
-    w += take;
-    i += (size_t)take;
-  }
-  exit_u64_mode(rng, w);
-}
+#include "rand_dble.inc"
 
 // ALWAYS_INLINE void rand_dble(double x[], size_t len, randompack_rng *rng) {
 //   int w = enter_u64_mode(rng);
