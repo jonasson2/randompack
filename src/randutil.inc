@@ -43,7 +43,7 @@ static inline void normalize_state(randompack_rng *rng) {
 
 static inline void fill_stream_states_with_jump(randompack_rng *rng) {
   if (rng->engine == FAST) {
-	 for (int i = 1; i < 8; i++) {
+	 for (int i = 1; i < MAXSTREAMS; i++) {
 		copy64(rng->state.ustream[i], rng->state.ustream[i-1], 4);
 		xoshiro256pp_jump(rng->state.ustream[i]);
 	 }

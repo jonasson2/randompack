@@ -43,7 +43,7 @@ struct randompack_rng {
 	 uint8_t  u8[48];
     uint32_t u32[16];
     uint64_t u64[8];
-    uint64_t ustream[8][4];
+    uint64_t ustream[MAXSTREAMS][4];
     #if HAVE128
     pcg64_t pcg;
     cwg128_64_t cwg;
@@ -412,12 +412,12 @@ bool randompack_unif(double x[], size_t len, double a, double b,
     return false;
   }
   rng->last_error = 0;
+  rand_dble(x, len, rng); // x in [0,1)
   double w = b - a;
   for (size_t i = 0; i < len; i++) {
     double v = a + w*x[i];
     x[i] = v < b ? v : b;
   }
-  rand_dble(x, len, rng); // x in [0,1)
   return true;
 }
 
