@@ -40,7 +40,7 @@ typedef void (*engine_fill)(randompack_rng *rng, size_t len);
 
 typedef struct {
   uint64_t s0[4], s1[4], s2[4], s3[4];
-} xo256 xo;
+} xo256;
 
 struct randompack_rng {
   union {
