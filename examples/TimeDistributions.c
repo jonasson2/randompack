@@ -210,7 +210,7 @@ int main(int argc, char **argv) {
     double nsd = time_double(chunk, bench_time, fill_wrapper, par, rngd);
     double nsf = time_float(chunk, bench_time, fill_wrapperf, parf, rngf);
     printf("%-18s", dists[i].name);
-    printf(" %9.2f %9.2f\n", nsd, nsf);
+    printf(" %9.3f %9.2f\n", nsd, nsf);
   }
   randompack_free(rngd);
   randompack_free(rngf);

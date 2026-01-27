@@ -54,6 +54,7 @@ struct randompack_rng {
   int buf_byte;
   char *last_error;
   engine_fill fill;
+  bool use53bits;
   union {
     uint32_t u32[2*BUFSIZE];
     uint64_t u64[BUFSIZE];

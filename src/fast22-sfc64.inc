@@ -1,4 +1,10 @@
 // -*- C -*-
+
+#include <stdint.h>
+#include <stddef.h>
+
+static inline void fill_fast(randompack_rng *rng, size_t len);
+
 #if HAVE_NEON
 #include <arm_neon.h>
 #define VEC_T uint64x2_t
@@ -89,6 +95,6 @@ static inline void fill_fast(randompack_rng *rng, size_t len) {
   s[2][3] = B3[0]; s[3][3] = B3[1];
 }
 
-#else // No SIMD
+#else
 #include "fast41.inc"
 #endif

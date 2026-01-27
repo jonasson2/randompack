@@ -38,10 +38,8 @@ ALWAYS_INLINE double flip_sign_if(double x, int sign) {
 }
 
 ALWAYS_INLINE double draw_norm(randompack_rng *rng, int *w) {
-  uint64_t r;
-  int sign;
-  uint64_t rabs;
-  int idx;
+  uint64_t rabs, r;
+  int sign, idx;
   double x;
   for (;;) {
     r = draw_u64_nocheck(rng, w);
@@ -49,23 +47,21 @@ ALWAYS_INLINE double draw_norm(randompack_rng *rng, int *w) {
     r >>= 8;
     sign = r & 0x1;
     rabs = (r >> 1) & 0x000fffffffffffff;
-    x = rabs * wi_double[idx];
+    x = rabs*wi_double[idx];
     x = flip_sign_if(x, sign);
-    if (rabs < ki_double[idx]) {
+    if (LIKELY(rabs < ki_double[idx])) {
       return x;
     }
-    else if (idx == 0) {
+    if (UNLIKELY(idx == 0)) {
       x = tail_draw(rng, rabs, w);
       make_half_full(rng, w);
       return x;
     }
-    else {
-      double h = fi_double[idx - 1] - fi_double[idx];
-      double y = draw_u01(rng, w);
-      if (h*y + fi_double[idx] < exp(-x*x/2)) {
-        make_half_full(rng, w);
-        return x;
-      }
+    double h = fi_double[idx - 1] - fi_double[idx];
+    double y = draw_u01(rng, w);
+    if (h*y + fi_double[idx] < exp(-0.5*x*x)) {
+      make_half_full(rng, w);
+      return x;
     }
     make_half_full(rng, w);
   }

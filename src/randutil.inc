@@ -54,6 +54,7 @@ static void rand_init(randompack_rng *rng) {
   rng->buf_word = BUFSIZE;
   rng->buf_byte = 0;
   rng->last_error = 0;
+  rng->use53bits = false;
   normalize_state(rng);
   fill_stream_states_with_jump(rng);
 }
