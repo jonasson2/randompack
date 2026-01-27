@@ -1,18 +1,4 @@
 // -*- C -*-
-#define FAST_STEP_SCALAR(s0,s1,s2,s3,outv) do { \
-  uint64_t r_; \
-  uint64_t t_; \
-  r_ = ROTL((s0) + (s3), 23) + (s0); \
-  t_ = (s1) << 17; \
-  (s2) ^= (s0); \
-  (s3) ^= (s1); \
-  (s1) ^= (s2); \
-  (s0) ^= (s3); \
-  (s2) ^= t_; \
-  (s3) = ROTL((s3), 45); \
-  (outv) = r_; \
-} while (0)
-
 static inline void fill_fast(randompack_rng *rng, size_t len) {
   uint64_t *out = rng->buf.u64 + rng->buf_word;
   uint64_t (*s)[4] = rng->state.ustream;

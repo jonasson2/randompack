@@ -39,7 +39,7 @@ int main(void) {
   warmup_min_time(warmup_time);
   double param[1] = {0};
   double ns = time_double(chunk, bench_time, fill_u01, param, rng);
-  printf("Time per draw: %.3f ns\n", ns);
+  printf("%.2f ns\n", ns);
   randompack_free(rng);
   return 0;
 }

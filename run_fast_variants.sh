@@ -2,7 +2,9 @@
 set -e
 # All variants are NEON only except fast22 which is the production one.
 
-variants="fast11 fast21 fast21soa fast41 fast41soa fast12 fast12soa fast14 fast14soa fast22 fast22soa"
+variants="SoA_2x1 SoA_1x2 SoA_2x2 SoA_4x1 SoA_1x4 "
+variants+="AoS_2x1 AoS_1x2 AoS_2x2 AoS_4x1 AoS_1x4 "
+variants+="AoS_1x1"
 
 for v in $variants; do
   cp "src/${v}.inc" src/fast.inc

@@ -12,24 +12,8 @@ static inline void fill_fast(randompack_rng *rng, size_t len) {
   uint64_t b3 = rng->state.ustream[1][3];
   uint64_t ra, rb, ta, tb;
   for (size_t i = 0; i < n; i += 2) {
-    ra = ROTL(a0 + a3, 23) + a0;
-    ta = a1 << 17;
-    a2 ^= a0;
-    a3 ^= a1;
-    a1 ^= a2;
-    a0 ^= a3;
-    a2 ^= ta;
-    a3 = ROTL(a3, 45);
-    rb = ROTL(b0 + b3, 23) + b0;
-    tb = b1 << 17;
-    b2 ^= b0;
-    b3 ^= b1;
-    b1 ^= b2;
-    b0 ^= b3;
-    b2 ^= tb;
-    b3 = ROTL(b3, 45);
-    out[i] = ra;
-    out[i+1] = rb;
+    FAST_STEP_SCALAR(a0, a1, a2, a3, out[i]);
+    FAST_STEP_SCALAR(b0, b1, b2, b3, out[i+1]);
   }
   rng->state.ustream[0][0] = a0;
   rng->state.ustream[0][1] = a1;
