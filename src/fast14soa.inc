@@ -31,31 +31,21 @@
 
 static inline void fill_fast(randompack_rng *rng, size_t len) {
   uint64_t *out = rng->buf.u64 + rng->buf_word;
-  uint64_t (*s)[4] = rng->state.ustream;
-  uint64_t A0[4], A1[4], A2[4], A3[4];
-  VEC_T a0, a1, a2, a3;
-  A0[0] = s[0][0]; A0[1] = s[1][0]; A0[2] = s[2][0]; A0[3] = s[3][0];
-  A1[0] = s[0][1]; A1[1] = s[1][1]; A1[2] = s[2][1]; A1[3] = s[3][1];
-  A2[0] = s[0][2]; A2[1] = s[1][2]; A2[2] = s[2][2]; A2[3] = s[3][2];
-  A3[0] = s[0][3]; A3[1] = s[1][3]; A3[2] = s[2][3]; A3[3] = s[3][3];
-  a0 = VEC_LOAD(A0);
-  a1 = VEC_LOAD(A1);
-  a2 = VEC_LOAD(A2);
-  a3 = VEC_LOAD(A3);
+  xo256 *st = &rng->state.xo;
+  VEC_T s0 = VEC_LOAD(&st->s0[0]);
+  VEC_T s1 = VEC_LOAD(&st->s1[0]);
+  VEC_T s2 = VEC_LOAD(&st->s2[0]);
+  VEC_T s3 = VEC_LOAD(&st->s3[0]);
   for (size_t i = 0; i < len; i += 4) {
     VEC_T r;
-    FAST_STEP_VEC(a0, a1, a2, a3, r);
+    FAST_STEP_VEC(s0, s1, s2, s3, r);
     VEC_STORE(out + i, r);
   }
-  VEC_STORE(A0, a0);
-  VEC_STORE(A1, a1);
-  VEC_STORE(A2, a2);
-  VEC_STORE(A3, a3);
-  s[0][0] = A0[0]; s[1][0] = A0[1]; s[2][0] = A0[2]; s[3][0] = A0[3];
-  s[0][1] = A1[0]; s[1][1] = A1[1]; s[2][1] = A1[2]; s[3][1] = A1[3];
-  s[0][2] = A2[0]; s[1][2] = A2[1]; s[2][2] = A2[2]; s[3][2] = A2[3];
-  s[0][3] = A3[0]; s[1][3] = A3[1]; s[2][3] = A3[2]; s[3][3] = A3[3];
+  VEC_STORE(&st->s0[0], s0);
+  VEC_STORE(&st->s1[0], s1);
+  VEC_STORE(&st->s2[0], s2);
+  VEC_STORE(&st->s3[0], s3);
 }
 #else
-#include "fast41.inc"
+#include "fast41soa.inc"
 #endif
