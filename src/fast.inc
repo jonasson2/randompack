@@ -2,8 +2,8 @@
 #if HAVE_NEON
 #include <arm_neon.h>
 #define VEC_T uint64x2_t
-#define VEC_LOAD(p) vld1q_u64((const uint64_t*)(p))
-#define VEC_STORE(p,x) vst1q_u64((uint64_t*)(p),(x))
+#define VEC_LOAD(p) vld1q_u64((const uint64_t *)(p))
+#define VEC_STORE(p,x) vst1q_u64((uint64_t *)(p),(x))
 #define VEC_ADD(a,b) vaddq_u64((a),(b))
 #define VEC_XOR(a,b) veorq_u64((a),(b))
 #define VEC_SHL17(a) vshlq_n_u64((a),17)
@@ -14,8 +14,8 @@
 #elif HAVE_AVX2
 #include <immintrin.h>
 #define VEC_T __m128i
-#define VEC_LOAD(p) _mm_loadu_si128((const __m128i*)(p))
-#define VEC_STORE(p,x) _mm_storeu_si128((__m128i*)(p),(x))
+#define VEC_LOAD(p) _mm_loadu_si128((const __m128i *)(p))
+#define VEC_STORE(p,x) _mm_storeu_si128((__m128i *)(p),(x))
 #define VEC_ADD(a,b) _mm_add_epi64((a),(b))
 #define VEC_XOR(a,b) _mm_xor_si128((a),(b))
 #define VEC_SHL17(a) _mm_slli_epi64((a),17)
@@ -45,7 +45,8 @@
 static inline void fill_fast(randompack_rng *rng, size_t len) {
   uint64_t *out = rng->buf.u64 + rng->buf_word;
   uint64_t (*s)[4] = rng->state.ustream;
-  uint64_t A0[2], A1[2], A2[2], A3[2], B0[2], B1[2], B2[2], B3[2];
+  uint64_t A0[2], A1[2], A2[2], A3[2];
+  uint64_t B0[2], B1[2], B2[2], B3[2];
   VEC_T a0, a1, a2, a3;
   VEC_T b0, b1, b2, b3;
   A0[0] = s[0][0]; A0[1] = s[1][0];

@@ -38,12 +38,17 @@ typedef enum {
 
 typedef void (*engine_fill)(randompack_rng *rng, size_t len);
 
+typedef struct {
+  uint64_t s0[4], s1[4], s2[4], s3[4];
+} xo256 xo;
+
 struct randompack_rng {
   union {
 	 uint8_t  u8[48];
     uint32_t u32[16];
     uint64_t u64[8];
     uint64_t ustream[MAXSTREAMS][4];
+    xo256    xo;
     #if HAVE128
     pcg64_t pcg;
     cwg128_64_t cwg;
