@@ -14,43 +14,27 @@ static int LastNonzeroColumn(int m, int n, double A[]) {
 
 //#include "zmgd.inc"   // static zmgd() lives here
 #include "norm_exp.inc"
+#include "rand_dble.inc"
 
-ALWAYS_INLINE static void rand_dble(double x[], size_t n, randompack_rng *rng) {
-  size_t i;
-  align64(rng);
-  i = 0;
-  while (i < n) {
-    fill_buf_if_empty(rng);
-    int take = min(n - i, BUFSIZE - rng->buf_word);
-    for (int j = 0; j < take; j++) {
-      uint64_t v = rng->buf.u64[rng->buf_word + j];
-      x[i + j] = U64_TO_DOUBLE(v);
-    }
-    rng->buf_word += take;
-    i += take;
-  }
-}
-
-ALWAYS_INLINE static void rand_float(float x[], size_t n, randompack_rng *rng) {
-  size_t i;
-  uint32_t *buf32 = (uint32_t*)rng->buf.u64;
-  align32(rng);
-  i = 0;
-  while (i < n) {
-    fill_buf_if_empty(rng);
-    int pos32 = 2*rng->buf_word + rng->buf_byte/4;
-    int avail = 2*BUFSIZE - pos32;
-    size_t rem = n - i;
-    int take = avail;
-    if (rem < (size_t)avail) take = (int)rem;
-    for (int j = 0; j < take; j++)
-      x[i + j] = U32_TO_FLOAT(buf32[pos32 + j]);
-    pos32 += take;
-    rng->buf_word = pos32/2;
-    rng->buf_byte = (pos32 & 1)*4;
-    i += take;
-  }
-}
+// ALWAYS_INLINE void rand_dble(double x[], size_t len, randompack_rng *rng) {
+//   int w = enter_u64_mode(rng);
+//   size_t i = 0, remain, avail, take;
+//   //  for (int j=0; j<BUFSIZE; j++) rng->buf.u64[j] = 12345678901234ULL;
+//   while (i < len) {
+//     fill_if_empty(rng, &w);
+//     //w = 0;
+//     remain = len - i;
+//     avail = (size_t)(BUFSIZE - w);
+//     take = remain < avail ? remain : avail;
+//     for (size_t j = 0; j < take; j++) {
+//       uint64_t v = rng->buf.u64[w + j];
+//       x[i + j] = U64_TO_DOUBLE(v);
+//     }
+//     w += (int)take;
+//     i += take;
+//   }
+//   exit_u64_mode(rng, w);
+// }
 
 static void rand_uint64(uint64_t x[], size_t n, uint64_t bound, randompack_rng *rng) {
   // Sets x to n random integers in {0, 1,..., bound-1}
@@ -64,7 +48,7 @@ static void rand_uint64(uint64_t x[], size_t n, uint64_t bound, randompack_rng *
   if (bound <= UINT8_MAX) {
     uint8_t r, b = bound, thresh = (1u<<8) % b;
     while (i < n) {
-      R = draw_u64_fast(rng, &w);
+      R = draw_u64(rng, &w);
       for (int j = 0; j < 8; j++) {
         r = R;
         if (r >= thresh) x[i++] = r % b;
@@ -76,7 +60,7 @@ static void rand_uint64(uint64_t x[], size_t n, uint64_t bound, randompack_rng *
   else if (bound <= UINT16_MAX) {
     uint16_t r, b = bound, thresh = (1u<<16) % b;
     while (i < n) {
-      R = draw_u64_fast(rng, &w);
+      R = draw_u64(rng, &w);
       for (int j = 0; j < 4; j++) {
         r = R;
         if (r >= thresh) x[i++] = r % b;
@@ -88,7 +72,7 @@ static void rand_uint64(uint64_t x[], size_t n, uint64_t bound, randompack_rng *
   else if (bound <= UINT32_MAX) {
     uint32_t r, b = bound, M = 0-b, thresh = M % b;
     while (i < n) {
-      R = draw_u64_fast(rng, &w);
+      R = draw_u64(rng, &w);
       r = R;
       if (r >= thresh) x[i++] = r % b;
       if (i>=n) break;
@@ -100,7 +84,7 @@ static void rand_uint64(uint64_t x[], size_t n, uint64_t bound, randompack_rng *
   else {
     uint64_t M = 0-bound, thresh = M % bound;
     while (i < n) {
-      R = draw_u64_fast(rng, &w);
+      R = draw_u64(rng, &w);
       if (R >= thresh) x[i++] = R % bound;
     }
   }
@@ -120,7 +104,7 @@ static void rand_uint32(uint32_t x[], size_t n, uint32_t bound, randompack_rng *
   if (bound <= UINT8_MAX) {
     uint8_t r, b = bound, thresh = (1u<<8) % b;
     while (i < n) {
-      R = draw_u64_fast(rng, &w);
+      R = draw_u64(rng, &w);
       for (j = 0; j < 8; j++) {
         r = R;
         if (r >= thresh) x[i++] = r % b;
@@ -132,7 +116,7 @@ static void rand_uint32(uint32_t x[], size_t n, uint32_t bound, randompack_rng *
   else if (bound <= UINT16_MAX) {
     uint16_t r, b = bound, thresh = (1u<<16) % b;
     while (i < n) {
-      R = draw_u64_fast(rng, &w);
+      R = draw_u64(rng, &w);
       for (j = 0; j < 4; j++) {
         r = R;
         if (r >= thresh) x[i++] = r % b;
@@ -144,7 +128,7 @@ static void rand_uint32(uint32_t x[], size_t n, uint32_t bound, randompack_rng *
   else {
     uint32_t r, b = bound, M = 0-b, thresh = M % b;
     while (i < n) {
-      R = draw_u64_fast(rng, &w);
+      R = draw_u64(rng, &w);
       r = R;
       if (r >= thresh) x[i++] = r % b;
       if (i>=n) break; // process left (high) half of R
@@ -168,7 +152,7 @@ static void rand_uint16(uint16_t x[], size_t n, uint16_t bound, randompack_rng *
   if (bound <= UINT8_MAX) {
     uint8_t r, b = bound, thresh = (1u<<8) % b;
     while (i < n) {
-      R = draw_u64_fast(rng, &w);
+      R = draw_u64(rng, &w);
       for (j = 0; j < 8; j++) {
         r = R;
         if (r >= thresh) x[i++] = r % b;
@@ -180,7 +164,7 @@ static void rand_uint16(uint16_t x[], size_t n, uint16_t bound, randompack_rng *
   else {
     uint16_t r, b = bound, thresh = (1u<<16) % b;
     while (i < n) {
-      R = draw_u64_fast(rng, &w);
+      R = draw_u64(rng, &w);
       for (j = 0; j < 4; j++) {
         r = R;
         if (r >= thresh) x[i++] = r % b;
@@ -204,7 +188,7 @@ static void rand_uint8(uint8_t x[], size_t n, uint8_t bound, randompack_rng *rng
   uint8_t r, b = bound, thresh = (1u<<8) % b;
   int w = enter_u32_mode(rng);
   while (i < n) {
-    R = draw_u64_fast(rng, &w);
+    R = draw_u64(rng, &w);
     for (j = 0; j < 8; j++) {
       r = R;
       if (r >= thresh) x[i++] = r % b;
@@ -215,7 +199,7 @@ static void rand_uint8(uint8_t x[], size_t n, uint8_t bound, randompack_rng *rng
   exit_u32_mode(rng, w);
 }
 
-ALWAYS_INLINE static void rand_int(int bound, int x[], size_t n, randompack_rng *rng) {
+ALWAYS_INLINE void rand_int(int bound, int x[], size_t n, randompack_rng *rng) {
   rand_uint32((uint32_t*)x, n, bound, rng);
 }
 
@@ -303,19 +287,20 @@ static void rand_sample(int p[], int n, int k, randompack_rng *rng) {
 #include "randompack.h"
 #include "randompack_config.h"
 
-ALWAYS_INLINE static void fill_gamma_shape1(double *x, size_t len, double shape,
+ALWAYS_INLINE void fill_gamma_shape1(double *x, size_t len, double shape,
                                             randompack_rng *rng) {
   double d = shape - 1.0/3.0;
   double c = 1.0/sqrt(9.0*d);
+  rand_norm(x, len, rng);
   int w = enter_u64_mode(rng);
-  for (size_t i = 0; i < len; i++) x[i] = draw_norm(rng, &w);
+  //for (size_t i = 0; i < len; i++) x[i] = draw_norm(rng, &w);
   for (size_t i = 0; i < len; i++) {
     for (;;) {
       double z = x[i];
       double v = 1.0 + c*z;
       if (v > 0.0) {
         double v3 = v*v*v;
-        double u  = u01(rng, &w);
+        double u  = draw_u01(rng, &w);
         double z2 = z*z;
         double z4 = z2*z2;
         if (u < 1.0 - 0.0331*z4 ||
@@ -324,13 +309,14 @@ ALWAYS_INLINE static void fill_gamma_shape1(double *x, size_t len, double shape,
           break;
         }
       }
+		make_half_full(rng, &w);
       x[i] = draw_norm(rng, &w);
     }
   }
   exit_u64_mode(rng, w);
 }
 
-ALWAYS_INLINE static void fill_gamma(double *x, size_t len, double shape, double scale,
+ALWAYS_INLINE void fill_gamma(double *x, size_t len, double shape, double scale,
                                      randompack_rng *rng) {
   if (shape >= 1.0) {
     fill_gamma_shape1(x, len, shape, rng);
@@ -339,7 +325,7 @@ ALWAYS_INLINE static void fill_gamma(double *x, size_t len, double shape, double
     fill_gamma_shape1(x, len, shape + 1, rng);
 	 int w = enter_u64_mode(rng);
     for (size_t i = 0; i < len; i++) {
-      double u = u01(rng, &w);
+      double u = draw_u01(rng, &w);
       x[i] *= exp(log(u)/shape);
     }
 	 exit_u64_mode(rng, w);
@@ -347,7 +333,7 @@ ALWAYS_INLINE static void fill_gamma(double *x, size_t len, double shape, double
   if (scale != 1) for (size_t i = 0; i < len; i++) x[i] *= scale;
 }
 
-ALWAYS_INLINE static void fill_beta(double *x, size_t len, double a, double b,
+ALWAYS_INLINE void fill_beta(double *x, size_t len, double a, double b,
                                     randompack_rng *rng) {
   // X = Ga/(Ga + Gb) ~ Beta(a,b) if Ga ~ Gamma(a,1) and Gb ~ Gamma(b,1)
   fill_gamma(x, len, a, 1.0, rng);
@@ -369,7 +355,7 @@ ALWAYS_INLINE static void fill_beta(double *x, size_t len, double a, double b,
   }
 }
 
-ALWAYS_INLINE static void fill_t(double *x, size_t len, double nu, randompack_rng *rng) {
+ALWAYS_INLINE void fill_t(double *x, size_t len, double nu, randompack_rng *rng) {
   // Z ~ N(0,1), U ~ Gamma(nu/2, 2) independent => X = Z/sqrt(U/nu) ~ t_nu
   double u[64];
   rand_norm(x, len, rng);
@@ -383,7 +369,7 @@ ALWAYS_INLINE static void fill_t(double *x, size_t len, double nu, randompack_rn
   }
 }
 
-ALWAYS_INLINE static void fill_f(double *x, size_t len, double nu1, double nu2,
+ALWAYS_INLINE void fill_f(double *x, size_t len, double nu1, double nu2,
                                  randompack_rng *rng) {
   // F(nu1,nu2) via gamma ratio:
   //   F = (X1*nu2)/(X2*nu1) where X1 ~ Gamma(nu1/2,1), X2 ~ Gamma(nu2/2,1)
@@ -489,4 +475,5 @@ static bool rand_mvn(char transp, double mu[], double Sig[], int d, size_t n,
   return false;
 }
 
+// #include "rand_float.inc"
 // #include "distrib_float.inc"

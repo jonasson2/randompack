@@ -114,6 +114,7 @@ static inline uint32_t mix32(uint32_t x) {
 #define UNLIKELY(x) (x)
 #endif
 
+#ifndef FAST_STEP_SCALAR
 #define FAST_STEP_SCALAR(s0,s1,s2,s3,outv) do { \
   uint64_t r_; \
   uint64_t t_; \
@@ -127,5 +128,6 @@ static inline uint32_t mix32(uint32_t x) {
   (s3) = ROTL((s3), 45); \
   (outv) = r_; \
 } while (0)
+#endif
 
 #endif

@@ -1,6 +1,6 @@
 // -*- C -*-
-static inline void fill_cwg128(randompack_rng *rng) {
-  uint64_t *out = rng->buf.u64;
+static inline void fill_cwg128(randompack_rng *rng, size_t len) {
+  uint64_t *out = rng->buf.u64 + rng->buf_word;
 
   // State layout assumed:
   //   rng->state.cwg.x    : __uint128_t
@@ -13,7 +13,7 @@ static inline void fill_cwg128(randompack_rng *rng) {
   uint64_t weyl = rng->state.cwg.weyl;
   uint64_t s = rng->state.cwg.s;
 
-  for (int i=0; i<BUFSIZE; i++) {
+  for (size_t i = 0; i < len; i++) {
     a += (uint64_t)x; // modulo 2^64
     weyl += s;
 
