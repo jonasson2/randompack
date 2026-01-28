@@ -13,16 +13,49 @@
 #include "randompack_config.h"
 #include "printX.h"
 
+static void print_engines(void) {
+  int n = 0;
+  int elen = 0;
+  int dlen = 0;
+  if (!randompack_engines(0, 0, &n, &elen, &dlen) || n <= 0 || elen <= 0 ||
+      dlen <= 0) {
+    printf("  (no engines available)\n");
+    return;
+  }
+  char *names = malloc((size_t)n*(size_t)elen);
+  char *descs = malloc((size_t)n*(size_t)dlen);
+  if (!names || !descs) {
+    free(names);
+    free(descs);
+    printf("  (allocation failed)\n");
+    return;
+  }
+  if (!randompack_engines(names, descs, &n, &elen, &dlen)) {
+    free(names);
+    free(descs);
+    printf("  (engine listing unavailable)\n");
+    return;
+  }
+  int width = elen - 1;
+  for (int i = 0; i < n; i++) {
+    printf("  %-*s  %s\n", width, names + i*elen, descs + i*dlen);
+  }
+  free(names);
+  free(descs);
+}
+
 static void print_help(void) {
   printf("TimeDistributions — time distributions (ns/value), double and float\n");
   printf("Usage: TimeDistributions [options]\n\n");
   printf("Options:\n");
   printf("  -h            Show this help message\n");
-  printf("  -e engine     RNG engine (default x256++)\n");
+  printf("  -e engine     RNG engine (default x256++simd)\n");
   printf("  -t seconds    Benchmark time per distribution (default 0.1)\n");
   printf("  -c chunk      Chunk size (values per call, default 4096)\n");
   printf("  -s seed       RNG seed (default 7)\n\n");
-  printf("Notes:\n");
+  printf("Engines:\n");
+  print_engines();
+  printf("\nNotes:\n");
   printf("  Parameters are fixed to representative values.\n");
 }
 
@@ -31,7 +64,7 @@ static bool get_options(int argc, char **argv, char **engine, double *bench_time
   opterr = 0;
   optind = 1;
   int opt;
-  *engine = "x256++";
+  *engine = "x256++simd";
   *bench_time = 0.1;
   *chunk = 4096;
   *seed = 7;

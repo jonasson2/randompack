@@ -20,7 +20,7 @@ Development version from GitHub:
 
         library(randompack)
 
-        # Create an RNG with the default engine (xoshiro256++)
+        # Create an RNG with the default engine (x256++simd)
         rng <- randompack_rng()
 
         # Generate random variates

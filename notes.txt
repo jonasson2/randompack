@@ -91,3 +91,6 @@ fi = bottom of strip i, except f0 = top of strip 1. Also use the notation xi = w
 The acceptance test is rabs < ki which must match x < x{i-1} (for the top strip, i=1, everything is accepted, aligns with k1=0), so ki*wi = x{i-1} or ki = 2^52*x{i-1}/x{i}. This holds for i=1...255. 
 
 For the bottom strip, w0 and k0 are determined differently. The area of the rectangle left of x255 is A = f1/x255 and the tail area is B = 1/256 - A. We should accept x with probability A/(A+B) 
+
+
+

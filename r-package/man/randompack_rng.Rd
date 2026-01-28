@@ -4,7 +4,7 @@
 \alias{randompack_rng}
 \title{Create and Use Random Number Generators}
 \usage{
-randompack_rng(engine = "x256++")
+randompack_rng(engine = "x256++simd")
 }
 \arguments{
 \item{engine}{RNG engine}
@@ -28,7 +28,7 @@ generation across different processes or threads.
 \section{Available Engines}{
 
 \tabular{lll}{
-\code{x256++} \tab\tab xoshiro256++ (default; Vigna and Blackman, 2018) \cr
+\code{x256++simd} \tab\tab xorshift256++ with streams (default) \cr
 \code{x256**} \tab\tab xoshiro256** (Vigna and Blackman, 2018) \cr
 \code{xoro++} \tab\tab xoroshiro128++ (Vigna and Blackman, 2016) \cr
 \code{x128+} \tab\tab xorshift128+ (Vigna, 2014) \cr

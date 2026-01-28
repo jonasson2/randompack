@@ -114,6 +114,16 @@ function main()
     consume!(sink, buf)
   end)
 
+  run("exp(1)", () -> begin
+    rand!(d_exp1, buf)
+    consume!(sink, buf)
+  end)
+
+  run("exp(2)", () -> begin
+    rand!(d_exp2, buf)
+    consume!(sink, buf)
+  end)
+
   run("lognormal(0,1)", () -> begin
     rand!(d_logn, buf)
     consume!(sink, buf)
@@ -134,16 +144,6 @@ function main()
       u = buf[i]
       buf[i] = (1 - u)^(-0.5)
     end
-    consume!(sink, buf)
-  end)
-
-  run("exp(1)", () -> begin
-    rand!(d_exp1, buf)
-    consume!(sink, buf)
-  end)
-
-  run("exp(2)", () -> begin
-    rand!(d_exp2, buf)
     consume!(sink, buf)
   end)
 

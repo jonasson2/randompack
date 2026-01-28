@@ -37,10 +37,10 @@ ALWAYS_INLINE float draw_normf(randompack_rng *rng, int *w) {
     rabs = (r >> 1) & 0x0007fffff;
     x = rabs * wi_float[idx];
     x = flip_sign_if_f(x, sign);
-    if (rabs < ki_float[idx]) {
+    if (LIKELY(rabs < ki_float[idx])) {
       return x;
     }
-    else if (idx == 0) {
+    else if (UNLIKELY(idx == 0)) {
       x = tail_draw_f(rng, rabs, w);
       make_half_full32(rng, w);
       return x;

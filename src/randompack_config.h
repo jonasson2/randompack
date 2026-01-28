@@ -52,7 +52,6 @@ static inline void copy16(void *dst, void *src, int n) { memcpy(dst, src, n*2); 
 static inline void copy32(void *dst, void *src, int n) { memcpy(dst, src, n*4); }
 static inline void copy64(void *dst, void *src, int n) { memcpy(dst, src, n*8); }
 
-#define MAXSTREAMS 8
 #define BUFSIZE 128
 
 _Static_assert(BUFSIZE % 8 == 0, "BUFSIZE must be a multiple of 8 (for chacha20)");

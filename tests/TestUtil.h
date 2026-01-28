@@ -146,6 +146,7 @@ static engine_table_entry engine_table[] = {
   {"sfc64",         4},
   {"x256**",        4},
   {"x256++",        4},
+  {"x256++simd",    4},
   {"chacha20",      6},
 #if HAVE128MUL
   {"philox",        6},

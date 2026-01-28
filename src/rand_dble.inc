@@ -101,7 +101,7 @@ ALWAYS_INLINE void rand_dble(double x[], size_t len, randompack_rng *rng) {
     size_t remain = len - i;
     size_t avail = BUFSIZE - (size_t)w;
     size_t take = remain < avail ? remain : avail;
-    if (rng->use53bits) {
+    if (rng->usefullmantissa) {
       rand_dble_4x53(x + i, take, rng->buf.u64 + (size_t)w);
     }
     else {

@@ -7,10 +7,10 @@ if (!requireNamespace("randompack", quietly = TRUE)) {
   stop("Package 'randompack' is required. Install with install.packages('randompack') or from your repo.")
 }
 
-# Optional engine from command line: Rscript TimeRandompack.R x256++
+# Optional engine from command line: Rscript TimeRandompack.R x256++simd
 args <- commandArgs(trailingOnly = TRUE)
 engine <- if (length(args) >= 1L) args[[1]] else ""
-if (!nzchar(engine)) engine <- "x256++"
+if (!nzchar(engine)) engine <- "x256++simd"
 
 rng <- randompack::randompack_rng(engine = engine)
 

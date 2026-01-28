@@ -7,8 +7,38 @@
 #include <ctype.h>
 #include "getopt.h"
 #include <limits.h>
-
 #include "randompack.h"
+
+static void print_engines(void) {
+  int n = 0;
+  int elen = 0;
+  int dlen = 0;
+  if (!randompack_engines(0, 0, &n, &elen, &dlen) || n <= 0 || elen <= 0 ||
+      dlen <= 0) {
+    printf("  (no engines available)\n");
+    return;
+  }
+  char *names = malloc((size_t)n*(size_t)elen);
+  char *descs = malloc((size_t)n*(size_t)dlen);
+  if (!names || !descs) {
+    free(names);
+    free(descs);
+    printf("  (allocation failed)\n");
+    return;
+  }
+  if (!randompack_engines(names, descs, &n, &elen, &dlen)) {
+    free(names);
+    free(descs);
+    printf("  (engine listing unavailable)\n");
+    return;
+  }
+  int width = elen - 1;
+  for (int i = 0; i < n; i++) {
+    printf("  %-*s  %s\n", width, names + i*elen, descs + i*dlen);
+  }
+  free(names);
+  free(descs);
+}
 
 static void print_help(void) {
   printf("RunRandom — generate and print random numbers using randompack\n");
@@ -16,16 +46,13 @@ static void print_help(void) {
   printf("Options:\n");
   printf("  -h            Show this help message\n");
   printf("  -n N          Number of values to generate (default 3)\n");
-  printf("  -e ENGINE     RNG engine short name (default: x256++)\n");
+  printf("  -e ENGINE     RNG engine name (default: x256++simd)\n");
   printf("  -s SEED       Integer seed (if omitted, RNG is auto-randomized)\n");
   printf("  -d DIST       Distribution (default u01)\n");
   printf("  -p LIST       Distribution parameters (comma-separated)\n\n");
-  printf("Engines (short names only):\n");
-  printf("  x256++    squares\n");
-  printf("  x256**    philox\n");
-  printf("  x128+     cwg128\n");
-  printf("  xoro++    chacha20\n");
-  printf("  pcg64     system\n\n");
+  printf("Engines:\n");
+  print_engines();
+  printf("\n");
   printf("Distributions:\n");
   printf("  u01                    U(0,1)\n");
   printf("  unif      -p a,b       U(a,b)\n");
@@ -85,14 +112,6 @@ static bool parse_double_list(const char *s, double *p, int want) {
   return true;
 }
 
-static bool engine_is_short_name(const char *s) {
-  if (!s) return true;
-  return streq_ci(s, "x128+") || streq_ci(s, "xoro++") || streq_ci(s, "x256**") ||
-         streq_ci(s, "x256++") || streq_ci(s, "squares") || streq_ci(s, "pcg64") ||
-         streq_ci(s, "cwg128") || streq_ci(s, "philox") || streq_ci(s, "chacha20") ||
-         streq_ci(s, "system");
-}
-
 int main(int argc, char **argv) {
   if (argc == 1) {
     printf("RunRandom: generate random numbers using randompack (-h for help)\n");
@@ -123,13 +142,15 @@ int main(int argc, char **argv) {
     else { print_help(); return 1; }
   }
   if (optind < argc) { print_help(); return 1; }
-  if (engine && !engine_is_short_name(engine)) {
-    fprintf(stderr, "RunRandom: engine must be a short name (use -h)\n");
-    return 1;
-  }
   randompack_rng *rng = randompack_create(engine);
   if (!rng) {
     fprintf(stderr, "RunRandom: rng allocation failed\n");
+    return 1;
+  }
+  msg = randompack_last_error(rng);
+  if (msg) {
+    fprintf(stderr, "RunRandom: %s\n", msg);
+    randompack_free(rng);
     return 1;
   }
   if (have_seed) {

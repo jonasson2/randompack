@@ -45,9 +45,9 @@ static void test_invalid_args(void) {
   free_engines(engines, n);
 }
 
-static void test_xoshiro_nonzero(void) {
+static void test_xorfamily_nonzero(void) {
   uint64_t zero[] = {0,0,0,0};
-  char *engines[] = {"x256++", "x256**"};
+  char *engines[] = {"x256++", "x256**", "x256++simd", "xoro++", "x128+"};
   for (int i = 0; i < LEN(engines); i++) {
     randompack_rng *rng = make_rng(engines[i]);
     bool ok = randompack_set_state(zero, 4, rng);
@@ -190,7 +190,7 @@ static void test_squares_set_state(void) {
 
 void TestSetState(void) {
   test_invalid_args();
-  test_xoshiro_nonzero();
+  test_xorfamily_nonzero();
   test_determinism();
   test_buf_reset();
   test_philox_set_state();

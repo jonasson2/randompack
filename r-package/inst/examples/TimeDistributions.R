@@ -46,10 +46,6 @@ cat(sprintf("%-18s %8.2f\n", "norm", ns))
 ns = time_dist(function() 2 + 3*rnorm(chunk), chunk, reps, bench_time)
 cat(sprintf("%-18s %8.2f\n", "normal(2,3)", ns))
 
-# lognormal(0,1)
-ns = time_dist(function() rlnorm(chunk, meanlog=0, sdlog=1), chunk, reps, bench_time)
-cat(sprintf("%-18s %8.2f\n", "lognormal(0,1)", ns))
-
 # exp(1)
 ns = time_dist(function() rexp(chunk, rate=1), chunk, reps, bench_time)
 cat(sprintf("%-18s %8.2f\n", "exp(1)", ns))
@@ -57,6 +53,10 @@ cat(sprintf("%-18s %8.2f\n", "exp(1)", ns))
 # exp(2)  (scale=2 => rate=1/2)
 ns = time_dist(function() rexp(chunk, rate=1/2), chunk, reps, bench_time)
 cat(sprintf("%-18s %8.2f\n", "exp(2)", ns))
+
+# lognormal(0,1)
+ns = time_dist(function() rlnorm(chunk, meanlog=0, sdlog=1), chunk, reps, bench_time)
+cat(sprintf("%-18s %8.2f\n", "lognormal(0,1)", ns))
 
 # gamma(2,3)
 ns = time_dist(function() rgamma(chunk, shape=2, scale=3), chunk, reps, bench_time)

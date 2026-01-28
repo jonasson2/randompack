@@ -1,0 +1,42 @@
+Timing of SIMD/ILP:
+[CxL: ILP chains by SIMD lanes]
+[AoS: state is array of structures, SoA structure of arrays]
+
+Mac M4 Pro:
+SoA_2x1 0.47 ns
+SoA_1x2 0.40 ns
+SoA_2x2 0.34 ns
+SoA_4x1 0.44 ns
+SoA_1x4 0.44 ns
+AoS_2x1 0.48 ns
+AoS_1x2 0.42 ns
+AoS_2x2 0.35 ns
+AoS_4x1 0.44 ns
+AoS_1x4 0.44 ns
+AoS_1x1 0.75 ns
+
+Jupiter: Linux x86-64 (AVX2):
+SoA_2x1 0.68 ns
+SoA_1x2 0.74 ns
+SoA_2x2 0.63 ns
+SoA_4x1 0.83 ns
+SoA_1x4 0.46 ns
+AoS_2x1 0.72 ns
+AoS_1x2 0.83 ns
+AoS_2x2 0.73 ns
+AoS_4x1 0.90 ns
+AoS_1x4 0.56 ns
+AoS_1x1 0.91 ns
+
+Elja: Linux x86-64 (AVX-512, Xeon)
+SoA_2x1 1.06 ns
+SoA_1x2 1.08 ns
+SoA_2x2 0.99 ns
+SoA_4x1 1.25 ns
+SoA_1x4 0.71 ns
+AoS_2x1 1.29 ns
+AoS_1x2 0.97 ns
+AoS_2x2 0.84 ns
+AoS_4x1 1.25 ns
+AoS_1x4 0.79 ns
+AoS_1x1 1.18 ns

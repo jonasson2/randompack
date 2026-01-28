@@ -3,15 +3,15 @@
 ## Introduction
 
 Randompack is a library for random number generation written in C. It is
-intended to be robust, portable, and straightforward to use, while placing
-emphasis on correctness and reproducibility. Interfaces are provided for C,
-Fortran, R, and Python, with compatible streams across languages under the same
-generator choice and seed. The library provides a range of distributions,
-including raw bit-streams, bounded and interval-based integers, permutations and
-sampling without replacement, uniform and normal variates, and several other
-commonly used continuous distributions. All distribution algorithms are
-implemented directly from their original or standard published descriptions,
-with care taken to avoid undocumented shortcuts or ad-hoc modifications.
+intended to be robust, portable, fast, and easy to use, while placing emphasis
+on correctness and reproducibility. Interfaces are provided for C, Fortran, R,
+and Python, with compatible streams across languages under the same generator
+choice and seed. The library provides a range of distributions, including raw
+bit-streams, bounded and interval-based integers, permutations and sampling
+without replacement, uniform and normal variates, and several other commonly
+used continuous distributions. All distribution algorithms are implemented
+directly from their original or standard published descriptions, with care taken
+to avoid undocumented shortcuts or ad-hoc modifications.
 
 The library includes several modern random number generators, including multiple
 members of Vigna and Blackman’s xor family, O’Neill’s PCG64, the Philox generator
@@ -25,7 +25,7 @@ engines and reference implementations.
 
 Randompack is designed for high-performance bulk generation. It uses buffering
 and inlining in tight, low-overhead inner loops, minimizing per-sample overhead
-when drawing large numbers of variates (using a fixed 1 KB buffer chosen for
+when drawing large numbers of variates (using a fixed 2 KB buffer chosen for
 performance). The library is thread-safe, released under the MIT licence, and
 built using the Meson build system with Ninja as the default backend. The C11
 core is intended to build cleanly on all major platforms and to serve both as a

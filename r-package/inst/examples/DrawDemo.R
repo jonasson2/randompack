@@ -1,4 +1,6 @@
-# inst/examples/draw.R
+# inst/examples/DrawDemo.R
+# Purpose: deterministic demo that prints a few unif draws for selected engines.
+# Matching C program: examples/DrawDemo.c
 
 suppressMessages(library(randompack))
 

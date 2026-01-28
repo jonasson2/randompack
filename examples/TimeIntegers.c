@@ -13,7 +13,7 @@ static void print_help(void) {
   printf("Usage: TimeIntegers [options]\n\n");
   printf("Options:\n");
   printf("  -h            Show this help message\n");
-  printf("  -e engine     RNG engine (default x256++)\n");
+  printf("  -e engine     RNG engine (default x256++simd)\n");
   printf("  -t seconds    Benchmark time per case (default 0.1)\n");
   printf("  -c chunk      Chunk size (values per call, default 4096)\n");
   printf("  -s seed       RNG seed (default 7)\n");
@@ -24,7 +24,7 @@ static bool get_options(int argc, char **argv, char **engine, double *bench_time
   opterr = 0;
   optind = 1;
   int opt;
-  *engine = "x256++";
+  *engine = "x256++simd";
   *bench_time = 0.1;
   *chunk = 4096;
   *seed = 7;

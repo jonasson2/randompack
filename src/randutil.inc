@@ -24,6 +24,7 @@ static inline void normalize_state(randompack_rng *rng) {
   switch (rng->engine) {
   case X256PP:
   case X256SS:
+  case FAST:
   case XORO:
   case X128P:
     if (rng->state.u64[0] == 0) rng->state.u64[0] = 1;
@@ -43,10 +44,23 @@ static inline void normalize_state(randompack_rng *rng) {
 
 static inline void fill_stream_states_with_jump(randompack_rng *rng) {
   if (rng->engine == FAST) {
-	 for (int i = 1; i < MAXSTREAMS; i++) {
-		copy64(rng->state.ustream[i], rng->state.ustream[i-1], 4);
-		xoshiro256pp_jump(rng->state.ustream[i]);
-	 }
+    xo256 *st = &rng->state.xo;
+    for (int i = 1; i < 4; i++) {
+      st->s0[i] = st->s0[i-1];
+      st->s1[i] = st->s1[i-1];
+      st->s2[i] = st->s2[i-1];
+      st->s3[i] = st->s3[i-1];
+      uint64_t tmp[4];
+      tmp[0] = st->s0[i];
+      tmp[1] = st->s1[i];
+      tmp[2] = st->s2[i];
+      tmp[3] = st->s3[i];
+      xoshiro256pp_jump(tmp);
+      st->s0[i] = tmp[0];
+      st->s1[i] = tmp[1];
+      st->s2[i] = tmp[2];
+      st->s3[i] = tmp[3];
+    }
   }
 }
 
@@ -54,7 +68,7 @@ static void rand_init(randompack_rng *rng) {
   rng->buf_word = BUFSIZE;
   rng->buf_byte = 0;
   rng->last_error = 0;
-  rng->use53bits = false;
+  rng->usefullmantissa = false;
   normalize_state(rng);
   fill_stream_states_with_jump(rng);
 }
@@ -64,6 +78,14 @@ static void rand_init_randomize(randompack_rng *rng) {
     entropy_fill(rng, &rng->state.u8[0],  32); // key (8 uints)
     entropy_fill(rng, &rng->state.u8[32], 12); // nonce (3 uints)
     rng->state.u32[11] = 0;                    // counter (1 uint)
+  }
+  else if (rng->engine == FAST) {
+    uint64_t tmp[4];
+    entropy_fill(rng, tmp, sizeof(tmp));
+    rng->state.xo.s0[0] = tmp[0];
+    rng->state.xo.s1[0] = tmp[1];
+    rng->state.xo.s2[0] = tmp[2];
+    rng->state.xo.s3[0] = tmp[3];
   }
   else {
     entropy_fill(rng, rng->state.u64, sizeof(rng->state.u64));
@@ -113,6 +135,12 @@ static void set_state(uint64_t *state, int nstate, randompack_rng *rng) {
   if (rng->engine == CHACHA20) {
     for (int i = 0; i < nstate; i++)
       store_u64_le(rng->state.u8 + 8*i, state[i]);
+  }
+  else if (rng->engine == FAST) {
+    rng->state.xo.s0[0] = state[0];
+    rng->state.xo.s1[0] = state[1];
+    rng->state.xo.s2[0] = state[2];
+    rng->state.xo.s3[0] = state[3];
   }
   else copy64(rng->state.u64, state, nstate);
 }

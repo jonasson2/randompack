@@ -4,6 +4,7 @@
 #include "xoshiro256pp.inc"
 #include "xoshiro256ss.inc"
 #include "xoroshiro128pp.inc"
+#include "x256ppsimd.inc"
 #include "chachacha.inc"
 #include "csprng.inc"
 #include "squares64.inc"
@@ -19,4 +20,3 @@
 #include "philox4x64.inc"
 #endif
 
-#include "fast.inc"

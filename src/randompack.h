@@ -12,7 +12,7 @@ typedef struct { uint64_t v[4]; } randompack_counter;
 typedef struct { uint64_t v[2]; } randompack_philox_key;
 
 randompack_rng *randompack_create( // Create randomized RNG of given engine type, error→0
-  const char *engine    // in      Engine name (Xoshiro256++ [default], PCG,... 0→default)
+  const char *engine    // in      Engine name (x256++simd [default], PCG,... 0→default)
 );
 
 randompack_rng *randompack_duplicate( // Clone an RNG (identical engine+state), error → 0
@@ -21,6 +21,11 @@ randompack_rng *randompack_duplicate( // Clone an RNG (identical engine+state), 
 
 bool randompack_randomize( // Randomize RNG state from system entropy, false on error
   randompack_rng *rng   // in/out  Random number generator
+);
+
+bool randompack_full_mantissa( // Use full mantissa for doubles (default false)
+  randompack_rng *rng,          // in/out  Random number generator
+  bool enable                  // in      true → 53-bit mantissa, false → 52-bit
 );
 
 bool randompack_seed( // Create RNG with given type and seed, false on error
@@ -253,8 +258,8 @@ bool randompack_squares_set_state( // Set squares64 counter/key state directly
 );
 
 bool randompack_set_state( // Set state of general engine directly
-  uint64_t state[],           // in      state words (length depends on engine)
-  int nstate,                 // in      number of state words provided
+  uint64_t state[],           // in      state words (must be nonzero for xor-family)
+  int nstate,                 // in      number of state words provided, depends on engine
   randompack_rng *rng         // in/out  target RNG
 );
 

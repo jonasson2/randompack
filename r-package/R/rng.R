@@ -20,7 +20,7 @@ NULL
 #'
 #' @section Available Engines:
 #' \tabular{lll}{
-#'   \code{x256++} \tab\tab xoshiro256++ (default; Vigna and Blackman, 2018) \cr
+#'   \code{x256++simd} \tab\tab xorshift256++ with streams (default) \cr
 #'   \code{x256**} \tab\tab xoshiro256** (Vigna and Blackman, 2018) \cr
 #'   \code{xoro++} \tab\tab xoroshiro128++ (Vigna and Blackman, 2016) \cr
 #'   \code{x128+} \tab\tab xorshift128+ (Vigna, 2014) \cr
@@ -147,7 +147,7 @@ NULL
 #' @seealso \code{\link{randompack_engines}} to list all available engines
 #'
 #' @export
-randompack_rng <- function(engine = "x256++") {
+randompack_rng <- function(engine = "x256++simd") {
   RandompackRNG$new(engine = engine)
 }
 

@@ -47,7 +47,6 @@ struct randompack_rng {
 	 uint8_t  u8[48];
     uint32_t u32[16];
     uint64_t u64[8];
-    uint64_t ustream[MAXSTREAMS][4];
     xo256    xo;
     #if HAVE128
     pcg64_t pcg;
@@ -59,7 +58,7 @@ struct randompack_rng {
   int buf_byte;
   char *last_error;
   engine_fill fill;
-  bool use53bits;
+  bool usefullmantissa;
   union {
     uint32_t u32[2*BUFSIZE];
     uint64_t u64[BUFSIZE];
@@ -80,20 +79,22 @@ typedef struct {
 #include "distributions.inc"
 
 static rng_entry rng_table[] = {
+  { "x256++simd","xorshift256++ with streams",             FAST,     4, fill_x256ppsimd},
   { "x256++",   "xoshiro256++ (Vigna & Blackman, 2019)",   X256PP,   4, fill_x256pp    },
   { "x256**",   "xoshiro256** (Vigna & Blackman, 2019)",   X256SS,   4, fill_x256ss    },
   { "xoro++",   "xoroshiro128++ (Vigna & Blackman, 2016)", XORO,     2, fill_xoro128pp },
   { "x128+",    "xorshift128+ (Vigna, 2014)",              X128P,    2, fill_x128p     },
-  { "fast",     "xorshift256++ with streams",              FAST,     4, fill_fast      },
 #if HAVE128
   { "pcg64",    "PCG64-DXSM (O'Neill, 2014)",              PCG64,    4, fill_pcg64     },
+#endif
+  { "sfc64",    "sfc64 (Chris Doty-Humphrey, 2013)",       SFC64,    4, fill_sfc64     },
+#if HAVE128
   { "cwg128",   "cwg128-64 (Działa, 2022)",                CWG128,   5, fill_cwg128    },
 #endif
 #if HAVE128MUL
   { "philox",   "Philox-4x64 (Salmon & Moraes, 2011)",     PHILOX,   6, fill_philox    },
 #endif
   { "squares",  "squares64 (Widynski, 2021)",              SQUARES,  2, fill_squares   },
-  { "sfc64",    "sfc64 (Chris Doty-Humphrey, 2013)",       SFC64,    4, fill_sfc64     },
   { "chacha20", "ChaCha20 (Bernstein, 2008)",              CHACHA20, 6, fill_chacha    },
   { "system",   "Operating system entropy source",         SYS,      0, fill_csprng    },
 };
@@ -108,8 +109,8 @@ static bool select_engine(const char *s, randompack_rng *rng) {
   // set rng->{engine,next} according to the engine name s
   if (!rng) return false;
   if (!s) {
-    rng->engine = X256PP; // default engine
-    rng->fill   = fill_x256pp;
+    rng->engine = FAST; // default engine
+    rng->fill   = fill_x256ppsimd;
     return true;
   }
   char t[64];
@@ -172,6 +173,14 @@ bool randompack_seed(int seed, uint32_t *spawn_key, int nkey, randompack_rng *rn
   }
   rng_entry *ent = find_entry(rng->engine);
   copy32(rng->state.u32, w, ent->state_words*2);
+  if (rng->engine == FAST) {
+    uint64_t tmp[4];
+    copy64(tmp, rng->state.u64, 4);
+    rng->state.xo.s0[0] = tmp[0];
+    rng->state.xo.s1[0] = tmp[1];
+    rng->state.xo.s2[0] = tmp[2];
+    rng->state.xo.s3[0] = tmp[3];
+  }
   rand_init(rng);
   return true;
 }
@@ -183,6 +192,17 @@ bool randompack_randomize(randompack_rng *rng) {
     return false;
   }
   rand_init_randomize(rng);
+  return true;
+}
+
+bool randompack_full_mantissa(randompack_rng *rng, bool enable) {
+  if (!rng) return false;
+  if (rng->engine == INVALID) {
+    rng->last_error = "randompack full_mantissa: invalid rng";
+    return false;
+  }
+  rng->last_error = 0;
+  rng->usefullmantissa = enable;
   return true;
 }
 
@@ -336,7 +356,7 @@ bool randompack_set_state(uint64_t state[], int nstate, randompack_rng *rng) {
       "randompack set_state: CWG128 engine not supported on this platform";
   else if (nstate != ent->state_words)
     rng->last_error = "randompack set_state: wrong nstate for this engine";
-  else if (rng->engine == X256PP || rng->engine == X256SS ||
+  else if (rng->engine == X256PP || rng->engine == X256SS || rng->engine == FAST ||
            rng->engine == XORO || rng->engine == X128P) {
     bool all_zero = true;
     for (int i = 0; i < nstate; i++) {

@@ -22,7 +22,7 @@ static void draw_randoms(char *engine, uint64_t *x, int n, uint64_t seed) {
 }
 
 static bool is_excluded_engine(const char *engine) {
-  return strcmp(engine, "fast") == 0;
+  return strcmp(engine, "x256++simd") == 0;
 }
 
 // Check that identical engines agree and different engines differ.
@@ -84,11 +84,11 @@ static void test_null_engine_name(void) {
 }
 
 // Null engine name should behave like explicitly requesting the default
-// engine ("x256++" at present), for the same seed.
-static void test_default_engine_matches_x256pp(void) {
+// engine ("x256++simd" at present), for the same seed.
+static void test_default_engine_matches_x256ppsimd(void) {
   uint64_t a[1], b[1];
   draw_randoms(0, a, 1, 42);
-  draw_randoms("x256++", b, 1, 42);
+  draw_randoms("x256++simd", b, 1, 42);
   xCheck(a[0] == b[0]);
 }
 
@@ -159,7 +159,7 @@ void TestCreate(void) {
   test_randomize();
   test_bad_engine_name();
   test_null_engine_name();
-  test_default_engine_matches_x256pp();
+  test_default_engine_matches_x256ppsimd();
   test_system_engine();
 #if !HAVE128
   test_engine_unavailable("pcg64");

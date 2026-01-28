@@ -49,8 +49,8 @@ examine_resolution = executable(
 )
 
 draw_example = executable(
-  'draw',
-  'draw.c',
+  'DrawDemo',
+  'DrawDemo.c',
   dependencies : [randompack_dep],
 )
 

@@ -1,4 +1,6 @@
-// examples/draw.c
+// examples/DrawDemo.c
+// Purpose: deterministic demo that prints a few u01 draws for selected engines.
+// Matching R script: r-package/inst/examples/DrawDemo.R
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
