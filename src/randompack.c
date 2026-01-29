@@ -439,6 +439,7 @@ bool randompack_unif(double x[], size_t len, double a, double b,
   }
   rng->last_error = 0;
   rand_dble(x, len, rng); // x in [0,1)
+  if (a==0 && b==1) return true;
   double w = b - a;
   for (size_t i = 0; i < len; i++) {
     double v = a + w*x[i];

@@ -45,6 +45,7 @@ complete list.
 - **Multiple engines**: Choose from modern, high-performance generators
 - **Wide distribution coverage**: Continuous, discrete, and multivariate distributions
 - **Reproducibility**: Seeding and state serialization
+- **Full mantissa option**: Toggle 53-bit mantissas for double-precision draws
 - **Parallel streams**: Independent substreams via spawn keys
 - **Thread-safe**: Multiple independent RNG objects
 

@@ -12,7 +12,7 @@ typedef struct { uint64_t v[4]; } randompack_counter;
 typedef struct { uint64_t v[2]; } randompack_philox_key;
 
 randompack_rng *randompack_create( // Create randomized RNG of given engine type, error→0
-  const char *engine    // in      Engine name (x256++simd [default], PCG,... 0→default)
+  const char *engine    // in      Type ("x256++simd" [default], "pcg64",... 0→default)
 );
 
 randompack_rng *randompack_duplicate( // Clone an RNG (identical engine+state), error → 0

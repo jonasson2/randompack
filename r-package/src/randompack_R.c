@@ -59,6 +59,13 @@ SEXP randompack_create_R(SEXP engine) {
     }
     Rf_error("unknown RNG engine '%s' (check spelling)", name);
   }
+  char *err = randompack_last_error(rng);
+  if (err && err[0]) {
+    if (is_platform_dependent_engine(name)) {
+      Rf_error("RNG engine '%s' is not supported on this platform/build", name);
+    }
+    Rf_error("unknown RNG engine '%s' (check spelling)", name);
+  }
   SEXP ext = R_MakeExternalPtr(rng, R_NilValue, R_NilValue);
   R_RegisterCFinalizerEx(ext, rng_finalizer, TRUE);
   return ext;
@@ -108,6 +115,38 @@ SEXP randompack_randomize_R(SEXP ext){
   if (!ok){
     char *msg = randompack_last_error(rng);
     if (!msg) msg = "randompack_randomize failed";
+    Rf_error("%s", msg);
+  }
+  return R_NilValue;
+}
+
+SEXP randompack_duplicate_R(SEXP ext){
+  randompack_rng *rng = (randompack_rng *)R_ExternalPtrAddr(ext);
+  if (!rng) Rf_error("RNG pointer is NULL");
+  randompack_rng *out = randompack_duplicate(rng);
+  if (!out){
+    char *msg = randompack_last_error(rng);
+    if (!msg) msg = "randompack_duplicate failed";
+    Rf_error("%s", msg);
+  }
+  char *err = randompack_last_error(out);
+  if (err && err[0])
+    Rf_error("%s", err);
+  SEXP ext_out = R_MakeExternalPtr(out, R_NilValue, R_NilValue);
+  R_RegisterCFinalizerEx(ext_out, rng_finalizer, TRUE);
+  return ext_out;
+}
+
+SEXP randompack_full_mantissa_R(SEXP ext, SEXP enable_){
+  randompack_rng *rng = (randompack_rng *)R_ExternalPtrAddr(ext);
+  if (!rng) Rf_error("RNG pointer is NULL");
+  int v = Rf_asLogical(enable_);
+  if (v == NA_LOGICAL)
+    Rf_error("enable must be TRUE or FALSE");
+  bool ok = randompack_full_mantissa(rng, v != 0);
+  if (!ok){
+    char *msg = randompack_last_error(rng);
+    if (!msg) msg = "randompack_full_mantissa failed";
     Rf_error("%s", msg);
   }
   return R_NilValue;

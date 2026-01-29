@@ -37,6 +37,15 @@ methods_configure <- list(
     invisible(self)
   },
 
+  full_mantissa = function(enable = TRUE) {
+    if (is.null(self$ptr)) stop("RNG is not initialized")
+    if (length(enable) != 1L || is.na(enable))
+      stop("enable must be TRUE or FALSE")
+    enable <- as.logical(enable)
+    .Call("randompack_full_mantissa_R", self$ptr, enable, PACKAGE = "randompack")
+    invisible(self)
+  },
+
   set_state = function(state) {
     if (is.null(self$ptr)) stop("RNG is not initialized")
     state <- as_u32_vec(state, "state", even = TRUE)
@@ -63,8 +72,10 @@ methods_configure <- list(
 
   duplicate = function() {
     if (is.null(self$ptr)) stop("RNG is not initialized")
+    ext <- .Call("randompack_duplicate_R", self$ptr, PACKAGE = "randompack")
     out <- randompack_rng(engine = self$engine)
-    out$deserialize(self$serialize())
+    .Call("randompack_free_R", out$ptr, PACKAGE = "randompack")
+    out$ptr <- ext
     out
   },
   

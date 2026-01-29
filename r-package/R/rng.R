@@ -96,6 +96,9 @@ NULL
 #'     numeric vector `spawn_key`.
 #'   }
 #'   \item{`randomize()`}{Randomize the RNG state from system entropy.}
+#'   \item{`full_mantissa(enable = TRUE)`}{
+#'     Enable or disable 53-bit mantissas for double-precision draws.
+#'   }
 #'   \item{`duplicate()`}{Duplicate the RNG, preserving its state.}
 #'   \item{`serialize()`}{Serialize the current RNG state as a raw vector.}
 #'   \item{`deserialize(raw_state)`}{Restore state from a raw vector created
@@ -135,6 +138,7 @@ NULL
 #' # Configuration and copying
 #' rng$seed(12345)                          # seed for reproducibility
 #' rng$randomize()                          # randomize from system entropy
+#' rng$full_mantissa(TRUE)                  # 53-bit mantissas for doubles
 #' rng2 <- rng$duplicate()                  # duplicate with same state
 #' identical(rng$unif(3), rng2$unif(3))     # TRUE
 #' raw_state <- rng$serialize()             # save state
