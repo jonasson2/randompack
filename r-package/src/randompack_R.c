@@ -191,7 +191,7 @@ SEXP randompack_philox_set_state_R(SEXP ext, SEXP counter_, SEXP key_){
     Rf_error("counter must have length between 1 and 8");
   if (key_n <= 0 || key_n > 4)
     Rf_error("key must have length between 1 and 4");
-  randompack_counter counter;
+  randompack_philox_ctr counter;
   randompack_philox_key key;
   for (int i = 0; i < 4; i++) counter.v[i] = 0;
   for (int i = 0; i < 2; i++) key.v[i] = 0;
@@ -283,6 +283,25 @@ SEXP randompack_normal_R(SEXP ext, SEXP n_, SEXP mu_, SEXP sigma_){
   if (!ok){
     char *msg = randompack_last_error(rng);
     if (!msg) msg = "randompack_normal failed";
+    Rf_error("%s", msg);
+  }
+  UNPROTECT(1);
+  return out;
+}
+
+SEXP randompack_skew_normal_R(SEXP ext, SEXP n_, SEXP mu_, SEXP sigma_, SEXP alpha_){
+  randompack_rng *rng = (randompack_rng *)R_ExternalPtrAddr(ext);
+  if (!rng) Rf_error("RNG pointer is NULL");
+  int n = Rf_asInteger(n_);
+  if (n < 0) Rf_error("n must be non-negative");
+  double mu = Rf_asReal(mu_);
+  double sigma = Rf_asReal(sigma_);
+  double alpha = Rf_asReal(alpha_);
+  SEXP out = PROTECT(Rf_allocVector(REALSXP, n));
+  bool ok = randompack_skew_normal(REAL(out), n, mu, sigma, alpha, rng);
+  if (!ok){
+    char *msg = randompack_last_error(rng);
+    if (!msg) msg = "randompack_skew_normal failed";
     Rf_error("%s", msg);
   }
   UNPROTECT(1);

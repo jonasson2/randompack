@@ -81,34 +81,6 @@ bool randompack_lognormalf(float x[], size_t len, float mu, float sigma,
   return true;
 }
 
-bool randompack_gumbelf(float x[], size_t len, float mu, float beta,
-  randompack_rng *rng) {
-  if (!rng) return false;
-  if (!x || beta <= 0.0f) {
-    rng->last_error = "invalid arguments to randompack_gumbelf";
-    return false;
-  }
-  rng->last_error = 0;
-  rand_float(x, len, rng); // x in [0,1)
-  for (size_t i = 0; i < len; i++)
-    x[i] = mu - beta*logf(-logf(x[i]));
-  return true;
-}
-
-bool randompack_paretof(float x[], size_t len, float xm, float alpha,
-  randompack_rng *rng) {
-  if (!rng) return false;
-  if (!x || xm <= 0 || alpha <= 0) {
-    rng->last_error = "invalid arguments to randompack_paretof";
-    return false;
-  }
-  rng->last_error = 0;
-  rand_expf(x, len, rng);
-  for (size_t i = 0; i < len; i++)
-    x[i] = xm*expf(x[i]/alpha);
-  return true;
-}
-
 bool randompack_gammaf(float x[], size_t len, float shape, float scale,
   randompack_rng *rng) {
   if (!rng) return false;
@@ -121,17 +93,6 @@ bool randompack_gammaf(float x[], size_t len, float shape, float scale,
   return true;
 }
 
-bool randompack_chi2f(float x[], size_t len, float nu, randompack_rng *rng) {
-  if (!rng) return false;
-  if (!x || nu <= 0) {
-    rng->last_error = "invalid arguments to randompack_chi2f";
-    return false;
-  }
-  rng->last_error = 0;
-  fill_gammaf(x, len, 0.5f*nu, 2.0f, rng);
-  return true;
-}
-
 bool randompack_betaf(float x[], size_t len, float a, float b,
   randompack_rng *rng) {
   if (!rng) return false;
@@ -141,6 +102,17 @@ bool randompack_betaf(float x[], size_t len, float a, float b,
   }
   rng->last_error = 0;
   fill_betaf(x, len, a, b, rng);
+  return true;
+}
+
+bool randompack_chi2f(float x[], size_t len, float nu, randompack_rng *rng) {
+  if (!rng) return false;
+  if (!x || nu <= 0) {
+    rng->last_error = "invalid arguments to randompack_chi2f";
+    return false;
+  }
+  rng->last_error = 0;
+  fill_chi2f(x, len, nu, rng);
   return true;
 }
 
@@ -167,6 +139,30 @@ bool randompack_ff(float x[], size_t len, float nu1, float nu2,
   return true;
 }
 
+bool randompack_gumbelf(float x[], size_t len, float mu, float beta,
+  randompack_rng *rng) {
+  if (!rng) return false;
+  if (!x || beta <= 0) {
+    rng->last_error = "invalid arguments to randompack_gumbelf";
+    return false;
+  }
+  rng->last_error = 0;
+  fill_gumbelf(x, len, mu, beta, rng);
+  return true;
+}
+
+bool randompack_paretof(float x[], size_t len, float xm, float alpha,
+  randompack_rng *rng) {
+  if (!rng) return false;
+  if (!x || xm <= 0 || alpha <= 0) {
+    rng->last_error = "invalid arguments to randompack_paretof";
+    return false;
+  }
+  rng->last_error = 0;
+  fill_paretof(x, len, xm, alpha, rng);
+  return true;
+}
+
 bool randompack_weibullf(float x[], size_t len, float shape, float scale,
   randompack_rng *rng) {
   if (!rng) return false;
@@ -175,9 +171,18 @@ bool randompack_weibullf(float x[], size_t len, float shape, float scale,
     return false;
   }
   rng->last_error = 0;
-  rand_expf(x, len, rng);
-  float inv_shape = 1.0f/shape;
-  for (size_t i = 0; i < len; i++)
-    x[i] = scale*powf(x[i], inv_shape);
+  fill_weibullf(x, len, shape, scale, rng);
+  return true;
+}
+
+bool randompack_skew_normalf(float x[], size_t len, float mu, float sigma,
+  float alpha, randompack_rng *rng) {
+  if (!rng) return false;
+  if (!x || sigma <= 0) {
+    rng->last_error = "invalid arguments to randompack_skew_normalf";
+    return false;
+  }
+  rng->last_error = 0;
+  fill_skew_normalf(x, len, mu, sigma, alpha, rng);
   return true;
 }

@@ -127,25 +127,25 @@ end
 @testset "rng_seed!" begin
   rng1 = rng_create("x256++simd")
   rng_seed!(rng1, 42)
-  x1 = random_unif(rng1, Float64)
+  x1 = random_unif(rng1)
   rng2 = rng_create("x256++simd")
   rng_seed!(rng2, 42)
-  x2 = random_unif(rng2, Float64)
+  x2 = random_unif(rng2)
   @test x1 == x2
   rng3 = rng_create("x256++simd")
   rng_seed!(rng3, 43)
-  x3 = random_unif(rng3, Float64)
+  x3 = random_unif(rng3)
   @test x1 != x3
   rng4 = rng_create("sfc64")
   rng_seed!(rng4, 42)
-  x4 = random_unif(rng4, Float64)
+  x4 = random_unif(rng4)
   @test x1 != x4
   rng5 = rng_create("x256++simd")
-  rng_seed!(rng5, 42; spawn_key=UInt32[42, 7])
-  x5 = random_unif(rng5, Float64)
+  rng_seed!(rng5, 42; spawn_key=[42, 7])
+  x5 = random_unif(rng5)
   rng6 = rng_create("x256++simd")
-  rng_seed!(rng6, 42; spawn_key=UInt32[42, 13])
-  x6 = random_unif(rng6, Float64)
+  rng_seed!(rng6, 42; spawn_key=[42, 13])
+  x6 = random_unif(rng6)
   @test x5 != x6
   has_pcg = true
   try
@@ -156,15 +156,16 @@ end
   if has_pcg
     rnga = rng_create("pcg64")
     rng_seed!(rnga, 42)
-    xa = random_unif(rnga, Float64)
+    xa = random_unif(rnga)
     rngb = rng_create("pcg64")
     rng_seed!(rngb, 42)
-    xb = random_unif(rngb, Float64)
+    xb = random_unif(rngb)
     @test xa == xb
   else
     @test true
   end
   @test_throws ArgumentError rng_seed!(rng1, 2^33)
+  @test_throws ArgumentError rng_seed!(rng1, 1; spawn_key=[big(1) << 33])
   rngnull = Randompack.RNG(C_NULL)
   @test_throws ErrorException rng_seed!(rngnull, 1)
 end
@@ -173,25 +174,25 @@ end
   rng = rng_create()
   rng_seed!(rng, 42)
   rng2 = Randompack.duplicate(rng)
-  x1 = random_unif(rng, Float64)
-  x2 = random_unif(rng2, Float64)
+  x1 = random_unif(rng)
+  x2 = random_unif(rng2)
   @test x1 == x2
 end
 
 @testset "randomize!" begin
   rng = rng_create()
   Randompack.randomize!(rng)
-  x = random_unif(rng, Float64)
+  x = random_unif(rng)
   @test isfinite(x)
 end
 
 @testset "full_mantissa!" begin
   rng = rng_create()
   Randompack.full_mantissa!(rng, true)
-  x = random_unif(rng, Float64)
+  x = random_unif(rng)
   @test isfinite(x)
   Randompack.full_mantissa!(rng, false)
-  y = random_unif(rng, Float64)
+  y = random_unif(rng)
   @test isfinite(y)
 end
 
@@ -206,21 +207,22 @@ end
 @testset "set_state!" begin
   rng1 = rng_create("squares")
   rng2 = rng_create("squares")
-  Randompack.set_state!(rng1, UInt64[1, 2])
-  Randompack.set_state!(rng2, UInt64[1, 2])
-  x1 = random_unif(rng1, Float64)
-  x2 = random_unif(rng2, Float64)
+  Randompack.set_state!(rng1; state=[1, 2])
+  Randompack.set_state!(rng2; state=[1, 2])
+  x1 = random_unif(rng1)
+  x2 = random_unif(rng2)
   @test x1 == x2
 end
 
 @testset "squares_set_state!" begin
   rng1 = rng_create("squares")
   rng2 = rng_create("squares")
-  Randompack.squares_set_state!(rng1, UInt64(3), UInt64(4))
-  Randompack.squares_set_state!(rng2, UInt64(3), UInt64(4))
-  x1 = random_unif(rng1, Float64)
-  x2 = random_unif(rng2, Float64)
+  Randompack.squares_set_state!(rng1; ctr=3, key=4)
+  Randompack.squares_set_state!(rng2; ctr=3, key=4)
+  x1 = random_unif(rng1)
+  x2 = random_unif(rng2)
   @test x1 == x2
+  @test_throws ArgumentError Randompack.squares_set_state!(rng1; ctr=big(1) << 65, key=0)
 end
 
 @testset "philox_set_state!" begin
@@ -233,14 +235,10 @@ end
   if has_philox
     rng1 = rng_create("philox")
     rng2 = rng_create("philox")
-    Randompack.philox_set_state!(rng1, (UInt64(1), UInt64(2), UInt64(3),
-                                        UInt64(4)),
-                                 (UInt64(5), UInt64(6)))
-    Randompack.philox_set_state!(rng2, (UInt64(1), UInt64(2), UInt64(3),
-                                        UInt64(4)),
-                                 (UInt64(5), UInt64(6)))
-    x1 = random_unif(rng1, Float64)
-    x2 = random_unif(rng2, Float64)
+    Randompack.philox_set_state!(rng1; ctr=[1, 2, 3, 4], key=[5, 6])
+    Randompack.philox_set_state!(rng2; ctr=[1, 2, 3, 4], key=[5, 6])
+    x1 = random_unif(rng1)
+    x2 = random_unif(rng2)
     @test x1 == x2
   else
     @test true
@@ -257,10 +255,10 @@ end
   if has_pcg
     rng1 = rng_create("pcg64")
     rng2 = rng_create("pcg64")
-    Randompack.pcg64_set_state!(rng1, UInt128(1), UInt128(2))
-    Randompack.pcg64_set_state!(rng2, UInt128(1), UInt128(2))
-    x1 = random_unif(rng1, Float64)
-    x2 = random_unif(rng2, Float64)
+    Randompack.pcg64_set_state!(rng1; state=1, inc=2)
+    Randompack.pcg64_set_state!(rng2; state=1, inc=2)
+    x1 = random_unif(rng1)
+    x2 = random_unif(rng2)
     @test x1 == x2
   else
     @test true
@@ -319,8 +317,12 @@ end
 @testset "random_unif" begin
   rng = rng_create()
   rng_seed!(rng, 42)
+  x0 = random_unif(rng)
+  @test x0 isa Float64
+  @test unif_ok(x0)
   test_dist(random_unif, random_unif!; rng=rng, T=Float32, ok_pred=unif_ok)
-  test_dist(random_unif, random_unif!; rng=rng, T=Float64, ok_pred=unif_ok, a=2.0, b=3.5)
+  test_dist(random_unif, random_unif!; rng=rng, T=Float64, ok_pred=unif_ok,
+            a=2.0, b=3.5)
   @test_throws ArgumentError random_unif!(rng, Array{Float64}(undef, 2, 2); a=1, b=1)
   @test_throws ArgumentError random_unif!(rng, Array{Float64}(undef, 2, 2); a=2, b=1)
   @test_throws ArgumentError random_unif!(rng, Array{Float32}(undef, 4, 4);
@@ -330,11 +332,27 @@ end
 @testset "random_normal" begin
   rng = rng_create()
   rng_seed!(rng, 42)
+  x0 = random_normal(rng)
+  @test x0 isa Float64
+  @test normal_ok(x0)
   test_dist(random_normal, random_normal!; rng=rng, T=Float64, ok_pred=normal_ok,
             mu=2.0, sigma=3.0)
   test_dist(random_normal, random_normal!; rng=rng, T=Float32, ok_pred=normal_ok)
   @test_throws ArgumentError random_normal!(rng, Array{Float64}(undef, 2, 2); sigma=0)
   @test_throws ArgumentError random_normal!(rng, Array{Float64}(undef, 2, 2); sigma=-1)
+end
+
+@testset "random_skew_normal" begin
+  rng = rng_create()
+  rng_seed!(rng, 42)
+  test_dist(random_skew_normal, random_skew_normal!; rng=rng, T=Float64,
+            ok_pred=normal_ok, mu=1.0, sigma=2.0, alpha=-0.5)
+  test_dist(random_skew_normal, random_skew_normal!; rng=rng, T=Float32,
+            ok_pred=normal_ok, alpha=1.5)
+  @test_throws ArgumentError random_skew_normal!(rng, Array{Float64}(undef, 2, 2);
+                                                sigma=0, alpha=1)
+  @test_throws ArgumentError random_skew_normal!(rng, Array{Float64}(undef, 2, 2);
+                                                sigma=-1, alpha=1)
 end
 
 @testset "random_int" begin
@@ -353,7 +371,7 @@ end
   bytes = Randompack.serialize(rng)
   rng2 = rng_create()
   Randompack.deserialize!(rng2, bytes)
-  x1 = random_unif(rng, Float64)
-  x2 = random_unif(rng2, Float64)
+  x1 = random_unif(rng)
+  x2 = random_unif(rng2)
   @test x1 == x2
 end

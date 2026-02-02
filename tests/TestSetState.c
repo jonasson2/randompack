@@ -125,7 +125,7 @@ static void test_buf_reset(void) {
 }
 
 static void test_philox_set_state(void) {
-  randompack_counter ctr = {{1, 2, 3, 4}};
+  randompack_philox_ctr ctr = {{1, 2, 3, 4}};
   randompack_philox_key key = {{5, 6}};
   randompack_rng *rng = make_rng("philox");
   bool ok = randompack_philox_set_state(ctr, key, rng);

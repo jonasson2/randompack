@@ -28,7 +28,7 @@ static void draw_philox(int ctr0, int key0) {
     printf("philox unavailable\n");
     return;
   }
-  randompack_counter ctr = {{(uint64_t)ctr0, 0, 0, 0}};
+  randompack_philox_ctr ctr = {{(uint64_t)ctr0, 0, 0, 0}};
   randompack_philox_key key = {{(uint64_t)key0, 0}};
   randompack_philox_set_state(ctr, key, rng);
   double x[2];

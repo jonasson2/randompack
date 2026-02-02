@@ -385,6 +385,52 @@ ALWAYS_INLINE void fill_f(double *x, size_t len, double nu1, double nu2,
   }
 }
 
+ALWAYS_INLINE void fill_chi2(double *x, size_t len, double nu,
+  randompack_rng *rng) {
+  fill_gamma(x, len, 0.5*nu, 2, rng);
+}
+
+ALWAYS_INLINE void fill_gumbel(double *x, size_t len, double mu, double beta,
+  randompack_rng *rng) {
+  rand_dble(x, len, rng); // x in [0,1)
+  for (size_t i = 0; i < len; i++)
+    x[i] = mu - beta*log(-log(x[i]));
+}
+
+ALWAYS_INLINE void fill_pareto(double *x, size_t len, double xm, double alpha,
+  randompack_rng *rng) {
+  rand_exp(x, len, rng);
+  for (size_t i = 0; i < len; i++)
+    x[i] = xm*exp(x[i]/alpha);
+}
+
+ALWAYS_INLINE void fill_weibull(double *x, size_t len, double shape,
+  double scale, randompack_rng *rng) {
+  rand_exp(x, len, rng); // x[i] = E ~ Exp(1) using ziggurat exponential
+  double inv_shape = 1/shape;
+  for (size_t i = 0; i < len; i++)
+    x[i] = scale*pow(x[i], inv_shape);
+}
+
+ALWAYS_INLINE void fill_skew_normal(double *x, size_t len, double mu,
+  double sigma, double alpha, randompack_rng *rng) {
+  double denom = sqrt(1 + alpha*alpha);
+  double delta = alpha/denom;
+  double scale = 1/denom;
+  rand_norm(x, len, rng);
+  size_t i = 0;
+  double u[64];
+  while (i < len) {
+    int n = min(64, len - i);
+    rand_norm(u, n, rng);
+    for (int j = 0; j < n; j++) {
+      double v = delta*fabs(u[j]) + scale*x[i + j];
+      x[i + j] = mu + sigma*v;
+    }
+    i += n;
+  }
+}
+
 // NOTE 1: There are situations when Sig is indefinite but close to being positive
 //         definite, for example due to rounding errors. To remedy this a pivoted
 //         Cholesky factorization of Sig is employed, which may return an L matrix

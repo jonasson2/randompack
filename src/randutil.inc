@@ -145,7 +145,7 @@ static void set_state(uint64_t *state, int nstate, randompack_rng *rng) {
   else copy64(rng->state.u64, state, nstate);
 }
 
-static void philox_set_state(randompack_counter ctr, randompack_philox_key key,
+static void philox_set_state(randompack_philox_ctr ctr, randompack_philox_key key,
   randompack_rng *rng) {
   uint64_t state[6] = {
     ctr.v[0], ctr.v[1], ctr.v[2], ctr.v[3],

@@ -50,9 +50,9 @@ ns = time_dist(function() 2 + 3*dqrng::dqrnorm(chunk), chunk, reps, bench_time)
 cat(sprintf("%-18s %8.2f\n", "normal(2,3)", ns))
 
 # exp(1)
-ns = time_dist(function() dqrng::dqrexp(chunk, rate = 1), chunk, reps, bench_time)
+ns = time_dist(function() dqrng::dqrexp(chunk, rate=1), chunk, reps, bench_time)
 cat(sprintf("%-18s %8.2f\n", "exp(1)", ns))
 
 # exp(2)  (scale=2 => rate=1/2)
-ns = time_dist(function() dqrng::dqrexp(chunk, rate = 1/2), chunk, reps, bench_time)
+ns = time_dist(function() dqrng::dqrexp(chunk, rate=1/2), chunk, reps, bench_time)
 cat(sprintf("%-18s %8.2f\n", "exp(2)", ns))

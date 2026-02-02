@@ -12,7 +12,7 @@ args <- commandArgs(trailingOnly = TRUE)
 engine <- if (length(args) >= 1L) args[[1]] else ""
 if (!nzchar(engine)) engine <- "x256++simd"
 
-rng <- randompack::randompack_rng(engine = engine)
+rng <- randompack::randompack_rng(engine=engine)
 
 chunk = 4096
 bench_time = 0.2            # seconds per distribution

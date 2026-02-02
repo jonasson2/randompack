@@ -42,32 +42,34 @@ NULL
 #'   \item{`rng$unif(len)`}{Uniform variates on [0,1).}
 #'   \item{`rng$unif(len, a, b)`}{Uniform variates on [a,b) with
 #'     `a < b`.}
-#'   \item{`normal(len)`}{Standard normal variates (mean 0 and standard
+#'   \item{`rng$normal(len)`}{Standard normal variates (mean 0 and standard
 #'     deviation 1).}
-#'   \item{`normal(len, mu, sigma)`}{Normal variates with mean `mu`
+#'   \item{`rng$normal(len, mu, sigma)`}{Normal variates with mean `mu`
 #'     and standard deviation `sigma`.}
-#'   \item{`lognormal(len, mu, sigma)`}{Lognormal variates derived from an
+#'   \item{`rng$skew_normal(len, mu, sigma, alpha)`}{Skew-normal variates with
+#'     location `mu`, scale `sigma`, and shape `alpha`.}
+#'   \item{`rng$lognormal(len, mu, sigma)`}{Lognormal variates derived from an
 #'     underlying normal distribution.}
-#'   \item{`exp(len)`}{Standard exponential variates (scale 1).}
-#'   \item{`exp(len, scale)`}{Exponential variates with scale
+#'   \item{`rng$exp(len)`}{Standard exponential variates (scale 1).}
+#'   \item{`rng$exp(len, scale)`}{Exponential variates with scale
 #'     `scale`.}
-#'   \item{`gamma(len, shape, scale)`}{Gamma variates with given shape and
+#'   \item{`rng$gamma(len, shape, scale)`}{Gamma variates with given shape and
 #'     scale.}
-#'   \item{`chi2(len, nu)`}{Chi-square variates with `nu` degrees of
+#'   \item{`rng$chi2(len, nu)`}{Chi-square variates with `nu` degrees of
 #'     freedom.}
-#'   \item{`beta(len, a, b)`}{Beta variates with shape parameters `a`
+#'   \item{`rng$beta(len, a, b)`}{Beta variates with shape parameters `a`
 #'     and `b`.}
-#'   \item{`t(len, nu)`}{Student's t variates with `nu` degrees of
+#'   \item{`rng$t(len, nu)`}{Student's t variates with `nu` degrees of
 #'     freedom.}
-#'   \item{`f(len, nu1, nu2)`}{F variates with `nu1` and `nu2`
+#'   \item{`rng$f(len, nu1, nu2)`}{F variates with `nu1` and `nu2`
 #'     degrees of freedom.}
-#'   \item{`gumbel(len, mu, beta)`}{Gumbel variates with location `mu`
+#'   \item{`rng$gumbel(len, mu, beta)`}{Gumbel variates with location `mu`
 #'     and scale `beta`.}
-#'   \item{`pareto(len, xm, alpha)`}{Pareto variates with minimum value
+#'   \item{`rng$pareto(len, xm, alpha)`}{Pareto variates with minimum value
 #'     `xm` and shape `alpha`.}
-#'   \item{`weibull(len, shape, scale)`}{Weibull variates with given shape
+#'   \item{`rng$weibull(len, shape, scale)`}{Weibull variates with given shape
 #'     and scale.}
-#'   \item{`mvn(n, Sigma, mu = NULL)`}{Multivariate normal variates as an
+#'   \item{`rng$mvn(n, Sigma, mu = NULL)`}{Multivariate normal variates as an
 #'     `n` by `d` matrix, where `d` is the dimension of
 #'     `Sigma`.}
 #' }
@@ -77,11 +79,11 @@ NULL
 #' discrete distributions and combinatorial constructions.
 #'
 #' \describe{
-#'   \item{`int(len, min, max)`}{Uniform integers on `[min, max]`.}
-#'   \item{`perm(n)`}{Random permutation of `1:n`.}
-#'   \item{`sample(n, k)`}{Sample `k` elements without replacement
+#'   \item{`rng$int(len, min, max)`}{Uniform integers on `[min, max]`.}
+#'   \item{`rng$perm(n)`}{Random permutation of `1:n`.}
+#'   \item{`rng$sample(n, k)`}{Sample `k` elements without replacement
 #'     from `1:n`.}
-#'   \item{`raw(len)`}{Generate `len` random bytes as a raw vector.}
+#'   \item{`rng$raw(len)`}{Generate `len` random bytes as a raw vector.}
 #' }
 #'
 #' @section Configuration and Copying:
@@ -91,24 +93,24 @@ NULL
 #' shorter vectors are padded with zeros.
 #'
 #' \describe{
-#'   \item{`seed(seed, spawn_key = integer(0))`}{
+#'   \item{`rng$seed(seed, spawn_key = integer(0))`}{
 #'     Reinitialize the RNG deterministically from `seed` and an optional
 #'     numeric vector `spawn_key`.
 #'   }
-#'   \item{`randomize()`}{Randomize the RNG state from system entropy.}
-#'   \item{`full_mantissa(enable = TRUE)`}{
+#'   \item{`rng$randomize()`}{Randomize the RNG state from system entropy.}
+#'   \item{`rng$full_mantissa(enable = TRUE)`}{
 #'     Enable or disable 53-bit mantissas for double-precision draws.
 #'   }
-#'   \item{`duplicate()`}{Duplicate the RNG, preserving its state.}
-#'   \item{`serialize()`}{Serialize the current RNG state as a raw vector.}
-#'   \item{`deserialize(raw_state)`}{Restore state from a raw vector created
+#'   \item{`rng$duplicate()`}{Duplicate the RNG, preserving its state.}
+#'   \item{`rng$serialize()`}{Serialize the current RNG state as a raw vector.}
+#'   \item{`rng$deserialize(raw_state)`}{Restore state from a raw vector created
 #'     by `serialize()`.}
-#'   \item{`set_state(state)`}{Set the engine state directly (advanced use).}
-#'   \item{`philox_set_state(counter, key)`}{
+#'   \item{`rng$set_state(state)`}{Set the engine state directly (advanced use).}
+#'   \item{`rng$philox_set_state(counter, key)`}{
 #'     Set the state of the Philox engine. The counter may have length up to 8
 #'     and the key up to 4; shorter vectors are zero-padded.
 #'   }
-#'   \item{`squares_set_state(counter, key)`}{
+#'   \item{`rng$squares_set_state(counter, key)`}{
 #'     Set the state of the Squares engine. The counter and key may each have
 #'     length up to 2; shorter vectors are zero-padded.
 #'   }
@@ -124,6 +126,7 @@ NULL
 #' x <- rng$unif(5)
 #' x <- rng$normal(100)                    # Standard normal
 #' x <- rng$normal(100, 1, 2)              # N(1,2)
+#' x <- rng$skew_normal(100, mu=0, sigma=1, alpha=2)
 #' x <- rng$lognormal(5, mu=0, sigma=1)
 #' x <- rng$beta(5, a=2, b=3)
 #' Sigma <- diag(2)

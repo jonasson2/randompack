@@ -15,6 +15,7 @@ SEXP randompack_philox_set_state_R(SEXP ptr, SEXP counter, SEXP key);
 SEXP randompack_squares_set_state_R(SEXP ptr, SEXP counter, SEXP key);
 SEXP randompack_unif_R(SEXP ptr, SEXP n, SEXP a, SEXP b);
 SEXP randompack_normal_R(SEXP ptr, SEXP n, SEXP mu, SEXP sigma);
+SEXP randompack_skew_normal_R(SEXP ptr, SEXP n, SEXP mu, SEXP sigma, SEXP alpha);
 SEXP randompack_lognormal_R(SEXP ptr, SEXP n, SEXP mu, SEXP sigma);
 SEXP randompack_gumbel_R(SEXP ptr, SEXP n, SEXP mu, SEXP beta);
 SEXP randompack_pareto_R(SEXP ptr, SEXP n, SEXP xm, SEXP alpha);
@@ -48,6 +49,7 @@ static const R_CallMethodDef CallEntries[] = {
     (DL_FUNC)&randompack_squares_set_state_R, 3},
   {"randompack_unif_R",        (DL_FUNC)&randompack_unif_R,        4},
   {"randompack_normal_R",      (DL_FUNC)&randompack_normal_R,      4},
+  {"randompack_skew_normal_R", (DL_FUNC)&randompack_skew_normal_R, 5},
   {"randompack_lognormal_R",   (DL_FUNC)&randompack_lognormal_R,   4},
   {"randompack_gumbel_R",      (DL_FUNC)&randompack_gumbel_R,      4},
   {"randompack_pareto_R",      (DL_FUNC)&randompack_pareto_R,      4},

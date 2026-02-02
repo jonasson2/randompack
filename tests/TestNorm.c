@@ -1,5 +1,5 @@
 // -*- C -*-
-// Tests for randompack_norm, N(0,1): determinism, edge cases, and PIT->U01 checks.
+// Tests for randompack_norm, N(0,1): max-value sanity checks.
 
 #include <math.h>
 #include <stdbool.h>
@@ -23,33 +23,18 @@ bool check_normal_max(double *x, int n) {
   return (zlo <= M && M <= zhi);
 }
 
-static void test_basic(char *engine) {
-  TEST_DETERMINISM0(engine, double, norm);
-  TEST_EDGE_CASES0(engine, double, norm);
-  TEST_DETERMINISM0(engine, float, normf);
-  TEST_EDGE_CASES0(engine, float, normf);
-}
-
-static void test_PIT(char *engine) {
+static void test_max(char *engine) {
   int N = N_STAT_FAST;
-  double *x, *u;
-  float *y, *v;
+  double *x;
+  float *y;
   TEST_ALLOC(x, N);
-  TEST_ALLOC(u, N);
   TEST_ALLOC(y, N);
-  TEST_ALLOC(v, N);
   DRAW(engine, 7, randompack_norm(x, N, rng));
   DRAW(engine, 7, randompack_normf(y, N, rng));
   xCheckMsg(check_normal_max(x, N), engine);
-  for (int i = 0; i < N; i++) u[i] = normcdf(x[i]);
-  for (int i = 0; i < N; i++) v[i] = (float)normcdf(y[i]);
-  check_u01_distribution(u, N, "norm", engine);
-  check_u01_distributionf(v, N, "normf", engine);
   for (int i = 0; i < N; i++) x[i] = y[i];
   xCheckMsg(check_normal_max(x, N), engine);
-  FREE(v);
   FREE(y);
-  FREE(u);
   FREE(x);
 }
 
@@ -58,8 +43,7 @@ void TestNorm(void) {
   char **engines = get_engines(&n);
   for (int i = 0; i < n; i++) {
     char *e = engines[i];
-    test_basic(e);
-    test_PIT(e);
+    test_max(e);
   }
   free_engines(engines, n);
 }

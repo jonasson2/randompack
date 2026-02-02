@@ -34,6 +34,7 @@ generation across different processes or threads.
 \code{x128+} \tab\tab xorshift128+ (Vigna, 2014) \cr
 \code{pcg64} \tab\tab PCG64 DXSM (O'Neill, 2014) \cr
 \code{cwg128} \tab\tab cwg128-64 (Działa, 2022) \cr
+\code{sfc64} \tab\tab sfc64 (Chris Doty-Humphrey, 2013) \cr
 \code{philox} \tab\tab Philox-4×64 (Salmon and Moraes, 2011) \cr
 \code{squares} \tab\tab squares64 (Widynski, 2021) \cr
 \code{chacha20} \tab\tab ChaCha20 (Bernstein, 2008) \cr
@@ -51,32 +52,34 @@ of length \code{len}.
 \item{\code{rng$unif(len)}}{Uniform variates on [0,1).}
 \item{\code{rng$unif(len, a, b)}}{Uniform variates on [a,b) with
 \code{a < b}.}
-\item{\code{normal(len)}}{Standard normal variates (mean 0 and standard
+\item{\code{rng$normal(len)}}{Standard normal variates (mean 0 and standard
 deviation 1).}
-\item{\code{normal(len, mu, sigma)}}{Normal variates with mean \code{mu}
+\item{\code{rng$normal(len, mu, sigma)}}{Normal variates with mean \code{mu}
 and standard deviation \code{sigma}.}
-\item{\code{lognormal(len, mu, sigma)}}{Lognormal variates derived from an
+\item{\code{rng$skew_normal(len, mu, sigma, alpha)}}{Skew-normal variates with
+location \code{mu}, scale \code{sigma}, and shape \code{alpha}.}
+\item{\code{rng$lognormal(len, mu, sigma)}}{Lognormal variates derived from an
 underlying normal distribution.}
-\item{\code{exp(len)}}{Standard exponential variates (scale 1).}
-\item{\code{exp(len, scale)}}{Exponential variates with scale
+\item{\code{rng$exp(len)}}{Standard exponential variates (scale 1).}
+\item{\code{rng$exp(len, scale)}}{Exponential variates with scale
 \code{scale}.}
-\item{\code{gamma(len, shape, scale)}}{Gamma variates with given shape and
+\item{\code{rng$gamma(len, shape, scale)}}{Gamma variates with given shape and
 scale.}
-\item{\code{chi2(len, nu)}}{Chi-square variates with \code{nu} degrees of
+\item{\code{rng$chi2(len, nu)}}{Chi-square variates with \code{nu} degrees of
 freedom.}
-\item{\code{beta(len, a, b)}}{Beta variates with shape parameters \code{a}
+\item{\code{rng$beta(len, a, b)}}{Beta variates with shape parameters \code{a}
 and \code{b}.}
-\item{\code{t(len, nu)}}{Student's t variates with \code{nu} degrees of
+\item{\code{rng$t(len, nu)}}{Student's t variates with \code{nu} degrees of
 freedom.}
-\item{\code{f(len, nu1, nu2)}}{F variates with \code{nu1} and \code{nu2}
+\item{\code{rng$f(len, nu1, nu2)}}{F variates with \code{nu1} and \code{nu2}
 degrees of freedom.}
-\item{\code{gumbel(len, mu, beta)}}{Gumbel variates with location \code{mu}
+\item{\code{rng$gumbel(len, mu, beta)}}{Gumbel variates with location \code{mu}
 and scale \code{beta}.}
-\item{\code{pareto(len, xm, alpha)}}{Pareto variates with minimum value
+\item{\code{rng$pareto(len, xm, alpha)}}{Pareto variates with minimum value
 \code{xm} and shape \code{alpha}.}
-\item{\code{weibull(len, shape, scale)}}{Weibull variates with given shape
+\item{\code{rng$weibull(len, shape, scale)}}{Weibull variates with given shape
 and scale.}
-\item{\code{mvn(n, Sigma, mu = NULL)}}{Multivariate normal variates as an
+\item{\code{rng$mvn(n, Sigma, mu = NULL)}}{Multivariate normal variates as an
 \code{n} by \code{d} matrix, where \code{d} is the dimension of
 \code{Sigma}.}
 }
@@ -88,11 +91,11 @@ The RNG object provides methods for generating random variates from common
 discrete distributions and combinatorial constructions.
 
 \describe{
-\item{\code{int(len, min, max)}}{Uniform integers on \verb{[min, max]}.}
-\item{\code{perm(n)}}{Random permutation of \code{1:n}.}
-\item{\code{sample(n, k)}}{Sample \code{k} elements without replacement
+\item{\code{rng$int(len, min, max)}}{Uniform integers on \verb{[min, max]}.}
+\item{\code{rng$perm(n)}}{Random permutation of \code{1:n}.}
+\item{\code{rng$sample(n, k)}}{Sample \code{k} elements without replacement
 from \code{1:n}.}
-\item{\code{raw(len)}}{Generate \code{len} random bytes as a raw vector.}
+\item{\code{rng$raw(len)}}{Generate \code{len} random bytes as a raw vector.}
 }
 }
 
@@ -104,21 +107,24 @@ nonnegative whole numbers not exceeding \eqn{2^{32}-1}. Where applicable,
 shorter vectors are padded with zeros.
 
 \describe{
-\item{\code{seed(seed, spawn_key = integer(0))}}{
+\item{\code{rng$seed(seed, spawn_key = integer(0))}}{
 Reinitialize the RNG deterministically from \code{seed} and an optional
 numeric vector \code{spawn_key}.
 }
-\item{\code{randomize()}}{Randomize the RNG state from system entropy.}
-\item{\code{duplicate()}}{Duplicate the RNG, preserving its state.}
-\item{\code{serialize()}}{Serialize the current RNG state as a raw vector.}
-\item{\code{deserialize(raw_state)}}{Restore state from a raw vector created
+\item{\code{rng$randomize()}}{Randomize the RNG state from system entropy.}
+\item{\code{rng$full_mantissa(enable = TRUE)}}{
+Enable or disable 53-bit mantissas for double-precision draws.
+}
+\item{\code{rng$duplicate()}}{Duplicate the RNG, preserving its state.}
+\item{\code{rng$serialize()}}{Serialize the current RNG state as a raw vector.}
+\item{\code{rng$deserialize(raw_state)}}{Restore state from a raw vector created
 by \code{serialize()}.}
-\item{\code{set_state(state)}}{Set the engine state directly (advanced use).}
-\item{\code{philox_set_state(counter, key)}}{
+\item{\code{rng$set_state(state)}}{Set the engine state directly (advanced use).}
+\item{\code{rng$philox_set_state(counter, key)}}{
 Set the state of the Philox engine. The counter may have length up to 8
 and the key up to 4; shorter vectors are zero-padded.
 }
-\item{\code{squares_set_state(counter, key)}}{
+\item{\code{rng$squares_set_state(counter, key)}}{
 Set the state of the Squares engine. The counter and key may each have
 length up to 2; shorter vectors are zero-padded.
 }
@@ -135,6 +141,7 @@ rng_chacha <- randompack_rng("chacha20")
 x <- rng$unif(5)
 x <- rng$normal(100)                    # Standard normal
 x <- rng$normal(100, 1, 2)              # N(1,2)
+x <- rng$skew_normal(100, mu=0, sigma=1, alpha=2)
 x <- rng$lognormal(5, mu=0, sigma=1)
 x <- rng$beta(5, a=2, b=3)
 Sigma <- diag(2)
@@ -149,6 +156,7 @@ x <- rng$raw(4)
 # Configuration and copying
 rng$seed(12345)                          # seed for reproducibility
 rng$randomize()                          # randomize from system entropy
+rng$full_mantissa(TRUE)                  # 53-bit mantissas for doubles
 rng2 <- rng$duplicate()                  # duplicate with same state
 identical(rng$unif(3), rng2$unif(3))     # TRUE
 raw_state <- rng$serialize()             # save state

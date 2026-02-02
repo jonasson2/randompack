@@ -4,12 +4,6 @@ option('blas_order',
   description: 'Comma-separated list of BLAS libraries to search for (e.g., "mkl,openblas,accelerate") or "auto" for platform default'
 )
 
-option('perf',
-  type: 'boolean',
-  value: false,
-  description: 'Enable performance tuning flags (requires -Db_lto=true)'
-)
-
 option('u01_hires',
   type: 'boolean',
   value: false,
@@ -20,4 +14,34 @@ option('TestU01',
   type: 'string',
   value: '',
   description: 'Prefix for TestU01 install (enable when non-empty)'
+)
+
+option('build_fortran',
+  type: 'feature',
+  value: 'auto',
+  description: 'Build the Fortran interface (set value to disabled to exclude it)'
+)
+
+option('build_examples',
+  type: 'boolean',
+  value: true,
+  description: 'Build example programs'
+)
+
+option('build_tests',
+  type: 'boolean',
+  value: true,
+  description: 'Build tests'
+)
+
+option('simd', 
+  type: 'combo', 
+  choices: ['baseline', 'avx2'], 
+  value: 'baseline'
+)
+
+option('build_test_variants',
+  type: 'boolean',
+  value: false,
+  description: 'Build internal test variants (no128, pretend_windows)'
 )

@@ -32,6 +32,25 @@ methods_continuous <- list(
           PACKAGE = "randompack")
   },
 
+  skew_normal = function(len, mu = 0, sigma = 1, alpha = 0) {
+    if (is.null(self$ptr)) stop("RNG is not initialized")
+    len <- as.integer(len)
+    if (length(len) != 1L || is.na(len) || len < 0L)
+      stop("len must be a non-negative integer")
+    if (!is.numeric(mu) || length(mu) != 1L || is.na(mu))
+      stop("mu must be a length-1 numeric")
+    if (!is.numeric(sigma) || length(sigma) != 1L || is.na(sigma))
+      stop("sigma must be a length-1 numeric")
+    if (!is.numeric(alpha) || length(alpha) != 1L || is.na(alpha))
+      stop("alpha must be a length-1 numeric")
+    mu <- as.numeric(mu)
+    sigma <- as.numeric(sigma)
+    alpha <- as.numeric(alpha)
+    if (!(sigma > 0)) stop("sigma must be positive")
+    .Call("randompack_skew_normal_R", self$ptr, len, mu, sigma, alpha,
+          PACKAGE = "randompack")
+  },
+
   lognormal = function(len, mu, sigma) {
     if (is.null(self$ptr)) stop("RNG is not initialized")
     len <- as.integer(len)

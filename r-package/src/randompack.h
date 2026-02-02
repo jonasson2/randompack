@@ -8,11 +8,11 @@
 #include <stddef.h>
 
 typedef struct randompack_rng randompack_rng;
-typedef struct { uint64_t v[4]; } randompack_counter;
+typedef struct { uint64_t v[4]; } randompack_philox_ctr;
 typedef struct { uint64_t v[2]; } randompack_philox_key;
 
 randompack_rng *randompack_create( // Create randomized RNG of given engine type, error→0
-  const char *engine    // in      Engine name (x256++simd [default], PCG,... 0→default)
+  const char *engine    // in      Type ("x256++simd" [default], "pcg64",... 0→default)
 );
 
 randompack_rng *randompack_duplicate( // Clone an RNG (identical engine+state), error → 0
@@ -104,22 +104,6 @@ bool randompack_lognormal( // Generate lognormal random numbers, false on error
   randompack_rng *rng      // in/out  Random number generator
 );
 
-bool randompack_gumbel( // Generate Gumbel random numbers, false on error
-  double x[],           // out     n-vector: Gumbel random numbers
-  size_t n,             // in      Number of variates
-  double mu,            // in      Location parameter
-  double beta,          // in      Scale parameter (> 0)
-  randompack_rng *rng   // in/out  Random number generator
-);
-
-bool randompack_pareto( // Generate Pareto (Type I) random numbers, false on error
-  double x[],           // out     n-vector: Pareto random numbers
-  size_t n,             // in      Number of variates
-  double xm,            // in      Minimum (scale) parameter (> 0)
-  double alpha,         // in      Shape parameter (> 0)
-  randompack_rng *rng   // in/out  Random number generator
-);
-
 bool randompack_exp( // Generate exponential random numbers, false on error
   double x[],           // out     n-vector: exponential random numbers
   size_t n,             // in      Number of variates
@@ -135,13 +119,6 @@ bool randompack_gamma( // Generate gamma random numbers, false on error
   randompack_rng *rng   // in/out  Random number generator
 );
 
-bool randompack_chi2( // Generate chi-square random numbers, false on error
-  double x[],           // out     n-vector: chi-square random numbers
-  size_t n,             // in      Number of variates
-  double nu,            // in      Degrees of freedom (> 0)
-  randompack_rng *rng   // in/out  Random number generator
-);
-
 bool randompack_beta( // Generate beta random numbers, false on error
   double x[],           // out     n-vector: beta random numbers
   size_t n,             // in      Number of variates
@@ -150,8 +127,15 @@ bool randompack_beta( // Generate beta random numbers, false on error
   randompack_rng *rng   // in/out  Random number generator
 );
 
-bool randompack_t( // Generate Student t random numbers, false on error
-  double x[],           // out     n-vector: Student t random numbers
+bool randompack_chi2( // Generate chi-square random numbers, false on error
+  double x[],           // out     n-vector: chi-square random numbers
+  size_t n,             // in      Number of variates
+  double nu,            // in      Degrees of freedom (> 0)
+  randompack_rng *rng   // in/out  Random number generator
+);
+
+bool randompack_t( // Generate t random numbers, false on error
+  double x[],           // out     n-vector: t random numbers
   size_t n,             // in      Number of variates
   double nu,            // in      Degrees of freedom (> 0)
   randompack_rng *rng   // in/out  Random number generator
@@ -165,12 +149,37 @@ bool randompack_f( // Generate F random numbers, false on error
   randompack_rng *rng   // in/out  Random number generator
 );
 
-bool randompack_weibull( // Generate Weibull random numbers, false on error
-  double x[],           // out     n-vector: Weibull random numbers
-  size_t n,             // in      Number of variates
-  double shape,         // in      Shape parameter (> 0)
-  double scale,         // in      Scale parameter (> 0)
-  randompack_rng *rng   // in/out  Random number generator
+bool randompack_gumbel( // Generate gumbel random numbers, false on error
+  double x[],            // out     n-vector: gumbel random numbers
+  size_t n,              // in      Number of variates
+  double mu,             // in      Location parameter
+  double beta,           // in      Scale parameter (> 0)
+  randompack_rng *rng    // in/out  Random number generator
+);
+
+bool randompack_pareto( // Generate pareto random numbers, false on error
+  double x[],            // out     n-vector: pareto random numbers
+  size_t n,              // in      Number of variates
+  double xm,             // in      Scale parameter (> 0)
+  double alpha,          // in      Shape parameter (> 0)
+  randompack_rng *rng    // in/out  Random number generator
+);
+
+bool randompack_weibull( // Generate weibull random numbers, false on error
+  double x[],             // out     n-vector: weibull random numbers
+  size_t n,               // in      Number of variates
+  double shape,           // in      Shape parameter (> 0)
+  double scale,           // in      Scale parameter (> 0)
+  randompack_rng *rng     // in/out  Random number generator
+);
+
+bool randompack_skew_normal( // Generate skew-normal random numbers, false on error
+  double x[],                  // out     n-vector: skew-normal random numbers
+  size_t n,                    // in      Number of variates
+  double mu,                   // in      Location parameter
+  double sigma,                // in      Scale parameter (> 0)
+  double alpha,                // in      Skew parameter
+  randompack_rng *rng          // in/out  Random number generator
 );
 
 bool randompack_mvn( // Generate multivariate normal randoms N(mu,Sig), false on error
@@ -246,13 +255,13 @@ bool randompack_pcg64_set_state( // Set PCG state and increment
 //#endif
 
 bool randompack_philox_set_state( // Set philox counter/key state directly
-  randompack_counter ctr,     // in      counter state
-  randompack_philox_key key,  // in      key state
+  randompack_philox_ctr ctr,  // in      counter state (4 x uint64s)
+  randompack_philox_key key,  // in      key state (2 x uint64s)
   randompack_rng *rng         // in/out  target RNG
 );
 
 bool randompack_squares_set_state( // Set squares64 counter/key state directly
-  uint64_t ctr,               // in      counter state
+  uint64_t ctr,               // in      counter state (4 x uint64s)
   uint64_t key,               // in      key state
   randompack_rng *rng         // in/out  target RNG
 );
@@ -303,22 +312,6 @@ bool randompack_lognormalf( // Generate lognormal random floats, false on error
   randompack_rng *rng       // in/out  Random number generator
 );
 
-bool randompack_gumbelf( // Generate Gumbel random floats, false on error
-  float x[],             // out     n-vector: Gumbel random numbers
-  size_t n,              // in      Number of variates
-  float mu,              // in      Location parameter
-  float beta,            // in      Scale parameter (> 0)
-  randompack_rng *rng    // in/out  Random number generator
-);
-
-bool randompack_paretof( // Generate Pareto (Type I) random floats, false on error
-  float x[],              // out     n-vector: Pareto random numbers
-  size_t n,               // in      Number of variates
-  float xm,               // in      Minimum (scale) parameter (> 0)
-  float alpha,            // in      Shape parameter (> 0)
-  randompack_rng *rng     // in/out  Random number generator
-);
-
 bool randompack_expf( // Generate exponential random floats, false on error
   float x[],           // out     n-vector: exponential random numbers
   size_t n,            // in      Number of variates
@@ -334,13 +327,6 @@ bool randompack_gammaf( // Generate gamma random floats, false on error
   randompack_rng *rng    // in/out  Random number generator
 );
 
-bool randompack_chi2f( // Generate chi-square random floats, false on error
-  float x[],           // out     n-vector: chi-square random numbers
-  size_t n,            // in      Number of variates
-  float nu,            // in      Degrees of freedom (> 0)
-  randompack_rng *rng  // in/out  Random number generator
-);
-
 bool randompack_betaf( // Generate beta random floats, false on error
   float x[],           // out     n-vector: beta random numbers
   size_t n,            // in      Number of variates
@@ -349,27 +335,59 @@ bool randompack_betaf( // Generate beta random floats, false on error
   randompack_rng *rng  // in/out  Random number generator
 );
 
+bool randompack_chi2f( // Generate chi-square random floats, false on error
+  float x[],             // out     n-vector: chi-square random numbers
+  size_t n,              // in      Number of variates
+  float nu,              // in      Degrees of freedom (> 0)
+  randompack_rng *rng    // in/out  Random number generator
+);
+
 bool randompack_tf( // Generate t random floats, false on error
-  float x[],         // out     n-vector: t random numbers
-  size_t n,          // in      Number of variates
-  float nu,          // in      Degrees of freedom (> 0)
-  randompack_rng *rng // in/out  Random number generator
+  float x[],             // out     n-vector: t random numbers
+  size_t n,              // in      Number of variates
+  float nu,              // in      Degrees of freedom (> 0)
+  randompack_rng *rng    // in/out  Random number generator
 );
 
 bool randompack_ff( // Generate F random floats, false on error
-  float x[],           // out     n-vector: F random numbers
-  size_t n,            // in      Number of variates
-  float nu1,           // in      Numerator degrees of freedom (> 0)
-  float nu2,           // in      Denominator degrees of freedom (> 0)
-  randompack_rng *rng  // in/out  Random number generator
+  float x[],             // out     n-vector: F random numbers
+  size_t n,              // in      Number of variates
+  float nu1,             // in      Numerator degrees of freedom (> 0)
+  float nu2,             // in      Denominator degrees of freedom (> 0)
+  randompack_rng *rng    // in/out  Random number generator
 );
 
-bool randompack_weibullf( // Generate Weibull random floats, false on error
-  float x[],             // out     n-vector: Weibull random numbers
-  size_t n,              // in      Number of variates
-  float shape,           // in      Shape parameter (> 0)
-  float scale,           // in      Scale parameter (> 0)
-  randompack_rng *rng    // in/out  Random number generator
+bool randompack_gumbelf( // Generate gumbel random floats, false on error
+  float x[],              // out     n-vector: gumbel random numbers
+  size_t n,               // in      Number of variates
+  float mu,               // in      Location parameter
+  float beta,             // in      Scale parameter (> 0)
+  randompack_rng *rng     // in/out  Random number generator
+);
+
+bool randompack_paretof( // Generate pareto random floats, false on error
+  float x[],              // out     n-vector: pareto random numbers
+  size_t n,               // in      Number of variates
+  float xm,               // in      Scale parameter (> 0)
+  float alpha,            // in      Shape parameter (> 0)
+  randompack_rng *rng     // in/out  Random number generator
+);
+
+bool randompack_weibullf( // Generate weibull random floats, false on error
+  float x[],               // out     n-vector: weibull random numbers
+  size_t n,                // in      Number of variates
+  float shape,             // in      Shape parameter (> 0)
+  float scale,             // in      Scale parameter (> 0)
+  randompack_rng *rng      // in/out  Random number generator
+);
+
+bool randompack_skew_normalf( // Generate skew-normal random floats, false on error
+  float x[],                   // out     n-vector: skew-normal random numbers
+  size_t n,                    // in      Number of variates
+  float mu,                    // in      Location parameter
+  float sigma,                 // in      Scale parameter (> 0)
+  float alpha,                 // in      Skew parameter
+  randompack_rng *rng          // in/out  Random number generator
 );
 
 #endif /* RANDOMPACK_H */

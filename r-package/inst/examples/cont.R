@@ -16,6 +16,9 @@ Standard normal variates (mean 0 and standard deviation 1).
 normal(len, mu, sigma)
 Normal variates with mean mu and standard deviation sigma.
 
+skew_normal(len, mu, sigma, alpha)
+Skew-normal variates with location mu, scale sigma, and shape alpha.
+
 lognormal(len)
 Standard lognormal variates (from standard normal).
 
@@ -58,8 +61,9 @@ rng <- randompack_rng()
 x <- rng$unif(5)
 x <- rng$normal(5)
 x <- rng$normal(5, 2, 0.5)
-x <- rng$normal(5, mu = 2, sigma = 0.5)
+x <- rng$normal(5, mu=2, sigma=0.5)
+x <- rng$skew_normal(5, mu=0, sigma=1, alpha=2)
 x <- rng$exp(5)
 x <- rng$gamma(5, 2, 1)
-x <- rng$t(5, nu = 5
-x <- rng$pareto(5, 1, alpha = 2)
+x <- rng$t(5, nu=5
+x <- rng$pareto(5, 1, alpha=2)

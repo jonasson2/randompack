@@ -212,17 +212,33 @@ The examples subfolodr contains additional example programs.
           return 0;
         }
 
-### N(3,2), PCG64_DXSM engine, seeded with 42
+### N(3,2), PCG64 engine, seeded with 42
 
         #include <stdio.h>
         #include "randompack.h"
 
         int main(void) {
-          randompack_rng *rng = randompack_create("pcg64_dxsm");
+          randompack_rng *rng = randompack_create("pcg64");
           randompack_seed(42, 0, 0, rng);
           double x[5];
           randompack_normal(x, 5, 3.0, 2.0, rng);
           for (int i = 0; i < 5; i++) printf("%g\n", x[i]);
+          randompack_free(rng);
+          return 0;
+        }
+
+### Secondary distributions
+
+        #include <stdio.h>
+        #include "randompack.h"
+
+        int main(void) {
+          randompack_rng *rng = randompack_create(0);
+          randompack_seed(7, 0, 0, rng);
+          double x[5];
+          randompack_chi2(x, 5, 5, rng);
+          randompack_weibull(x, 5, 2, 3, rng);
+          randompack_skew_normal(x, 5, 0, 1, 1, rng);
           randompack_free(rng);
           return 0;
         }
@@ -235,7 +251,7 @@ The examples subfolodr contains additional example programs.
           bool ok;
           double x[10];
           randompack_rng *rng = 0;
-          rng = randompack_create("xoshiro256++");
+          rng = randompack_create("x256++");
           if (!rng) {
             fprintf(stderr, "rng creation failed\n");
             return 1;

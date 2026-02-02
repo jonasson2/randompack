@@ -20,7 +20,7 @@
 #endif
 
 typedef randompack_philox_key r123array2x64;
-typedef randompack_counter r123array4x64;
+typedef randompack_philox_ctr r123array4x64;
 
 static inline uint64_t mulhilo64(uint64_t a, uint64_t b, uint64_t *hip) {
 #if defined(_MSC_VER)
@@ -52,7 +52,7 @@ _philox4x64round(r123array4x64 ctr, r123array2x64 key) {
   return out;
 }
 
-typedef randompack_counter philox4x64_ctr_t;
+typedef randompack_philox_ctr philox4x64_ctr_t;
 typedef randompack_philox_key philox4x64_key_t;
 
 static inline philox4x64_ctr_t
@@ -72,12 +72,12 @@ philox4x64(philox4x64_ctr_t ctr, philox4x64_key_t key) {
 
 static inline void fill_philox(randompack_rng *rng, size_t len) {
   uint64_t *out = rng->buf.u64 + rng->buf_word;
-  randompack_counter ctr;
+  randompack_philox_ctr ctr;
   randompack_philox_key key;
   copy64(ctr.v, rng->state.u64, 4);
   copy64(key.v, rng->state.u64 + 4, 2);
   for (size_t i = 0; i < len; i += 4) {
-    randompack_counter block = philox4x64(ctr, key);
+    randompack_philox_ctr block = philox4x64(ctr, key);
     copy64(out + i, block.v, 4);
     ctr.v[0]++;
   }

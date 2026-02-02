@@ -107,3 +107,49 @@ ALWAYS_INLINE void fill_ff(float *x, size_t len, float nu1, float nu2,
     i += n;
   }
 }
+
+ALWAYS_INLINE void fill_chi2f(float *x, size_t len, float nu,
+  randompack_rng *rng) {
+  fill_gammaf(x, len, 0.5f*nu, 2, rng);
+}
+
+ALWAYS_INLINE void fill_gumbelf(float *x, size_t len, float mu, float beta,
+  randompack_rng *rng) {
+  rand_float(x, len, rng); // x in [0,1)
+  for (size_t i = 0; i < len; i++)
+    x[i] = mu - beta*logf(-logf(x[i]));
+}
+
+ALWAYS_INLINE void fill_paretof(float *x, size_t len, float xm, float alpha,
+  randompack_rng *rng) {
+  rand_expf(x, len, rng);
+  for (size_t i = 0; i < len; i++)
+    x[i] = xm*expf(x[i]/alpha);
+}
+
+ALWAYS_INLINE void fill_weibullf(float *x, size_t len, float shape,
+  float scale, randompack_rng *rng) {
+  rand_expf(x, len, rng);
+  float inv_shape = 1.0f/shape;
+  for (size_t i = 0; i < len; i++)
+    x[i] = scale*powf(x[i], inv_shape);
+}
+
+ALWAYS_INLINE void fill_skew_normalf(float *x, size_t len, float mu,
+  float sigma, float alpha, randompack_rng *rng) {
+  float denom = sqrtf(1.0f + alpha*alpha);
+  float delta = alpha/denom;
+  float scale = 1.0f/denom;
+  rand_normf(x, len, rng);
+  size_t i = 0;
+  float u[64];
+  while (i < len) {
+    int n = min(64, len - i);
+    rand_normf(u, n, rng);
+    for (int j = 0; j < n; j++) {
+      float v = delta*fabsf(u[j]) + scale*x[i + j];
+      x[i + j] = mu + sigma*v;
+    }
+    i += n;
+  }
+}
