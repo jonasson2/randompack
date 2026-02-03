@@ -3,7 +3,9 @@ use, intrinsic :: iso_c_binding, only: c_double, c_int, c_int8_t, c_int64_t
 use, intrinsic :: ieee_arithmetic, only: ieee_is_nan, ieee_is_finite
 implicit none
 private
-public :: fail, assert_true, assert_all_finite, assert_all_in_01, assert_all_in_ab, assert_all_int_in_mn, assert_equal_r8, assert_equal_i4, assert_equal_i8, assert_not_equal_r8
+public :: fail, assert_true, assert_all_finite, assert_all_in_01, &
+  assert_all_in_ab, assert_all_int_in_mn, assert_equal_r8, assert_equal_i4, &
+  assert_equal_i8, assert_not_equal_r8
 
 interface assert_all_finite
   module procedure assert_all_finite_r8

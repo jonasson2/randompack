@@ -1,8 +1,10 @@
 module randompack
-use, intrinsic :: iso_c_binding, only: c_ptr, c_char, c_bool, c_int, c_size_t, c_double, c_float, c_int8_t, c_int64_t, c_null_ptr, c_null_char, c_associated, c_loc, c_f_pointer
+use, intrinsic :: iso_c_binding, only: c_ptr, c_char, c_bool, c_int, &
+  c_size_t, c_double, c_float, c_int8_t, c_int64_t, c_null_ptr, c_null_char, &
+  c_associated, c_loc, c_f_pointer
 implicit none
 private
-public :: rng, engines, rp_double, rp_int, rp_i64, rp_i8, randompack_philox_ctr, randompack_philox_key
+public :: rng, engines, rp_double, rp_int, rp_i64, rp_i8
 
 integer, parameter :: rp_double = c_double
 integer, parameter :: rp_int = c_int
@@ -17,7 +19,7 @@ type, bind(C), public :: randompack_philox_key
   integer(c_int64_t) :: v(2)
 end type
 
-type, public :: rng
+type :: rng
   type(c_ptr) :: p = c_null_ptr
 contains
   procedure :: create => rp_create

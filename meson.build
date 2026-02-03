@@ -107,31 +107,27 @@ build_fortran_opt = get_option('build_fortran')
 want_fortran = accel_bug_workaround or build_fortran_opt.enabled()
 
 if build_fortran_opt.auto() and not accel_bug_workaround
-  if meson.has_compiler('fortran')
-    add_languages('fortran', required: false)
-    fc = meson.get_compiler('fortran')
-    add_project_arguments('-Wno-do-subscript', language : 'fortran')
-    add_project_arguments(
-      fc.get_supported_arguments(['-Wno-function-elimination']),
-      language : 'fortran'
-    )
+  add_languages('fortran', required: true)
+  fc = meson.get_compiler('fortran')
+  add_project_arguments('-Wno-do-subscript', language : 'fortran')
+  add_project_arguments(
+    fc.get_supported_arguments(['-Wno-function-elimination']),
+    language : 'fortran'
+  )
 
-    kind_check = fc.run('program rp_kind_check\n' +
-      '  use, intrinsic :: iso_c_binding\n' +
-      '  implicit none\n' +
-      '  if (kind(1.0) /= c_float) stop 1\n' +
-      '  if (kind(1.0d0) /= c_double) stop 2\n' +
-      '  if (kind(1) /= c_int) stop 3\n' +
-      'end program\n',
-      name: 'fortran kind check'
-    )
+  kind_check = fc.run('program rp_kind_check\n' +
+                      '  use, intrinsic :: iso_c_binding\n' +
+                      '  implicit none\n' +
+                      '  if (kind(1.0) /= c_float) stop 1\n' +
+                      '  if (kind(1.0d0) /= c_double) stop 2\n' +
+                      '  if (kind(1) /= c_int) stop 3\n' +
+                      'end program\n',
+                      name: 'fortran kind check'
+                     )
 
-    want_fortran = kind_check.compiled() and kind_check.returncode() == 0
-    if not want_fortran
-      warning('Fortran kinds do not match C kinds; disabling Fortran interface')
-    endif
-  else
-    want_fortran = false
+  want_fortran = kind_check.compiled() and kind_check.returncode() == 0
+  if not want_fortran
+    warning('Fortran kinds do not match C kinds; disabling Fortran interface')
   endif
 endif
 
