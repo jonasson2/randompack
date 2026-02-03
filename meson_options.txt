@@ -36,8 +36,8 @@ option('build_tests',
 
 option('simd', 
   type: 'combo', 
-  choices: ['baseline', 'avx2'], 
-  value: 'baseline'
+  choices: ['auto', 'baseline', 'avx2'], 
+  value: 'auto'
 )
 
 option('build_test_variants',

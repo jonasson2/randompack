@@ -38,8 +38,27 @@ endif
 
 cc = meson.get_compiler('c')
 
-if get_option('simd') == 'avx2'
+simd_opt = get_option('simd')
+if simd_opt == 'avx2'
   add_project_arguments('-mavx2', language : 'c')
+elif simd_opt == 'auto'
+  if host_machine.cpu_family() in ['x86', 'x86_64'] and cc.has_argument('-mavx2')
+    if not meson.is_cross_build()
+      avx2_check = cc.run('''
+        #include <immintrin.h>
+        int main(void) {
+        #if defined(__GNUC__) || defined(__clang__) || defined(__INTEL_COMPILER)
+          return __builtin_cpu_supports("avx2") ? 0 : 1;
+        #else
+          return 1;
+        #endif
+        }
+      ''')
+      if avx2_check.returncode() == 0
+        add_project_arguments('-mavx2', language : 'c')
+      endif
+    endif
+  endif
 endif
 
 math_dep = cc.find_library('m', required: false)
