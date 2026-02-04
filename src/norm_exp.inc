@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include <math.h>
 #include <string.h>
+#include "printX.h"
 #include "randompack.h"
 #include "ziggurat_constants.h"
 #undef NDEBUG
@@ -21,7 +22,7 @@ static double tail_draw(randompack_rng *rng, uint64_t rabs, int *w) {
     /* Switch to 1.0 - U to avoid log(0.0), see GH 13361 */
     xx = -ziggurat_nor_inv_r * log1p(-draw_u01(rng, w));
     yy = -log1p(-draw_u01(rng, w));
-    if (yy + yy > xx * xx)
+    if (LIKELY(yy + yy > xx * xx))
       return ((rabs >> 8) & 0x1) ? -(ziggurat_nor_r + xx)
         : ziggurat_nor_r + xx;
   }
@@ -82,43 +83,50 @@ ALWAYS_INLINE void rand_norm(double *buf, size_t len, randompack_rng *rng) {
 }
 
 // Following four functions are copied from NumPy, except for marked changes
-ALWAYS_INLINE double standard_exponential_unlikely(randompack_rng *rng,
-                                                          uint8_t idx, double x, int *w) {
+ALWAYS_INLINE double standard_exponential_unlikely(randompack_rng *rng, uint8_t idx,
+                                                   uint64_t ri, double x, int *w) {
   while (true) { // added loop to replace recursion, to allow speedup.
-    if (idx == 0) {
+    if (UNLIKELY(idx == 0)) {
       /* Switch to 1.0 - U to avoid log(0.0), see GH 13361 */
       return ziggurat_exp_r - log1p(-draw_u01(rng, w));
     }
-    else if ((fe_double[idx-1] - fe_double[idx])*draw_u01(rng, w) + fe_double[idx] < exp(-x)) {
-      return x;
-    }
-    else { 
-      // Replaced calling rand_exp with the following:
-      uint64_t ri = draw_u64(rng, w);
-      ri >>= 3;
-      idx = ri & 0xFF;
-      ri >>= 8;
-      x = ri*we_double[idx];
-      if (ri < ke_double[idx]) {
+    else {
+      uint64_t y = draw_u64(rng, w);
+      double f1 = fe_double[idx-1];
+      double f0 = fe_double[idx];
+      double h = f1 - f0;
+      double d = (ri - ke_double[idx])*we_double[idx];
+      if (y*h >= d*f1) return x;
+      // printSetNdec(7);
+      // printD("x1", x1);
+      // printD("x", x);
+      // printD("f1      ", f1);
+      // printD("exp(-x1)", exp(-x1));
+      // printD("f1 - exp(-x1)*(x-x1)"
+      if ((f1 - f0)*y + f0 < exp(-x)) {
         return x;
+      }
+      else { 
+        // Replaced calling rand_exp with the following:
+        ri = draw_u64(rng, w);
+        idx = ri & 0xFF;
+        ri >>= 11;
+        x = ri*we_double[idx];
+        if (LIKELY(ri < ke_double[idx])) return x;
       }
     }
   }
 }
 
 ALWAYS_INLINE double draw_exp(randompack_rng *rng, int *w) {
-  uint64_t ri;
-  uint8_t idx;
-  double xi;
-  ri = draw_u64_nocheck(rng, w);
+  uint64_t ri = draw_u64_nocheck(rng, w);
   ri >>= 3;
-  idx = ri & 0xFF;
+  uint8_t idx = ri & 0xFF;
   ri >>= 8;
-  xi = ri * we_double[idx];
-  if (ri >= ke_double[idx]) {
-	 xi = standard_exponential_unlikely(rng, idx, xi, w);
-	 make_half_full(rng, w);
-  }
+  double xi = ri*we_double[idx];
+  if (LIKELY(ri < ke_double[idx])) return xi;
+  xi = standard_exponential_unlikely(rng, idx, ri, xi, w);
+  make_half_full(rng, w);
   return xi;
 }
 
@@ -128,7 +136,7 @@ ALWAYS_INLINE void rand_exp(double *buf, size_t len, randompack_rng *rng) {
   while (i < len) {
     make_half_full(rng, &w);
     int take = min(len - i, BUFSIZE/2);
-    for (size_t j = i; j < i + take; j++) {
+    for (size_t j = i; LIKELY(j < i + take); j++) {
       buf[j] = draw_exp(rng, &w);
     }
     i += take;
