@@ -91,29 +91,19 @@ ALWAYS_INLINE double standard_exponential_unlikely(randompack_rng *rng, uint8_t 
       return ziggurat_exp_r - log1p(-draw_u01(rng, w));
     }
     else {
-      uint64_t y = draw_u64(rng, w);
       double f1 = fe_double[idx-1];
       double f0 = fe_double[idx];
       double h = f1 - f0;
+      double yh = draw_u01(rng, w)*h;
       double d = (ri - ke_double[idx])*we_double[idx];
-      if (y*h >= d*f1) return x;
-      // printSetNdec(7);
-      // printD("x1", x1);
-      // printD("x", x);
-      // printD("f1      ", f1);
-      // printD("exp(-x1)", exp(-x1));
-      // printD("f1 - exp(-x1)*(x-x1)"
-      if ((f1 - f0)*y + f0 < exp(-x)) {
-        return x;
-      }
-      else { 
-        // Replaced calling rand_exp with the following:
-        ri = draw_u64(rng, w);
-        idx = ri & 0xFF;
-        ri >>= 11;
-        x = ri*we_double[idx];
-        if (LIKELY(ri < ke_double[idx])) return x;
-      }
+      if (yh >= d*f1) return x;
+      if (yh + f0 < exp(-x)) return x;
+      // Replaced calling rand_exp with the following:
+      ri = draw_u64(rng, w);
+      idx = ri & 0xFF;
+      ri >>= 11;
+      x = ri*we_double[idx];
+      if (LIKELY(ri < ke_double[idx])) return x;
     }
   }
 }
