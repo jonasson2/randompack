@@ -97,7 +97,7 @@ ALWAYS_INLINE double standard_exponential_unlikely(randompack_rng *rng, uint8_t 
       double yh = draw_u01(rng, w)*h;
       double d = (ri - ke_double[idx])*we_double[idx];
       if (yh >= d*f1) return x;
-      if (yh + f0 < exp(-x)) return x;
+      if (f1 - yh < exp(-x)) return x;
       // Replaced calling rand_exp with the following:
       ri = draw_u64(rng, w);
       idx = ri & 0xFF;
