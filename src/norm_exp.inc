@@ -83,41 +83,46 @@ ALWAYS_INLINE void rand_norm(double *buf, size_t len, randompack_rng *rng) {
 }
 
 // Following four functions are copied from NumPy, except for marked changes
-ALWAYS_INLINE double standard_exponential_unlikely(randompack_rng *rng, uint8_t idx,
-                                                   uint64_t ri, double x, int *w) {
+ALWAYS_INLINE double standard_exponential_unlikely(
+  randompack_rng *rng, uint8_t idx, uint64_t ki, double wi, uint64_t r, double x, int *w) {
   while (true) { // added loop to replace recursion, to allow speedup.
     if (UNLIKELY(idx == 0)) {
       /* Switch to 1.0 - U to avoid log(0.0), see GH 13361 */
       return ziggurat_exp_r - log1p(-draw_u01(rng, w));
     }
     else {
-      double f1 = fe_double[idx-1];
-      double f0 = fe_double[idx];
-      double h = f1 - f0;
-      double yh = draw_u01(rng, w)*h;
-      double d = (ri - ke_double[idx])*we_double[idx];
-      if (yh >= d*f1) return x;
-      if (f1 - yh < exp(-x)) return x;
-      // Replaced calling rand_exp with the following:
-      ri = draw_u64(rng, w);
-      idx = ri & 0xFF;
-      ri >>= 11;
-      x = ri*we_double[idx];
-      if (LIKELY(ri < ke_double[idx])) return x;
+      double y = draw_u01(rng, w);
+		uint64_t r0 = (1ULL << 53) - ki;
+		uint64_t r1 = r - ki;
+		if (r0*y > r1) {
+		  double f1 = fe_double[idx-1];
+		  double f0 = fe_double[idx];
+		  double h = f1 - f0;
+		  double yh = y*h;
+		  if (yh >= r1*wi*f1) return x;
+		  if (f1 - yh < exp(-x)) return x;
+		}
+      r = draw_u64(rng, w);
+      idx = r & 0xFF;
+      r >>= 11;
+      x = r*we_double[idx];
+      if (LIKELY(r < ke_double[idx])) return x;
     }
   }
 }
 
 ALWAYS_INLINE double draw_exp(randompack_rng *rng, int *w) {
-  uint64_t ri = draw_u64_nocheck(rng, w);
-  ri >>= 3;
-  uint8_t idx = ri & 0xFF;
-  ri >>= 8;
-  double xi = ri*we_double[idx];
-  if (LIKELY(ri < ke_double[idx])) return xi;
-  xi = standard_exponential_unlikely(rng, idx, ri, xi, w);
+  uint64_t r = draw_u64_nocheck(rng, w);
+  r >>= 3;
+  uint8_t idx = r & 0xFF;
+  r >>= 8;
+  uint64_t ki = ke_double[idx];
+  double wi = we_double[idx];
+  double x = r*wi;
+  if (LIKELY(r < ki)) return x;
+  x = standard_exponential_unlikely(rng, idx, ki, wi, r, x, w);
   make_half_full(rng, w);
-  return xi;
+  return x;
 }
 
 ALWAYS_INLINE void rand_exp(double *buf, size_t len, randompack_rng *rng) {
