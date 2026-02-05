@@ -541,8 +541,17 @@ bool randompack_unif(double x[], size_t len, double a, double b,
   rng->last_error = 0;
   rand_dble(x, len, rng); // x in [0,1)
   if (a==0 && b==1) return true;
+#if defined(FP_FAST_FMA)
   double w = nextafter(b - a, 0.0);
   for (size_t i = 0; i < len; i++) x[i] = fma(w, x[i], a);
+#else
+  double w = b - a;
+  for (size_t i = 0; i < len; i++) {
+    double y = a + w*x[i];
+    y = y > b ? b : y;
+    x[i] = y;
+#endif
+ }
   return true;
 }
 
