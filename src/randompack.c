@@ -551,7 +551,6 @@ bool randompack_unif(double x[], size_t len, double a, double b,
     y = y > b ? b : y;
     x[i] = y;
 #endif
- }
   return true;
 }
 

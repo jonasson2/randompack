@@ -71,21 +71,6 @@ ALWAYS_INLINE void rand_normf(float *buf, size_t len, randompack_rng *rng) {
   exit_u32_mode(rng, w);
 }
 
-ALWAYS_INLINE void rand_normalf(float *buf, size_t len, double mu, double sigma,
-                                randompack_rng *rng) {
-  int w = enter_u32_mode(rng);
-  size_t i = 0;
-  while (i < len) {
-    make_half_full32(rng, &w);
-    int take = min(len - i, BUFSIZE);
-    for (int j = 0; j < take; j++) {
-      buf[i + j] = mu + sigma*draw_normf(rng, &w);
-    }
-    i += take;
-  }
-  exit_u32_mode(rng, w);
-}
-
 #ifndef U01_HIRES
 ALWAYS_INLINE float standard_exponential_unlikely_f(randompack_rng *rng,
   uint8_t idx, uint32_t ki, float wi, uint32_t r, float x, int *w) {

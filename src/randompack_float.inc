@@ -20,8 +20,16 @@ bool randompack_uniff(float x[], size_t len, float a, float b, randompack_rng *r
   rng->last_error = 0;
   rand_float(x, len, rng); // x in [0,1)
   if (a==0 && b==1) return true;
-  float w = nextafterf(b - a, 0);
+#if defined(FP_FAST_FMA)
+  float w = nextafterf(b - a, 0.0f);
   for (size_t i = 0; i < len; i++) x[i] = fmaf(w, x[i], a);
+#else
+  float w = b - a;
+  for (size_t i = 0; i < len; i++) {
+    float y = a + w*x[i];
+    y = y > b ? b : y;
+    x[i] = y;
+#endif
   return true;
 }
 
