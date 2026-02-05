@@ -16,15 +16,14 @@
 #undef NDEBUG
 #include "assert.h"
 
-static double tail_draw(randompack_rng *rng, uint64_t rabs, int *w) {
+static double norm_tail_draw(randompack_rng *rng, uint64_t rabs, int *w) {
   double xx, yy;
   for (;;) {
     /* Switch to 1.0 - U to avoid log(0.0), see GH 13361 */
     xx = -ziggurat_nor_inv_r * log1p(-draw_u01(rng, w));
     yy = -log1p(-draw_u01(rng, w));
     if (LIKELY(yy + yy > xx * xx))
-      return ((rabs >> 8) & 0x1) ? -(ziggurat_nor_r + xx)
-        : ziggurat_nor_r + xx;
+      return ((rabs >> 8) & 0x1) ? -(ziggurat_nor_r + xx) : ziggurat_nor_r + xx;
   }
 }
 
@@ -54,7 +53,7 @@ ALWAYS_INLINE double draw_norm(randompack_rng *rng, int *w) {
       return x;
     }
     if (UNLIKELY(idx == 0)) {
-      x = tail_draw(rng, rabs, w);
+      x = norm_tail_draw(rng, rabs, w);
       make_half_full(rng, w);
       return x;
     }
@@ -95,34 +94,50 @@ ALWAYS_INLINE double standard_exponential_unlikely(
 		uint64_t r0 = (1ULL << 53) - ki;
 		uint64_t r1 = r - ki;
 		if (r0*y > r1) {
-		  double f1 = fe_double[idx-1];
-		  double f0 = fe_double[idx];
-		  double h = f1 - f0;
-		  double yh = y*h;
+		  double f1 = fe_double[idx-1], f0 = fe_double[idx];
+		  double yh = y*(f1 - f0);
 		  if (yh >= r1*wi*f1) return x;
-		  if (f1 - yh < exp(-x)) return x;
+		  if (UNLIKELY(f1 - yh < exp(-x))) return x;
 		}
       r = draw_u64(rng, w);
+      r >>= 3;
       idx = r & 0xFF;
-      r >>= 11;
-      x = r*we_double[idx];
-      if (LIKELY(r < ke_double[idx])) return x;
+      r >>= 8;
+      wi = we_double[idx];
+      x = r*wi;
+      ki = ke_double[idx];
+      if (LIKELY(r < ki)) return x;
     }
   }
 }
 
 ALWAYS_INLINE double draw_exp(randompack_rng *rng, int *w) {
-  uint64_t r = draw_u64_nocheck(rng, w);
-  r >>= 3;
-  uint8_t idx = r & 0xFF;
-  r >>= 8;
-  uint64_t ki = ke_double[idx];
-  double wi = we_double[idx];
-  double x = r*wi;
-  if (LIKELY(r < ki)) return x;
-  x = standard_exponential_unlikely(rng, idx, ki, wi, r, x, w);
-  make_half_full(rng, w);
-  return x;
+  while (true) {
+    uint64_t r = draw_u64_nocheck(rng, w);
+    r >>= 3;
+    uint8_t idx = r & 0xFF;
+    r >>= 8;
+    uint64_t ki = ke_double[idx];
+    double wi = we_double[idx];
+    double x = r*wi;
+    if (LIKELY(r < ki)) return x;
+    if (UNLIKELY(idx == 0)) {
+      return ziggurat_exp_r - log1p(-draw_u01(rng, w));
+    }
+    double y = draw_u01(rng, w);
+    uint64_t r0 = (1ULL << 53) - ki;
+    uint64_t r1 = r - ki;
+    if (r0*y > r1) { // below secant
+      double f1 = fe_double[idx-1], f0 = fe_double[idx];
+      double yh = y*(f1 - f0);
+      if (yh >= r1*wi*f1 ||    // below tangent
+          f1 - yh < exp(-x)) { // or below pdf
+        make_half_full(rng, w);
+        return x;
+      }
+    }
+    make_half_full(rng, w);
+  }
 }
 
 ALWAYS_INLINE void rand_exp(double *buf, size_t len, randompack_rng *rng) {
