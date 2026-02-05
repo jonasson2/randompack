@@ -541,11 +541,8 @@ bool randompack_unif(double x[], size_t len, double a, double b,
   rng->last_error = 0;
   rand_dble(x, len, rng); // x in [0,1)
   if (a==0 && b==1) return true;
-  double w = b - a;
-  for (size_t i = 0; i < len; i++) {
-    double v = a + w*x[i];
-    x[i] = v < b ? v : b;
-  }
+  double w = nextafter(b - a, 0.0);
+  for (size_t i = 0; i < len; i++) x[i] = fma(w, x[i], a);
   return true;
 }
 
@@ -560,15 +557,15 @@ bool randompack_norm(double x[], size_t len, randompack_rng *rng) { // standard 
   return true;
 }
 
-bool randompack_normal(double x[], size_t len, double mu, double sigma, randompack_rng
-							  *rng) { // general normal
+bool randompack_normal(double x[], size_t len, double mu, double sigma,
+  randompack_rng *rng) { // general normal
   if (!rng) return false;
   if (!x || sigma <= 0) {
     rng->last_error = "invalid arguments to randompack_normal";
     return false;
   }
   rng->last_error = 0;
-  rand_norm(x, len, rng);     // generate N(0,1)
+  rand_norm(x, len, rng);
   if (mu != 0 || sigma != 1)
     for (size_t i = 0; i < len; i++) x[i] = mu + sigma*x[i];
   return true;

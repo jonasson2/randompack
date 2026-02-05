@@ -5,7 +5,8 @@ Always obey the rules below.
 ---------------------------
 CORE C STYLE
 ---------------------------
-- ISO C11 only; no compiler extensions
+- Platform agnostic; should compile on ARM and Intel with gcc, clang,
+  MSVC (cl.exe) and icx
 - Indent 2 spaces
 - No blank lines inside functions (allowed between code blocks outside functions)
 - Stroustrup braces

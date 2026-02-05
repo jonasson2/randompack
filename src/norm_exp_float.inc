@@ -15,8 +15,8 @@ static float tail_draw_f(randompack_rng *rng, uint32_t rabs, int *w) {
   float xx, yy;
   for (;;) {
     // Switch to 1.0 - U to avoid log(0.0), see GH 13361
-    xx = -ziggurat_nor_inv_r_f * log1pf(-u01f(rng, w));
-    yy = -log1pf(-u01f(rng, w));
+    xx = -ziggurat_nor_inv_r_f * log1pf(-draw_u01f(rng, w));
+    yy = -log1pf(-draw_u01f(rng, w));
     if (yy + yy > xx * xx)
       return ((rabs >> 8) & 0x1) ? -(ziggurat_nor_r_f + xx)
                                  : ziggurat_nor_r_f + xx;
@@ -47,7 +47,7 @@ ALWAYS_INLINE float draw_normf(randompack_rng *rng, int *w) {
     }
     else {
       float h = fi_float[idx - 1] - fi_float[idx];
-      float y = u01f(rng, w);
+      float y = draw_u01f(rng, w);
       if (h*y + fi_float[idx] < expf(-x*x/2)) {
         make_half_full32(rng, w);
         return x;
@@ -71,46 +71,98 @@ ALWAYS_INLINE void rand_normf(float *buf, size_t len, randompack_rng *rng) {
   exit_u32_mode(rng, w);
 }
 
+ALWAYS_INLINE void rand_normalf(float *buf, size_t len, double mu, double sigma,
+                                randompack_rng *rng) {
+  int w = enter_u32_mode(rng);
+  size_t i = 0;
+  while (i < len) {
+    make_half_full32(rng, &w);
+    int take = min(len - i, BUFSIZE);
+    for (int j = 0; j < take; j++) {
+      buf[i + j] = mu + sigma*draw_normf(rng, &w);
+    }
+    i += take;
+  }
+  exit_u32_mode(rng, w);
+}
+
 #ifndef U01_HIRES
 ALWAYS_INLINE float standard_exponential_unlikely_f(randompack_rng *rng,
-  uint8_t idx, float x, int *w) {
+  uint8_t idx, uint32_t ki, float wi, uint32_t r, float x, int *w) {
   while (true) { // added loop to replace recursion, to allow speedup.
-    if (idx == 0) {
+    if (UNLIKELY(idx == 0)) {
       // Switch to 1.0 - U to avoid log(0.0), see GH 13361
-      return ziggurat_exp_r_f - log1pf(-u01f(rng, w));
-    }
-    else if ((fe_float[idx-1] - fe_float[idx])*u01f(rng, w) + fe_float[idx] <
-             expf(-x)) {
-      return x;
+      return ziggurat_exp_r_f - log1pf(-draw_u01f(rng, w));
     }
     else {
-      uint32_t ri = draw_u32(rng, w);
-      ri >>= 1;
-      idx = ri & 0xFF;
-      ri >>= 8;
-      x = ri*we_float[idx];
-      if (ri < ke_float[idx]) {
-        return x;
+      float y = draw_u01f(rng, w);
+      uint32_t r0 = (1U << 24) - ki;
+      uint32_t r1 = r - ki;
+      if (r0*y > r1) {
+        float f1 = fe_float[idx-1], f0 = fe_float[idx];
+        float yh = y*(f1 - f0);
+        if (yh >= r1*wi*f1) return x;
+        if (UNLIKELY(f1 - yh < expf(-x))) return x;
       }
+      r = draw_u32(rng, w);
+      r >>= 1;
+      idx = r & 0xFF;
+      r >>= 8;
+      wi = we_float[idx];
+      x = r*wi;
+      ki = ke_float[idx];
+      if (LIKELY(r < ki)) return x;
     }
   }
 }
 
 ALWAYS_INLINE float draw_expf(randompack_rng *rng, int *w) {
-  uint32_t ri;
-  uint8_t idx;
-  float xi;
-  ri = draw_u32_nocheck(rng, w);
-  ri >>= 1;
-  idx = ri & 0xFF;
-  ri >>= 8;
-  xi = ri * we_float[idx];
-  if (ri >= ke_float[idx]) {
-    xi = standard_exponential_unlikely_f(rng, idx, xi, w);
+  while (true) {
+    uint32_t r = draw_u32_nocheck(rng, w);
+    r >>= 1;
+    uint8_t idx = r & 0xFF;
+    r >>= 8;
+    uint32_t ki = ke_float[idx];
+    float wi = we_float[idx];
+    float x = r*wi;
+    if (LIKELY(r < ki)) return x;
+    if (UNLIKELY(idx == 0)) {
+      return ziggurat_exp_r_f - log1pf(-draw_u01f(rng, w));
+    }
+    float y = draw_u01f(rng, w);
+    uint32_t dk = (1U << 24) - ki;
+    uint32_t k1 = (1U << 24) - r;
+    if (y*dk <= k1) { // below secant
+      float f0 = fe_float[idx-1], f1 = fe_float[idx];
+      float yh = y*(f0 - f1);
+      if (yh <= f1*wi*k1) { // below tangent
+        make_half_full32(rng, w);
+        return x;
+      }
+      if (f1 + yh < expf(-x)) { // or below pdf
+        make_half_full32(rng, w);
+        return x;
+      }
+    }
     make_half_full32(rng, w);
   }
-  return xi;
 }
+
+// ALWAYS_INLINE float draw_expf(randompack_rng *rng, int *w) {
+//   uint32_t ri;
+//   uint8_t idx;
+//   float xi;
+//   ri = draw_u32_nocheck(rng, w);
+//   ri >>= 1;
+//   idx = ri & 0xFF;
+//   ri >>= 8;
+//   xi = ri * we_float[idx];
+//   if (ri >= ke_float[idx]) {
+//     xi = standard_exponential_unlikely_f(rng, idx, xi, w);
+//     make_half_full32(rng, w);
+//   }
+//   return xi;
+// }
 
 ALWAYS_INLINE void rand_expf(float *buf, size_t len, randompack_rng *rng) {
   int w = enter_u32_mode(rng);
@@ -118,7 +170,7 @@ ALWAYS_INLINE void rand_expf(float *buf, size_t len, randompack_rng *rng) {
   while (i < len) {
     make_half_full32(rng, &w);
     int take = min(len - i, BUFSIZE);
-    for (size_t j = i; j < i + take; j++) {
+    for (size_t j = i; LIKELY(j < i + take); j++) {
       buf[j] = draw_expf(rng, &w);
     }
     i += take;
@@ -143,8 +195,9 @@ ALWAYS_INLINE void rand_expf(float *x, size_t len, randompack_rng *rng) {
     if (ri < ke2f[idx])           // ke2f = kef*2
       x[i++] = xi;                // fast accept
     else if (idx == 0)            // tail
-      x[i++] = ziggurat_exp_r_f - log1pf(-u01f(rng, &w));
-    else if ((fe_float[idx-1]-fe_float[idx])*u01f(rng, &w) + fe_float[idx] < expf(-xi))
+      x[i++] = ziggurat_exp_r_f - log1pf(-draw_u01f(rng, &w));
+    else if ((fe_float[idx-1] - fe_float[idx])*draw_u01f(rng, &w) +
+      fe_float[idx] < expf(-xi))
       x[i++] = xi;                // wedge accept
   }
   exit_u32_mode(rng, w);

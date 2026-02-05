@@ -19,15 +19,9 @@ bool randompack_uniff(float x[], size_t len, float a, float b, randompack_rng *r
   }
   rng->last_error = 0;
   rand_float(x, len, rng); // x in [0,1)
-  float w = b - a;
-  for (size_t i = 0; i < len; i++) {
-#if defined(__clang__)
-    x[i] = fminf(a + w*x[i], nextafter(b, a));
-#else
-    float v = a + w*x[i];
-    x[i] = v < b ? v : nextafter(b, a);
-#endif
-  }
+  if (a==0 && b==1) return true;
+  float w = nextafterf(b - a, 0);
+  for (size_t i = 0; i < len; i++) x[i] = fmaf(w, x[i], a);
   return true;
 }
 

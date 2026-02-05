@@ -12,6 +12,12 @@ run_varmasim = executable(
   dependencies : [randompack_dep],
 )
 
+run_exp = executable(
+  'RunExp',
+  ['RunExp.c'] + common_util,
+  dependencies : [randompack_dep],
+)
+
 time_engines = executable(
   'TimeEngines',
   ['TimeEngines.c', 'TimeUtil.c'] + common_util,

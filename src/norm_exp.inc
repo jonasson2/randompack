@@ -16,6 +16,18 @@
 #undef NDEBUG
 #include "assert.h"
 
+static uint64_t countAboveSecant = 0;
+static uint64_t countBelowTangent = 0;
+static uint64_t countCurve = 0;
+static uint64_t countBelowCurve = 0;
+
+void randompack_get_counters(uint64_t *cas, uint64_t *cbt, uint64_t *cc, uint64_t *cbc) {
+  if (cas) *cas = countAboveSecant;
+  if (cbt) *cbt = countBelowTangent;
+  if (cc) *cc = countCurve;
+  if (cbc) *cbc = countBelowCurve;
+}
+
 static double norm_tail_draw(randompack_rng *rng, uint64_t rabs, int *w) {
   double xx, yy;
   for (;;) {
@@ -81,9 +93,9 @@ ALWAYS_INLINE void rand_norm(double *buf, size_t len, randompack_rng *rng) {
   exit_u64_mode(rng, w);
 }
 
-// Following four functions are copied from NumPy, except for marked changes
-ALWAYS_INLINE double standard_exponential_unlikely(
-  randompack_rng *rng, uint8_t idx, uint64_t ki, double wi, uint64_t r, double x, int *w) {
+// Following four functions are based on NumPy
+ALWAYS_INLINE double standard_exponential_unlikely(randompack_rng *rng,
+  uint8_t idx, uint64_t ki, double wi, uint64_t r, double x, int *w) {
   while (true) { // added loop to replace recursion, to allow speedup.
     if (UNLIKELY(idx == 0)) {
       /* Switch to 1.0 - U to avoid log(0.0), see GH 13361 */
@@ -125,17 +137,25 @@ ALWAYS_INLINE double draw_exp(randompack_rng *rng, int *w) {
       return ziggurat_exp_r - log1p(-draw_u01(rng, w));
     }
     double y = draw_u01(rng, w);
-    uint64_t r0 = (1ULL << 53) - ki;
-    uint64_t r1 = r - ki;
-    if (r0*y > r1) { // below secant
-      double f1 = fe_double[idx-1], f0 = fe_double[idx];
-      double yh = y*(f1 - f0);
-      if (yh >= r1*wi*f1 ||    // below tangent
-          f1 - yh < exp(-x)) { // or below pdf
+    uint64_t dk = (1ULL << 53) - ki;
+    uint64_t k1 = (1ULL << 53) - r;
+    if (y*dk <= k1) { // below secant
+      double f0 = fe_double[idx-1], f1 = fe_double[idx];
+      double yh = y*(f0 - f1);
+      if (yh <= f1*wi*k1) { // below tangent
+        // countBelowTangent++;
+        make_half_full(rng, w);
+        return x;
+      }
+      // countCurve++;
+      if (f1 + yh < exp(-x)) { // or below pdf
+        // countBelowCurve++;
         make_half_full(rng, w);
         return x;
       }
     }
+    else
+      // countAboveSecant++;
     make_half_full(rng, w);
   }
 }

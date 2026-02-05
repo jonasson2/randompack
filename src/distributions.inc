@@ -16,26 +16,6 @@ static int LastNonzeroColumn(int m, int n, double A[]) {
 #include "norm_exp.inc"
 #include "rand_dble.inc"
 
-// ALWAYS_INLINE void rand_dble(double x[], size_t len, randompack_rng *rng) {
-//   int w = enter_u64_mode(rng);
-//   size_t i = 0, remain, avail, take;
-//   //  for (int j=0; j<BUFSIZE; j++) rng->buf.u64[j] = 12345678901234ULL;
-//   while (i < len) {
-//     fill_if_empty(rng, &w);
-//     //w = 0;
-//     remain = len - i;
-//     avail = (size_t)(BUFSIZE - w);
-//     take = remain < avail ? remain : avail;
-//     for (size_t j = 0; j < take; j++) {
-//       uint64_t v = rng->buf.u64[w + j];
-//       x[i + j] = U64_TO_DOUBLE(v);
-//     }
-//     w += (int)take;
-//     i += take;
-//   }
-//   exit_u64_mode(rng, w);
-// }
-
 static void rand_uint64(uint64_t x[], size_t n, uint64_t bound, randompack_rng *rng) {
   // Sets x to n random integers in {0, 1,..., bound-1}
   if (bound == 0) {

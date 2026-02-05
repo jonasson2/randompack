@@ -27,7 +27,7 @@ ALWAYS_INLINE void fill_gamma_shape1f(float *x, size_t len, float shape,
       float v = 1.0f + c*z;
       if (v > 0.0f) {
         float v3 = v*v*v;
-        float u  = u01f(rng, &w);
+        float u  = draw_u01f(rng, &w);
         float z2 = z*z;
         float z4 = z2*z2;
         if (u < 1.0f - 0.0331f*z4 ||
@@ -52,7 +52,7 @@ ALWAYS_INLINE void fill_gammaf(float *x, size_t len, float shape, float scale,
     fill_gamma_shape1f(x, len, shape + 1.0f, rng);
     int w = enter_u32_mode(rng);
     for (size_t i = 0; i < len; i++) {
-      float u = u01f(rng, &w);
+      float u = draw_u01f(rng, &w);
       x[i] *= expf(logf(u)/shape);
     }
     exit_u32_mode(rng, w);

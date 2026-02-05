@@ -99,7 +99,7 @@ ALWAYS_INLINE double draw_u01(randompack_rng *rng, int *w) {
   return U64_TO_DOUBLE(draw_u64(rng, w));
 }
 
-ALWAYS_INLINE float u01f(randompack_rng *rng, int *w) {
+ALWAYS_INLINE float draw_u01f(randompack_rng *rng, int *w) {
   return U32_TO_FLOAT(draw_u32(rng, w));
 }
 

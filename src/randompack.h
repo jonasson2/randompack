@@ -111,6 +111,13 @@ bool randompack_exp( // Generate exponential random numbers, false on error
   randompack_rng *rng   // in/out  Random number generator
 );
 
+void randompack_get_counters( // Get exp draw counters
+  uint64_t *count_above_secant,  // out     Count above secant
+  uint64_t *count_below_tangent, // out     Count below tangent
+  uint64_t *count_curve,         // out     Count curve
+  uint64_t *count_below_curve    // out     Count below curve
+);
+
 bool randompack_gamma( // Generate gamma random numbers, false on error
   double x[],           // out     n-vector: gamma random numbers
   size_t n,             // in      Number of variates
