@@ -29,6 +29,7 @@ bool randompack_uniff(float x[], size_t len, float a, float b, randompack_rng *r
     float y = a + w*x[i];
     y = y > b ? b : y;
     x[i] = y;
+  }
 #endif
   return true;
 }

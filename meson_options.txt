@@ -45,3 +45,5 @@ option('build_test_variants',
   value: false,
   description: 'Build internal test variants (no128, pretend_windows)'
 )
+
+option('perf', type: 'boolean', value: false, description: 'Enable performance benchmarking flags/macros')

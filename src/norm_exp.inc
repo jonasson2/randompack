@@ -144,18 +144,17 @@ ALWAYS_INLINE double draw_exp(randompack_rng *rng, int *w) {
     double y = draw_u01(rng, w);
     uint64_t dk = (1ULL << 53) - ki;
     uint64_t dr = (1ULL << 53) - r;
-    if (y*dk <= dr) { // below secant
-      if (y <= dr*slope[idx]) {
+    if (y <= dr*slope[idx]) { // below tangent (1.07%)
+      make_half_full(rng, w);
+      return x;
+    }
+    if (y*dk <= dr) { // below secant (0.030%)
+      double f0 = fe_double[idx-1], f1 = fe_double[idx];
+      if (f1 + y*(f0 - f1) < exp(-x)) { // below curve (0.020%)
         make_half_full(rng, w);
         return x;
-      }// below tangent (1.07%)
-      double f0 = fe_double[idx-1], f1 = fe_double[idx];
-      if (f1 + y*(f0 - f1) < exp(-x)) {
-        make_half_full(rng, w);
-        return x; // between curve and tangent (0.020%)
       }
-      // between curve and secant 0.010%
-    } // above secant (1.10%)
+    }
     make_half_full(rng, w);
   }
 }
