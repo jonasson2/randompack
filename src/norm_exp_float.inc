@@ -112,19 +112,20 @@ ALWAYS_INLINE float draw_expf(randompack_rng *rng, int *w) {
     float x = r*wi;
     if (LIKELY(r < ki)) return x;
     if (UNLIKELY(idx == 0)) {
-      return ziggurat_exp_r_f - log1pf(-draw_u01f(rng, w));
+      x = ziggurat_exp_r_f - log1pf(-draw_u01f(rng, w));
+      make_half_full32(rng, w);
+      return x;
     }
     float y = draw_u01f(rng, w);
     uint32_t dk = (1U << 24) - ki;
-    uint32_t k1 = (1U << 24) - r;
-    if (y*dk <= k1) { // below secant
+    uint32_t dr = (1U << 24) - r;
+    if (y <= dr*slope_f[idx]) { // below tangent
+      make_half_full32(rng, w);
+      return x;
+    }
+    if (y*dk <= dr) { // below secant
       float f0 = fe_float[idx-1], f1 = fe_float[idx];
-      float yh = y*(f0 - f1);
-      if (yh <= f1*wi*k1) { // below tangent
-        make_half_full32(rng, w);
-        return x;
-      }
-      if (f1 + yh < expf(-x)) { // or below pdf
+      if (f1 + y*(f0 - f1) < expf(-x)) { // or below pdf
         make_half_full32(rng, w);
         return x;
       }
