@@ -1,5 +1,9 @@
 // -*- mode: c; -*-
 #include <float.h>
+#if defined(__APPLE__)
+void vvexp(double *y, const double *x, const int *n);
+void vvlog(double *y, const double *x, const int *n);
+#endif
 
 static int LastNonzeroColumn(int m, int n, double A[]) {
   // If they are all zero, return 0.
@@ -69,6 +73,29 @@ static void rand_uint64(uint64_t x[], size_t n, uint64_t bound, randompack_rng *
     }
   }
   exit_u32_mode(rng, w);
+}
+
+static void rand_lognormal(double x[], size_t len, double mu, double sigma,
+  randompack_rng *rng) {
+  rand_norm(x, len, rng); // N(0,1)
+#if defined(__APPLE__)
+  for (size_t i = 0; i < len; ) {
+    size_t chunk;
+    if (len - i > (size_t)INT_MAX) {
+      chunk = (size_t)INT_MAX;
+    }
+    else {
+      chunk = len - i;
+    }
+    int n = (int)chunk;
+    if (mu != 0 || sigma != 1)
+      for (size_t j = 0; j < chunk; j++) x[i + j] = mu + sigma*x[i + j];
+    vvexp(x + i, x + i, &n);
+    i += chunk;
+  }
+#else
+  for (size_t i = 0; i < len; i++) x[i] = exp(mu + sigma*x[i]);
+#endif
 }
 
 static void rand_uint32(uint32_t x[], size_t n, uint32_t bound, randompack_rng *rng) {
@@ -373,8 +400,27 @@ ALWAYS_INLINE void fill_chi2(double *x, size_t len, double nu,
 ALWAYS_INLINE void fill_gumbel(double *x, size_t len, double mu, double beta,
   randompack_rng *rng) {
   rand_dble(x, len, rng); // x in [0,1)
+#if defined(__APPLE__)
+  for (size_t i = 0; i < len; ) {
+    size_t chunk;
+    if (len - i > (size_t)INT_MAX) {
+      chunk = (size_t)INT_MAX;
+    }
+    else {
+      chunk = len - i;
+    }
+    int n = (int)chunk;
+    vvlog(x + i, x + i, &n);
+    for (size_t j = 0; j < chunk; j++) x[i + j] = -x[i + j];
+    vvlog(x + i, x + i, &n);
+    for (size_t j = 0; j < chunk; j++)
+      x[i + j] = mu - beta*x[i + j];
+    i += chunk;
+  }
+#else
   for (size_t i = 0; i < len; i++)
     x[i] = mu - beta*log(-log(x[i]));
+#endif
 }
 
 ALWAYS_INLINE void fill_pareto(double *x, size_t len, double xm, double alpha,

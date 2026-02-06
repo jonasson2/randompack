@@ -16,16 +16,18 @@
 #undef NDEBUG
 #include "assert.h"
 
-static uint64_t countAboveSecant = 0;
-static uint64_t countBelowTangent = 0;
-static uint64_t countCurve = 0;
-static uint64_t countBelowCurve = 0;
+static int countAboveSecant = 0;
+static int countBelowTangent = 0;
+static int countAboveCurve = 0;
+static int countBelowCurve = 0;
+static int countTail = 0;
 
-void randompack_get_counters(uint64_t *cas, uint64_t *cbt, uint64_t *cc, uint64_t *cbc) {
-  if (cas) *cas = countAboveSecant;
-  if (cbt) *cbt = countBelowTangent;
-  if (cc) *cc = countCurve;
-  if (cbc) *cbc = countBelowCurve;
+void randompack_get_counters(int *cas, int *cbt, int *cc, int *cbc, int *ctail) {
+  *cas = countAboveSecant;
+  *cbt = countBelowTangent;
+  *cc = countAboveCurve;
+  *cbc = countBelowCurve;
+  *ctail = countTail;
 }
 
 static double norm_tail_draw(randompack_rng *rng, uint64_t rabs, int *w) {
@@ -124,38 +126,36 @@ ALWAYS_INLINE double standard_exponential_unlikely(randompack_rng *rng,
 }
 
 ALWAYS_INLINE double draw_exp(randompack_rng *rng, int *w) {
+  // double shift = 0;
+  double x;
   while (true) {
     uint64_t r = draw_u64_nocheck(rng, w);
     r >>= 3;
     uint8_t idx = r & 0xFF;
     r >>= 8;
     uint64_t ki = ke_double[idx];
-    double wi = we_double[idx];
-    double x = r*wi;
+    x = r*we_double[idx];;
     if (LIKELY(r < ki)) return x;
-    if (UNLIKELY(idx == 0)) {
-      return ziggurat_exp_r - log1p(-draw_u01(rng, w));
+    if (UNLIKELY(idx == 0)) { // 0.045%
+      x = ziggurat_exp_r + log1p(-draw_u01(rng, w));
+      make_half_full(rng, w);
+      return x;
     }
     double y = draw_u01(rng, w);
     uint64_t dk = (1ULL << 53) - ki;
-    uint64_t k1 = (1ULL << 53) - r;
-    if (y*dk <= k1) { // below secant
+    uint64_t dr = (1ULL << 53) - r;
+    if (y*dk <= dr) { // below secant
+      if (y <= dr*slope[idx]) {
+        make_half_full(rng, w);
+        return x;
+      }// below tangent (1.07%)
       double f0 = fe_double[idx-1], f1 = fe_double[idx];
-      double yh = y*(f0 - f1);
-      if (yh <= f1*wi*k1) { // below tangent
-        // countBelowTangent++;
+      if (f1 + y*(f0 - f1) < exp(-x)) {
         make_half_full(rng, w);
-        return x;
+        return x; // between curve and tangent (0.020%)
       }
-      // countCurve++;
-      if (f1 + yh < exp(-x)) { // or below pdf
-        // countBelowCurve++;
-        make_half_full(rng, w);
-        return x;
-      }
-    }
-    else
-      // countAboveSecant++;
+      // between curve and secant 0.010%
+    } // above secant (1.10%)
     make_half_full(rng, w);
   }
 }

@@ -1,8 +1,8 @@
 
 interface
   function crp_create(engine) bind(C, name="randompack_create") result(p)
-    import :: c_ptr, c_char
-    character(kind=c_char), dimension(*) :: engine
+    import :: c_ptr
+    type(c_ptr), value :: engine
     type(c_ptr) :: p
   end function
 
@@ -329,9 +329,9 @@ interface
   end function
 
   logical(c_bool) function crp_philox_set_state(ctr, key, rngp) bind(C, name="randompack_philox_set_state")
-    import :: c_ptr, c_bool, randompack_philox_ctr, randompack_philox_key
-    type(randompack_philox_ctr), value :: ctr
-    type(randompack_philox_key), value :: key
+    import :: c_ptr, c_bool, c_philox_ctr, c_philox_key
+    type(c_philox_ctr), value :: ctr
+    type(c_philox_key), value :: key
     type(c_ptr), value :: rngp
   end function
 

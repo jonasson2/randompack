@@ -9,6 +9,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <time.h>
+#include <limits.h>
 #include "randompack.h"
 #include "randompack_config.h"
 #include "BlasGateway.h"
@@ -599,10 +600,7 @@ bool randompack_lognormal(double x[], size_t len, double mu, double sigma,
     return false;
   }
   rng->last_error = 0;
-  rand_norm(x, len, rng); // N(0,1)
-  for (size_t i = 0; i < len; i++) {
-    x[i] = exp(mu + sigma*x[i]);
-  }
+  rand_lognormal(x, len, mu, sigma, rng);
   return true;
 }
 

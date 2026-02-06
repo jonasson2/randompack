@@ -14,6 +14,33 @@
 //   }
 //   exit_u32_mode(rng, w);
 // }
+#if defined(__APPLE__)
+void vvexpf(float *y, const float *x, const int *n);
+void vvlogf(float *y, const float *x, const int *n);
+#endif
+
+static void rand_lognormalf(float x[], size_t len, float mu, float sigma,
+  randompack_rng *rng) {
+  rand_normf(x, len, rng); // N(0,1)
+#if defined(__APPLE__)
+  for (size_t i = 0; i < len; ) {
+    size_t chunk;
+    if (len - i > (size_t)INT_MAX) {
+      chunk = (size_t)INT_MAX;
+    }
+    else {
+      chunk = len - i;
+    }
+    int n = (int)chunk;
+    if (mu != 0 || sigma != 1)
+      for (size_t j = 0; j < chunk; j++) x[i + j] = mu + sigma*x[i + j];
+    vvexpf(x + i, x + i, &n);
+    i += chunk;
+  }
+#else
+  for (size_t i = 0; i < len; i++) x[i] = expf(mu + sigma*x[i]);
+#endif
+}
 
 ALWAYS_INLINE void fill_gamma_shape1f(float *x, size_t len, float shape,
   randompack_rng *rng) {
@@ -116,8 +143,27 @@ ALWAYS_INLINE void fill_chi2f(float *x, size_t len, float nu,
 ALWAYS_INLINE void fill_gumbelf(float *x, size_t len, float mu, float beta,
   randompack_rng *rng) {
   rand_float(x, len, rng); // x in [0,1)
+#if defined(__APPLE__)
+  for (size_t i = 0; i < len; ) {
+    size_t chunk;
+    if (len - i > (size_t)INT_MAX) {
+      chunk = (size_t)INT_MAX;
+    }
+    else {
+      chunk = len - i;
+    }
+    int n = (int)chunk;
+    vvlogf(x + i, x + i, &n);
+    for (size_t j = 0; j < chunk; j++) x[i + j] = -x[i + j];
+    vvlogf(x + i, x + i, &n);
+    for (size_t j = 0; j < chunk; j++)
+      x[i + j] = mu - beta*x[i + j];
+    i += chunk;
+  }
+#else
   for (size_t i = 0; i < len; i++)
     x[i] = mu - beta*logf(-logf(x[i]));
+#endif
 }
 
 ALWAYS_INLINE void fill_paretof(float *x, size_t len, float xm, float alpha,

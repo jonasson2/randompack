@@ -78,8 +78,7 @@ bool randompack_lognormalf(float x[], size_t len, float mu, float sigma,
     return false;
   }
   rng->last_error = 0;
-  rand_normf(x, len, rng);
-  for (size_t i = 0; i < len; i++) x[i] = expf(mu + sigma*x[i]);
+  rand_lognormalf(x, len, mu, sigma, rng);
   return true;
 }
 

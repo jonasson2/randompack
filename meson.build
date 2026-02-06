@@ -38,6 +38,20 @@ endif
 
 cc = meson.get_compiler('c')
 
+perf_opt = get_option('perf')
+if perf_opt
+  add_project_arguments('-DRANDOMPACK_PERF', language : 'c')
+  add_project_arguments(
+    cc.get_supported_arguments([
+      '-fno-math-errno',
+      '-fno-trapping-math',
+      '-fomit-frame-pointer',
+      '-fno-semantic-interposition',
+    ]),
+    language : 'c'
+  )
+endif
+
 simd_opt = get_option('simd')
 if simd_opt == 'avx2'
   add_project_arguments('-mavx2', language : 'c')

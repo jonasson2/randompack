@@ -2,21 +2,25 @@ module randompack
 use, intrinsic :: iso_c_binding, only: c_ptr, c_char, c_bool, c_int, &
   c_size_t, c_double, c_float, c_int8_t, c_int64_t, c_null_ptr, c_null_char, &
   c_associated, c_loc, c_f_pointer
+use, intrinsic :: iso_fortran_env, only: int64
 implicit none
 private
-public :: rng, engines, rp_double, rp_int, rp_i64, rp_i8
+public :: rng, engines
 
-integer, parameter :: rp_double = c_double
-integer, parameter :: rp_int = c_int
-integer, parameter :: rp_i64 = c_int64_t
-integer, parameter :: rp_i8 = c_int8_t
-
-type, bind(C), public :: randompack_philox_ctr
+type, bind(C) :: c_philox_ctr
   integer(c_int64_t) :: v(4)
 end type
 
-type, bind(C), public :: randompack_philox_key
+type, bind(C) :: c_philox_key
   integer(c_int64_t) :: v(2)
+end type
+
+type, public :: randompack_philox_ctr
+  integer(int64) :: v(4)
+end type
+
+type, public :: randompack_philox_key
+  integer(int64) :: v(2)
 end type
 
 type :: rng

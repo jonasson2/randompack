@@ -112,10 +112,11 @@ bool randompack_exp( // Generate exponential random numbers, false on error
 );
 
 void randompack_get_counters( // Get exp draw counters
-  uint64_t *count_above_secant,  // out     Count above secant
-  uint64_t *count_below_tangent, // out     Count below tangent
-  uint64_t *count_curve,         // out     Count curve
-  uint64_t *count_below_curve    // out     Count below curve
+  int *count_above_secant,  // out     Count above secant
+  int *count_below_tangent, // out     Count below tangent
+  int *count_curve,         // out     Count curve
+  int *count_below_curve,    // out     Count below curve
+  int *count_tail              
 );
 
 bool randompack_gamma( // Generate gamma random numbers, false on error

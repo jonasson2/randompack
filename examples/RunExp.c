@@ -55,13 +55,15 @@ int main(int argc, char **argv) {
       return 1;
     }
   }
-  uint64_t cas = 0, cbt = 0, cc = 0, cbc = 0;
-  randompack_get_counters(&cas, &cbt, &cc, &cbc);
+  int cas, cbt, cc, cbc, ctail;
+  randompack_get_counters(&cas, &cbt, &cc, &cbc, &ctail);
+  double dn = (double)n;
   printf("n: %d\n", n);
-  printf("above_secant: %" PRIu64 "\n", cas);
-  printf("below_tangent: %" PRIu64 "\n", cbt);
-  printf("curve: %" PRIu64 "\n", cc);
-  printf("below_curve: %" PRIu64 "\n", cbc);
+  printf("above_secant: %d (%.4f%%)\n", cas, 100*cas/dn);
+  printf("below_tangent: %d (%.4f%%)\n", cbt, 100*cbt/dn);
+  printf("curve: %d (%.4f%%)\n", cc, 100*cc/dn);
+  printf("below_curve: %d (%.4f%%)\n", cbc, 100*cbc/dn);
+  printf("tail: %d (%.4f%%)\n", ctail, 100*ctail/dn);
   randompack_free(rng);
   return 0;
 }

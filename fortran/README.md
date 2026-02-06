@@ -27,37 +27,38 @@ manually, but the Meson build is the supported path.
 
 ```fortran
 program demo_randompack
-use, intrinsic :: iso_c_binding, only: c_double, c_float, c_int
+use, intrinsic :: iso_fortran_env, only: int64
 use randompack
 implicit none
 type(rng) :: r
-real(rp_double) :: x(100)
-real(c_float) :: xf(100)
-integer(rp_int) :: iv(10)
+double precision :: x(100)
+real :: xf(100)
+integer :: iv(10)
 
 call r%create()        ! default engine (x256++simd)
 call r%seed(123)       ! deterministic seed
 
 call r%u01(x)          ! U(0,1) in Float64
 call r%normal(x, 0.0d0, 1.0d0)
-call r%normal(xf, 0.0_c_float, 1.0_c_float)
+call r%normal(xf, 0.0, 1.0)
 
-call r%int(iv, 1_c_int, 6_c_int)   ! integers in [1,6]
+call r%int(iv, 1, 6)   ! integers in [1,6]
 call r%free()
 end program
 ```
 
 ### Notes on types
 
-The module exposes kind parameters for convenience:
+The interface uses standard Fortran types:
 
-- `rp_double` (C double)
-- `rp_int` (C int)
-- `rp_i64` (C int64)
-- `rp_i8` (C int8)
+- Double precision real for Float64 draws
+- Default real for Float32 draws
+- Default integer for integer draws
+- `integer(int64)` for 64-bit state setters
 
-Use these kinds for portability. Continuous draws accept `real(rp_double)` and
-`real(c_float)` arrays; integer draws use `integer(rp_int)` arrays.
+At runtime it checks that `double precision` matches C `double`, default `real`
+matches C `float`, default `integer` matches C `int`, and `int64` matches C
+`int64`.
 
 ## Engines
 
@@ -80,7 +81,7 @@ The `rng` type provides:
 
 - `create([engine])`
 - `free`
-- `duplicate`
+- `duplicate(out)`
 - `randomize` (seed from system entropy)
 - `full_mantissa(enable)` (logical)
 - `seed(seed[, spawn_key])`
@@ -102,8 +103,8 @@ scalar-specific methods; use a length‑1 array for a single draw.
 
 ### Continuous (Float64 / Float32)
 
-Each of the following is a generic that accepts `real(rp_double)` or `real(c_float)`
-arrays (vector or matrix), with the usual parameters:
+Each of the following is a generic that accepts `double precision` or default
+`real` arrays (vector or matrix), with the usual parameters:
 
 - `u01` (U(0,1))
 - `unif` (a, b)
@@ -124,7 +125,7 @@ arrays (vector or matrix), with the usual parameters:
 Example:
 
 ```fortran
-real(rp_double) :: a(100), b(10,10)
+double precision :: a(100), b(10,10)
 call r%unif(a, -1.0d0, 2.0d0)
 call r%skew_normal(b, 0.0d0, 1.0d0, 2.0d0)
 ```
@@ -134,9 +135,9 @@ call r%skew_normal(b, 0.0d0, 1.0d0, 2.0d0)
 `int` draws uniform integers in the inclusive range `[m,n]`:
 
 ```fortran
-integer(rp_int) :: iv(50), im(6,9)
-call r%int(iv, -2_c_int, 3_c_int)
-call r%int(im, 1_c_int, 10_c_int)
+integer :: iv(50), im(6,9)
+call r%int(iv, -2, 3)
+call r%int(im, 1, 10)
 ```
 
 ## State control and serialization
@@ -144,7 +145,7 @@ call r%int(im, 1_c_int, 10_c_int)
 Serialize to a byte buffer:
 
 ```fortran
-integer(rp_i8), allocatable :: buf(:)
+integer, allocatable :: buf(:)
 call r%serialize(buf)
 call r%deserialize(buf)
 ```
@@ -154,10 +155,10 @@ Engine-specific state setters:
 ```fortran
 type(randompack_philox_ctr) :: ctr
 type(randompack_philox_key) :: key
-ctr%v = [1_rp_i64, 2_rp_i64, 3_rp_i64, 4_rp_i64]
-key%v = [5_rp_i64, 6_rp_i64]
+ctr%v = [1_int64, 2_int64, 3_int64, 4_int64]
+key%v = [5_int64, 6_int64]
 call r%philox_set_state(ctr, key)
-call r%squares_set_state(1_rp_i64, 2_rp_i64)
+call r%squares_set_state(1_int64, 2_int64)
 ```
 
 ## Errors

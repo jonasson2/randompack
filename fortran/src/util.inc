@@ -31,6 +31,24 @@ function cstr_to_fstring(p) result(msg)
   end do
 end function
 
+subroutine check_kinds()
+  logical, save :: done = .false.
+  if (done) return
+  if (kind(1.0d0) /= c_double) then
+    error stop "randompack: c_double mismatch"
+  end if
+  if (kind(1.0) /= c_float) then
+    error stop "randompack: c_float mismatch"
+  end if
+  if (kind(1) /= c_int) then
+    error stop "randompack: c_int mismatch"
+  end if
+  if (int64 /= c_int64_t) then
+    error stop "randompack: int64 mismatch"
+  end if
+  done = .true.
+end subroutine
+
 subroutine rp_die(self, where)
   class(rng), intent(in) :: self
   character(len=*), intent(in) :: where
@@ -42,8 +60,10 @@ subroutine rp_die(self, where)
   p = crp_last_error(self%p)
   emsg = cstr_to_fstring(p)
   if (len(emsg) == 0) then
+    write(*,'(A)') where//": randompack call failed"
     error stop where//": randompack call failed"
   else
+    write(*,'(A)') where//": "//trim(emsg)
     error stop where//": "//trim(emsg)
   end if
 end subroutine
@@ -56,6 +76,7 @@ subroutine engines(names, descriptions)
   character(kind=c_char), allocatable, target :: raw_desc(:)
   logical(c_bool) :: ok
   integer :: i, j, k, n, m
+  call check_kinds()
   neng = 0_c_int
   eng_maxlen = 0_c_int
   desc_maxlen = 0_c_int

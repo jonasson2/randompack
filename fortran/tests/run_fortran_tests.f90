@@ -1,5 +1,5 @@
 module testutil
-use, intrinsic :: iso_c_binding, only: c_double, c_int, c_int8_t, c_int64_t
+use, intrinsic :: iso_fortran_env, only: int64
 use, intrinsic :: ieee_arithmetic, only: ieee_is_nan, ieee_is_finite
 implicit none
 private
@@ -39,81 +39,81 @@ subroutine assert_true(cond, msg)
   if (.not. cond) call fail(msg)
 end subroutine
 subroutine assert_all_finite_r8(x, msg)
-  real(c_double), intent(in) :: x(:)
+  double precision, intent(in) :: x(:)
   character(len=*), intent(in) :: msg
   if (any(ieee_is_nan(x))) call fail(msg//" (NaN)")
   if (.not. all(ieee_is_finite(x))) call fail(msg//" (Inf)")
 end subroutine
 subroutine assert_all_finite_r8m(x, msg)
-  real(c_double), intent(in) :: x(:,:)
+  double precision, intent(in) :: x(:,:)
   character(len=*), intent(in) :: msg
   if (any(ieee_is_nan(x))) call fail(msg//" (NaN)")
   if (.not. all(ieee_is_finite(x))) call fail(msg//" (Inf)")
 end subroutine
 subroutine assert_all_in_01_r8(x, msg)
-  real(c_double), intent(in) :: x(:)
+  double precision, intent(in) :: x(:)
   character(len=*), intent(in) :: msg
   call assert_all_finite(x, msg)
   if (.not. all(x >= 0.0d0)) call fail(msg//" (x<0)")
   if (.not. all(x <  1.0d0)) call fail(msg//" (x>=1)")
 end subroutine
 subroutine assert_all_in_01_r8m(x, msg)
-  real(c_double), intent(in) :: x(:,:)
+  double precision, intent(in) :: x(:,:)
   character(len=*), intent(in) :: msg
   call assert_all_finite(x, msg)
   if (.not. all(x >= 0.0d0)) call fail(msg//" (x<0)")
   if (.not. all(x <  1.0d0)) call fail(msg//" (x>=1)")
 end subroutine
 subroutine assert_all_in_ab_r8(x, a, b, msg)
-  real(c_double), intent(in) :: x(:)
-  real(c_double), intent(in) :: a, b
+  double precision, intent(in) :: x(:)
+  double precision, intent(in) :: a, b
   character(len=*), intent(in) :: msg
   call assert_all_finite(x, msg)
   if (.not. all(x >= a)) call fail(msg//" (x<a)")
   if (.not. all(x <= b)) call fail(msg//" (x>b)")
 end subroutine
 subroutine assert_all_in_ab_r8m(x, a, b, msg)
-  real(c_double), intent(in) :: x(:,:)
-  real(c_double), intent(in) :: a, b
+  double precision, intent(in) :: x(:,:)
+  double precision, intent(in) :: a, b
   character(len=*), intent(in) :: msg
   call assert_all_finite(x, msg)
   if (.not. all(x >= a)) call fail(msg//" (x<a)")
   if (.not. all(x <= b)) call fail(msg//" (x>b)")
 end subroutine
 subroutine assert_all_int_in_mn_i4(x, m, n, msg)
-  integer(c_int), intent(in) :: x(:)
-  integer(c_int), intent(in) :: m, n
+  integer, intent(in) :: x(:)
+  integer, intent(in) :: m, n
   character(len=*), intent(in) :: msg
   if (.not. all(x >= m)) call fail(msg//" (x<m)")
   if (.not. all(x <= n)) call fail(msg//" (x>n)")
 end subroutine
 subroutine assert_all_int_in_mn_i4m(x, m, n, msg)
-  integer(c_int), intent(in) :: x(:,:)
-  integer(c_int), intent(in) :: m, n
+  integer, intent(in) :: x(:,:)
+  integer, intent(in) :: m, n
   character(len=*), intent(in) :: msg
   if (.not. all(x >= m)) call fail(msg//" (x<m)")
   if (.not. all(x <= n)) call fail(msg//" (x>n)")
 end subroutine
 subroutine assert_equal_r8(a, b, msg)
-  real(c_double), intent(in) :: a(:), b(:)
+  double precision, intent(in) :: a(:), b(:)
   character(len=*), intent(in) :: msg
   if (size(a) /= size(b)) call fail(msg//" (size)")
   if (maxval(abs(a - b)) > 0.0d0) call fail(msg//" (values)")
 end subroutine
 subroutine assert_not_equal_r8(a, b, msg)
-  real(c_double), intent(in) :: a(:), b(:)
+  double precision, intent(in) :: a(:), b(:)
   character(len=*), intent(in) :: msg
   if (size(a) /= size(b)) call fail(msg//" (size)")
   if (maxval(abs(a - b)) <= 0.0d0) call fail(msg//" (expected difference)")
 end subroutine
 subroutine assert_equal_i4(a, b, msg)
-  integer(c_int), intent(in) :: a(:), b(:)
+  integer, intent(in) :: a(:), b(:)
   character(len=*), intent(in) :: msg
   if (size(a) /= size(b)) call fail(msg//" (size)")
   if (.not. all(a == b)) call fail(msg//" (values)")
 end subroutine
 subroutine assert_equal_i8(a, b, msg)
-  integer(c_int8_t), intent(in) :: a(:), b(:)
+  integer, intent(in) :: a(:), b(:)
   character(len=*), intent(in) :: msg
   if (size(a) /= size(b)) call fail(msg//" (size)")
   if (.not. all(a == b)) call fail(msg//" (values)")
@@ -121,7 +121,7 @@ end subroutine
 end module testutil
 
 program test_randompack_fortran
-use, intrinsic :: iso_c_binding, only: c_double, c_int, c_int8_t, c_int64_t
+use, intrinsic :: iso_fortran_env, only: int64
 use randompack
 use testutil
 implicit none
@@ -133,10 +133,10 @@ type(randompack_philox_key) :: key
 character(len=:), allocatable :: names(:), desc(:)
 character(len=:), allocatable :: engine
 logical :: has_pcg, has_x, has_philox, has_squares
-real(c_double) :: x(100), y(100), z(100)
-real(c_double) :: a(7,11)
-integer(c_int) :: iv(50), im(6,9)
-integer(c_int8_t), allocatable :: bytes(:)
+double precision :: x(100), y(100), z(100)
+double precision :: a(7,11)
+integer :: iv(50), im(6,9)
+integer, allocatable :: bytes(:)
 
 call engines(names, desc)
 call assert_true(size(names) == size(desc), "engines: names/desc size mismatch")
@@ -191,10 +191,10 @@ call assert_true(all(a >= 0.0d0) .and. all(a <= 1.0d0), "beta mat bounds")
 
 ! int vec/mat
 call r1%seed(123)
-call r1%int(iv, -2_c_int, 3_c_int)
-call assert_all_int_in_mn(iv, -2_c_int, 3_c_int, "int vec")
-call r1%int(im, -4_c_int, -1_c_int)
-call assert_all_int_in_mn(im, -4_c_int, -1_c_int, "int mat")
+call r1%int(iv, -2, 3)
+call assert_all_int_in_mn(iv, -2, 3, "int vec")
+call r1%int(im, -4, -1)
+call assert_all_int_in_mn(im, -4, -1, "int mat")
 
 !------------------------------------------------------------
 ! Determinism: seed resets stream
@@ -211,7 +211,7 @@ call assert_not_equal_r8(x, z, "different seed differs")
 !------------------------------------------------------------
 ! Duplicate: identical then diverge
 call r1%seed(999)
-r2 = r1%duplicate()
+call r1%duplicate(r2)
 call r1%u01(x)
 call r2%u01(y)
 call assert_equal_r8(x, y, "duplicate initial match")
@@ -236,8 +236,8 @@ call assert_equal_r8(y, z, "serialize/deserialize restores state")
 if (has_squares) then
   call s1%create("squares")
   call s2%create("squares")
-  call s1%squares_set_state(3_c_int64_t, 4_c_int64_t)
-  call s2%squares_set_state(3_c_int64_t, 4_c_int64_t)
+  call s1%squares_set_state(3_int64, 4_int64)
+  call s2%squares_set_state(3_int64, 4_int64)
   call s1%u01(x)
   call s2%u01(y)
   call assert_equal_r8(x, y, "squares_set_state repeatability")
@@ -247,8 +247,8 @@ end if
 
 ! Optional: philox_set_state repeatability
 if (has_philox) then
-  ctr%v = [1_c_int64_t, 2_c_int64_t, 3_c_int64_t, 4_c_int64_t]
-  key%v = [5_c_int64_t, 6_c_int64_t]
+  ctr%v = [1_int64, 2_int64, 3_int64, 4_int64]
+  key%v = [5_int64, 6_int64]
   call p1%create("philox")
   call p2%create("philox")
   call p1%philox_set_state(ctr, key)

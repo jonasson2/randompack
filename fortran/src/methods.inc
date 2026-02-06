@@ -14,24 +14,25 @@ end subroutine
 subroutine rp_create(self, engine)
   class(rng), intent(inout) :: self
   character(len=*), intent(in), optional :: engine
-  character(kind=c_char), allocatable :: eng(:)
+  character(kind=c_char), allocatable, target :: eng(:)
+  call check_kinds()
   if (c_associated(self%p)) call self%free()
   if (present(engine)) then
     eng = to_c_string(engine)
+    self%p = crp_create(c_loc(eng(1)))
   else
-    eng = [c_null_char]
+    self%p = crp_create(c_null_ptr)
   end if
-  self%p = crp_create(eng)
   if (.not. c_associated(self%p)) call rp_die(self, "create")
 end subroutine
 
-function rp_duplicate(self) result(out)
+subroutine rp_duplicate(self, out)
   class(rng), intent(in) :: self
-  type(rng) :: out
+  type(rng), intent(out) :: out
   if (.not. c_associated(self%p)) call rp_die(self, "duplicate")
   out%p = crp_duplicate(self%p)
   if (.not. c_associated(out%p)) call rp_die(self, "duplicate")
-end function
+end subroutine
 
 subroutine rp_randomize(self)
   class(rng), intent(inout) :: self
@@ -71,7 +72,7 @@ end subroutine
 
 subroutine u01_vec(self, x)
   class(rng), intent(inout) :: self
-  real(c_double), intent(out) :: x(:)
+  double precision, intent(out) :: x(:)
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "u01")
   ok = crp_u01(x, int(size(x), c_size_t), self%p)
@@ -80,7 +81,7 @@ end subroutine
 
 subroutine u01_mat(self, x)
   class(rng), intent(inout) :: self
-  real(c_double), intent(out) :: x(:,:)
+  double precision, intent(out) :: x(:,:)
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "u01")
   ok = crp_u01(x, int(size(x), c_size_t), self%p)
@@ -89,7 +90,7 @@ end subroutine
 
 subroutine u01f_vec(self, x)
   class(rng), intent(inout) :: self
-  real(c_float), intent(out) :: x(:)
+  real, intent(out) :: x(:)
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "u01")
   ok = crp_u01f(x, int(size(x), c_size_t), self%p)
@@ -98,7 +99,7 @@ end subroutine
 
 subroutine u01f_mat(self, x)
   class(rng), intent(inout) :: self
-  real(c_float), intent(out) :: x(:,:)
+  real, intent(out) :: x(:,:)
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "u01")
   ok = crp_u01f(x, int(size(x), c_size_t), self%p)
@@ -107,9 +108,9 @@ end subroutine
 
 subroutine unif_vec(self, x, a, b)
   class(rng), intent(inout) :: self
-  real(c_double), intent(out) :: x(:)
-  real(c_double), intent(in) :: a
-  real(c_double), intent(in) :: b
+  double precision, intent(out) :: x(:)
+  double precision, intent(in) :: a
+  double precision, intent(in) :: b
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "unif")
   ok = crp_unif(x, int(size(x), c_size_t), a, b, self%p)
@@ -118,9 +119,9 @@ end subroutine
 
 subroutine unif_mat(self, x, a, b)
   class(rng), intent(inout) :: self
-  real(c_double), intent(out) :: x(:,:)
-  real(c_double), intent(in) :: a
-  real(c_double), intent(in) :: b
+  double precision, intent(out) :: x(:,:)
+  double precision, intent(in) :: a
+  double precision, intent(in) :: b
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "unif")
   ok = crp_unif(x, int(size(x), c_size_t), a, b, self%p)
@@ -129,9 +130,9 @@ end subroutine
 
 subroutine uniff_vec(self, x, a, b)
   class(rng), intent(inout) :: self
-  real(c_float), intent(out) :: x(:)
-  real(c_float), intent(in) :: a
-  real(c_float), intent(in) :: b
+  real, intent(out) :: x(:)
+  real, intent(in) :: a
+  real, intent(in) :: b
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "unif")
   ok = crp_uniff(x, int(size(x), c_size_t), a, b, self%p)
@@ -140,9 +141,9 @@ end subroutine
 
 subroutine uniff_mat(self, x, a, b)
   class(rng), intent(inout) :: self
-  real(c_float), intent(out) :: x(:,:)
-  real(c_float), intent(in) :: a
-  real(c_float), intent(in) :: b
+  real, intent(out) :: x(:,:)
+  real, intent(in) :: a
+  real, intent(in) :: b
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "unif")
   ok = crp_uniff(x, int(size(x), c_size_t), a, b, self%p)
@@ -151,7 +152,7 @@ end subroutine
 
 subroutine norm_vec(self, x)
   class(rng), intent(inout) :: self
-  real(c_double), intent(out) :: x(:)
+  double precision, intent(out) :: x(:)
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "norm")
   ok = crp_norm(x, int(size(x), c_size_t), self%p)
@@ -160,7 +161,7 @@ end subroutine
 
 subroutine norm_mat(self, x)
   class(rng), intent(inout) :: self
-  real(c_double), intent(out) :: x(:,:)
+  double precision, intent(out) :: x(:,:)
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "norm")
   ok = crp_norm(x, int(size(x), c_size_t), self%p)
@@ -169,7 +170,7 @@ end subroutine
 
 subroutine normf_vec(self, x)
   class(rng), intent(inout) :: self
-  real(c_float), intent(out) :: x(:)
+  real, intent(out) :: x(:)
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "norm")
   ok = crp_normf(x, int(size(x), c_size_t), self%p)
@@ -178,7 +179,7 @@ end subroutine
 
 subroutine normf_mat(self, x)
   class(rng), intent(inout) :: self
-  real(c_float), intent(out) :: x(:,:)
+  real, intent(out) :: x(:,:)
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "norm")
   ok = crp_normf(x, int(size(x), c_size_t), self%p)
@@ -187,9 +188,9 @@ end subroutine
 
 subroutine normal_vec(self, x, mu, sigma)
   class(rng), intent(inout) :: self
-  real(c_double), intent(out) :: x(:)
-  real(c_double), intent(in) :: mu
-  real(c_double), intent(in) :: sigma
+  double precision, intent(out) :: x(:)
+  double precision, intent(in) :: mu
+  double precision, intent(in) :: sigma
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "normal")
   ok = crp_normal(x, int(size(x), c_size_t), mu, sigma, self%p)
@@ -198,9 +199,9 @@ end subroutine
 
 subroutine normal_mat(self, x, mu, sigma)
   class(rng), intent(inout) :: self
-  real(c_double), intent(out) :: x(:,:)
-  real(c_double), intent(in) :: mu
-  real(c_double), intent(in) :: sigma
+  double precision, intent(out) :: x(:,:)
+  double precision, intent(in) :: mu
+  double precision, intent(in) :: sigma
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "normal")
   ok = crp_normal(x, int(size(x), c_size_t), mu, sigma, self%p)
@@ -209,9 +210,9 @@ end subroutine
 
 subroutine normalf_vec(self, x, mu, sigma)
   class(rng), intent(inout) :: self
-  real(c_float), intent(out) :: x(:)
-  real(c_float), intent(in) :: mu
-  real(c_float), intent(in) :: sigma
+  real, intent(out) :: x(:)
+  real, intent(in) :: mu
+  real, intent(in) :: sigma
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "normal")
   ok = crp_normalf(x, int(size(x), c_size_t), mu, sigma, self%p)
@@ -220,9 +221,9 @@ end subroutine
 
 subroutine normalf_mat(self, x, mu, sigma)
   class(rng), intent(inout) :: self
-  real(c_float), intent(out) :: x(:,:)
-  real(c_float), intent(in) :: mu
-  real(c_float), intent(in) :: sigma
+  real, intent(out) :: x(:,:)
+  real, intent(in) :: mu
+  real, intent(in) :: sigma
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "normal")
   ok = crp_normalf(x, int(size(x), c_size_t), mu, sigma, self%p)
@@ -231,8 +232,8 @@ end subroutine
 
 subroutine exp_vec(self, x, scale)
   class(rng), intent(inout) :: self
-  real(c_double), intent(out) :: x(:)
-  real(c_double), intent(in) :: scale
+  double precision, intent(out) :: x(:)
+  double precision, intent(in) :: scale
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "exp")
   ok = crp_exp(x, int(size(x), c_size_t), scale, self%p)
@@ -241,8 +242,8 @@ end subroutine
 
 subroutine exp_mat(self, x, scale)
   class(rng), intent(inout) :: self
-  real(c_double), intent(out) :: x(:,:)
-  real(c_double), intent(in) :: scale
+  double precision, intent(out) :: x(:,:)
+  double precision, intent(in) :: scale
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "exp")
   ok = crp_exp(x, int(size(x), c_size_t), scale, self%p)
@@ -251,8 +252,8 @@ end subroutine
 
 subroutine expf_vec(self, x, scale)
   class(rng), intent(inout) :: self
-  real(c_float), intent(out) :: x(:)
-  real(c_float), intent(in) :: scale
+  real, intent(out) :: x(:)
+  real, intent(in) :: scale
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "exp")
   ok = crp_expf(x, int(size(x), c_size_t), scale, self%p)
@@ -261,8 +262,8 @@ end subroutine
 
 subroutine expf_mat(self, x, scale)
   class(rng), intent(inout) :: self
-  real(c_float), intent(out) :: x(:,:)
-  real(c_float), intent(in) :: scale
+  real, intent(out) :: x(:,:)
+  real, intent(in) :: scale
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "exp")
   ok = crp_expf(x, int(size(x), c_size_t), scale, self%p)
@@ -271,9 +272,9 @@ end subroutine
 
 subroutine lognormal_vec(self, x, mu, sigma)
   class(rng), intent(inout) :: self
-  real(c_double), intent(out) :: x(:)
-  real(c_double), intent(in) :: mu
-  real(c_double), intent(in) :: sigma
+  double precision, intent(out) :: x(:)
+  double precision, intent(in) :: mu
+  double precision, intent(in) :: sigma
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "lognormal")
   ok = crp_lognormal(x, int(size(x), c_size_t), mu, sigma, self%p)
@@ -282,9 +283,9 @@ end subroutine
 
 subroutine lognormal_mat(self, x, mu, sigma)
   class(rng), intent(inout) :: self
-  real(c_double), intent(out) :: x(:,:)
-  real(c_double), intent(in) :: mu
-  real(c_double), intent(in) :: sigma
+  double precision, intent(out) :: x(:,:)
+  double precision, intent(in) :: mu
+  double precision, intent(in) :: sigma
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "lognormal")
   ok = crp_lognormal(x, int(size(x), c_size_t), mu, sigma, self%p)
@@ -293,9 +294,9 @@ end subroutine
 
 subroutine lognormalf_vec(self, x, mu, sigma)
   class(rng), intent(inout) :: self
-  real(c_float), intent(out) :: x(:)
-  real(c_float), intent(in) :: mu
-  real(c_float), intent(in) :: sigma
+  real, intent(out) :: x(:)
+  real, intent(in) :: mu
+  real, intent(in) :: sigma
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "lognormal")
   ok = crp_lognormalf(x, int(size(x), c_size_t), mu, sigma, self%p)
@@ -304,9 +305,9 @@ end subroutine
 
 subroutine lognormalf_mat(self, x, mu, sigma)
   class(rng), intent(inout) :: self
-  real(c_float), intent(out) :: x(:,:)
-  real(c_float), intent(in) :: mu
-  real(c_float), intent(in) :: sigma
+  real, intent(out) :: x(:,:)
+  real, intent(in) :: mu
+  real, intent(in) :: sigma
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "lognormal")
   ok = crp_lognormalf(x, int(size(x), c_size_t), mu, sigma, self%p)
@@ -315,9 +316,9 @@ end subroutine
 
 subroutine gamma_vec(self, x, shape, scale)
   class(rng), intent(inout) :: self
-  real(c_double), intent(out) :: x(:)
-  real(c_double), intent(in) :: shape
-  real(c_double), intent(in) :: scale
+  double precision, intent(out) :: x(:)
+  double precision, intent(in) :: shape
+  double precision, intent(in) :: scale
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "gamma")
   ok = crp_gamma(x, int(size(x), c_size_t), shape, scale, self%p)
@@ -326,9 +327,9 @@ end subroutine
 
 subroutine gamma_mat(self, x, shape, scale)
   class(rng), intent(inout) :: self
-  real(c_double), intent(out) :: x(:,:)
-  real(c_double), intent(in) :: shape
-  real(c_double), intent(in) :: scale
+  double precision, intent(out) :: x(:,:)
+  double precision, intent(in) :: shape
+  double precision, intent(in) :: scale
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "gamma")
   ok = crp_gamma(x, int(size(x), c_size_t), shape, scale, self%p)
@@ -337,9 +338,9 @@ end subroutine
 
 subroutine gammaf_vec(self, x, shape, scale)
   class(rng), intent(inout) :: self
-  real(c_float), intent(out) :: x(:)
-  real(c_float), intent(in) :: shape
-  real(c_float), intent(in) :: scale
+  real, intent(out) :: x(:)
+  real, intent(in) :: shape
+  real, intent(in) :: scale
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "gamma")
   ok = crp_gammaf(x, int(size(x), c_size_t), shape, scale, self%p)
@@ -348,9 +349,9 @@ end subroutine
 
 subroutine gammaf_mat(self, x, shape, scale)
   class(rng), intent(inout) :: self
-  real(c_float), intent(out) :: x(:,:)
-  real(c_float), intent(in) :: shape
-  real(c_float), intent(in) :: scale
+  real, intent(out) :: x(:,:)
+  real, intent(in) :: shape
+  real, intent(in) :: scale
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "gamma")
   ok = crp_gammaf(x, int(size(x), c_size_t), shape, scale, self%p)
@@ -359,9 +360,9 @@ end subroutine
 
 subroutine beta_vec(self, x, a, b)
   class(rng), intent(inout) :: self
-  real(c_double), intent(out) :: x(:)
-  real(c_double), intent(in) :: a
-  real(c_double), intent(in) :: b
+  double precision, intent(out) :: x(:)
+  double precision, intent(in) :: a
+  double precision, intent(in) :: b
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "beta")
   ok = crp_beta(x, int(size(x), c_size_t), a, b, self%p)
@@ -370,9 +371,9 @@ end subroutine
 
 subroutine beta_mat(self, x, a, b)
   class(rng), intent(inout) :: self
-  real(c_double), intent(out) :: x(:,:)
-  real(c_double), intent(in) :: a
-  real(c_double), intent(in) :: b
+  double precision, intent(out) :: x(:,:)
+  double precision, intent(in) :: a
+  double precision, intent(in) :: b
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "beta")
   ok = crp_beta(x, int(size(x), c_size_t), a, b, self%p)
@@ -381,9 +382,9 @@ end subroutine
 
 subroutine betaf_vec(self, x, a, b)
   class(rng), intent(inout) :: self
-  real(c_float), intent(out) :: x(:)
-  real(c_float), intent(in) :: a
-  real(c_float), intent(in) :: b
+  real, intent(out) :: x(:)
+  real, intent(in) :: a
+  real, intent(in) :: b
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "beta")
   ok = crp_betaf(x, int(size(x), c_size_t), a, b, self%p)
@@ -392,9 +393,9 @@ end subroutine
 
 subroutine betaf_mat(self, x, a, b)
   class(rng), intent(inout) :: self
-  real(c_float), intent(out) :: x(:,:)
-  real(c_float), intent(in) :: a
-  real(c_float), intent(in) :: b
+  real, intent(out) :: x(:,:)
+  real, intent(in) :: a
+  real, intent(in) :: b
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "beta")
   ok = crp_betaf(x, int(size(x), c_size_t), a, b, self%p)
@@ -403,8 +404,8 @@ end subroutine
 
 subroutine chi2_vec(self, x, nu)
   class(rng), intent(inout) :: self
-  real(c_double), intent(out) :: x(:)
-  real(c_double), intent(in) :: nu
+  double precision, intent(out) :: x(:)
+  double precision, intent(in) :: nu
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "chi2")
   ok = crp_chi2(x, int(size(x), c_size_t), nu, self%p)
@@ -413,8 +414,8 @@ end subroutine
 
 subroutine chi2_mat(self, x, nu)
   class(rng), intent(inout) :: self
-  real(c_double), intent(out) :: x(:,:)
-  real(c_double), intent(in) :: nu
+  double precision, intent(out) :: x(:,:)
+  double precision, intent(in) :: nu
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "chi2")
   ok = crp_chi2(x, int(size(x), c_size_t), nu, self%p)
@@ -423,8 +424,8 @@ end subroutine
 
 subroutine chi2f_vec(self, x, nu)
   class(rng), intent(inout) :: self
-  real(c_float), intent(out) :: x(:)
-  real(c_float), intent(in) :: nu
+  real, intent(out) :: x(:)
+  real, intent(in) :: nu
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "chi2")
   ok = crp_chi2f(x, int(size(x), c_size_t), nu, self%p)
@@ -433,8 +434,8 @@ end subroutine
 
 subroutine chi2f_mat(self, x, nu)
   class(rng), intent(inout) :: self
-  real(c_float), intent(out) :: x(:,:)
-  real(c_float), intent(in) :: nu
+  real, intent(out) :: x(:,:)
+  real, intent(in) :: nu
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "chi2")
   ok = crp_chi2f(x, int(size(x), c_size_t), nu, self%p)
@@ -443,8 +444,8 @@ end subroutine
 
 subroutine t_vec(self, x, nu)
   class(rng), intent(inout) :: self
-  real(c_double), intent(out) :: x(:)
-  real(c_double), intent(in) :: nu
+  double precision, intent(out) :: x(:)
+  double precision, intent(in) :: nu
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "t")
   ok = crp_t(x, int(size(x), c_size_t), nu, self%p)
@@ -453,8 +454,8 @@ end subroutine
 
 subroutine t_mat(self, x, nu)
   class(rng), intent(inout) :: self
-  real(c_double), intent(out) :: x(:,:)
-  real(c_double), intent(in) :: nu
+  double precision, intent(out) :: x(:,:)
+  double precision, intent(in) :: nu
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "t")
   ok = crp_t(x, int(size(x), c_size_t), nu, self%p)
@@ -463,8 +464,8 @@ end subroutine
 
 subroutine tf_vec(self, x, nu)
   class(rng), intent(inout) :: self
-  real(c_float), intent(out) :: x(:)
-  real(c_float), intent(in) :: nu
+  real, intent(out) :: x(:)
+  real, intent(in) :: nu
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "t")
   ok = crp_tf(x, int(size(x), c_size_t), nu, self%p)
@@ -473,8 +474,8 @@ end subroutine
 
 subroutine tf_mat(self, x, nu)
   class(rng), intent(inout) :: self
-  real(c_float), intent(out) :: x(:,:)
-  real(c_float), intent(in) :: nu
+  real, intent(out) :: x(:,:)
+  real, intent(in) :: nu
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "t")
   ok = crp_tf(x, int(size(x), c_size_t), nu, self%p)
@@ -483,9 +484,9 @@ end subroutine
 
 subroutine f_vec(self, x, nu1, nu2)
   class(rng), intent(inout) :: self
-  real(c_double), intent(out) :: x(:)
-  real(c_double), intent(in) :: nu1
-  real(c_double), intent(in) :: nu2
+  double precision, intent(out) :: x(:)
+  double precision, intent(in) :: nu1
+  double precision, intent(in) :: nu2
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "f")
   ok = crp_f(x, int(size(x), c_size_t), nu1, nu2, self%p)
@@ -494,9 +495,9 @@ end subroutine
 
 subroutine f_mat(self, x, nu1, nu2)
   class(rng), intent(inout) :: self
-  real(c_double), intent(out) :: x(:,:)
-  real(c_double), intent(in) :: nu1
-  real(c_double), intent(in) :: nu2
+  double precision, intent(out) :: x(:,:)
+  double precision, intent(in) :: nu1
+  double precision, intent(in) :: nu2
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "f")
   ok = crp_f(x, int(size(x), c_size_t), nu1, nu2, self%p)
@@ -505,9 +506,9 @@ end subroutine
 
 subroutine ff_vec(self, x, nu1, nu2)
   class(rng), intent(inout) :: self
-  real(c_float), intent(out) :: x(:)
-  real(c_float), intent(in) :: nu1
-  real(c_float), intent(in) :: nu2
+  real, intent(out) :: x(:)
+  real, intent(in) :: nu1
+  real, intent(in) :: nu2
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "f")
   ok = crp_ff(x, int(size(x), c_size_t), nu1, nu2, self%p)
@@ -516,9 +517,9 @@ end subroutine
 
 subroutine ff_mat(self, x, nu1, nu2)
   class(rng), intent(inout) :: self
-  real(c_float), intent(out) :: x(:,:)
-  real(c_float), intent(in) :: nu1
-  real(c_float), intent(in) :: nu2
+  real, intent(out) :: x(:,:)
+  real, intent(in) :: nu1
+  real, intent(in) :: nu2
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "f")
   ok = crp_ff(x, int(size(x), c_size_t), nu1, nu2, self%p)
@@ -527,9 +528,9 @@ end subroutine
 
 subroutine gumbel_vec(self, x, mu, beta)
   class(rng), intent(inout) :: self
-  real(c_double), intent(out) :: x(:)
-  real(c_double), intent(in) :: mu
-  real(c_double), intent(in) :: beta
+  double precision, intent(out) :: x(:)
+  double precision, intent(in) :: mu
+  double precision, intent(in) :: beta
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "gumbel")
   ok = crp_gumbel(x, int(size(x), c_size_t), mu, beta, self%p)
@@ -538,9 +539,9 @@ end subroutine
 
 subroutine gumbel_mat(self, x, mu, beta)
   class(rng), intent(inout) :: self
-  real(c_double), intent(out) :: x(:,:)
-  real(c_double), intent(in) :: mu
-  real(c_double), intent(in) :: beta
+  double precision, intent(out) :: x(:,:)
+  double precision, intent(in) :: mu
+  double precision, intent(in) :: beta
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "gumbel")
   ok = crp_gumbel(x, int(size(x), c_size_t), mu, beta, self%p)
@@ -549,9 +550,9 @@ end subroutine
 
 subroutine gumbelf_vec(self, x, mu, beta)
   class(rng), intent(inout) :: self
-  real(c_float), intent(out) :: x(:)
-  real(c_float), intent(in) :: mu
-  real(c_float), intent(in) :: beta
+  real, intent(out) :: x(:)
+  real, intent(in) :: mu
+  real, intent(in) :: beta
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "gumbel")
   ok = crp_gumbelf(x, int(size(x), c_size_t), mu, beta, self%p)
@@ -560,9 +561,9 @@ end subroutine
 
 subroutine gumbelf_mat(self, x, mu, beta)
   class(rng), intent(inout) :: self
-  real(c_float), intent(out) :: x(:,:)
-  real(c_float), intent(in) :: mu
-  real(c_float), intent(in) :: beta
+  real, intent(out) :: x(:,:)
+  real, intent(in) :: mu
+  real, intent(in) :: beta
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "gumbel")
   ok = crp_gumbelf(x, int(size(x), c_size_t), mu, beta, self%p)
@@ -571,9 +572,9 @@ end subroutine
 
 subroutine pareto_vec(self, x, xm, alpha)
   class(rng), intent(inout) :: self
-  real(c_double), intent(out) :: x(:)
-  real(c_double), intent(in) :: xm
-  real(c_double), intent(in) :: alpha
+  double precision, intent(out) :: x(:)
+  double precision, intent(in) :: xm
+  double precision, intent(in) :: alpha
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "pareto")
   ok = crp_pareto(x, int(size(x), c_size_t), xm, alpha, self%p)
@@ -582,9 +583,9 @@ end subroutine
 
 subroutine pareto_mat(self, x, xm, alpha)
   class(rng), intent(inout) :: self
-  real(c_double), intent(out) :: x(:,:)
-  real(c_double), intent(in) :: xm
-  real(c_double), intent(in) :: alpha
+  double precision, intent(out) :: x(:,:)
+  double precision, intent(in) :: xm
+  double precision, intent(in) :: alpha
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "pareto")
   ok = crp_pareto(x, int(size(x), c_size_t), xm, alpha, self%p)
@@ -593,9 +594,9 @@ end subroutine
 
 subroutine paretof_vec(self, x, xm, alpha)
   class(rng), intent(inout) :: self
-  real(c_float), intent(out) :: x(:)
-  real(c_float), intent(in) :: xm
-  real(c_float), intent(in) :: alpha
+  real, intent(out) :: x(:)
+  real, intent(in) :: xm
+  real, intent(in) :: alpha
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "pareto")
   ok = crp_paretof(x, int(size(x), c_size_t), xm, alpha, self%p)
@@ -604,9 +605,9 @@ end subroutine
 
 subroutine paretof_mat(self, x, xm, alpha)
   class(rng), intent(inout) :: self
-  real(c_float), intent(out) :: x(:,:)
-  real(c_float), intent(in) :: xm
-  real(c_float), intent(in) :: alpha
+  real, intent(out) :: x(:,:)
+  real, intent(in) :: xm
+  real, intent(in) :: alpha
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "pareto")
   ok = crp_paretof(x, int(size(x), c_size_t), xm, alpha, self%p)
@@ -615,9 +616,9 @@ end subroutine
 
 subroutine weibull_vec(self, x, shape, scale)
   class(rng), intent(inout) :: self
-  real(c_double), intent(out) :: x(:)
-  real(c_double), intent(in) :: shape
-  real(c_double), intent(in) :: scale
+  double precision, intent(out) :: x(:)
+  double precision, intent(in) :: shape
+  double precision, intent(in) :: scale
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "weibull")
   ok = crp_weibull(x, int(size(x), c_size_t), shape, scale, self%p)
@@ -626,9 +627,9 @@ end subroutine
 
 subroutine weibull_mat(self, x, shape, scale)
   class(rng), intent(inout) :: self
-  real(c_double), intent(out) :: x(:,:)
-  real(c_double), intent(in) :: shape
-  real(c_double), intent(in) :: scale
+  double precision, intent(out) :: x(:,:)
+  double precision, intent(in) :: shape
+  double precision, intent(in) :: scale
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "weibull")
   ok = crp_weibull(x, int(size(x), c_size_t), shape, scale, self%p)
@@ -637,9 +638,9 @@ end subroutine
 
 subroutine weibullf_vec(self, x, shape, scale)
   class(rng), intent(inout) :: self
-  real(c_float), intent(out) :: x(:)
-  real(c_float), intent(in) :: shape
-  real(c_float), intent(in) :: scale
+  real, intent(out) :: x(:)
+  real, intent(in) :: shape
+  real, intent(in) :: scale
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "weibull")
   ok = crp_weibullf(x, int(size(x), c_size_t), shape, scale, self%p)
@@ -648,9 +649,9 @@ end subroutine
 
 subroutine weibullf_mat(self, x, shape, scale)
   class(rng), intent(inout) :: self
-  real(c_float), intent(out) :: x(:,:)
-  real(c_float), intent(in) :: shape
-  real(c_float), intent(in) :: scale
+  real, intent(out) :: x(:,:)
+  real, intent(in) :: shape
+  real, intent(in) :: scale
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "weibull")
   ok = crp_weibullf(x, int(size(x), c_size_t), shape, scale, self%p)
@@ -659,10 +660,10 @@ end subroutine
 
 subroutine skew_normal_vec(self, x, mu, sigma, alpha)
   class(rng), intent(inout) :: self
-  real(c_double), intent(out) :: x(:)
-  real(c_double), intent(in) :: mu
-  real(c_double), intent(in) :: sigma
-  real(c_double), intent(in) :: alpha
+  double precision, intent(out) :: x(:)
+  double precision, intent(in) :: mu
+  double precision, intent(in) :: sigma
+  double precision, intent(in) :: alpha
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "skew_normal")
   ok = crp_skew_normal(x, int(size(x), c_size_t), mu, sigma, alpha, self%p)
@@ -671,10 +672,10 @@ end subroutine
 
 subroutine skew_normal_mat(self, x, mu, sigma, alpha)
   class(rng), intent(inout) :: self
-  real(c_double), intent(out) :: x(:,:)
-  real(c_double), intent(in) :: mu
-  real(c_double), intent(in) :: sigma
-  real(c_double), intent(in) :: alpha
+  double precision, intent(out) :: x(:,:)
+  double precision, intent(in) :: mu
+  double precision, intent(in) :: sigma
+  double precision, intent(in) :: alpha
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "skew_normal")
   ok = crp_skew_normal(x, int(size(x), c_size_t), mu, sigma, alpha, self%p)
@@ -683,10 +684,10 @@ end subroutine
 
 subroutine skew_normalf_vec(self, x, mu, sigma, alpha)
   class(rng), intent(inout) :: self
-  real(c_float), intent(out) :: x(:)
-  real(c_float), intent(in) :: mu
-  real(c_float), intent(in) :: sigma
-  real(c_float), intent(in) :: alpha
+  real, intent(out) :: x(:)
+  real, intent(in) :: mu
+  real, intent(in) :: sigma
+  real, intent(in) :: alpha
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "skew_normal")
   ok = crp_skew_normalf(x, int(size(x), c_size_t), mu, sigma, alpha, self%p)
@@ -695,10 +696,10 @@ end subroutine
 
 subroutine skew_normalf_mat(self, x, mu, sigma, alpha)
   class(rng), intent(inout) :: self
-  real(c_float), intent(out) :: x(:,:)
-  real(c_float), intent(in) :: mu
-  real(c_float), intent(in) :: sigma
-  real(c_float), intent(in) :: alpha
+  real, intent(out) :: x(:,:)
+  real, intent(in) :: mu
+  real, intent(in) :: sigma
+  real, intent(in) :: alpha
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "skew_normal")
   ok = crp_skew_normalf(x, int(size(x), c_size_t), mu, sigma, alpha, self%p)
@@ -707,9 +708,9 @@ end subroutine
 
 subroutine int_vec(self, x, m, n)
   class(rng), intent(inout) :: self
-  integer(c_int), intent(out) :: x(:)
-  integer(c_int), intent(in) :: m
-  integer(c_int), intent(in) :: n
+  integer, intent(out) :: x(:)
+  integer, intent(in) :: m
+  integer, intent(in) :: n
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "int")
   ok = crp_int(x, int(size(x), c_size_t), m, n, self%p)
@@ -718,9 +719,9 @@ end subroutine
 
 subroutine int_mat(self, x, m, n)
   class(rng), intent(inout) :: self
-  integer(c_int), intent(out) :: x(:,:)
-  integer(c_int), intent(in) :: m
-  integer(c_int), intent(in) :: n
+  integer, intent(out) :: x(:,:)
+  integer, intent(in) :: m
+  integer, intent(in) :: n
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "int")
   ok = crp_int(x, int(size(x), c_size_t), m, n, self%p)
@@ -729,8 +730,9 @@ end subroutine
 
 subroutine rp_serialize(self, buf)
   class(rng), intent(inout) :: self
-  integer(c_int8_t), allocatable, intent(out), target :: buf(:)
+  integer, allocatable, intent(out) :: buf(:)
   integer(c_int) :: len
+  integer(c_int8_t), allocatable, target :: tmp(:)
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "serialize")
   len = 0_c_int
@@ -740,24 +742,29 @@ subroutine rp_serialize(self, buf)
     allocate(buf(0))
     return
   end if
-  allocate(buf(len))
-  ok = crp_serialize(c_loc(buf(1)), len, self%p)
+  allocate(tmp(int(len)))
+  ok = crp_serialize(c_loc(tmp(1)), len, self%p)
   if (.not. ok) call rp_die(self, "serialize")
+  allocate(buf(int(len)))
+  buf = int(tmp, kind(buf))
 end subroutine
 
 subroutine rp_deserialize(self, buf)
   class(rng), intent(inout) :: self
-  integer(c_int8_t), intent(in), target :: buf(:)
+  integer, intent(in) :: buf(:)
+  integer(c_int8_t), allocatable, target :: tmp(:)
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "deserialize")
   if (size(buf) == 0) call rp_die(self, "deserialize")
-  ok = crp_deserialize(c_loc(buf(1)), int(size(buf), c_int), self%p)
+  allocate(tmp(size(buf)))
+  tmp = int(buf, c_int8_t)
+  ok = crp_deserialize(c_loc(tmp(1)), int(size(tmp), c_int), self%p)
   if (.not. ok) call rp_die(self, "deserialize")
 end subroutine
 
 subroutine rp_set_state(self, state)
   class(rng), intent(inout) :: self
-  integer(c_int64_t), intent(in), target :: state(:)
+  integer(int64), intent(in), target :: state(:)
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "set_state")
   if (size(state) <= 0) call rp_die(self, "set_state")
@@ -769,16 +776,20 @@ subroutine rp_philox_set_state(self, ctr, key)
   class(rng), intent(inout) :: self
   type(randompack_philox_ctr), intent(in) :: ctr
   type(randompack_philox_key), intent(in) :: key
+  type(c_philox_ctr) :: cctr
+  type(c_philox_key) :: ckey
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "philox_set_state")
-  ok = crp_philox_set_state(ctr, key, self%p)
+  cctr%v = int(ctr%v, c_int64_t)
+  ckey%v = int(key%v, c_int64_t)
+  ok = crp_philox_set_state(cctr, ckey, self%p)
   if (.not. ok) call rp_die(self, "philox_set_state")
 end subroutine
 
 subroutine rp_squares_set_state(self, ctr, key)
   class(rng), intent(inout) :: self
-  integer(c_int64_t), intent(in) :: ctr
-  integer(c_int64_t), intent(in) :: key
+  integer(int64), intent(in) :: ctr
+  integer(int64), intent(in) :: key
   logical(c_bool) :: ok
   if (.not. c_associated(self%p)) call rp_die(self, "squares_set_state")
   ok = crp_squares_set_state(ctr, key, self%p)
