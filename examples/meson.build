@@ -66,6 +66,14 @@ raw_stream = executable(
   dependencies : [randompack_dep],
 )
 
+if build_fortran
+  check_fortran_ints = executable(
+    'CheckFortranInts',
+    'CheckFortranInts.f90',
+    dependencies : [randompack_dep],
+  )
+endif
+
 testu01_prefix = get_option('TestU01')
 if testu01_prefix != ''
   testu01_inc = include_directories(join_paths(testu01_prefix, 'include'))

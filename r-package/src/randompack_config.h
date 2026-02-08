@@ -7,6 +7,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#if defined(_MSC_VER)
+  #include <intrin.h>
+#endif
 
 #if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 201112L
 #error "_Static_assert requires C11"
@@ -80,18 +83,43 @@ static inline uint32_t mix32(uint32_t x) {
   #include <windows.h>
 #endif
 
-#if defined(__SIZEOF_INT128__) && !defined(RANDOMPACK_PRETEND_NO128) \
-    && !defined(RANDOMPACK_PRETEND_WINDOWS)
+#if defined(__SIZEOF_INT128__) && !defined(RANDOMPACK_PRETEND_NO128)
   #define HAVE128 1
-  #define HAVE128MUL 1
   typedef __uint128_t uint128_t;
-#elif (defined(_MSC_VER) && defined(_M_X64)) || defined(RANDOMPACK_PRETEND_WINDOWS)
-  #define HAVE128 0
-  #define HAVE128MUL 1
 #else
   #define HAVE128 0
-  #define HAVE128MUL 0
 #endif
+
+// 64x64 -> 128 (hi,lo). Prefer native, fall back to emulation.
+#if HAVE128
+#define MUL64_WIDE(a, b, hi, lo) do {                          \
+  __uint128_t _p = ((__uint128_t)(a)) * ((__uint128_t)(b));    \
+  (lo) = (uint64_t)_p;                                         \
+  (hi) = (uint64_t)(_p >> 64);                                 \
+} while (0)
+
+#elif defined(_MSC_VER)
+#define MUL64_WIDE(a, b, hi, lo) do {                          \
+  (lo) = _umul128((a), (b), &(hi));                            \
+} while (0)
+
+#else
+#define MUL64_WIDE(a, b, hi, lo) do {                          \
+  uint64_t _a0 = (uint32_t)(a);                                \
+  uint64_t _a1 = (a) >> 32;                                    \
+  uint64_t _b0 = (uint32_t)(b);                                \
+  uint64_t _b1 = (b) >> 32;                                    \
+  uint64_t _p00 = _a0*_b0;                                     \
+  uint64_t _p01 = _a0*_b1;                                     \
+  uint64_t _p10 = _a1*_b0;                                     \
+  uint64_t _p11 = _a1*_b1;                                     \
+  uint64_t _mid = (_p00 >> 32) + (uint32_t)_p01                \
+    + (uint32_t)_p10;                                          \
+  (hi) = _p11 + (_p01 >> 32) + (_p10 >> 32) + (_mid >> 32);    \
+  (lo) = (_mid << 32) | (uint32_t)_p00;                        \
+} while (0)
+#endif
+
 
 // SIMD feature macros
 #if defined(__AVX2__)

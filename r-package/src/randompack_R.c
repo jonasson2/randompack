@@ -42,29 +42,17 @@ static uint32_t read_u32_num(SEXP x, R_xlen_t i, char *name){
 /* ---------- constructors / destructors ---------- */
 #include <string.h>
 
-static bool is_platform_dependent_engine(const char *name) {
-  return strcmp(name, "philox") == 0 ||
-         strcmp(name, "pcg64") == 0 ||
-         strcmp(name, "cwg128") == 0;
-}
-
 SEXP randompack_create_R(SEXP engine) {
   if (!Rf_isString(engine) || LENGTH(engine) != 1)
     Rf_error("engine must be a length-1 character string");
   const char *name = CHAR(STRING_ELT(engine, 0));
   randompack_rng *rng = randompack_create(name);
   if (!rng) {
-    if (is_platform_dependent_engine(name)) {
-      Rf_error("RNG engine '%s' is not supported on this platform/build", name);
-    }
     Rf_error("unknown RNG engine '%s' (check spelling)", name);
   }
   char *err = randompack_last_error(rng);
   if (err && err[0]) {
-    if (is_platform_dependent_engine(name)) {
-      Rf_error("RNG engine '%s' is not supported on this platform/build", name);
-    }
-    Rf_error("unknown RNG engine '%s' (check spelling)", name);
+    Rf_error("%s", err);
   }
   SEXP ext = R_MakeExternalPtr(rng, R_NilValue, R_NilValue);
   R_RegisterCFinalizerEx(ext, rng_finalizer, TRUE);

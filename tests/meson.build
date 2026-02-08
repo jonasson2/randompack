@@ -4,6 +4,7 @@ test_sources = files(
   'RunTests.c',
   'TestCreate.c',
   'TestInt.c',
+  'TestLongLong.c',
   'TestPerm.c',
   'TestSample.c',
   'TestNorm.c',
@@ -51,18 +52,6 @@ if get_option('build_test_variants')
 
   test('RunTestNo128', test_no128, args : ['-v'])
 
-  test_pretend_windows = executable(
-    'RunTestPretendWindows',
-    [
-      'RunTestNo128.c',
-      'TestCreate.c',
-      'TestHelpers.c',
-    ] + extra_util,
-    dependencies : [randompack_pretend_windows_dep],
-    c_args : ['-DRANDOMPACK_PRETEND_WINDOWS'],
-  )
-
-  test('RunTestPretendWindows', test_pretend_windows, args : ['-v'])
 endif
 
 seedseq_test = executable(

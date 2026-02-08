@@ -41,6 +41,7 @@ test_that("other continuous distributions return numeric values", {
   check(rng$gamma(5, 2, 1), 5)
   check(rng$chi2(5, 2), 5)
   check(rng$beta(5, 2, 3), 5)
+  check(rng$skew_normal(5, 0, 1, 2), 5)
   check(rng$t(5, 5), 5)
   check(rng$f(5, 5, 7), 5)
   check(rng$weibull(5, 1, 2), 5)

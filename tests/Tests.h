@@ -6,6 +6,7 @@
 void TestCreate(void);
 void TestRandomize(void);
 void TestInt(void);
+void TestLongLong(void);
 void TestPerm(void);
 void TestSample(void);
 void TestU01(void);

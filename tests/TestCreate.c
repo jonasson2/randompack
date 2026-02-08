@@ -92,16 +92,6 @@ static void test_default_engine_matches_x256ppsimd(void) {
   xCheck(a[0] == b[0]);
 }
 
-#if !HAVE128 || !HAVE128MUL
-static void test_engine_unavailable(char *engine) {
-  // Check that the specified engine results in an invalid RNG
-  randompack_rng *rng = randompack_create(engine);
-  ASSERT(rng);
-  char *err = randompack_last_error(rng);
-  xCheck(err && err[0]);
-  randompack_free(rng);
-}
-#endif
 
 // "system" should map to the system CSPRNG, produce non-trivial output, and set no error.
 static void test_system_engine(void) {
@@ -161,11 +151,5 @@ void TestCreate(void) {
   test_null_engine_name();
   test_default_engine_matches_x256ppsimd();
   test_system_engine();
-#if !HAVE128
-  test_engine_unavailable("pcg64");
-  test_engine_unavailable("cwg128");
-#endif
-#if !HAVE128MUL
-  test_engine_unavailable("philox");
-#endif
+  // cwg128 is supported on all platforms
 }

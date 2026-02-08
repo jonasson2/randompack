@@ -243,6 +243,24 @@ The examples subfolodr contains additional example programs.
           return 0;
         }
 
+### Integer range example
+
+        #include <stdio.h>
+        #include "randompack.h"
+
+        int main(void) {
+          randompack_rng *rng = randompack_create(0);
+          randompack_seed(7, 0, 0, rng);
+          int xi[5];
+          long long xl[5];
+          randompack_int(xi, 5, -3, 8, rng);
+          randompack_long_long(xl, 5, -10, 10, rng);
+          for (int i = 0; i < 5; i++)
+            printf("%d %lld\n", xi[i], xl[i]);
+          randompack_free(rng);
+          return 0;
+        }
+
 ### Example with full error checking
         #include <stdio.h>
         #include "randompack.h"

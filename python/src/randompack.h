@@ -1,0 +1,399 @@
+// randompack.h – see the file README.md for help
+
+#ifndef RANDOMPACK_H
+#define RANDOMPACK_H
+
+#include <stdbool.h>
+#include <stdint.h>
+#include <stddef.h>
+
+typedef struct randompack_rng randompack_rng;
+typedef struct { uint64_t v[4]; } randompack_philox_ctr;
+typedef struct { uint64_t v[2]; } randompack_philox_key;
+
+randompack_rng *randompack_create( // Create randomized RNG of given engine type, error→0
+  const char *engine    // in      Type ("x256++simd" [default], "pcg64",... 0→default)
+);
+
+randompack_rng *randompack_duplicate( // Clone an RNG (identical engine+state), error → 0
+  randompack_rng *rng   // in      RNG to duplicate
+);
+
+bool randompack_randomize( // Randomize RNG state from system entropy, false on error
+  randompack_rng *rng   // in/out  Random number generator
+);
+
+bool randompack_full_mantissa( // Use full mantissa for doubles (default false)
+  randompack_rng *rng,          // in/out  Random number generator
+  bool enable                  // in      true → 53-bit mantissa, false → 52-bit
+);
+
+bool randompack_seed( // Create RNG with given type and seed, false on error
+  int seed,             // in      Any integer seed; expanded with a hash to fill state
+  uint32_t *spawn_key,  // in      Optional spawn key array (may be 0 if n_key==0)
+  int n_key,            // in      Number of spawn_key entries
+  randompack_rng *rng   // in/out  Random number generator
+);
+
+void randompack_free( // Free an RNG created with randompack_create
+  randompack_rng *rng   // in      Random number generator
+);
+
+bool randompack_engines( // Return supported RNG engine names and their descriptions
+  char *engines,      // out     n×eng_maxlen buffer of engine names (0 → query mode)
+  char *descriptions, // out     n×desc_maxlen buffer of descriptions (or 0 in query mode)
+  int *nengines,      // in/out  number of engines (= n, query → fill, non-query → check)
+  int *eng_maxlen,    // in/out  max engine-name length including trailing 0
+  int *desc_maxlen    // in/out  max description length including trailing 0
+);
+
+bool randompack_int( // Generate uniform integers in [m, n], false on error
+  int x[],              // out     len-vector of integers
+  size_t len,           // in      Number of integers requested
+  int m,                // in      Inclusive minimum
+  int n,                // in      Inclusive maximum
+  randompack_rng *rng   // in/out  Random number generator
+);
+
+bool randompack_perm( // Generate a random permutation of 0..n-1, false on error
+  int x[],              // out     n-vector containing the permutation
+  int n,                // in      Permutation size
+  randompack_rng *rng   // in/out  Random number generator
+);
+
+bool randompack_sample( // Sample without replacement from 0..n-1, false on error
+  int x[],              // out     k-vector of sampled indices
+  int n,                // in      Population size
+  int k,                // in      Sample size (0 <= k <= n)
+  randompack_rng *rng   // in/out  Random number generator
+);
+
+bool randompack_u01( // Generate uniform random numbers in [0,1), false on error
+  double x[],           // out     n-vector: uniform random numbers in [0,1)
+  size_t n,             // in      Number of variates
+  randompack_rng *rng   // in/out  Random number generator
+);
+
+bool randompack_unif( // Generate uniform random numbers in [a,b], false on error
+  double x[],           // out     n-vector: uniform random numbers in [a,b]
+  size_t n,             // in      Number of variates
+  double a,             // in      Minimum (a < b)
+  double b,             // in      Maximum (a < b)
+  randompack_rng *rng   // in/out  Random number generator
+);
+
+bool randompack_norm( // Generate standard normal random numbers N(0,1), false on error
+  double x[],           // out     n-vector: standard normal random numbers
+  size_t n,             // in      Number of variates
+  randompack_rng *rng   // in/out  Random number generator
+);
+
+bool randompack_normal( // Generate normal random numbers N(mu,sigma), false on error
+  double x[],           // out     n-vector: normal random numbers
+  size_t n,             // in      Number of variates
+  double mu,            // in      Mean
+  double sigma,         // in      Standard deviation (> 0)
+  randompack_rng *rng   // in/out  Random number generator
+);
+
+bool randompack_lognormal( // Generate lognormal random numbers, false on error
+  double x[],              // out     n-vector: lognormal random numbers
+  size_t n,                // in      Number of variates
+  double mu,               // in      Mean of underlying normal
+  double sigma,            // in      Std dev of underlying normal (> 0)
+  randompack_rng *rng      // in/out  Random number generator
+);
+
+bool randompack_exp( // Generate exponential random numbers, false on error
+  double x[],           // out     n-vector: exponential random numbers
+  size_t n,             // in      Number of variates
+  double scale,         // in      Scale parameter (1.0 → standard exponential)
+  randompack_rng *rng   // in/out  Random number generator
+);
+
+void randompack_get_counters( // Get exp draw counters
+  int *count_above_secant,  // out     Count above secant
+  int *count_below_tangent, // out     Count below tangent
+  int *count_curve,         // out     Count curve
+  int *count_below_curve,    // out     Count below curve
+  int *count_tail              
+);
+
+bool randompack_gamma( // Generate gamma random numbers, false on error
+  double x[],           // out     n-vector: gamma random numbers
+  size_t n,             // in      Number of variates
+  double shape,         // in      Shape parameter (> 0)
+  double scale,         // in      Scale parameter (> 0)
+  randompack_rng *rng   // in/out  Random number generator
+);
+
+bool randompack_beta( // Generate beta random numbers, false on error
+  double x[],           // out     n-vector: beta random numbers
+  size_t n,             // in      Number of variates
+  double a,             // in      Shape parameter a (> 0)
+  double b,             // in      Shape parameter b (> 0)
+  randompack_rng *rng   // in/out  Random number generator
+);
+
+bool randompack_chi2( // Generate chi-square random numbers, false on error
+  double x[],           // out     n-vector: chi-square random numbers
+  size_t n,             // in      Number of variates
+  double nu,            // in      Degrees of freedom (> 0)
+  randompack_rng *rng   // in/out  Random number generator
+);
+
+bool randompack_t( // Generate t random numbers, false on error
+  double x[],           // out     n-vector: t random numbers
+  size_t n,             // in      Number of variates
+  double nu,            // in      Degrees of freedom (> 0)
+  randompack_rng *rng   // in/out  Random number generator
+);
+
+bool randompack_f( // Generate F random numbers, false on error
+  double x[],           // out     n-vector: F random numbers
+  size_t n,             // in      Number of variates
+  double nu1,           // in      Numerator degrees of freedom (> 0)
+  double nu2,           // in      Denominator degrees of freedom (> 0)
+  randompack_rng *rng   // in/out  Random number generator
+);
+
+bool randompack_gumbel( // Generate gumbel random numbers, false on error
+  double x[],            // out     n-vector: gumbel random numbers
+  size_t n,              // in      Number of variates
+  double mu,             // in      Location parameter
+  double beta,           // in      Scale parameter (> 0)
+  randompack_rng *rng    // in/out  Random number generator
+);
+
+bool randompack_pareto( // Generate pareto random numbers, false on error
+  double x[],            // out     n-vector: pareto random numbers
+  size_t n,              // in      Number of variates
+  double xm,             // in      Scale parameter (> 0)
+  double alpha,          // in      Shape parameter (> 0)
+  randompack_rng *rng    // in/out  Random number generator
+);
+
+bool randompack_weibull( // Generate weibull random numbers, false on error
+  double x[],             // out     n-vector: weibull random numbers
+  size_t n,               // in      Number of variates
+  double shape,           // in      Shape parameter (> 0)
+  double scale,           // in      Scale parameter (> 0)
+  randompack_rng *rng     // in/out  Random number generator
+);
+
+bool randompack_skew_normal( // Generate skew-normal random numbers, false on error
+  double x[],                  // out     n-vector: skew-normal random numbers
+  size_t n,                    // in      Number of variates
+  double mu,                   // in      Location parameter
+  double sigma,                // in      Scale parameter (> 0)
+  double alpha,                // in      Skew parameter
+  randompack_rng *rng          // in/out  Random number generator
+);
+
+bool randompack_mvn( // Generate multivariate normal randoms N(mu,Sig), false on error
+  char *transp,         // in      "N" to get n×d X, "T" to get d×n X
+  double mu[],          // in      d-vector: mean (NULL → zero-mean)
+  double Sig[],         // in      d×d covariance matrix (NULL → use L as-is)
+  int d,                // in      Dimension of each vector
+  size_t n,             // in      Number of replicates
+  double X[],           // out     n×d or d×n matrix of generated vectors
+  int ldx,              // in      Leading dimension of X
+  double L[],           // in/out  d×d lower Cholesky factor of Sig (or NULL)
+  randompack_rng *rng   // in/out  Random number generator
+);
+
+char *randompack_last_error( // Get last error string, or 0 if none
+  randompack_rng *rng   // in      Random number generator
+);
+
+//========================================================================================
+// Advanced API: Low-level utilities and engine-specific features
+//
+// These functions expose additional control over RNG behaviour, distribution kernels, and
+// bit-precise integer generation. They are intended for specialised use cases, testing,
+// and performance tuning, and are typically not needed in routine applications.
+//========================================================================================
+
+bool randompack_uint8( // Generate uint8 in [0, bound), false on error
+  uint8_t x[],           // out     len-vector of bytes
+  size_t len,            // in      number requested
+  uint8_t bound,         // in      exclusive upper bound, or 0 for unbounded
+  randompack_rng *rng    // in/out  random number generator
+);
+
+bool randompack_uint16( // Generate uint16 in [0, bound), false on error
+  uint16_t x[],          // out     len-vector of short integers
+  size_t len,            // in      number requested
+  uint16_t bound,        // in      exclusive upper bound, or 0 for unbounded
+  randompack_rng *rng    // in/out  random number generator
+);
+
+bool randompack_uint32( // Generate uint32 in [0, bound), false on error
+  uint32_t x[],          // out     len-vector of integers
+  size_t len,            // in      number requested
+  uint32_t bound,        // in      exclusive upper bound, or 0 for unbounded
+  randompack_rng *rng    // in/out  random number generator
+);
+
+bool randompack_uint64( // Generate uint64 in [0, bound), false on error
+  uint64_t x[],          // out     len-vector of uint64_t integers
+  size_t len,            // in      number requested
+  uint64_t bound,        // in      exclusive upper bound, or 0 for unbounded
+  randompack_rng *rng    // in/out  random number generator
+);
+
+bool randompack_serialize( // Serialize an RNG to an opaque byte buffer
+  uint8_t *buf,          // out     buffer for serialization (may be NULL if *len==0)
+  int *len,              // in/out  0 → query size; otherwise buffer length
+  randompack_rng *rng    // in      RNG to serialize
+);
+
+bool randompack_deserialize( // Restore an RNG from an opaque byte buffer
+  const uint8_t *buf,     // in      buffer with serialization
+  int len,                // in      buffer length
+  randompack_rng *rng     // out     target RNG (must be allocated)
+);
+
+bool randompack_pcg64_set_state( // Set PCG state and increment (low 64 bits)
+  uint64_t state,          // in      PCG state low 64 bits
+  uint64_t inc,            // in      PCG increment low 64 bits
+  randompack_rng *rng      // in/out  target RNG
+);
+
+bool randompack_philox_set_state( // Set philox counter/key state directly
+  randompack_philox_ctr ctr,  // in      counter state (4 x uint64s)
+  randompack_philox_key key,  // in      key state (2 x uint64s)
+  randompack_rng *rng         // in/out  target RNG
+);
+
+bool randompack_squares_set_state( // Set squares64 counter/key state directly
+  uint64_t ctr,               // in      counter state (4 x uint64s)
+  uint64_t key,               // in      key state
+  randompack_rng *rng         // in/out  target RNG
+);
+
+bool randompack_set_state( // Set state of general engine directly
+  uint64_t state[],           // in      state words (must be nonzero for xor-family)
+  int nstate,                 // in      number of state words provided, depends on engine
+  randompack_rng *rng         // in/out  target RNG
+);
+
+//========================================================================================
+// Single precision (float) versions of the randompack distributions
+//========================================================================================
+
+bool randompack_u01f( // Generate uniform random floats in [0,1), false on error
+  float x[],            // out     n-vector: uniform random numbers in [0,1)
+  size_t n,             // in      Number of variates
+  randompack_rng *rng   // in/out  Random number generator
+);
+
+bool randompack_uniff( // Generate uniform random floats U(a,b), false on error
+  float x[],            // out     n-vector: uniform random numbers in [a,b)
+  size_t n,             // in      Number of variates
+  float a,              // in      Lower bound
+  float b,              // in      Upper bound (> a)
+  randompack_rng *rng   // in/out  Random number generator
+);
+
+bool randompack_normf( // Generate normal random floats N(0,1), false on error
+  float x[],            // out     n-vector: normal random numbers
+  size_t n,             // in      Number of variates
+  randompack_rng *rng   // in/out  Random number generator
+);
+
+bool randompack_normalf( // Generate normal random floats N(mu,sigma), false on error
+  float x[],             // out     n-vector: normal random numbers
+  size_t n,              // in      Number of variates
+  float mu,              // in      Mean
+  float sigma,           // in      Standard deviation (> 0)
+  randompack_rng *rng    // in/out  Random number generator
+);
+
+bool randompack_lognormalf( // Generate lognormal random floats, false on error
+  float x[],                // out     n-vector: lognormal random numbers
+  size_t n,                 // in      Number of variates
+  float mu,                 // in      Mean of underlying normal
+  float sigma,              // in      Std dev of underlying normal (> 0)
+  randompack_rng *rng       // in/out  Random number generator
+);
+
+bool randompack_expf( // Generate exponential random floats, false on error
+  float x[],           // out     n-vector: exponential random numbers
+  size_t n,            // in      Number of variates
+  float scale,         // in      Scale parameter (1.0f → standard exponential)
+  randompack_rng *rng  // in/out  Random number generator
+);
+
+bool randompack_gammaf( // Generate gamma random floats, false on error
+  float x[],             // out     n-vector: gamma random numbers
+  size_t n,              // in      Number of variates
+  float shape,           // in      Shape parameter (> 0)
+  float scale,           // in      Scale parameter (> 0)
+  randompack_rng *rng    // in/out  Random number generator
+);
+
+bool randompack_betaf( // Generate beta random floats, false on error
+  float x[],           // out     n-vector: beta random numbers
+  size_t n,            // in      Number of variates
+  float a,             // in      First shape parameter (> 0)
+  float b,             // in      Second shape parameter (> 0)
+  randompack_rng *rng  // in/out  Random number generator
+);
+
+bool randompack_chi2f( // Generate chi-square random floats, false on error
+  float x[],             // out     n-vector: chi-square random numbers
+  size_t n,              // in      Number of variates
+  float nu,              // in      Degrees of freedom (> 0)
+  randompack_rng *rng    // in/out  Random number generator
+);
+
+bool randompack_tf( // Generate t random floats, false on error
+  float x[],             // out     n-vector: t random numbers
+  size_t n,              // in      Number of variates
+  float nu,              // in      Degrees of freedom (> 0)
+  randompack_rng *rng    // in/out  Random number generator
+);
+
+bool randompack_ff( // Generate F random floats, false on error
+  float x[],             // out     n-vector: F random numbers
+  size_t n,              // in      Number of variates
+  float nu1,             // in      Numerator degrees of freedom (> 0)
+  float nu2,             // in      Denominator degrees of freedom (> 0)
+  randompack_rng *rng    // in/out  Random number generator
+);
+
+bool randompack_gumbelf( // Generate gumbel random floats, false on error
+  float x[],              // out     n-vector: gumbel random numbers
+  size_t n,               // in      Number of variates
+  float mu,               // in      Location parameter
+  float beta,             // in      Scale parameter (> 0)
+  randompack_rng *rng     // in/out  Random number generator
+);
+
+bool randompack_paretof( // Generate pareto random floats, false on error
+  float x[],              // out     n-vector: pareto random numbers
+  size_t n,               // in      Number of variates
+  float xm,               // in      Scale parameter (> 0)
+  float alpha,            // in      Shape parameter (> 0)
+  randompack_rng *rng     // in/out  Random number generator
+);
+
+bool randompack_weibullf( // Generate weibull random floats, false on error
+  float x[],               // out     n-vector: weibull random numbers
+  size_t n,                // in      Number of variates
+  float shape,             // in      Shape parameter (> 0)
+  float scale,             // in      Scale parameter (> 0)
+  randompack_rng *rng      // in/out  Random number generator
+);
+
+bool randompack_skew_normalf( // Generate skew-normal random floats, false on error
+  float x[],                   // out     n-vector: skew-normal random numbers
+  size_t n,                    // in      Number of variates
+  float mu,                    // in      Location parameter
+  float sigma,                 // in      Scale parameter (> 0)
+  float alpha,                 // in      Skew parameter
+  randompack_rng *rng          // in/out  Random number generator
+);
+
+#endif /* RANDOMPACK_H */

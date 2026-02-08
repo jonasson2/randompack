@@ -55,6 +55,14 @@ bool randompack_int( // Generate uniform integers in [m, n], false on error
   randompack_rng *rng   // in/out  Random number generator
 );
 
+bool randompack_long_long( // Generate uniform long long in [m, n], false on error
+  long long x[],         // out     len-vector of integers
+  size_t len,            // in      Number of integers requested
+  long long m,           // in      Inclusive minimum
+  long long n,           // in      Inclusive maximum
+  randompack_rng *rng    // in/out  Random number generator
+);
+
 bool randompack_perm( // Generate a random permutation of 0..n-1, false on error
   int x[],              // out     n-vector containing the permutation
   int n,                // in      Permutation size
@@ -254,13 +262,11 @@ bool randompack_deserialize( // Restore an RNG from an opaque byte buffer
   randompack_rng *rng     // out     target RNG (must be allocated)
 );
 
-//#ifdef HAVE128
-bool randompack_pcg64_set_state( // Set PCG state and increment
-  __uint128_t state,      // in      PCG state
-  __uint128_t inc,		  // in      PCG increment (even changed to odd)
-  randompack_rng *rng	  // in/out  target RNG      
+bool randompack_pcg64_set_state( // Set PCG state and increment (low 64 bits)
+  uint64_t state,          // in      PCG state low 64 bits
+  uint64_t inc,            // in      PCG increment low 64 bits
+  randompack_rng *rng      // in/out  target RNG
 );
-//#endif
 
 bool randompack_philox_set_state( // Set philox counter/key state directly
   randompack_philox_ctr ctr,  // in      counter state (4 x uint64s)

@@ -16,6 +16,8 @@
 #if HAVE128
 #include "cwg128_64.h"
 #include "pcg64.h"
+#else
+#include "pcg64_emul.h"
 #endif
 #include "crypto_random.inc"
 
@@ -49,8 +51,8 @@ struct randompack_rng {
     uint32_t u32[16];
     uint64_t u64[8];
     xo256    xo;
-    #if HAVE128
     pcg64_t pcg;
+    #if HAVE128
     cwg128_64_t cwg;
     #endif
   } state;
@@ -85,16 +87,10 @@ static rng_entry rng_table[] = {
   {"x256**",   "xoshiro256**, Vigna & Blackman, 2019 (4x64)",  X256SS,  4, fill_x256ss    },
   {"xoro++",   "xoroshiro128++, Vigna & Blackman, 2016 (2x64)",XORO,    2, fill_xoro128pp },
   {"x128+",    "xorshift128+, Vigna, 2014 (2x64)",             X128P,   2, fill_x128p     },
-#if HAVE128
   {"pcg64",    "PCG64-DXSM, O'Neill, 2014 (4x64)",             PCG64,   4, fill_pcg64     },
-#endif
   {"sfc64",    "sfc64, Chris Doty-Humphrey, 2013 (4x64)",      SFC64,   4, fill_sfc64     },
-#if HAVE128
   {"cwg128",   "cwg128-64, Działa, 2022 (5x64)",               CWG128,  5, fill_cwg128    },
-#endif
-#if HAVE128MUL
   {"philox",   "Philox-4x64, Salmon & Moraes, 2011 (6x64)",    PHILOX,  6, fill_philox    },
-#endif
   {"squares",  "squares64, Widynski, 2021 (2x64)",             SQUARES, 2, fill_squares   },
   {"chacha20", "ChaCha20, Bernstein, 2008 (6x64)",             CHACHA20,6, fill_chacha    },
   {"system",   "Operating system entropy source",              SYS,     0, fill_csprng    },
@@ -137,15 +133,6 @@ randompack_rng *randompack_create(const char *engine) {
   rng->engine = INVALID;
   if (!select_engine(engine, rng)) {
     rng->last_error = "unknown engine name (spelling error in requested engine)";
-    return rng;
-  }
-  if (rng->engine == PCG64 && !HAVE128) {
-    rng->last_error = "PCG64 engine not supported on this platform (no 128-bit integers)";
-    return rng;
-  }
-  if (rng->engine == CWG128 && !HAVE128) {
-    rng->last_error =
-      "CWG128 engine not supported on this platform (no 128-bit integers)";
     return rng;
   }
   rng_entry *ent = find_entry(rng->engine);
@@ -307,7 +294,7 @@ bool randompack_deserialize(const uint8_t *buf, int len, randompack_rng *rng) {
   if (!rng) return false;
   rng->last_error = 0;
   if (rng->engine == SYS) {
-    rng->last_error = "randompack deserialize: system rng not supported on this platform";
+    rng->last_error = "randompack deserialize: not supported for system rng";
     return false;
   }
   if (!buf || len <= 0) {
@@ -330,16 +317,6 @@ bool randompack_deserialize(const uint8_t *buf, int len, randompack_rng *rng) {
     rng->last_error = "randompack deserialize: engine mismatch";
     return false;
   }
-  if (blob.engine == PCG64 && !HAVE128) {
-    rng->last_error =
-      "randompack deserialize: PCG64 engine not supported on this platform";
-    return false;
-  }
-  if (blob.engine == CWG128 && !HAVE128) {
-    rng->last_error =
-      "randompack deserialize: CWG128 engine not supported on this platform";
-    return false;
-  }
   bool ok = deserialize(&blob, ent, rng);
   if (!ok) {
     rng->last_error = "randompack deserialize: allocation failed";
@@ -360,12 +337,6 @@ bool randompack_set_state(uint64_t state[], int nstate, randompack_rng *rng) {
   rng_entry *ent = find_entry(rng->engine);
   if (rng->engine == SYS)
     rng->last_error = "randompack set_state: not supported for system-csprng";
-  else if (rng->engine == PCG64 && !HAVE128)
-    rng->last_error =
-      "randompack set_state: PCG64 engine not supported on this platform";
-  else if (rng->engine == CWG128 && !HAVE128)
-    rng->last_error =
-      "randompack set_state: CWG128 engine not supported on this platform";
   else if (nstate != ent->state_words)
     rng->last_error = "randompack set_state: wrong nstate for this engine";
   else if (rng->engine == X256PP || rng->engine == X256SS || rng->engine == FAST ||
@@ -386,8 +357,7 @@ bool randompack_set_state(uint64_t state[], int nstate, randompack_rng *rng) {
   return true;
 }
 
-#if HAVE128
-bool randompack_pcg64_set_state(uint128_t state, uint128_t inc, randompack_rng *rng) {
+bool randompack_pcg64_set_state(uint64_t state, uint64_t inc, randompack_rng *rng) {
   if (!rng) return false;
   rng->last_error = 0;
   if (rng->engine != PCG64) {
@@ -398,7 +368,6 @@ bool randompack_pcg64_set_state(uint128_t state, uint128_t inc, randompack_rng *
   rand_init(rng);
   return true;
 }
-#endif
 
 bool randompack_philox_set_state(randompack_philox_ctr ctr, randompack_philox_key key,
   randompack_rng *rng) {
@@ -490,6 +459,29 @@ bool randompack_int(int x[], size_t len, int m, int n, randompack_rng *rng) {
   
   rand_uint32((uint32_t*)x, len, span + 1, rng);
   for (size_t i = 0; i < len; i++) x[i] += m;
+  return true;
+}
+
+bool randompack_long_long(long long x[], size_t len, long long m, long long n,
+  randompack_rng *rng) {
+  if (!rng) return false;
+  if (!x)
+    rng->last_error = "invalid arguments to randompack_long_long";
+  else if (m > n)
+    rng->last_error = "randompack long long: m must be <= n";
+  else
+    rng->last_error = 0;
+  if (rng->last_error) return false;
+  if (m == LLONG_MIN && n == LLONG_MAX) {
+    rand_uint64((uint64_t*)x, len, 0, rng);
+    return true;
+  }
+  uint64_t span = (uint64_t)n - (uint64_t)m;
+  rand_uint64((uint64_t*)x, len, span + 1, rng);
+  for (size_t i = 0; i < len; i++) {
+    uint64_t u = (uint64_t)x[i] + (uint64_t)m;
+    x[i] = (long long)u;
+  }
   return true;
 }
 

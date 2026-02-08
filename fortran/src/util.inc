@@ -19,7 +19,7 @@ function cstr_to_fstring(p) result(msg)
     msg = ""
     return
   end if
-  call c_f_pointer(p, s, [huge(1)])
+  call c_f_pointer(p, s, [MAXSTRLEN])
   n = 0
   do i = 1, size(s)
     if (s(i) == c_null_char) exit
@@ -40,17 +40,11 @@ subroutine check_kinds()
   if (kind(1.0) /= c_float) then
     error stop "randompack: c_float mismatch"
   end if
-  if (kind(1) /= c_int) then
-    error stop "randompack: c_int mismatch"
-  end if
-  if (int64 /= c_int64_t) then
-    error stop "randompack: int64 mismatch"
-  end if
   done = .true.
 end subroutine
 
 subroutine rp_die(self, where)
-  class(rng), intent(in) :: self
+  class(randompack_rng), intent(in) :: self
   character(len=*), intent(in) :: where
   character(len=:), allocatable :: emsg
   type(c_ptr) :: p
@@ -67,6 +61,37 @@ subroutine rp_die(self, where)
     error stop where//": "//trim(emsg)
   end if
 end subroutine
+
+logical function rp_check(self, where, ok) result(go)
+  class(randompack_rng), intent(in) :: self
+  character(len=*), intent(in) :: where
+  logical, intent(out), optional :: ok
+  if (.not. c_associated(self%p)) then
+    if (present(ok)) then
+      ok = .false.
+      go = .false.
+      return
+    end if
+    call rp_die(self, where)
+  end if
+  go = .true.
+end function
+
+logical function rp_check_ok(self, where, ok, c_ok) result(go)
+  class(randompack_rng), intent(in) :: self
+  character(len=*), intent(in) :: where
+  logical, intent(out), optional :: ok
+  logical(c_bool), intent(in) :: c_ok
+  if (.not. c_ok) then
+    if (present(ok)) then
+      ok = .false.
+      go = .false.
+      return
+    end if
+    call rp_die(self, where)
+  end if
+  go = .true.
+end function
 
 subroutine engines(names, descriptions)
   character(len=:), allocatable, intent(out) :: names(:)

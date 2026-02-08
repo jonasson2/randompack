@@ -121,7 +121,7 @@ end
   exc = err isa Test.Pass ? err.value : err
   msg = sprint(showerror, exc)
   @test occursin("unknown RNG engine", msg)
-  @test occursin("check spelling", msg)
+  @test occursin("spelling error", msg)
 end
 
 @testset "rng_seed!" begin

@@ -25,18 +25,12 @@ rng = rng_create("pcg64")
 function rng_create(engine::AbstractString)
   p = ccall((:randompack_create, _libpath[]), RNGPtr, (Cstring,), engine)
   if p == C_NULL
-    if _is_platform_dependent_engine(engine)
-      throw(ErrorException("RNG engine '$engine' is not supported on this platform/build"))
-    end
     throw(ErrorException("unknown RNG engine '$engine' (check spelling)"))
   end
   err = _last_error(p)
   if err !== nothing
     _free(p)
-    if _is_platform_dependent_engine(engine)
-      throw(ErrorException("RNG engine '$engine' is not supported on this platform/build"))
-    end
-    throw(ErrorException("unknown RNG engine '$engine' (check spelling)"))
+    throw(ErrorException(err))
   end
   rng = RNG(p)
   finalizer(rng) do r
@@ -106,4 +100,3 @@ function rng_seed!(rng::RNG, seed::Integer; spawn_key=nothing)
   _check_ok(ok, rng.ptr, "randompack_seed failed")
   return
 end
-

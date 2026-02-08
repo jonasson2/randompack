@@ -99,6 +99,7 @@ int main(int argc, char **argv) {
   run_test("Uint64",   TestUint64);
   run_test("Reference",TestReference);
   run_test("Int",      TestInt);
+  run_test("LongLong", TestLongLong);
   run_test("Perm",     TestPerm);
   run_test("Sample",   TestSample);
   run_test("U01",      TestU01);

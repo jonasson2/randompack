@@ -14,9 +14,9 @@
 #if HAVE128
 #include "pcg64_dxsm.inc"
 #include "cwg128.inc"
+#else
+#include "pcg64_dxsm_emul.inc"
+#include "cwg128_emul.inc"
 #endif
 
-#if HAVE128MUL
 #include "philox4x64.inc"
-#endif
-

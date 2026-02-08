@@ -148,13 +148,9 @@ static engine_table_entry engine_table[] = {
   {"x256++",        4},
   {"x256++simd",    4},
   {"chacha20",      6},
-#if HAVE128MUL
   {"philox",        6},
-#endif
-#if HAVE128
   {"pcg64",         4},
   {"cwg128",        5},
-#endif
 };
 char **get_engines(int *n);
 void free_engines(char **engines, int n);

@@ -30,12 +30,10 @@ static inline void normalize_state(randompack_rng *rng) {
     if (rng->state.u64[0] == 0) rng->state.u64[0] = 1;
     break;
   case CWG128:
-    rng->state.u64[3] |= 1;
+    rng->state.u64[4] |= 1;
     break;
   case PCG64:
-#if HAVE128
-    rng->state.cwg.s |= 1;
-#endif
+    rng->state.u64[2] |= 1;
     break;
   default:
     break;
@@ -159,11 +157,7 @@ static void squares_set_state(uint64_t ctr, uint64_t key, randompack_rng *rng) {
   set_state(state, LEN(state), rng);
 }
 
-#if HAVE128
-static void pcg64_set_state(uint128_t pcgstate, uint128_t inc, randompack_rng *rng) {
-  uint64_t state[4];
-  copy64(state, &pcgstate, 2);
-  copy64(state + 2, &inc, 2);
+static void pcg64_set_state(uint64_t pcgstate, uint64_t inc, randompack_rng *rng) {
+  uint64_t state[4] = {pcgstate, 0, inc, 0};
   set_state(state, LEN(state), rng);
 }
-#endif

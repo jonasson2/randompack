@@ -26,9 +26,6 @@ test_that("set_state accepts numeric state words", {
 })
 
 test_that("philox_set_state makes draws repeatable", {
-  engines <- randompack_engines()
-  if (!"philox" %in% engines$engine)
-    skip("philox not available")
   rng1 <- randompack_rng("philox")
   rng2 <- randompack_rng("philox")
   counter <- c(1, 0, 2, 0, 3, 0, 4, 0)

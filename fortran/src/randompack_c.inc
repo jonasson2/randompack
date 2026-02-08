@@ -24,8 +24,8 @@ interface
   end function
 
   logical(c_bool) function crp_seed(seed, spawn_key, n_key, rngp) bind(C, name="randompack_seed")
-    import :: c_int, c_ptr, c_bool
-    integer(c_int), value :: seed
+    import :: c_int32_t, c_ptr, c_bool, c_int
+    integer(c_int32_t), value :: seed
     type(c_ptr), value :: spawn_key
     integer(c_int), value :: n_key
     type(c_ptr), value :: rngp
@@ -297,11 +297,21 @@ interface
   end function
 
   logical(c_bool) function crp_int(x, len, m, n, rngp) bind(C, name="randompack_int")
-    import :: c_int, c_size_t, c_ptr, c_bool
-    integer(c_int) :: x(*)
+    import :: c_int, c_int32_t, c_size_t, c_ptr, c_bool
+    integer(c_int32_t) :: x(*)
     integer(c_size_t), value :: len
-    integer(c_int), value :: m
-    integer(c_int), value :: n
+    integer(c_int32_t), value :: m
+    integer(c_int32_t), value :: n
+    type(c_ptr), value :: rngp
+  end function
+
+  logical(c_bool) function crp_long_long(x, len, m, n, rngp) &
+    bind(C, name="randompack_long_long")
+    import :: c_int64_t, c_size_t, c_ptr, c_bool
+    integer(c_int64_t) :: x(*)
+    integer(c_size_t), value :: len
+    integer(c_int64_t), value :: m
+    integer(c_int64_t), value :: n
     type(c_ptr), value :: rngp
   end function
 

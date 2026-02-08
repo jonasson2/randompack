@@ -21,10 +21,6 @@ function _check_ok(ok::Bool, rngptr::RNGPtr, fallback::AbstractString)
   throw(ErrorException(isempty(msg) ? fallback : msg))
 end
 
-function _is_platform_dependent_engine(name::AbstractString)::Bool
-  return name == "philox" || name == "pcg64" || name == "cwg128"
-end
-
 # -----------------------------------------------------------------------------
 # Internal integer-conversion helpers with bounds checks.
 #

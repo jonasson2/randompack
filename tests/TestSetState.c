@@ -146,7 +146,9 @@ static void test_philox_set_state(void) {
 }
 
 static void test_pcg_set_state(void) {
-  uint128_t c1 = 12345678901ULL, pcgstate = c1*c1*c1, inc = c1*c1;
+  uint64_t c1 = 1234567ULL;
+  uint64_t pcgstate = c1*c1*c1;
+  uint64_t inc = c1*c1;
   randompack_rng *rng = make_rng("pcg64");
   bool ok = randompack_pcg64_set_state(pcgstate, inc, rng);
   check_success(ok, rng);

@@ -1,285 +1,265 @@
 module testutil
-use, intrinsic :: iso_fortran_env, only: int64
-use, intrinsic :: ieee_arithmetic, only: ieee_is_nan, ieee_is_finite
-implicit none
-private
-public :: fail, assert_true, assert_all_finite, assert_all_in_01, &
-  assert_all_in_ab, assert_all_int_in_mn, assert_equal_r8, assert_equal_i4, &
-  assert_equal_i8, assert_not_equal_r8
+  use, intrinsic :: ieee_arithmetic, only: ieee_is_nan, ieee_is_finite
+  implicit none
+  private
+  public :: fail, assert, approx_equal, approx_equal_d
 
-interface assert_all_finite
-  module procedure assert_all_finite_r8
-  module procedure assert_all_finite_r8m
-end interface
-
-interface assert_all_in_01
-  module procedure assert_all_in_01_r8
-  module procedure assert_all_in_01_r8m
-end interface
-
-interface assert_all_in_ab
-  module procedure assert_all_in_ab_r8
-  module procedure assert_all_in_ab_r8m
-end interface
-
-interface assert_all_int_in_mn
-  module procedure assert_all_int_in_mn_i4
-  module procedure assert_all_int_in_mn_i4m
-end interface
 
 contains
-subroutine fail(msg)
-  character(len=*), intent(in) :: msg
-  write(*,'(A)') "FAIL: "//trim(msg)
-  stop 1
-end subroutine
-subroutine assert_true(cond, msg)
-  logical, intent(in) :: cond
-  character(len=*), intent(in) :: msg
-  if (.not. cond) call fail(msg)
-end subroutine
-subroutine assert_all_finite_r8(x, msg)
-  double precision, intent(in) :: x(:)
-  character(len=*), intent(in) :: msg
-  if (any(ieee_is_nan(x))) call fail(msg//" (NaN)")
-  if (.not. all(ieee_is_finite(x))) call fail(msg//" (Inf)")
-end subroutine
-subroutine assert_all_finite_r8m(x, msg)
-  double precision, intent(in) :: x(:,:)
-  character(len=*), intent(in) :: msg
-  if (any(ieee_is_nan(x))) call fail(msg//" (NaN)")
-  if (.not. all(ieee_is_finite(x))) call fail(msg//" (Inf)")
-end subroutine
-subroutine assert_all_in_01_r8(x, msg)
-  double precision, intent(in) :: x(:)
-  character(len=*), intent(in) :: msg
-  call assert_all_finite(x, msg)
-  if (.not. all(x >= 0.0d0)) call fail(msg//" (x<0)")
-  if (.not. all(x <  1.0d0)) call fail(msg//" (x>=1)")
-end subroutine
-subroutine assert_all_in_01_r8m(x, msg)
-  double precision, intent(in) :: x(:,:)
-  character(len=*), intent(in) :: msg
-  call assert_all_finite(x, msg)
-  if (.not. all(x >= 0.0d0)) call fail(msg//" (x<0)")
-  if (.not. all(x <  1.0d0)) call fail(msg//" (x>=1)")
-end subroutine
-subroutine assert_all_in_ab_r8(x, a, b, msg)
-  double precision, intent(in) :: x(:)
-  double precision, intent(in) :: a, b
-  character(len=*), intent(in) :: msg
-  call assert_all_finite(x, msg)
-  if (.not. all(x >= a)) call fail(msg//" (x<a)")
-  if (.not. all(x <= b)) call fail(msg//" (x>b)")
-end subroutine
-subroutine assert_all_in_ab_r8m(x, a, b, msg)
-  double precision, intent(in) :: x(:,:)
-  double precision, intent(in) :: a, b
-  character(len=*), intent(in) :: msg
-  call assert_all_finite(x, msg)
-  if (.not. all(x >= a)) call fail(msg//" (x<a)")
-  if (.not. all(x <= b)) call fail(msg//" (x>b)")
-end subroutine
-subroutine assert_all_int_in_mn_i4(x, m, n, msg)
-  integer, intent(in) :: x(:)
-  integer, intent(in) :: m, n
-  character(len=*), intent(in) :: msg
-  if (.not. all(x >= m)) call fail(msg//" (x<m)")
-  if (.not. all(x <= n)) call fail(msg//" (x>n)")
-end subroutine
-subroutine assert_all_int_in_mn_i4m(x, m, n, msg)
-  integer, intent(in) :: x(:,:)
-  integer, intent(in) :: m, n
-  character(len=*), intent(in) :: msg
-  if (.not. all(x >= m)) call fail(msg//" (x<m)")
-  if (.not. all(x <= n)) call fail(msg//" (x>n)")
-end subroutine
-subroutine assert_equal_r8(a, b, msg)
-  double precision, intent(in) :: a(:), b(:)
-  character(len=*), intent(in) :: msg
-  if (size(a) /= size(b)) call fail(msg//" (size)")
-  if (maxval(abs(a - b)) > 0.0d0) call fail(msg//" (values)")
-end subroutine
-subroutine assert_not_equal_r8(a, b, msg)
-  double precision, intent(in) :: a(:), b(:)
-  character(len=*), intent(in) :: msg
-  if (size(a) /= size(b)) call fail(msg//" (size)")
-  if (maxval(abs(a - b)) <= 0.0d0) call fail(msg//" (expected difference)")
-end subroutine
-subroutine assert_equal_i4(a, b, msg)
-  integer, intent(in) :: a(:), b(:)
-  character(len=*), intent(in) :: msg
-  if (size(a) /= size(b)) call fail(msg//" (size)")
-  if (.not. all(a == b)) call fail(msg//" (values)")
-end subroutine
-subroutine assert_equal_i8(a, b, msg)
-  integer, intent(in) :: a(:), b(:)
-  character(len=*), intent(in) :: msg
-  if (size(a) /= size(b)) call fail(msg//" (size)")
-  if (.not. all(a == b)) call fail(msg//" (values)")
-end subroutine
+  subroutine fail(msg)
+    character(len=*), intent(in) :: msg
+    write(*,'(A)') "FAIL: "//trim(msg)
+    stop 1
+  end subroutine fail
+
+  subroutine assert(cond, msg)
+    logical, intent(in) :: cond
+    character(len=*), intent(in) :: msg
+    if (.not. cond) call fail(msg)
+  end subroutine assert
+
+  pure elemental logical function approx_equal(x, y) result(ok)
+    real, intent(in) :: x, y
+    ok = abs(x - y) <= epsilon(x)*max(1.0, abs(x), abs(y))
+  end function approx_equal
+
+  pure elemental logical function approx_equal_d(x, y) result(ok)
+    double precision, intent(in) :: x, y
+    ok = abs(x - y) <= epsilon(x)*max(1.0d0, abs(x), abs(y))
+  end function approx_equal_d
 end module testutil
 
 program test_randompack_fortran
-use, intrinsic :: iso_fortran_env, only: int64
-use randompack
-use testutil
-implicit none
-type(rng) :: r1, r2, r3
-type(rng) :: s1, s2
-type(rng) :: p1, p2
-type(randompack_philox_ctr) :: ctr
-type(randompack_philox_key) :: key
-character(len=:), allocatable :: names(:), desc(:)
-character(len=:), allocatable :: engine
-logical :: has_pcg, has_x, has_philox, has_squares
-double precision :: x(100), y(100), z(100)
-double precision :: a(7,11)
-integer :: iv(50), im(6,9)
-integer, allocatable :: bytes(:)
+use, intrinsic :: iso_c_binding, only: c_int32_t, c_int64_t, c_int8_t
+use, intrinsic :: ieee_arithmetic, only: ieee_is_finite
+  use randompack
+  use testutil
+  implicit none
+  type(randompack_rng) :: r1, r2, r3
+  type(randompack_rng) :: s1, s2
+  type(randompack_rng) :: p1, p2
+  type(randompack_philox_ctr) :: ctr
+  type(randompack_philox_key) :: key
+  character(len=:), allocatable :: names(:), desc(:)
+  character(len=:), allocatable :: engine
+  logical :: has_pcg, has_x, has_philox, has_squares
+  double precision :: x(100), y(100), z(100)
+  double precision :: a(7,11)
+  real :: xf(100)
+  real :: af(7,11)
+  integer(c_int32_t) :: iv(50), im(6,9)
+  integer(c_int64_t) :: iv64(50)
+  integer(c_int8_t), allocatable :: bytes(:)
 
-call engines(names, desc)
-call assert_true(size(names) == size(desc), "engines: names/desc size mismatch")
-call assert_true(size(names) > 0, "engines: empty engine list")
+  call engines(names, desc)
+  call assert(size(names) == size(desc), "engines: names/desc size mismatch")
+  call assert(size(names) > 0, "engines: empty engine list")
 
-has_pcg = has_name(names, "pcg64")
-has_x = has_name(names, "x256++simd")
-has_philox = has_name(names, "philox")
-has_squares = has_name(names, "squares")
+  has_pcg = has_name(names, "pcg64")
+  has_x = has_name(names, "x256++simd")
+  has_philox = has_name(names, "philox")
+  has_squares = has_name(names, "squares")
 
-if (has_pcg) then
-  engine = "pcg64"
-else if (has_x) then
-  engine = "x256++simd"
-else
-  engine = names(1)
-end if
+  if (has_pcg) then
+    engine = "pcg64"
+  else if (has_x) then
+    engine = "x256++simd"
+  else
+    engine = names(1)
+  end if
 
-write(*,'(A)') "Using engine: "//engine
+  write(*,'(A)') "Using engine: "//engine
 
-!------------------------------------------------------------
-! Smoke: create + seed + u01 vec/mat
-call r1%create(engine)
-call r1%seed(123)
-call r1%u01(x)
-call assert_all_in_01(x, "u01 vec")
-call r1%u01(a)
-call assert_all_in_01(a, "u01 mat")
+  !------------------------------------------------------------
+  ! Smoke: create + seed + u01 vec/mat
+  call r1%create(engine)
+  call r1%seed(123_c_int32_t)
+  call r1%u01(x)
+  call assert(all(0 <= x .and. x < 1 .and. ieee_is_finite(x)), "u01")
+  call r1%u01(a)
+  call assert(all(0 <= a .and. a < 1 .and. ieee_is_finite(a)), "u01")
 
-! unif(a,b) vec/mat
-call r1%seed(123)
-call r1%unif(x, -1.0d0, 2.0d0)
-call assert_all_in_ab(x, -1.0d0, 2.0d0, "unif vec")
-call r1%unif(a, -3.0d0, -2.0d0)
-call assert_all_in_ab(a, -3.0d0, -2.0d0, "unif mat")
+  ! unif(a,b) vec/mat
+  call r1%seed(123_c_int32_t)
+  call r1%unif(x, -1d0, 2d0)
+  call assert(all(-1 <= x .and. x <= 2 .and. ieee_is_finite(x)), "unif")
+  call r1%unif(a, -3d0, -2d0)
+  call assert(all(-3 <= a .and. a <= -2 .and. ieee_is_finite(a)), "unif")
 
-! normal vec/mat
-call r1%seed(123)
-call r1%normal(x, 0.0d0, 1.0d0)
-call assert_all_finite(x, "normal vec")
-call r1%normal(a, 2.0d0, 3.0d0)
-call assert_all_finite(a, "normal mat")
+  ! normal vec/mat
+  call r1%seed(123_c_int32_t)
+  call r1%normal(x, 0d0, 1d0)
+  call assert(all(ieee_is_finite(x)), "normal")
+  call r1%normal(a, 2d0, 3d0)
+  call assert(all(ieee_is_finite(a)), "normal")
 
-! beta vec/mat (bounds [0,1])
-call r1%seed(123)
-call r1%beta(x, 2.0d0, 3.0d0)
-call assert_all_finite(x, "beta vec")
-call assert_true(all(x >= 0.0d0) .and. all(x <= 1.0d0), "beta vec bounds")
-call r1%beta(a, 2.0d0, 3.0d0)
-call assert_all_finite(a, "beta mat")
-call assert_true(all(a >= 0.0d0) .and. all(a <= 1.0d0), "beta mat bounds")
+  ! u01/unif/normal vec/mat (float)
+  call r1%seed(123_c_int32_t)
+  call r1%u01(xf)
+  call assert(all(0 <= xf .and. xf < 1 .and. ieee_is_finite(xf)), "u01f")
+  call r1%u01(af)
+  call assert(all(0 <= af .and. af < 1 .and. ieee_is_finite(af)), "u01f")
+  call r1%unif(xf, -1., 2.)
+  call assert(all(-1 <= xf .and. xf <= 2 .and. ieee_is_finite(xf)), "uniff")
+  call r1%unif(af, -3., -2.)
+  call assert(all(-3 <= af .and. af <= -2 .and. ieee_is_finite(af)), "uniff")
+  call r1%normal(xf, 0., 1.)
+  call assert(all(ieee_is_finite(xf)), "normalf")
+  call r1%normal(af, 2., 3.)
+  call assert(all(ieee_is_finite(af)), "normalf")
 
-! int vec/mat
-call r1%seed(123)
-call r1%int(iv, -2, 3)
-call assert_all_int_in_mn(iv, -2, 3, "int vec")
-call r1%int(im, -4, -1)
-call assert_all_int_in_mn(im, -4, -1, "int mat")
+  ! beta vec/mat (bounds [0,1])
+  call r1%seed(123_c_int32_t)
+  call r1%beta(x, 2d0, 3d0)
+  call assert(all(0 <= x .and. x <= 1 .and. ieee_is_finite(x)), "beta")
+  call r1%beta(a, 2d0, 3d0)
+  call assert(all(0 <= a .and. a <= 1 .and. ieee_is_finite(a)), "beta")
 
-!------------------------------------------------------------
-! Determinism: seed resets stream
-call r1%seed(777)
-call r1%u01(x)
-call r1%seed(777)
-call r1%u01(y)
-call assert_equal_r8(x, y, "seed determinism")
+  ! other continuous vec
+  call r1%seed(123_c_int32_t)
+  call r1%lognormal(x, 0d0, 1d0)
+  call assert(all(x >= 0 .and. ieee_is_finite(x)), "lognormal")
+  call r1%exp(x, 1d0)
+  call assert(all(x >= 0 .and. ieee_is_finite(x)), "exp")
+  call r1%gamma(x, 2d0, 1d0)
+  call assert(all(x >= 0 .and. ieee_is_finite(x)), "gamma")
+  call r1%chi2(x, 5d0)
+  call assert(all(x >= 0 .and. ieee_is_finite(x)), "chi2")
+  call r1%t(x, 5d0)
+  call assert(all(ieee_is_finite(x)), "t")
+  call r1%f(x, 5d0, 7d0)
+  call assert(all(x >= 0 .and. ieee_is_finite(x)), "f")
+  call r1%gumbel(x, 0d0, 1d0)
+  call assert(all(ieee_is_finite(x)), "gumbel")
+  call r1%pareto(x, 1d0, 2d0)
+  call assert(all(x >= 0 .and. ieee_is_finite(x)), "pareto")
+  call r1%weibull(x, 2d0, 1d0)
+  call assert(all(x >= 0 .and. ieee_is_finite(x)), "weibull")
+  call r1%skew_normal(x, 0d0, 1d0, 2d0)
+  call assert(all(ieee_is_finite(x)), "skew_normal")
 
-call r1%seed(778)
-call r1%u01(z)
-call assert_not_equal_r8(x, z, "different seed differs")
+  ! other continuous vec (float)
+  call r1%seed(123_c_int32_t)
+  call r1%lognormal(xf, 0., 1.)
+  call assert(all(xf >= 0 .and. ieee_is_finite(xf)), "lognormalf")
+  call r1%exp(xf, 1.)
+  call assert(all(xf >= 0 .and. ieee_is_finite(xf)), "expf")
+  call r1%gamma(xf, 2., 1.)
+  call assert(all(xf >= 0 .and. ieee_is_finite(xf)), "gammaf")
+  call r1%chi2(xf, 5.)
+  call assert(all(xf >= 0 .and. ieee_is_finite(xf)), "chi2f")
+  call r1%t(xf, 5.)
+  call assert(all(ieee_is_finite(xf)), "tf")
+  call r1%f(xf, 5., 7.)
+  call assert(all(xf >= 0 .and. ieee_is_finite(xf)), "ff")
+  call r1%gumbel(xf, 0., 1.)
+  call assert(all(ieee_is_finite(xf)), "gumbelf")
+  call r1%pareto(xf, 1., 2.)
+  call assert(all(xf >= 0 .and. ieee_is_finite(xf)), "paretof")
+  call r1%weibull(xf, 2., 1.)
+  call assert(all(xf >= 0 .and. ieee_is_finite(xf)), "weibullf")
+  call r1%skew_normal(xf, 0., 1., 2.)
+  call assert(all(ieee_is_finite(xf)), "skew_normalf")
 
-!------------------------------------------------------------
-! Duplicate: identical then diverge
-call r1%seed(999)
-call r1%duplicate(r2)
-call r1%u01(x)
-call r2%u01(y)
-call assert_equal_r8(x, y, "duplicate initial match")
-call r1%u01(z)    ! advance only r1
-call r1%u01(x)
-call r2%u01(y)
-call assert_not_equal_r8(x, y, "duplicate independence")
+  ! int vec/mat
+  call r1%seed(123_c_int32_t)
+  call r1%int(iv, -2_c_int32_t, 3_c_int32_t)
+  call assert(all(-2 <= iv .and. iv <= 3), "int32")
+  call r1%int(im, -4_c_int32_t, -1_c_int32_t)
+  call assert(all(-4 <= im .and. im <= -1), "int32")
+  call r1%int(iv64, -2_c_int64_t, 3_c_int64_t)
+  call assert(all(-2 <= iv64 .and. iv64 <= 3), "int64")
 
-!------------------------------------------------------------
-! Serialize/deserialize: restore state exactly
-call r1%seed(555)
-call r1%u01(x)
-call r1%serialize(bytes)
-call r1%u01(y)
-call r3%create(engine)
-call r3%deserialize(bytes)
-call r3%u01(z)
-call assert_equal_r8(y, z, "serialize/deserialize restores state")
+  !------------------------------------------------------------
+  ! Determinism: seed resets stream
+  call r1%seed(777_c_int32_t)
+  call r1%u01(x)
+  call r1%seed(777_c_int32_t)
+  call r1%u01(y)
+  call assert(size(x) == size(y) .and. all(approx_equal_d(x, y)), "seed determinism")
 
-!------------------------------------------------------------
-! Optional: squares_set_state repeatability
-if (has_squares) then
-  call s1%create("squares")
-  call s2%create("squares")
-  call s1%squares_set_state(3_int64, 4_int64)
-  call s2%squares_set_state(3_int64, 4_int64)
-  call s1%u01(x)
-  call s2%u01(y)
-  call assert_equal_r8(x, y, "squares_set_state repeatability")
-  call s1%free()
-  call s2%free()
-end if
+  call r1%seed(778_c_int32_t)
+  call r1%u01(z)
+  call assert(size(x) == size(z) .and. .not. all(approx_equal_d(x, z)), &
+    "different seed differs")
 
-! Optional: philox_set_state repeatability
-if (has_philox) then
-  ctr%v = [1_int64, 2_int64, 3_int64, 4_int64]
-  key%v = [5_int64, 6_int64]
-  call p1%create("philox")
-  call p2%create("philox")
-  call p1%philox_set_state(ctr, key)
-  call p2%philox_set_state(ctr, key)
-  call p1%u01(x)
-  call p2%u01(y)
-  call assert_equal_r8(x, y, "philox_set_state repeatability")
-  call p1%free()
-  call p2%free()
-end if
+  !------------------------------------------------------------
+  ! Duplicate: identical then diverge
+  call r1%seed(999_c_int32_t)
+  call r1%duplicate(r2)
+  call r1%u01(x)
+  call r2%u01(y)
+  call assert(size(x) == size(y) .and. all(approx_equal_d(x, y)), &
+    "duplicate initial match")
+  call r1%u01(z)    ! advance only r1
+  call r1%u01(x)
+  call r2%u01(y)
+  call assert(size(x) == size(y) .and. .not. all(approx_equal_d(x, y)), &
+    "duplicate independence")
 
-call r1%free()
-call r2%free()
-call r3%free()
+  !------------------------------------------------------------
+  ! Serialize/deserialize: restore state exactly
+  call r1%seed(555_c_int32_t)
+  call r1%u01(x)
+  call r1%serialize(bytes)
+  call r1%u01(y)
+  call r3%create(engine)
+  call r3%deserialize(bytes)
+  call r3%u01(z)
+  call assert(size(y) == size(z) .and. all(approx_equal_d(y, z)), &
+    "deserialize restores state")
 
-write(*,'(A)') "OK: Fortran randompack tests passed."
-stop 0
+  !------------------------------------------------------------
+  ! Optional: squares_set_state repeatability
+  if (has_squares) then
+    call s1%create("squares")
+    call s2%create("squares")
+    call s1%squares_set_state(3_c_int64_t, 4_c_int64_t)
+    call s2%squares_set_state(3_c_int64_t, 4_c_int64_t)
+    call s1%u01(x)
+    call s2%u01(y)
+    call assert(size(x) == size(y) .and. all(approx_equal_d(x, y)), &
+      "squares_set_state repeatability")
+    call s1%free()
+    call s2%free()
+  end if
+
+  ! Optional: philox_set_state repeatability
+  if (has_philox) then
+    ctr%v = [1_c_int64_t, 2_c_int64_t, 3_c_int64_t, 4_c_int64_t]
+    key%v = [5_c_int64_t, 6_c_int64_t]
+    call p1%create("philox")
+    call p2%create("philox")
+    call p1%philox_set_state(ctr, key)
+    call p2%philox_set_state(ctr, key)
+    call p1%u01(x)
+    call p2%u01(y)
+    call assert(size(x) == size(y) .and. all(approx_equal_d(x, y)), &
+      "philox_set_state repeatability")
+    call p1%free()
+    call p2%free()
+  end if
+
+  call r1%free()
+  call r2%free()
+  call r3%free()
+
+  write(*,'(A)') "OK: Fortran randompack tests passed."
+  stop 0
 
 contains
 
-logical function has_name(names, target)
-  character(len=:), allocatable, intent(in) :: names(:)
-  character(len=*), intent(in) :: target
-  integer :: i
-  has_name = .false.
-  do i = 1, size(names)
-    if (trim(names(i)) == target) then
-      has_name = .true.
-      return
-    end if
-  end do
-end function
+  logical function has_name(names, target)
+    character(len=:), allocatable, intent(in) :: names(:)
+    character(len=*), intent(in) :: target
+    integer :: i
+    has_name = .false.
+    do i = 1, size(names)
+      if (trim(names(i)) == target) then
+        has_name = .true.
+        return
+      end if
+    end do
+  end function has_name
 
 end program test_randompack_fortran

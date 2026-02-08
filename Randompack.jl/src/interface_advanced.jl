@@ -251,10 +251,11 @@ end
 """
     Randompack.pcg64_set_state!(rng::RNG; state::Integer, inc::Integer)
 
-Set PCG64 state and increment (both 128-bit values).
+Set PCG64 state and increment (low 64 bits only).
 
-Values are range-checked and converted to `UInt128` before calling the C
-library. Throws if the RNG is not a pcg64 engine.
+Values are range-checked and converted to `UInt64` before calling the C
+library. The high 64 bits are set to zero. Throws if the RNG is not a
+pcg64 engine.
 
 # Examples
 ```julia
@@ -264,10 +265,10 @@ Randompack.pcg64_set_state!(rng; state=1, inc=2)
 """
 function pcg64_set_state!(rng::RNG; state::Integer, inc::Integer)
   rng.ptr == C_NULL && throw(ErrorException("RNG pointer is NULL"))
-  st = _u128_scalar_checked(state)
-  ic = _u128_scalar_checked(inc)
+  st = _u64_scalar_checked(state)
+  ic = _u64_scalar_checked(inc)
   ok = ccall((:randompack_pcg64_set_state, _libpath[]), Bool,
-             (UInt128, UInt128, RNGPtr), st, ic, rng.ptr)
+             (UInt64, UInt64, RNGPtr), st, ic, rng.ptr)
   _check_ok(ok, rng.ptr, "randompack_pcg64_set_state failed")
   return nothing
 end

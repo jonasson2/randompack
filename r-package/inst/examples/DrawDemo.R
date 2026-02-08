@@ -20,10 +20,7 @@ u64_halves <- function(x) {
 
 draw_u01 <- function(engine, seed, key) {
   rng <- randompack_rng(engine)
-  if (is.null(rng)) {
-    cat(sprintf("%s unavailable\n", engine))
-    return(invisible(NULL))
-  }
+  if (is.null(rng)) stop("engine creation failed")
   rng$seed(seed, as.integer(key))
   x <- rng$unif(2)
   cat(sprintf(fmt1, engine, seed, key, x[1], x[2]))
@@ -32,10 +29,7 @@ draw_u01 <- function(engine, seed, key) {
 
 draw_philox <- function(counter0, key0) {
   rng <- randompack_rng("philox")
-  if (is.null(rng)) {
-    cat("philox unavailable\n")
-    return(invisible(NULL))
-  }
+  if (is.null(rng)) stop("engine creation failed")
   counter <- c(u64_halves(counter0), 0, 0, 0, 0, 0, 0)
   key <- c(u64_halves(key0), 0, 0)
   rng$philox_set_state(counter, key)

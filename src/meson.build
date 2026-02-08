@@ -49,7 +49,7 @@ randompack_dep = declare_dependency(
 
 if get_option('build_test_variants')
   librandompack_no128 = static_library(
-    # Pretend neither HAVE128 nor HAVE128MUL
+    # Pretend HAVE128 is disabled
     'randompack_no128',
     randompack_src,
     include_directories: randompack_inc,
@@ -59,28 +59,10 @@ if get_option('build_test_variants')
     install: false,
   )
 
-  librandompack_pretend_windows = static_library(
-    # Pretend HAVE128MUL but not HAVE128 (Windows) 
-    'randompack_pretend_windows',
-    randompack_src,
-    include_directories: randompack_inc,
-    dependencies: [blas_dep] + math_deps,
-    c_args: ['-DRANDOMPACK_PRETEND_WINDOWS'] + accel_bug_args,
-    pic: true,
-    install: false,
-  )
   randompack_no128_dep = declare_dependency(
     link_with: librandompack_no128,
     include_directories: randompack_inc,
     dependencies: [blas_dep] + math_deps,
     compile_args: accel_bug_args,
   )
-
-  randompack_pretend_windows_dep = declare_dependency(
-    link_with: librandompack_pretend_windows,
-    include_directories: randompack_inc,
-    dependencies: [blas_dep] + math_deps,
-    compile_args: accel_bug_args,
-  )
 endif
-

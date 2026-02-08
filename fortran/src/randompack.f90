@@ -1,11 +1,12 @@
 module randompack
 use, intrinsic :: iso_c_binding, only: c_ptr, c_char, c_bool, c_int, &
-  c_size_t, c_double, c_float, c_int8_t, c_int64_t, c_null_ptr, c_null_char, &
-  c_associated, c_loc, c_f_pointer
-use, intrinsic :: iso_fortran_env, only: int64
+  c_size_t, c_double, c_float, c_int8_t, c_int32_t, c_int64_t, c_null_ptr, &
+  c_null_char, c_associated, c_loc, c_f_pointer
 implicit none
 private
-public :: rng, engines
+public :: randompack_rng, engines
+
+integer, parameter :: MAXSTRLEN = 1000
 
 type, bind(C) :: c_philox_ctr
   integer(c_int64_t) :: v(4)
@@ -16,14 +17,14 @@ type, bind(C) :: c_philox_key
 end type
 
 type, public :: randompack_philox_ctr
-  integer(int64) :: v(4)
+  integer(c_int64_t) :: v(4)
 end type
 
 type, public :: randompack_philox_key
-  integer(int64) :: v(2)
+  integer(c_int64_t) :: v(2)
 end type
 
-type :: rng
+type :: randompack_rng
   type(c_ptr) :: p = c_null_ptr
 contains
   procedure :: create => rp_create
@@ -107,17 +108,21 @@ contains
   procedure, private :: skew_normalf_vec
   procedure, private :: skew_normalf_mat
   generic :: skew_normal => skew_normal_vec, skew_normal_mat, skew_normalf_vec, skew_normalf_mat
-  procedure, private :: int_vec
-  procedure, private :: int_mat
-  generic :: int => int_vec, int_mat
+  procedure, private :: int32_vec
+  procedure, private :: int32_mat
+  procedure, private :: int64_vec
+  procedure, private :: int64_mat
+  generic :: int => int32_vec, int32_mat, int64_vec, int64_mat
   procedure :: serialize => rp_serialize
   procedure :: deserialize => rp_deserialize
-  procedure :: set_state => rp_set_state
+  procedure, private :: set_state32
+  procedure, private :: set_state64
+  generic :: set_state => set_state32, set_state64
   procedure :: philox_set_state => rp_philox_set_state
   procedure :: squares_set_state => rp_squares_set_state
   procedure :: last_error => rp_last_error
   final :: rp_finalize
-end type
+end type randompack_rng
 
 include "randompack_c.inc"
 
