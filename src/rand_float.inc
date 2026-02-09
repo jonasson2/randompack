@@ -16,7 +16,9 @@ ALWAYS_INLINE void rand_float_8x23(float x[], size_t len, uint32_t u32[]) {
 #if HAVE_AVX2
   __m256 scale = _mm256_set1_ps(0x1.0p-23f);
   for (; i + 7 < len; i += 8) {
-    __m256i r = _mm256_loadu_si256((const __m256i_u *)(u32 + i));
+	 __m256i r;
+	 memcpy(&r, u32 + i, 32);
+    //__m256i r = _mm256_loadu_si256((const __m256i_u *)(u32 + i));
     r = _mm256_srli_epi32(r, 9);
     __m256 d = _mm256_cvtepi32_ps(r);
     d = _mm256_mul_ps(d, scale);

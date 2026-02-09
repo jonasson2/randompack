@@ -182,6 +182,30 @@ static double time_sample(int n, int k, double bench_time, randompack_rng *rng) 
   return 1000000000*(t - t0)/calls;
 }
 
+static double time_long_long_range(int chunk, double bench_time, long long m,
+                                   long long n, randompack_rng *rng) {
+  long long *buf;
+  TEST_ALLOC(buf, chunk);
+  int reps = 1000000/chunk;
+  if (reps < 1)
+    reps = 1;
+  int calls = 0;
+  double t0 = get_time();
+  double t = t0;
+  while (t - t0 < bench_time) {
+    for (int i = 0; i < reps; i++) {
+      ASSERT(randompack_long_long(buf, chunk, m, n, rng));
+      consume_u64((uint64_t)buf[chunk - 1]);
+    }
+    calls += reps;
+    t = get_time();
+  }
+  FREE(buf);
+  if (calls == 0)
+    return 0;
+  return 1000000000*(t - t0)/(calls*chunk);
+}
+
 int main(int argc, char **argv) {
   char *engine;
   double bench_time;
@@ -206,16 +230,20 @@ int main(int argc, char **argv) {
     return 1;
   }
   warmup_cpu(100);
-  typedef struct { int m; int n; char *label; } int_spec;
-  int_spec int_ranges[] = {
-    { 0, 2, "[0,2]" },
-    { 1, 10, "[1,10]" },
-    { 1, 100, "[1,100]" },
-    { 1, 250, "[1,250]" },
-    { 1, 1000, "[1,1000]" },
-    { 1, 10000, "[1,10000]" },
-    { 1, 100000, "[1,100000]" },
-    { 1, 1000000, "[1,1000000]" },
+  struct { int n; char *label; } int_ranges[] = {
+    { 3, "1-3" },
+    { 20, "1-20" },
+    { 1000, "1-1000" },
+    { 100000, "1-1e5" },
+    { 10000000, "1-1e7" },
+    { 1000000000, "1-1e9" },
+  };
+  struct { long long n; char *label; } ll_ranges[] = {
+    { 10, "1-10" },
+    { 1000, "1-1e3" },
+    { 1000000, "1-1e6" },
+    { 10000000000LL, "1-1e10" },
+    { 1000000000000000000LL, "1-1e18" },
   };
   struct { uint8_t bound; char *label; } u8_specs[] = {
     { 2, "bound 2" },
@@ -238,8 +266,13 @@ int main(int argc, char **argv) {
   printf("chunk:            %d\n", chunk);
   printf("\n%-14s %8s\n", "int range", "ns/value");
   for (int i = 0; i < LEN(int_ranges); i++) {
-    double ns = time_int_range(chunk, bench_time, int_ranges[i].m, int_ranges[i].n, rng);
+    double ns = time_int_range(chunk, bench_time, 1, int_ranges[i].n, rng);
     printf("%-14s %8.2f\n", int_ranges[i].label, ns);
+  }
+  printf("\n%-14s %8s\n", "long long", "ns/value");
+  for (int i = 0; i < LEN(ll_ranges); i++) {
+    double ns = time_long_long_range(chunk, bench_time, 1, ll_ranges[i].n, rng);
+    printf("%-14s %8.2f\n", ll_ranges[i].label, ns);
   }
   printf("\n%-14s %8s\n", "uint8", "ns/value");
   for (int i = 0; i < LEN(u8_specs); i++) {

@@ -61,6 +61,20 @@ static void test_seed_changes_output(char *engine) {
   xCheck(!same);
 }
 
+static void test_large_ranges(char *engine) {
+  long long x[64];
+  randompack_rng *rng = create_seeded_rng(engine, 321);
+  bool ok = randompack_long_long(x, LEN(x), LLONG_MAX - 1000, LLONG_MAX - 1, rng);
+  check_success(ok, rng);
+  for (int i = 0; i < LEN(x); i++)
+    xCheck(x[i] >= LLONG_MAX - 1000 && x[i] <= LLONG_MAX - 1);
+  ok = randompack_long_long(x, LEN(x), LLONG_MIN + 1, LLONG_MIN + 1000, rng);
+  check_success(ok, rng);
+  for (int i = 0; i < LEN(x); i++)
+    xCheck(x[i] >= LLONG_MIN + 1 && x[i] <= LLONG_MIN + 1000);
+  randompack_free(rng);
+}
+
 void TestLongLong(void) {
   test_long_long_simple();
   int n = 0;
@@ -69,6 +83,7 @@ void TestLongLong(void) {
     char *e = engines[i];
     test_edge_cases(e);
     test_seed_changes_output(e);
+    test_large_ranges(e);
   }
   free_engines(engines, n);
 }

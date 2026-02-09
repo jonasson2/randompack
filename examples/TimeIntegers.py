@@ -59,6 +59,26 @@ def time_int_range(rng: np.random.Generator,
   return 1e9 * (t - t0) / total_vals
 
 
+def time_long_long_range(rng: np.random.Generator,
+                         chunk: int,
+                         bench_time: float,
+                         m: int,
+                         n: int) -> float:
+  reps = compute_reps(chunk)
+  calls = 0
+  t0 = time.perf_counter()
+  t = t0
+  while t - t0 < bench_time:
+    for _ in range(reps):
+      rng.integers(m, n + 1, size=chunk, dtype=np.int64)
+    calls += reps
+    t = time.perf_counter()
+  total_vals = calls * chunk
+  if total_vals <= 0:
+    return float("nan")
+  return 1e9 * (t - t0) / total_vals
+
+
 def time_uint8_bound(rng: np.random.Generator,
                      chunk: int,
                      bench_time: float,
@@ -136,13 +156,12 @@ def time_sample(rng: np.random.Generator,
 
 def make_int_ranges() -> List[IntRangeSpec]:
   return [
-    IntRangeSpec(0, 2, "[0,2]"),
-    IntRangeSpec(1, 10, "[1,10]"),
-    IntRangeSpec(1, 100, "[1,100]"),
-    IntRangeSpec(1, 1000, "[1,1000]"),
-    IntRangeSpec(1, 10000, "[1,10000]"),
-    IntRangeSpec(1, 100000, "[1,100000]"),
-    IntRangeSpec(1, 1000000, "[1,1000000]"),
+    IntRangeSpec(1, 3, "1-3"),
+    IntRangeSpec(1, 20, "1-20"),
+    IntRangeSpec(1, 1000, "1-1000"),
+    IntRangeSpec(1, 100000, "1-1e5"),
+    IntRangeSpec(1, 10000000, "1-1e7"),
+    IntRangeSpec(1, 1000000000, "1-1e9"),
   ]
 
 
@@ -168,10 +187,19 @@ def main() -> None:
     SampleSpec(1000, 501, "1000/501"),
     SampleSpec(1000, 990, "1000/990"),
   ]
+  ll_ranges = [
+    IntRangeSpec(1, 10, "1-10"),
+    IntRangeSpec(1, 1000, "1-1e3"),
+    IntRangeSpec(1, 1000000, "1-1e6"),
+    IntRangeSpec(1, 10000000000, "1-1e10"),
+    IntRangeSpec(1, 1000000000000000000, "1-1e18"),
+  ]
 
   # Warm up.
   for spec in int_ranges:
     rng.integers(spec.m, spec.n + 1, size=16, dtype=np.int32)
+  for spec in ll_ranges:
+    rng.integers(spec.m, spec.n + 1, size=16, dtype=np.int64)
   for spec in u8_specs:
     rng.integers(0, spec.bound, size=16, dtype=np.uint8)
   rng.integers(0, (1 << 64) // 3, size=16, dtype=np.uint64)
@@ -186,6 +214,10 @@ def main() -> None:
   print("\n%-14s %8s" % ("int range", "ns/value"))
   for spec in int_ranges:
     ns = time_int_range(rng, args.chunk, args.bench_time, spec.m, spec.n)
+    print("%-14s %8.2f" % (spec.label, ns))
+  print("\n%-14s %8s" % ("long long", "ns/value"))
+  for spec in ll_ranges:
+    ns = time_long_long_range(rng, args.chunk, args.bench_time, spec.m, spec.n)
     print("%-14s %8.2f" % (spec.label, ns))
   print("\n%-14s %8s" % ("uint8", "ns/value"))
   for spec in u8_specs:
