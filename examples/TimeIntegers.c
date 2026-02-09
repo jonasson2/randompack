@@ -64,8 +64,8 @@ static inline void consume_u64(uint64_t x) {
   sink ^= x;
 }
 
-static double time_int_range(int chunk, double bench_time, int m, int n,
-                             randompack_rng *rng) {
+static double time_int_range(int chunk, double bench_time, int m, int n, randompack_rng
+                             *rng) {
   int *buf;
   TEST_ALLOC(buf, chunk);
   int reps = 1000000/chunk;
@@ -210,7 +210,11 @@ int main(int argc, char **argv) {
   int_spec int_ranges[] = {
     { 0, 2, "[0,2]" },
     { 1, 10, "[1,10]" },
+    { 1, 100, "[1,100]" },
+    { 1, 250, "[1,250]" },
     { 1, 1000, "[1,1000]" },
+    { 1, 10000, "[1,10000]" },
+    { 1, 100000, "[1,100000]" },
     { 1, 1000000, "[1,1000000]" },
   };
   struct { uint8_t bound; char *label; } u8_specs[] = {
@@ -234,8 +238,7 @@ int main(int argc, char **argv) {
   printf("chunk:            %d\n", chunk);
   printf("\n%-14s %8s\n", "int range", "ns/value");
   for (int i = 0; i < LEN(int_ranges); i++) {
-    double ns = time_int_range(chunk, bench_time, int_ranges[i].m,
-                               int_ranges[i].n, rng);
+    double ns = time_int_range(chunk, bench_time, int_ranges[i].m, int_ranges[i].n, rng);
     printf("%-14s %8.2f\n", int_ranges[i].label, ns);
   }
   printf("\n%-14s %8s\n", "uint8", "ns/value");

@@ -169,6 +169,8 @@ use, intrinsic :: ieee_arithmetic, only: ieee_is_finite
   call assert(all(-4 <= im .and. im <= -1), "int32")
   call r1%int(iv64, -2_c_int64_t, 3_c_int64_t)
   call assert(all(-2 <= iv64 .and. iv64 <= 3), "int64")
+  call r1%int(iv64, 1_c_int32_t, 9_c_int32_t)
+  call assert(all(1 <= iv64 .and. iv64 <= 9), "int64 bounds32")
 
   !------------------------------------------------------------
   ! Determinism: seed resets stream

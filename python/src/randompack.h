@@ -55,6 +55,14 @@ bool randompack_int( // Generate uniform integers in [m, n], false on error
   randompack_rng *rng   // in/out  Random number generator
 );
 
+bool randompack_long_long( // Generate uniform long long in [m, n], false on error
+  long long x[],         // out     len-vector of integers
+  size_t len,            // in      Number of integers requested
+  long long m,           // in      Inclusive minimum
+  long long n,           // in      Inclusive maximum
+  randompack_rng *rng    // in/out  Random number generator
+);
+
 bool randompack_perm( // Generate a random permutation of 0..n-1, false on error
   int x[],              // out     n-vector containing the permutation
   int n,                // in      Permutation size

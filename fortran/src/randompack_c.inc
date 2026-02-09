@@ -315,6 +315,24 @@ interface
     type(c_ptr), value :: rngp
   end function
 
+  logical(c_bool) function crp_uint32(x, len, bound, rngp) &
+    bind(C, name="randompack_uint32")
+    import :: c_int32_t, c_size_t, c_ptr, c_bool
+    integer(c_int32_t) :: x(*)
+    integer(c_size_t), value :: len
+    integer(c_int32_t), value :: bound
+    type(c_ptr), value :: rngp
+  end function
+
+  logical(c_bool) function crp_uint64(x, len, bound, rngp) &
+    bind(C, name="randompack_uint64")
+    import :: c_int64_t, c_size_t, c_ptr, c_bool
+    integer(c_int64_t) :: x(*)
+    integer(c_size_t), value :: len
+    integer(c_int64_t), value :: bound
+    type(c_ptr), value :: rngp
+  end function
+
   logical(c_bool) function crp_engines(eng, desc, neng, eng_maxlen, desc_maxlen) bind(C, name="randompack_engines")
     import :: c_ptr, c_int, c_bool
     type(c_ptr), value :: eng

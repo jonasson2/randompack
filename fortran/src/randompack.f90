@@ -32,7 +32,9 @@ contains
   procedure :: duplicate => rp_duplicate
   procedure :: randomize => rp_randomize
   procedure :: full_mantissa => rp_full_mantissa
-  procedure :: seed => rp_seed
+  procedure, private :: seed32 => rp_seed32
+  procedure, private :: seed64 => rp_seed64
+  generic :: seed => seed32, seed64
   procedure, private :: u01_vec
   procedure, private :: u01_mat
   procedure, private :: u01f_vec
@@ -112,7 +114,15 @@ contains
   procedure, private :: int32_mat
   procedure, private :: int64_vec
   procedure, private :: int64_mat
-  generic :: int => int32_vec, int32_mat, int64_vec, int64_mat
+  procedure, private :: int64_vec32
+  procedure, private :: int64_mat32
+  generic :: int => int32_vec, int32_mat, int64_vec, int64_mat, &
+    int64_vec32, int64_mat32
+  procedure, private :: raw32_vec
+  procedure, private :: raw32_mat
+  procedure, private :: raw64_vec
+  procedure, private :: raw64_mat
+  generic :: raw => raw32_vec, raw32_mat, raw64_vec, raw64_mat
   procedure :: serialize => rp_serialize
   procedure :: deserialize => rp_deserialize
   procedure, private :: set_state32

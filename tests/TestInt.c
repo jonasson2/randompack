@@ -39,7 +39,7 @@ static void test_edge_cases(char *engine, int max) {
   xCheck(equal_vec(buf, orig, 4));
   ok = randompack_int(0, 4, 0, 10, rng);    check_failure(ok, rng); // null buffer w/len>0
   ok = randompack_int(buf, 4, 0, max, rng); check_success(ok, rng); // max span   
-  ok = randompack_int(buf, 4, -1, max, rng);check_failure(ok, rng); // max span + 1
+  ok = randompack_int(buf, 4, -1, max, rng);check_success(ok, rng); // max span + 1
   ok = randompack_int(buf, 4, 0, 10, 0);    xCheck(!ok);            // null rng
   ok = randompack_int(buf, 4, 5, 3, rng);   check_failure(ok, rng); // empty desired range
   randompack_free(rng);

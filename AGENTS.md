@@ -32,6 +32,8 @@ ARCHITECTURE
 - Sources under src/, tests live in tests/, examples in examples/
 - Use macros and helpers from randompack_config.h:
 -    STRSET, STRSETF, LEN, CLEAR, ALLOC, FREE, min, max
+- Do not manually edit r-package/src or python/src; they are synced from src
+  via syncR.sh and syncpy.sh
 - In tests, use utilities declared/defined in TestUtil.h
 - Meson/Ninja drive builds
 

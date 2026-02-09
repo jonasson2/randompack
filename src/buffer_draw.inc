@@ -71,6 +71,27 @@ ALWAYS_INLINE uint8_t draw_byte(randompack_rng *rng) {
   return b;
 }
 
+ALWAYS_INLINE uint16_t draw_u16(randompack_rng *rng) {
+  align16(rng);
+  fill_buf_if_empty(rng);
+  uint64_t w = rng->buf.u64[rng->buf_word];
+  uint16_t v = (uint16_t)(w >> (8*rng->buf_byte));
+  rng->buf_byte += 2;
+  if (rng->buf_byte >= 8) {
+    rng->buf_byte = 0;
+    rng->buf_word++;
+  }
+  return v;
+}
+
+ALWAYS_INLINE uint32_t draw_u32(randompack_rng *rng, int *w) {
+  if (*w >= 2*BUFSIZE) {
+    *w = rng->buf_word = 0;
+    rng->fill(rng, BUFSIZE);
+  }
+  return rng->buf.u32[(*w)++];
+}
+
 ALWAYS_INLINE uint64_t draw_u64(randompack_rng *rng, int *w) {
   if (*w >= BUFSIZE) {
     *w = rng->buf_word = 0;
@@ -81,14 +102,6 @@ ALWAYS_INLINE uint64_t draw_u64(randompack_rng *rng, int *w) {
 
 ALWAYS_INLINE uint64_t draw_u64_nocheck(randompack_rng *rng, int *w) {
   return rng->buf.u64[(*w)++];
-}
-
-ALWAYS_INLINE uint32_t draw_u32(randompack_rng *rng, int *w) {
-  if (*w >= 2*BUFSIZE) {
-    *w = rng->buf_word = 0;
-    rng->fill(rng, BUFSIZE);
-  }
-  return rng->buf.u32[(*w)++];
 }
 
 ALWAYS_INLINE uint32_t draw_u32_nocheck(randompack_rng *rng, int *w) {

@@ -72,6 +72,16 @@ if build_fortran
     'CheckFortranInts.f90',
     dependencies : [randompack_dep],
   )
+  bad_engine = executable(
+    'BadEngine',
+    'BadEngine.f90',
+    dependencies : [randompack_dep],
+  )
+  seed_too_large = executable(
+    'SeedTooLarge',
+    'SeedTooLarge.f90',
+    dependencies : [randompack_dep],
+  )
 endif
 
 testu01_prefix = get_option('TestU01')

@@ -43,54 +43,23 @@ subroutine check_kinds()
   done = .true.
 end subroutine
 
-subroutine rp_die(self, where)
+function rp_error_message(self, where) result(msg)
   class(randompack_rng), intent(in) :: self
   character(len=*), intent(in) :: where
+  character(len=:), allocatable :: msg
   character(len=:), allocatable :: emsg
   type(c_ptr) :: p
   if (.not. c_associated(self%p)) then
-    error stop where//": rng not created"
+    msg = where//": rng not created"
+    return
   end if
   p = crp_last_error(self%p)
   emsg = cstr_to_fstring(p)
   if (len(emsg) == 0) then
-    write(*,'(A)') where//": randompack call failed"
-    error stop where//": randompack call failed"
+    msg = where//": randompack call failed"
   else
-    write(*,'(A)') where//": "//trim(emsg)
-    error stop where//": "//trim(emsg)
+    msg = where//": "//trim(emsg)
   end if
-end subroutine
-
-logical function rp_check(self, where, ok) result(go)
-  class(randompack_rng), intent(in) :: self
-  character(len=*), intent(in) :: where
-  logical, intent(out), optional :: ok
-  if (.not. c_associated(self%p)) then
-    if (present(ok)) then
-      ok = .false.
-      go = .false.
-      return
-    end if
-    call rp_die(self, where)
-  end if
-  go = .true.
-end function
-
-logical function rp_check_ok(self, where, ok, c_ok) result(go)
-  class(randompack_rng), intent(in) :: self
-  character(len=*), intent(in) :: where
-  logical, intent(out), optional :: ok
-  logical(c_bool), intent(in) :: c_ok
-  if (.not. c_ok) then
-    if (present(ok)) then
-      ok = .false.
-      go = .false.
-      return
-    end if
-    call rp_die(self, where)
-  end if
-  go = .true.
 end function
 
 subroutine engines(names, descriptions)

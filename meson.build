@@ -167,6 +167,9 @@ endif
 if accel_bug_workaround or (want_fortran and not build_fortran_opt.auto())
   add_languages('fortran', required: true)
   fc = meson.get_compiler('fortran')
+  if fc.get_id() == 'gcc'
+    add_project_arguments('-fno-backtrace', language: 'fortran')
+  endif
   add_project_arguments('-Wno-do-subscript', language : 'fortran')
   add_project_arguments(
     fc.get_supported_arguments(['-Wno-function-elimination']),

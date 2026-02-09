@@ -20,6 +20,61 @@ static int LastNonzeroColumn(int m, int n, double A[]) {
 #include "norm_exp.inc"
 #include "rand_dble.inc"
 
+ALWAYS_INLINE int draw_bounded_32(randompack_rng *rng, int *w, int m, int n) {
+  uint32_t b = (uint32_t)(n - m) + 1u;
+  if (b == 0) return (int)draw_u32(rng, w);
+  if (b <= 0x100u) {
+    uint32_t thresh = 0x100u % b;
+    for (;;) {
+      uint32_t r = draw_byte(rng);
+      if (r >= thresh) return m + (int)(r % b);
+    }
+  }
+  if (b <= 0x10000u) {
+    uint32_t thresh = 0x10000u % b;
+    for (;;) {
+      uint32_t r = draw_u16(rng);
+      if (r >= thresh) return m + (int)(r % b);
+    }
+  }
+  uint32_t thresh = (-b) % b;
+  for (;;) {
+    uint32_t r = draw_u32(rng, w);
+    if (r >= thresh) return m + (int)(r % b);
+  }
+}
+
+ALWAYS_INLINE long long draw_bounded_64(randompack_rng *rng, int *w, long long m, long long n) {
+  uint64_t b = (uint64_t)(n - m) + 1u;
+  if (b == 0) return (long long)draw_u64(rng, w);
+  if (b <= 0x100u) {
+    uint64_t thresh = 0x100u % b;
+    for (;;) {
+      uint64_t r = draw_byte(rng);
+      if (r >= thresh) return m + (long long)(r % b);
+    }
+  }
+  if (b <= 0x10000u) {
+    uint64_t thresh = 0x10000u % b;
+    for (;;) {
+      uint64_t r = draw_u16(rng);
+      if (r >= thresh) return m + (long long)(r % b);
+    }
+  }
+  if (b <= 0x100000000u) {
+    uint64_t thresh = 0x100000000u % b;
+    for (;;) {
+      uint64_t r = draw_u32(rng, w);
+      if (r >= thresh) return m + (long long)(r % b);
+    }
+  }
+  uint64_t thresh = (-b) % b;
+  for (;;) {
+    uint64_t r = draw_u64(rng, w);
+    if (r >= thresh) return m + (long long)(r % b);
+  }
+}
+
 static void rand_uint64(uint64_t x[], size_t n, uint64_t bound, randompack_rng *rng) {
   // Sets x to n random integers in {0, 1,..., bound-1}
   if (bound == 0) {

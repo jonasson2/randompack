@@ -19,10 +19,14 @@ cdef extern from "randompack.h":
                             int *eng_maxlen, int *desc_maxlen)
 
     bint randompack_int(int *x, size_t len, int m, int n, randompack_rng *rng)
+    bint randompack_long_long(long long *x, size_t len, long long m, long long n,
+                              randompack_rng *rng)
     bint randompack_uint32(uint32_t *x, size_t len, uint32_t bound,
                            randompack_rng *rng)
     bint randompack_uint64(uint64_t *x, size_t len, uint64_t bound,
                            randompack_rng *rng)
+    bint randompack_perm(int *x, int n, randompack_rng *rng)
+    bint randompack_sample(int *x, int n, int k, randompack_rng *rng)
 
     bint randompack_unif(double *x, size_t n, double a, double b,
                          randompack_rng *rng) nogil
@@ -50,6 +54,9 @@ cdef extern from "randompack.h":
                             randompack_rng *rng) nogil
     bint randompack_skew_normal(double *x, size_t n, double mu, double sigma,
                                 double alpha, randompack_rng *rng) nogil
+    bint randompack_mvn(char *transp, double *mu, double *Sig, int d, size_t n,
+                        double *X, int ldX, double *L,
+                        randompack_rng *rng) nogil
 
     bint randompack_uniff(float *x, size_t n, float a, float b,
                           randompack_rng *rng) nogil
@@ -88,3 +95,5 @@ cdef extern from "randompack.h":
                                      randompack_rng *rng)
     bint randompack_squares_set_state(uint64_t ctr, uint64_t key,
                                       randompack_rng *rng)
+    bint randompack_set_state(uint64_t *state, int nstate,
+                              randompack_rng *rng)

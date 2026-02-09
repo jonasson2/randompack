@@ -63,6 +63,7 @@ struct randompack_rng {
   engine_fill fill;
   bool usefullmantissa;
   union {
+    uint16_t u16[4*BUFSIZE];
     uint32_t u32[2*BUFSIZE];
     uint64_t u64[BUFSIZE];
   } buf;
@@ -437,33 +438,108 @@ bool randompack_uint64(uint64_t x[], size_t len, uint64_t bound, randompack_rng 
   else
     rng->last_error = 0;
   if (rng->last_error) return false;
-
   rand_uint64(x, len, bound, rng);
   return true;
 }
 
 //============================= Discrete distributions ===================================
 
-bool randompack_int(int x[], size_t len, int m, int n, randompack_rng *rng) {
+bool randompack_int(int x[], size_t n, int m, int nn, randompack_rng *rng) {
   if (!rng) return false;
-  int64_t span = (int64_t)n - (int64_t)m;
   if (!x)
     rng->last_error = "invalid arguments to randompack_int";
-  else if (m > n)
+  else if (m > nn)
     rng->last_error = "randompack int: m must be <= n";
-  else if (span > INT_MAX)
-    rng->last_error = "randompack int: n - m must be < 2^31";
   else
     rng->last_error = 0;
   if (rng->last_error) return false;
-  
-  rand_uint32((uint32_t*)x, len, span + 1, rng);
-  for (size_t i = 0; i < len; i++) x[i] += m;
+  uint32_t bound = (uint32_t)(nn - m) + 1u;
+  size_t i = 0;
+  int w = enter_u32_mode(rng);
+  if (bound == 0) {
+    while (i < n) {
+      uint64_t R = draw_u64(rng, &w);
+      x[i++] = (int)(uint32_t)R;
+      if (i >= n) break;
+      x[i++] = (int)(uint32_t)(R >> 32);
+    }
+  }
+  else if (bound <= 0x100u) {
+    uint32_t b = bound;
+    uint32_t thresh = 0x100u % b;
+    while (i < n) {
+      uint64_t R = draw_u64(rng, &w);
+      for (int j = 0; j < 8; j++) {
+        uint32_t r = (uint8_t)R;
+        if (r >= thresh) x[i++] = m + (int)(r % b);
+        if (i >= n) break;
+        R >>= 8;
+      }
+    }
+  }
+  else if (bound <= 0x10000u) {
+    uint32_t b = bound;
+    uint32_t thresh = 0x10000u % b;
+    while (i < n) {
+      uint64_t R = draw_u64(rng, &w);
+      for (int j = 0; j < 4; j++) {
+        uint32_t r = (uint16_t)R;
+        if (r >= thresh) x[i++] = m + (int)(r % b);
+        if (i >= n) break;
+        R >>= 16;
+      }
+    }
+  }
+  else {
+    uint32_t b = bound;
+    uint32_t thresh = (-b) % b;
+    while (i < n) {
+      uint64_t R = draw_u64(rng, &w);
+      uint32_t r = (uint32_t)R;
+      if (r >= thresh) x[i++] = m + (int)(r % b);
+      if (i >= n) break;
+      r = (uint32_t)(R >> 32);
+      if (r >= thresh) x[i++] = m + (int)(r % b);
+    }
+  }
+  exit_u32_mode(rng, w);
   return true;
 }
+// bool randompack_int(int x[], size_t len, int m, int n, randompack_rng *rng) {
+//   if (!rng) return false;
+//   if (!x)
+//     rng->last_error = "invalid arguments to randompack_int";
+//   else if (m > n)
+//     rng->last_error = "randompack int: m must be <= n";
+//   else
+//     rng->last_error = 0;
+//   if (rng->last_error) return false;
+//   int w = enter_u32_mode(rng);
+//   for (size_t i = 0; i < len; i++) x[i] = draw_bounded_32(rng, &w, m, n);
+//   exit_u32_mode(rng, w);
+//   return true;
+// }
+
+// bool randompack_int(int x[], size_t len, int m, int n, randompack_rng *rng) {
+//   if (!rng) return false;
+//   int64_t span = (int64_t)n - (int64_t)m;
+//   if (!x)
+//     rng->last_error = "invalid arguments to randompack_int";
+//   else if (m > n)
+//     rng->last_error = "randompack int: m must be <= n";
+//   else if (span > INT_MAX)
+//     rng->last_error = "randompack int: n - m must be < 2^31";
+//   else
+//     rng->last_error = 0;
+//   if (rng->last_error) return false;
+//   rand_uint32((uint32_t*)x, len, span + 1, rng);
+//   for (size_t i = 0; i < len; i++) x[i] += m;
+//   return true;
+// }
+
 
 bool randompack_long_long(long long x[], size_t len, long long m, long long n,
-  randompack_rng *rng) {
+								  randompack_rng *rng) {
   if (!rng) return false;
   if (!x)
     rng->last_error = "invalid arguments to randompack_long_long";
@@ -472,18 +548,34 @@ bool randompack_long_long(long long x[], size_t len, long long m, long long n,
   else
     rng->last_error = 0;
   if (rng->last_error) return false;
-  if (m == LLONG_MIN && n == LLONG_MAX) {
-    rand_uint64((uint64_t*)x, len, 0, rng);
-    return true;
-  }
-  uint64_t span = (uint64_t)n - (uint64_t)m;
-  rand_uint64((uint64_t*)x, len, span + 1, rng);
-  for (size_t i = 0; i < len; i++) {
-    uint64_t u = (uint64_t)x[i] + (uint64_t)m;
-    x[i] = (long long)u;
-  }
+  int w = enter_u64_mode(rng);
+  for (size_t i = 0; i < len; i++) x[i] = draw_bounded_64(rng, &w, m, n);
+  exit_u64_mode(rng, w);
   return true;
 }
+
+// bool randompack_long_long(long long x[], size_t len, long long m, long long n,
+//   randompack_rng *rng) {
+//   if (!rng) return false;
+//   if (!x)
+//     rng->last_error = "invalid arguments to randompack_long_long";
+//   else if (m > n)
+//     rng->last_error = "randompack long long: m must be <= n";
+//   else
+//     rng->last_error = 0;
+//   if (rng->last_error) return false;
+//   if (m == LLONG_MIN && n == LLONG_MAX) {
+//     rand_uint64((uint64_t*)x, len, 0, rng);
+//     return true;
+//   }
+//   uint64_t span = (uint64_t)n - (uint64_t)m;
+//   rand_uint64((uint64_t*)x, len, span + 1, rng);
+//   for (size_t i = 0; i < len; i++) {
+//     uint64_t u = (uint64_t)x[i] + (uint64_t)m;
+//     x[i] = (long long)u;
+//   }
+//   return true;
+// }
 
 bool randompack_perm(int x[], int len, randompack_rng *rng) {
   if (!rng) return false;

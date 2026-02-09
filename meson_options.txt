@@ -43,7 +43,7 @@ option('simd',
 option('build_test_variants',
   type: 'boolean',
   value: false,
-  description: 'Build internal test variants (no128, pretend_windows)'
+  description: 'Build internal test variant: no128'
 )
 
 option('perf', type: 'boolean', value: false, description: 'Enable performance benchmarking flags/macros')

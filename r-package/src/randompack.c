@@ -437,7 +437,6 @@ bool randompack_uint64(uint64_t x[], size_t len, uint64_t bound, randompack_rng 
   else
     rng->last_error = 0;
   if (rng->last_error) return false;
-
   rand_uint64(x, len, bound, rng);
   return true;
 }
@@ -456,7 +455,6 @@ bool randompack_int(int x[], size_t len, int m, int n, randompack_rng *rng) {
   else
     rng->last_error = 0;
   if (rng->last_error) return false;
-  
   rand_uint32((uint32_t*)x, len, span + 1, rng);
   for (size_t i = 0; i < len; i++) x[i] += m;
   return true;

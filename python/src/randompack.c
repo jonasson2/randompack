@@ -437,7 +437,6 @@ bool randompack_uint64(uint64_t x[], size_t len, uint64_t bound, randompack_rng 
   else
     rng->last_error = 0;
   if (rng->last_error) return false;
-
   rand_uint64(x, len, bound, rng);
   return true;
 }
@@ -456,9 +455,31 @@ bool randompack_int(int x[], size_t len, int m, int n, randompack_rng *rng) {
   else
     rng->last_error = 0;
   if (rng->last_error) return false;
-  
   rand_uint32((uint32_t*)x, len, span + 1, rng);
   for (size_t i = 0; i < len; i++) x[i] += m;
+  return true;
+}
+
+bool randompack_long_long(long long x[], size_t len, long long m, long long n,
+  randompack_rng *rng) {
+  if (!rng) return false;
+  if (!x)
+    rng->last_error = "invalid arguments to randompack_long_long";
+  else if (m > n)
+    rng->last_error = "randompack long long: m must be <= n";
+  else
+    rng->last_error = 0;
+  if (rng->last_error) return false;
+  if (m == LLONG_MIN && n == LLONG_MAX) {
+    rand_uint64((uint64_t*)x, len, 0, rng);
+    return true;
+  }
+  uint64_t span = (uint64_t)n - (uint64_t)m;
+  rand_uint64((uint64_t*)x, len, span + 1, rng);
+  for (size_t i = 0; i < len; i++) {
+    uint64_t u = (uint64_t)x[i] + (uint64_t)m;
+    x[i] = (long long)u;
+  }
   return true;
 }
 
