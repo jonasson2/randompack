@@ -261,6 +261,22 @@ The examples subfolodr contains additional example programs.
           return 0;
         }
 
+### Raw bitstream example
+
+        #include <stdio.h>
+        #include "randompack.h"
+
+        int main(void) {
+          randompack_rng *rng = randompack_create(0);
+          long long xi[2];
+          unsigned char xb[1];
+          randompack_raw(xi, sizeof(xi), rng);
+          randompack_raw(xb, sizeof(xb), rng);
+          printf("%lld %lld %u\n", xi[0], xi[1], (unsigned)xb[0]);
+          randompack_free(rng);
+          return 0;
+        }
+
 ### Example with full error checking
         #include <stdio.h>
         #include "randompack.h"
