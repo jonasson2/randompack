@@ -1,0 +1,121 @@
+#!/usr/bin/env python3
+# TimeRandompack.py
+# Time randompack distributions in Python (ns/value)
+
+import argparse
+import os
+import sys
+import time
+
+import numpy as np
+
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if ROOT not in sys.path:
+  sys.path.insert(0, ROOT)
+
+import randompack as rp
+
+
+def compute_reps(chunk: int) -> int:
+  return max(1, 1_000_000 // chunk)
+
+
+def time_dist(fn, buf, chunk: int, reps: int, bench_time: float) -> float:
+  calls = 0
+  t0 = time.perf_counter()
+  t = t0
+  while t - t0 < bench_time:
+    for _ in range(reps):
+      fn(buf)
+      sink = buf[chunk - 1]
+    calls += reps
+    t = time.perf_counter()
+  if calls == 0:
+    return float("nan")
+  return 1e9 * (t - t0) / (calls * chunk)
+
+
+def main() -> None:
+  parser = argparse.ArgumentParser(
+    description="Time randompack distributions in Python (ns/value)")
+  parser.add_argument("engine", nargs="?", default="",
+                      help="engine name (default x256++simd)")
+  parser.add_argument("-t", type=float, default=0.2, dest="bench_time",
+                      help="benchmark time per case (seconds)")
+  parser.add_argument("-c", type=int, default=4096, dest="chunk",
+                      help="chunk size (values per call)")
+  args = parser.parse_args()
+
+  engine = args.engine if args.engine else "x256++simd"
+  rng = rp.Rng(engine)
+
+  chunk = args.chunk
+  bench_time = args.bench_time
+  reps = compute_reps(chunk)
+  buf = np.empty(chunk, dtype=np.float64)
+
+  print(f"Engine: {engine}")
+  print(f"{'Distribution':<18} {'ns/value':>8}")
+
+  # Warmup
+  t0 = time.perf_counter()
+  while time.perf_counter() - t0 < 0.1:
+    rng.unif(out=buf)
+  t1 = time.perf_counter()
+  print(f"Warmup time: {t1 - t0:.3f} s\n")
+
+  ns = time_dist(lambda b: rng.unif(out=b), buf, chunk, reps, bench_time)
+  print(f"{'u01':<18} {ns:8.2f}")
+
+  ns = time_dist(lambda b: rng.unif(out=b, a=2, b=5), buf, chunk, reps, bench_time)
+  print(f"{'unif(2,5)':<18} {ns:8.2f}")
+
+  ns = time_dist(lambda b: rng.normal(out=b), buf, chunk, reps, bench_time)
+  print(f"{'norm':<18} {ns:8.2f}")
+
+  ns = time_dist(lambda b: rng.normal(out=b, mu=2, sigma=3), buf, chunk, reps,
+                 bench_time)
+  print(f"{'normal(2,3)':<18} {ns:8.2f}")
+
+  ns = time_dist(lambda b: rng.exp(out=b, scale=1), buf, chunk, reps, bench_time)
+  print(f"{'exp(1)':<18} {ns:8.2f}")
+
+  ns = time_dist(lambda b: rng.exp(out=b, scale=2), buf, chunk, reps, bench_time)
+  print(f"{'exp(2)':<18} {ns:8.2f}")
+
+  ns = time_dist(lambda b: rng.lognormal(out=b, mu=0, sigma=1), buf, chunk, reps,
+                 bench_time)
+  print(f"{'lognormal(0,1)':<18} {ns:8.2f}")
+
+  ns = time_dist(lambda b: rng.gumbel(out=b, mu=0, beta=1), buf, chunk, reps,
+                 bench_time)
+  print(f"{'gumbel(0,1)':<18} {ns:8.2f}")
+
+  ns = time_dist(lambda b: rng.pareto(out=b, xm=1, alpha=2), buf, chunk, reps,
+                 bench_time)
+  print(f"{'pareto(1,2)':<18} {ns:8.2f}")
+
+  ns = time_dist(lambda b: rng.gamma(out=b, shape=2, scale=3), buf, chunk, reps,
+                 bench_time)
+  print(f"{'gamma(2,3)':<18} {ns:8.2f}")
+
+  ns = time_dist(lambda b: rng.chi2(out=b, nu=5), buf, chunk, reps, bench_time)
+  print(f"{'chi2(5)':<18} {ns:8.2f}")
+
+  ns = time_dist(lambda b: rng.beta(out=b, a=2, b=5), buf, chunk, reps, bench_time)
+  print(f"{'beta(2,5)':<18} {ns:8.2f}")
+
+  ns = time_dist(lambda b: rng.t(out=b, nu=10), buf, chunk, reps, bench_time)
+  print(f"{'t(10)':<18} {ns:8.2f}")
+
+  ns = time_dist(lambda b: rng.f(out=b, nu1=5, nu2=10), buf, chunk, reps,
+                 bench_time)
+  print(f"{'F(5,10)':<18} {ns:8.2f}")
+
+  ns = time_dist(lambda b: rng.weibull(out=b, shape=2, scale=1), buf, chunk, reps,
+                 bench_time)
+  print(f"{'weibull(2,1)':<18} {ns:8.2f}")
+
+
+if __name__ == "__main__":
+  main()

@@ -220,13 +220,13 @@ static void rand_sample_reservoir(int p[], int n, int k, randompack_rng *rng) {
 }
 
 static void rand_sample_floyd(int p[], int n, int k, randompack_rng *rng) {
-  // Floyd: O(k) expected. p[0..k-1] gets k distinct integers from 0..n-1.
+  // Floyd's algorithm: O(k) expected. p[0..k-1] gets k distinct integers from 0..n-1.
   if (k <= 0) return;
   int m = 1;
   while (m < 2*k) m <<= 1;
   int mask = m - 1;
   int *keys;
-  if (!ALLOC(keys, m)) {
+  if (!ALLOC(keys, m)) { // fall-back
     rand_sample_reservoir(p, n, k, rng);
     return;
   }
@@ -243,6 +243,7 @@ static void rand_sample_floyd(int p[], int n, int k, randompack_rng *rng) {
 }
 
 static void rand_sample(int p[], int n, int k, randompack_rng *rng) {
+  // Floyd for small k, reservoir for big k
   if (k <= n/2) rand_sample_floyd(p, n, k, rng);
   else rand_sample_reservoir(p, n, k, rng);
 }

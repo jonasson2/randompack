@@ -113,247 +113,263 @@ subroutine rp_seed64(self, seed, spawn_key)
   if (.not. c_ok) error stop rp_error_message(self, "seed")
 end subroutine
 
-subroutine u01_vec(self, x)
-  class(randompack_rng), intent(inout) :: self
-  double precision, intent(out) :: x(:)
-  logical(c_bool) :: c_ok
-  if (.not. c_associated(self%p)) error stop rp_error_message(self, "u01")
-  c_ok = crp_u01(x, int(size(x), c_size_t), self%p)
-  if (.not. c_ok) error stop rp_error_message(self, "u01")
-end subroutine
-
-subroutine u01_mat(self, x)
-  class(randompack_rng), intent(inout) :: self
-  double precision, intent(out) :: x(:,:)
-  logical(c_bool) :: c_ok
-  if (.not. c_associated(self%p)) error stop rp_error_message(self, "u01")
-  c_ok = crp_u01(x, int(size(x), c_size_t), self%p)
-  if (.not. c_ok) error stop rp_error_message(self, "u01")
-end subroutine
-
-subroutine u01f_vec(self, x)
-  class(randompack_rng), intent(inout) :: self
-  real, intent(out) :: x(:)
-  logical(c_bool) :: c_ok
-  if (.not. c_associated(self%p)) error stop rp_error_message(self, "u01")
-  c_ok = crp_u01f(x, int(size(x), c_size_t), self%p)
-  if (.not. c_ok) error stop rp_error_message(self, "u01")
-end subroutine
-
-subroutine u01f_mat(self, x)
-  class(randompack_rng), intent(inout) :: self
-  real, intent(out) :: x(:,:)
-  logical(c_bool) :: c_ok
-  if (.not. c_associated(self%p)) error stop rp_error_message(self, "u01")
-  c_ok = crp_u01f(x, int(size(x), c_size_t), self%p)
-  if (.not. c_ok) error stop rp_error_message(self, "u01")
-end subroutine
-
 subroutine unif_vec(self, x, a, b)
   class(randompack_rng), intent(inout) :: self
   double precision, intent(out) :: x(:)
-  double precision, intent(in) :: a
-  double precision, intent(in) :: b
+  double precision, intent(in), optional :: a
+  double precision, intent(in), optional :: b
+  double precision :: aa, bb
   logical(c_bool) :: c_ok
   if (.not. c_associated(self%p)) error stop rp_error_message(self, "unif")
-  c_ok = crp_unif(x, int(size(x), c_size_t), a, b, self%p)
+  aa = 0
+  bb = 1
+  if (present(a)) aa = a
+  if (present(b)) bb = b
+  if (.not. (aa < bb)) error stop "unif: require a < b"
+  c_ok = crp_unif(x, int(size(x), c_size_t), aa, bb, self%p)
   if (.not. c_ok) error stop rp_error_message(self, "unif")
 end subroutine
 
 subroutine unif_mat(self, x, a, b)
   class(randompack_rng), intent(inout) :: self
   double precision, intent(out) :: x(:,:)
-  double precision, intent(in) :: a
-  double precision, intent(in) :: b
+  double precision, intent(in), optional :: a
+  double precision, intent(in), optional :: b
+  double precision :: aa, bb
   logical(c_bool) :: c_ok
   if (.not. c_associated(self%p)) error stop rp_error_message(self, "unif")
-  c_ok = crp_unif(x, int(size(x), c_size_t), a, b, self%p)
+  aa = 0
+  bb = 1
+  if (present(a)) aa = a
+  if (present(b)) bb = b
+  if (.not. (aa < bb)) error stop "unif: require a < b"
+  c_ok = crp_unif(x, int(size(x), c_size_t), aa, bb, self%p)
   if (.not. c_ok) error stop rp_error_message(self, "unif")
 end subroutine
 
 subroutine uniff_vec(self, x, a, b)
   class(randompack_rng), intent(inout) :: self
   real, intent(out) :: x(:)
-  real, intent(in) :: a
-  real, intent(in) :: b
+  real, intent(in), optional :: a
+  real, intent(in), optional :: b
+  real :: aa, bb
   logical(c_bool) :: c_ok
   if (.not. c_associated(self%p)) error stop rp_error_message(self, "unif")
-  c_ok = crp_uniff(x, int(size(x), c_size_t), a, b, self%p)
+  aa = 0
+  bb = 1
+  if (present(a)) aa = a
+  if (present(b)) bb = b
+  if (.not. (aa < bb)) error stop "unif: require a < b"
+  c_ok = crp_uniff(x, int(size(x), c_size_t), aa, bb, self%p)
   if (.not. c_ok) error stop rp_error_message(self, "unif")
 end subroutine
 
 subroutine uniff_mat(self, x, a, b)
   class(randompack_rng), intent(inout) :: self
   real, intent(out) :: x(:,:)
-  real, intent(in) :: a
-  real, intent(in) :: b
+  real, intent(in), optional :: a
+  real, intent(in), optional :: b
+  real :: aa, bb
   logical(c_bool) :: c_ok
   if (.not. c_associated(self%p)) error stop rp_error_message(self, "unif")
-  c_ok = crp_uniff(x, int(size(x), c_size_t), a, b, self%p)
+  aa = 0
+  bb = 1
+  if (present(a)) aa = a
+  if (present(b)) bb = b
+  if (.not. (aa < bb)) error stop "unif: require a < b"
+  c_ok = crp_uniff(x, int(size(x), c_size_t), aa, bb, self%p)
   if (.not. c_ok) error stop rp_error_message(self, "unif")
-end subroutine
-
-subroutine norm_vec(self, x)
-  class(randompack_rng), intent(inout) :: self
-  double precision, intent(out) :: x(:)
-  logical(c_bool) :: c_ok
-  if (.not. c_associated(self%p)) error stop rp_error_message(self, "norm")
-  c_ok = crp_norm(x, int(size(x), c_size_t), self%p)
-  if (.not. c_ok) error stop rp_error_message(self, "norm")
-end subroutine
-
-subroutine norm_mat(self, x)
-  class(randompack_rng), intent(inout) :: self
-  double precision, intent(out) :: x(:,:)
-  logical(c_bool) :: c_ok
-  if (.not. c_associated(self%p)) error stop rp_error_message(self, "norm")
-  c_ok = crp_norm(x, int(size(x), c_size_t), self%p)
-  if (.not. c_ok) error stop rp_error_message(self, "norm")
-end subroutine
-
-subroutine normf_vec(self, x)
-  class(randompack_rng), intent(inout) :: self
-  real, intent(out) :: x(:)
-  logical(c_bool) :: c_ok
-  if (.not. c_associated(self%p)) error stop rp_error_message(self, "norm")
-  c_ok = crp_normf(x, int(size(x), c_size_t), self%p)
-  if (.not. c_ok) error stop rp_error_message(self, "norm")
-end subroutine
-
-subroutine normf_mat(self, x)
-  class(randompack_rng), intent(inout) :: self
-  real, intent(out) :: x(:,:)
-  logical(c_bool) :: c_ok
-  if (.not. c_associated(self%p)) error stop rp_error_message(self, "norm")
-  c_ok = crp_normf(x, int(size(x), c_size_t), self%p)
-  if (.not. c_ok) error stop rp_error_message(self, "norm")
 end subroutine
 
 subroutine normal_vec(self, x, mu, sigma)
   class(randompack_rng), intent(inout) :: self
   double precision, intent(out) :: x(:)
-  double precision, intent(in) :: mu
-  double precision, intent(in) :: sigma
+  double precision, intent(in), optional :: mu
+  double precision, intent(in), optional :: sigma
+  double precision :: mu0, sig0
   logical(c_bool) :: c_ok
   if (.not. c_associated(self%p)) error stop rp_error_message(self, "normal")
-  c_ok = crp_normal(x, int(size(x), c_size_t), mu, sigma, self%p)
+  mu0 = 0
+  sig0 = 1
+  if (present(mu)) mu0 = mu
+  if (present(sigma)) sig0 = sigma
+  if (.not. (sig0 > 0)) error stop "normal: sigma must be positive"
+  c_ok = crp_normal(x, int(size(x), c_size_t), mu0, sig0, self%p)
   if (.not. c_ok) error stop rp_error_message(self, "normal")
 end subroutine
 
 subroutine normal_mat(self, x, mu, sigma)
   class(randompack_rng), intent(inout) :: self
   double precision, intent(out) :: x(:,:)
-  double precision, intent(in) :: mu
-  double precision, intent(in) :: sigma
+  double precision, intent(in), optional :: mu
+  double precision, intent(in), optional :: sigma
+  double precision :: mu0, sig0
   logical(c_bool) :: c_ok
   if (.not. c_associated(self%p)) error stop rp_error_message(self, "normal")
-  c_ok = crp_normal(x, int(size(x), c_size_t), mu, sigma, self%p)
+  mu0 = 0
+  sig0 = 1
+  if (present(mu)) mu0 = mu
+  if (present(sigma)) sig0 = sigma
+  if (.not. (sig0 > 0)) error stop "normal: sigma must be positive"
+  c_ok = crp_normal(x, int(size(x), c_size_t), mu0, sig0, self%p)
   if (.not. c_ok) error stop rp_error_message(self, "normal")
 end subroutine
 
 subroutine normalf_vec(self, x, mu, sigma)
   class(randompack_rng), intent(inout) :: self
   real, intent(out) :: x(:)
-  real, intent(in) :: mu
-  real, intent(in) :: sigma
+  real, intent(in), optional :: mu
+  real, intent(in), optional :: sigma
+  real :: mu0, sig0
   logical(c_bool) :: c_ok
   if (.not. c_associated(self%p)) error stop rp_error_message(self, "normal")
-  c_ok = crp_normalf(x, int(size(x), c_size_t), mu, sigma, self%p)
+  mu0 = 0
+  sig0 = 1
+  if (present(mu)) mu0 = mu
+  if (present(sigma)) sig0 = sigma
+  if (.not. (sig0 > 0)) error stop "normal: sigma must be positive"
+  c_ok = crp_normalf(x, int(size(x), c_size_t), mu0, sig0, self%p)
   if (.not. c_ok) error stop rp_error_message(self, "normal")
 end subroutine
 
 subroutine normalf_mat(self, x, mu, sigma)
   class(randompack_rng), intent(inout) :: self
   real, intent(out) :: x(:,:)
-  real, intent(in) :: mu
-  real, intent(in) :: sigma
+  real, intent(in), optional :: mu
+  real, intent(in), optional :: sigma
+  real :: mu0, sig0
   logical(c_bool) :: c_ok
   if (.not. c_associated(self%p)) error stop rp_error_message(self, "normal")
-  c_ok = crp_normalf(x, int(size(x), c_size_t), mu, sigma, self%p)
+  mu0 = 0
+  sig0 = 1
+  if (present(mu)) mu0 = mu
+  if (present(sigma)) sig0 = sigma
+  if (.not. (sig0 > 0)) error stop "normal: sigma must be positive"
+  c_ok = crp_normalf(x, int(size(x), c_size_t), mu0, sig0, self%p)
   if (.not. c_ok) error stop rp_error_message(self, "normal")
 end subroutine
 
 subroutine exp_vec(self, x, scale)
   class(randompack_rng), intent(inout) :: self
   double precision, intent(out) :: x(:)
-  double precision, intent(in) :: scale
+  double precision, intent(in), optional :: scale
+  double precision :: s0
   logical(c_bool) :: c_ok
   if (.not. c_associated(self%p)) error stop rp_error_message(self, "exp")
-  c_ok = crp_exp(x, int(size(x), c_size_t), scale, self%p)
+  s0 = 1
+  if (present(scale)) s0 = scale
+  if (.not. (s0 > 0)) error stop "exp: scale must be positive"
+  c_ok = crp_exp(x, int(size(x), c_size_t), s0, self%p)
   if (.not. c_ok) error stop rp_error_message(self, "exp")
 end subroutine
 
 subroutine exp_mat(self, x, scale)
   class(randompack_rng), intent(inout) :: self
   double precision, intent(out) :: x(:,:)
-  double precision, intent(in) :: scale
+  double precision, intent(in), optional :: scale
+  double precision :: s0
   logical(c_bool) :: c_ok
   if (.not. c_associated(self%p)) error stop rp_error_message(self, "exp")
-  c_ok = crp_exp(x, int(size(x), c_size_t), scale, self%p)
+  s0 = 1
+  if (present(scale)) s0 = scale
+  if (.not. (s0 > 0)) error stop "exp: scale must be positive"
+  c_ok = crp_exp(x, int(size(x), c_size_t), s0, self%p)
   if (.not. c_ok) error stop rp_error_message(self, "exp")
 end subroutine
 
 subroutine expf_vec(self, x, scale)
   class(randompack_rng), intent(inout) :: self
   real, intent(out) :: x(:)
-  real, intent(in) :: scale
+  real, intent(in), optional :: scale
+  real :: s0
   logical(c_bool) :: c_ok
   if (.not. c_associated(self%p)) error stop rp_error_message(self, "exp")
-  c_ok = crp_expf(x, int(size(x), c_size_t), scale, self%p)
+  s0 = 1
+  if (present(scale)) s0 = scale
+  if (.not. (s0 > 0)) error stop "exp: scale must be positive"
+  c_ok = crp_expf(x, int(size(x), c_size_t), s0, self%p)
   if (.not. c_ok) error stop rp_error_message(self, "exp")
 end subroutine
 
 subroutine expf_mat(self, x, scale)
   class(randompack_rng), intent(inout) :: self
   real, intent(out) :: x(:,:)
-  real, intent(in) :: scale
+  real, intent(in), optional :: scale
+  real :: s0
   logical(c_bool) :: c_ok
   if (.not. c_associated(self%p)) error stop rp_error_message(self, "exp")
-  c_ok = crp_expf(x, int(size(x), c_size_t), scale, self%p)
+  s0 = 1
+  if (present(scale)) s0 = scale
+  if (.not. (s0 > 0)) error stop "exp: scale must be positive"
+  c_ok = crp_expf(x, int(size(x), c_size_t), s0, self%p)
   if (.not. c_ok) error stop rp_error_message(self, "exp")
 end subroutine
 
 subroutine lognormal_vec(self, x, mu, sigma)
   class(randompack_rng), intent(inout) :: self
   double precision, intent(out) :: x(:)
-  double precision, intent(in) :: mu
-  double precision, intent(in) :: sigma
+  double precision, intent(in), optional :: mu
+  double precision, intent(in), optional :: sigma
+  double precision :: mu0, sig0
   logical(c_bool) :: c_ok
   if (.not. c_associated(self%p)) error stop rp_error_message(self, "lognormal")
-  c_ok = crp_lognormal(x, int(size(x), c_size_t), mu, sigma, self%p)
+  mu0 = 0
+  sig0 = 1
+  if (present(mu)) mu0 = mu
+  if (present(sigma)) sig0 = sigma
+  if (.not. (sig0 > 0)) error stop "lognormal: sigma must be positive"
+  c_ok = crp_lognormal(x, int(size(x), c_size_t), mu0, sig0, self%p)
   if (.not. c_ok) error stop rp_error_message(self, "lognormal")
 end subroutine
 
 subroutine lognormal_mat(self, x, mu, sigma)
   class(randompack_rng), intent(inout) :: self
   double precision, intent(out) :: x(:,:)
-  double precision, intent(in) :: mu
-  double precision, intent(in) :: sigma
+  double precision, intent(in), optional :: mu
+  double precision, intent(in), optional :: sigma
+  double precision :: mu0, sig0
   logical(c_bool) :: c_ok
   if (.not. c_associated(self%p)) error stop rp_error_message(self, "lognormal")
-  c_ok = crp_lognormal(x, int(size(x), c_size_t), mu, sigma, self%p)
+  mu0 = 0
+  sig0 = 1
+  if (present(mu)) mu0 = mu
+  if (present(sigma)) sig0 = sigma
+  if (.not. (sig0 > 0)) error stop "lognormal: sigma must be positive"
+  c_ok = crp_lognormal(x, int(size(x), c_size_t), mu0, sig0, self%p)
   if (.not. c_ok) error stop rp_error_message(self, "lognormal")
 end subroutine
 
 subroutine lognormalf_vec(self, x, mu, sigma)
   class(randompack_rng), intent(inout) :: self
   real, intent(out) :: x(:)
-  real, intent(in) :: mu
-  real, intent(in) :: sigma
+  real, intent(in), optional :: mu
+  real, intent(in), optional :: sigma
+  real :: mu0, sig0
   logical(c_bool) :: c_ok
   if (.not. c_associated(self%p)) error stop rp_error_message(self, "lognormal")
-  c_ok = crp_lognormalf(x, int(size(x), c_size_t), mu, sigma, self%p)
+  mu0 = 0
+  sig0 = 1
+  if (present(mu)) mu0 = mu
+  if (present(sigma)) sig0 = sigma
+  if (.not. (sig0 > 0)) error stop "lognormal: sigma must be positive"
+  c_ok = crp_lognormalf(x, int(size(x), c_size_t), mu0, sig0, self%p)
   if (.not. c_ok) error stop rp_error_message(self, "lognormal")
 end subroutine
 
 subroutine lognormalf_mat(self, x, mu, sigma)
   class(randompack_rng), intent(inout) :: self
   real, intent(out) :: x(:,:)
-  real, intent(in) :: mu
-  real, intent(in) :: sigma
+  real, intent(in), optional :: mu
+  real, intent(in), optional :: sigma
+  real :: mu0, sig0
   logical(c_bool) :: c_ok
   if (.not. c_associated(self%p)) error stop rp_error_message(self, "lognormal")
-  c_ok = crp_lognormalf(x, int(size(x), c_size_t), mu, sigma, self%p)
+  mu0 = 0
+  sig0 = 1
+  if (present(mu)) mu0 = mu
+  if (present(sigma)) sig0 = sigma
+  if (.not. (sig0 > 0)) error stop "lognormal: sigma must be positive"
+  c_ok = crp_lognormalf(x, int(size(x), c_size_t), mu0, sig0, self%p)
   if (.not. c_ok) error stop rp_error_message(self, "lognormal")
 end subroutine
 
@@ -361,10 +377,14 @@ subroutine gamma_vec(self, x, shape, scale)
   class(randompack_rng), intent(inout) :: self
   double precision, intent(out) :: x(:)
   double precision, intent(in) :: shape
-  double precision, intent(in) :: scale
+  double precision, intent(in), optional :: scale
+  double precision :: sc0
   logical(c_bool) :: c_ok
   if (.not. c_associated(self%p)) error stop rp_error_message(self, "gamma")
-  c_ok = crp_gamma(x, int(size(x), c_size_t), shape, scale, self%p)
+  sc0 = 1
+  if (present(scale)) sc0 = scale
+  if (.not. (shape > 0 .and. sc0 > 0)) error stop "gamma: shape/scale must be positive"
+  c_ok = crp_gamma(x, int(size(x), c_size_t), shape, sc0, self%p)
   if (.not. c_ok) error stop rp_error_message(self, "gamma")
 end subroutine
 
@@ -372,10 +392,14 @@ subroutine gamma_mat(self, x, shape, scale)
   class(randompack_rng), intent(inout) :: self
   double precision, intent(out) :: x(:,:)
   double precision, intent(in) :: shape
-  double precision, intent(in) :: scale
+  double precision, intent(in), optional :: scale
+  double precision :: sc0
   logical(c_bool) :: c_ok
   if (.not. c_associated(self%p)) error stop rp_error_message(self, "gamma")
-  c_ok = crp_gamma(x, int(size(x), c_size_t), shape, scale, self%p)
+  sc0 = 1
+  if (present(scale)) sc0 = scale
+  if (.not. (shape > 0 .and. sc0 > 0)) error stop "gamma: shape/scale must be positive"
+  c_ok = crp_gamma(x, int(size(x), c_size_t), shape, sc0, self%p)
   if (.not. c_ok) error stop rp_error_message(self, "gamma")
 end subroutine
 
@@ -383,10 +407,14 @@ subroutine gammaf_vec(self, x, shape, scale)
   class(randompack_rng), intent(inout) :: self
   real, intent(out) :: x(:)
   real, intent(in) :: shape
-  real, intent(in) :: scale
+  real, intent(in), optional :: scale
+  real :: sc0
   logical(c_bool) :: c_ok
   if (.not. c_associated(self%p)) error stop rp_error_message(self, "gamma")
-  c_ok = crp_gammaf(x, int(size(x), c_size_t), shape, scale, self%p)
+  sc0 = 1
+  if (present(scale)) sc0 = scale
+  if (.not. (shape > 0 .and. sc0 > 0)) error stop "gamma: shape/scale must be positive"
+  c_ok = crp_gammaf(x, int(size(x), c_size_t), shape, sc0, self%p)
   if (.not. c_ok) error stop rp_error_message(self, "gamma")
 end subroutine
 
@@ -394,10 +422,14 @@ subroutine gammaf_mat(self, x, shape, scale)
   class(randompack_rng), intent(inout) :: self
   real, intent(out) :: x(:,:)
   real, intent(in) :: shape
-  real, intent(in) :: scale
+  real, intent(in), optional :: scale
+  real :: sc0
   logical(c_bool) :: c_ok
   if (.not. c_associated(self%p)) error stop rp_error_message(self, "gamma")
-  c_ok = crp_gammaf(x, int(size(x), c_size_t), shape, scale, self%p)
+  sc0 = 1
+  if (present(scale)) sc0 = scale
+  if (.not. (shape > 0 .and. sc0 > 0)) error stop "gamma: shape/scale must be positive"
+  c_ok = crp_gammaf(x, int(size(x), c_size_t), shape, sc0, self%p)
   if (.not. c_ok) error stop rp_error_message(self, "gamma")
 end subroutine
 
@@ -572,44 +604,68 @@ end subroutine
 subroutine gumbel_vec(self, x, mu, beta)
   class(randompack_rng), intent(inout) :: self
   double precision, intent(out) :: x(:)
-  double precision, intent(in) :: mu
-  double precision, intent(in) :: beta
+  double precision, intent(in), optional :: mu
+  double precision, intent(in), optional :: beta
+  double precision :: mu0, b0
   logical(c_bool) :: c_ok
   if (.not. c_associated(self%p)) error stop rp_error_message(self, "gumbel")
-  c_ok = crp_gumbel(x, int(size(x), c_size_t), mu, beta, self%p)
+  mu0 = 0
+  b0 = 1
+  if (present(mu)) mu0 = mu
+  if (present(beta)) b0 = beta
+  if (.not. (b0 > 0)) error stop "gumbel: beta must be positive"
+  c_ok = crp_gumbel(x, int(size(x), c_size_t), mu0, b0, self%p)
   if (.not. c_ok) error stop rp_error_message(self, "gumbel")
 end subroutine
 
 subroutine gumbel_mat(self, x, mu, beta)
   class(randompack_rng), intent(inout) :: self
   double precision, intent(out) :: x(:,:)
-  double precision, intent(in) :: mu
-  double precision, intent(in) :: beta
+  double precision, intent(in), optional :: mu
+  double precision, intent(in), optional :: beta
+  double precision :: mu0, b0
   logical(c_bool) :: c_ok
   if (.not. c_associated(self%p)) error stop rp_error_message(self, "gumbel")
-  c_ok = crp_gumbel(x, int(size(x), c_size_t), mu, beta, self%p)
+  mu0 = 0
+  b0 = 1
+  if (present(mu)) mu0 = mu
+  if (present(beta)) b0 = beta
+  if (.not. (b0 > 0)) error stop "gumbel: beta must be positive"
+  c_ok = crp_gumbel(x, int(size(x), c_size_t), mu0, b0, self%p)
   if (.not. c_ok) error stop rp_error_message(self, "gumbel")
 end subroutine
 
 subroutine gumbelf_vec(self, x, mu, beta)
   class(randompack_rng), intent(inout) :: self
   real, intent(out) :: x(:)
-  real, intent(in) :: mu
-  real, intent(in) :: beta
+  real, intent(in), optional :: mu
+  real, intent(in), optional :: beta
+  real :: mu0, b0
   logical(c_bool) :: c_ok
   if (.not. c_associated(self%p)) error stop rp_error_message(self, "gumbel")
-  c_ok = crp_gumbelf(x, int(size(x), c_size_t), mu, beta, self%p)
+  mu0 = 0
+  b0 = 1
+  if (present(mu)) mu0 = mu
+  if (present(beta)) b0 = beta
+  if (.not. (b0 > 0)) error stop "gumbel: beta must be positive"
+  c_ok = crp_gumbelf(x, int(size(x), c_size_t), mu0, b0, self%p)
   if (.not. c_ok) error stop rp_error_message(self, "gumbel")
 end subroutine
 
 subroutine gumbelf_mat(self, x, mu, beta)
   class(randompack_rng), intent(inout) :: self
   real, intent(out) :: x(:,:)
-  real, intent(in) :: mu
-  real, intent(in) :: beta
+  real, intent(in), optional :: mu
+  real, intent(in), optional :: beta
+  real :: mu0, b0
   logical(c_bool) :: c_ok
   if (.not. c_associated(self%p)) error stop rp_error_message(self, "gumbel")
-  c_ok = crp_gumbelf(x, int(size(x), c_size_t), mu, beta, self%p)
+  mu0 = 0
+  b0 = 1
+  if (present(mu)) mu0 = mu
+  if (present(beta)) b0 = beta
+  if (.not. (b0 > 0)) error stop "gumbel: beta must be positive"
+  c_ok = crp_gumbelf(x, int(size(x), c_size_t), mu0, b0, self%p)
   if (.not. c_ok) error stop rp_error_message(self, "gumbel")
 end subroutine
 
@@ -661,10 +717,14 @@ subroutine weibull_vec(self, x, shape, scale)
   class(randompack_rng), intent(inout) :: self
   double precision, intent(out) :: x(:)
   double precision, intent(in) :: shape
-  double precision, intent(in) :: scale
+  double precision, intent(in), optional :: scale
+  double precision :: sc0
   logical(c_bool) :: c_ok
   if (.not. c_associated(self%p)) error stop rp_error_message(self, "weibull")
-  c_ok = crp_weibull(x, int(size(x), c_size_t), shape, scale, self%p)
+  sc0 = 1
+  if (present(scale)) sc0 = scale
+  if (.not. (shape > 0 .and. sc0 > 0)) error stop "weibull: shape/scale must be positive"
+  c_ok = crp_weibull(x, int(size(x), c_size_t), shape, sc0, self%p)
   if (.not. c_ok) error stop rp_error_message(self, "weibull")
 end subroutine
 
@@ -672,10 +732,14 @@ subroutine weibull_mat(self, x, shape, scale)
   class(randompack_rng), intent(inout) :: self
   double precision, intent(out) :: x(:,:)
   double precision, intent(in) :: shape
-  double precision, intent(in) :: scale
+  double precision, intent(in), optional :: scale
+  double precision :: sc0
   logical(c_bool) :: c_ok
   if (.not. c_associated(self%p)) error stop rp_error_message(self, "weibull")
-  c_ok = crp_weibull(x, int(size(x), c_size_t), shape, scale, self%p)
+  sc0 = 1
+  if (present(scale)) sc0 = scale
+  if (.not. (shape > 0 .and. sc0 > 0)) error stop "weibull: shape/scale must be positive"
+  c_ok = crp_weibull(x, int(size(x), c_size_t), shape, sc0, self%p)
   if (.not. c_ok) error stop rp_error_message(self, "weibull")
 end subroutine
 
@@ -683,10 +747,14 @@ subroutine weibullf_vec(self, x, shape, scale)
   class(randompack_rng), intent(inout) :: self
   real, intent(out) :: x(:)
   real, intent(in) :: shape
-  real, intent(in) :: scale
+  real, intent(in), optional :: scale
+  real :: sc0
   logical(c_bool) :: c_ok
   if (.not. c_associated(self%p)) error stop rp_error_message(self, "weibull")
-  c_ok = crp_weibullf(x, int(size(x), c_size_t), shape, scale, self%p)
+  sc0 = 1
+  if (present(scale)) sc0 = scale
+  if (.not. (shape > 0 .and. sc0 > 0)) error stop "weibull: shape/scale must be positive"
+  c_ok = crp_weibullf(x, int(size(x), c_size_t), shape, sc0, self%p)
   if (.not. c_ok) error stop rp_error_message(self, "weibull")
 end subroutine
 
@@ -694,58 +762,86 @@ subroutine weibullf_mat(self, x, shape, scale)
   class(randompack_rng), intent(inout) :: self
   real, intent(out) :: x(:,:)
   real, intent(in) :: shape
-  real, intent(in) :: scale
+  real, intent(in), optional :: scale
+  real :: sc0
   logical(c_bool) :: c_ok
   if (.not. c_associated(self%p)) error stop rp_error_message(self, "weibull")
-  c_ok = crp_weibullf(x, int(size(x), c_size_t), shape, scale, self%p)
+  sc0 = 1
+  if (present(scale)) sc0 = scale
+  if (.not. (shape > 0 .and. sc0 > 0)) error stop "weibull: shape/scale must be positive"
+  c_ok = crp_weibullf(x, int(size(x), c_size_t), shape, sc0, self%p)
   if (.not. c_ok) error stop rp_error_message(self, "weibull")
 end subroutine
 
 subroutine skew_normal_vec(self, x, mu, sigma, alpha)
   class(randompack_rng), intent(inout) :: self
   double precision, intent(out) :: x(:)
-  double precision, intent(in) :: mu
-  double precision, intent(in) :: sigma
+  double precision, intent(in), optional :: mu
+  double precision, intent(in), optional :: sigma
   double precision, intent(in) :: alpha
+  double precision :: mu0, sig0
   logical(c_bool) :: c_ok
   if (.not. c_associated(self%p)) error stop rp_error_message(self, "skew_normal")
-  c_ok = crp_skew_normal(x, int(size(x), c_size_t), mu, sigma, alpha, self%p)
+  mu0 = 0
+  sig0 = 1
+  if (present(mu)) mu0 = mu
+  if (present(sigma)) sig0 = sigma
+  if (.not. (sig0 > 0)) error stop "skew_normal: sigma must be positive"
+  c_ok = crp_skew_normal(x, int(size(x), c_size_t), mu0, sig0, alpha, self%p)
   if (.not. c_ok) error stop rp_error_message(self, "skew_normal")
 end subroutine
 
 subroutine skew_normal_mat(self, x, mu, sigma, alpha)
   class(randompack_rng), intent(inout) :: self
   double precision, intent(out) :: x(:,:)
-  double precision, intent(in) :: mu
-  double precision, intent(in) :: sigma
+  double precision, intent(in), optional :: mu
+  double precision, intent(in), optional :: sigma
   double precision, intent(in) :: alpha
+  double precision :: mu0, sig0
   logical(c_bool) :: c_ok
   if (.not. c_associated(self%p)) error stop rp_error_message(self, "skew_normal")
-  c_ok = crp_skew_normal(x, int(size(x), c_size_t), mu, sigma, alpha, self%p)
+  mu0 = 0
+  sig0 = 1
+  if (present(mu)) mu0 = mu
+  if (present(sigma)) sig0 = sigma
+  if (.not. (sig0 > 0)) error stop "skew_normal: sigma must be positive"
+  c_ok = crp_skew_normal(x, int(size(x), c_size_t), mu0, sig0, alpha, self%p)
   if (.not. c_ok) error stop rp_error_message(self, "skew_normal")
 end subroutine
 
 subroutine skew_normalf_vec(self, x, mu, sigma, alpha)
   class(randompack_rng), intent(inout) :: self
   real, intent(out) :: x(:)
-  real, intent(in) :: mu
-  real, intent(in) :: sigma
+  real, intent(in), optional :: mu
+  real, intent(in), optional :: sigma
   real, intent(in) :: alpha
+  real :: mu0, sig0
   logical(c_bool) :: c_ok
   if (.not. c_associated(self%p)) error stop rp_error_message(self, "skew_normal")
-  c_ok = crp_skew_normalf(x, int(size(x), c_size_t), mu, sigma, alpha, self%p)
+  mu0 = 0
+  sig0 = 1
+  if (present(mu)) mu0 = mu
+  if (present(sigma)) sig0 = sigma
+  if (.not. (sig0 > 0)) error stop "skew_normal: sigma must be positive"
+  c_ok = crp_skew_normalf(x, int(size(x), c_size_t), mu0, sig0, alpha, self%p)
   if (.not. c_ok) error stop rp_error_message(self, "skew_normal")
 end subroutine
 
 subroutine skew_normalf_mat(self, x, mu, sigma, alpha)
   class(randompack_rng), intent(inout) :: self
   real, intent(out) :: x(:,:)
-  real, intent(in) :: mu
-  real, intent(in) :: sigma
+  real, intent(in), optional :: mu
+  real, intent(in), optional :: sigma
   real, intent(in) :: alpha
+  real :: mu0, sig0
   logical(c_bool) :: c_ok
   if (.not. c_associated(self%p)) error stop rp_error_message(self, "skew_normal")
-  c_ok = crp_skew_normalf(x, int(size(x), c_size_t), mu, sigma, alpha, self%p)
+  mu0 = 0
+  sig0 = 1
+  if (present(mu)) mu0 = mu
+  if (present(sigma)) sig0 = sigma
+  if (.not. (sig0 > 0)) error stop "skew_normal: sigma must be positive"
+  c_ok = crp_skew_normalf(x, int(size(x), c_size_t), mu0, sig0, alpha, self%p)
   if (.not. c_ok) error stop rp_error_message(self, "skew_normal")
 end subroutine
 
@@ -933,7 +1029,20 @@ subroutine rp_philox_set_state(self, ctr, key)
   if (.not. c_ok) error stop rp_error_message(self, "philox_set_state")
 end subroutine
 
-subroutine rp_squares_set_state(self, ctr, key)
+subroutine rp_squares_set_state32(self, ctr, key)
+  class(randompack_rng), intent(inout) :: self
+  integer(c_int32_t), intent(in) :: ctr
+  integer(c_int32_t), intent(in) :: key
+  integer(c_int64_t) :: cctr, ckey
+  logical(c_bool) :: c_ok
+  if (.not. c_associated(self%p)) error stop rp_error_message(self, "squares_set_state")
+  cctr = int(ctr, c_int64_t)
+  ckey = int(key, c_int64_t)
+  c_ok = crp_squares_set_state(cctr, ckey, self%p)
+  if (.not. c_ok) error stop rp_error_message(self, "squares_set_state")
+end subroutine
+
+subroutine rp_squares_set_state64(self, ctr, key)
   class(randompack_rng), intent(inout) :: self
   integer(c_int64_t), intent(in) :: ctr
   integer(c_int64_t), intent(in) :: key

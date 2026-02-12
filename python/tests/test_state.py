@@ -37,6 +37,12 @@ def test_duplicate():
     assert np.any(x != y)
 
 
+def test_full_mantissa_toggle():
+    rng = rp.Rng(pick_engine())
+    rng.full_mantissa(True)
+    rng.full_mantissa(False)
+
+
 def test_serialize_deserialize():
     rng = rp.Rng(pick_engine())
     rng.seed(555)

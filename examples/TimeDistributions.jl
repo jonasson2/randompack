@@ -53,6 +53,28 @@ end
 function main()
   chunk = 4096
   bench_time = 0.2
+  args = ARGS
+  i = 1
+  while i <= length(args)
+    arg = args[i]
+    if arg == "-h" || arg == "--help"
+      println("Usage: julia TimeDistributions.jl [-c chunk]")
+      println("  -c chunk   number of draws per call (default: 4096)")
+      return
+    elseif arg == "-c" || arg == "--chunk"
+      if i == length(args)
+        error("missing value for -c")
+      end
+      i += 1
+      chunk = parse(Int, args[i])
+      if chunk <= 0
+        error("chunk must be positive")
+      end
+    else
+      error("unknown argument: " * arg)
+    end
+    i += 1
+  end
   reps = compute_reps(chunk)
 
   buf = Vector{Float64}(undef, chunk)

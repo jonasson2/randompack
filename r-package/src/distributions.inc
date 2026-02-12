@@ -20,61 +20,6 @@ static int LastNonzeroColumn(int m, int n, double A[]) {
 #include "norm_exp.inc"
 #include "rand_dble.inc"
 
-static void rand_uint64(uint64_t x[], size_t n, uint64_t bound, randompack_rng *rng) {
-  // Sets x to n random integers in {0, 1,..., bound-1}
-  if (bound == 0) {
-    draw_u64_copy(x, n, rng);
-    return;
-  }
-  size_t i = 0;
-  uint64_t R;
-  int w = enter_u32_mode(rng);
-  if (bound <= UINT8_MAX) {
-    uint8_t r, b = bound, thresh = (1u<<8) % b;
-    while (i < n) {
-      R = draw_u64(rng, &w);
-      for (int j = 0; j < 8; j++) {
-        r = R;
-        if (r >= thresh) x[i++] = r % b;
-        if (i>=n) break;
-        R >>= 8;
-      }
-    }
-  }
-  else if (bound <= UINT16_MAX) {
-    uint16_t r, b = bound, thresh = (1u<<16) % b;
-    while (i < n) {
-      R = draw_u64(rng, &w);
-      for (int j = 0; j < 4; j++) {
-        r = R;
-        if (r >= thresh) x[i++] = r % b;
-        if (i>=n) break;
-        R >>= 16;
-      }
-    }
-  }
-  else if (bound <= UINT32_MAX) {
-    uint32_t r, b = bound, M = 0-b, thresh = M % b;
-    while (i < n) {
-      R = draw_u64(rng, &w);
-      r = R;
-      if (r >= thresh) x[i++] = r % b;
-      if (i>=n) break;
-      R >>= 32;
-      r = R;
-      if (r >= thresh) x[i++] = r % b;
-    }
-  }
-  else {
-    uint64_t M = 0-bound, thresh = M % bound;
-    while (i < n) {
-      R = draw_u64(rng, &w);
-      if (R >= thresh) x[i++] = R % bound;
-    }
-  }
-  exit_u32_mode(rng, w);
-}
-
 static void rand_lognormal(double x[], size_t len, double mu, double sigma,
   randompack_rng *rng) {
   rand_norm(x, len, rng); // N(0,1)
@@ -98,123 +43,141 @@ static void rand_lognormal(double x[], size_t len, double mu, double sigma,
 #endif
 }
 
-static void rand_uint32(uint32_t x[], size_t n, uint32_t bound, randompack_rng *rng) {
-  // Sets x to n random integers in {0, 1,..., bound-1}
-  if (bound == 0) {
-    draw_u32_copy(x, n, rng);
-    return;
-  }
+// All the rand_uintXX, rand_int and rand_long_long are strict-aliasing-safe
+static void rand_uint8(uint8_t x[], size_t n, uint8_t bound, randompack_rng *rng) {
   size_t i = 0;
-  int j;
-  uint64_t R;
-  int w = enter_u32_mode(rng);
-  if (bound <= UINT8_MAX) {
-    uint8_t r, b = bound, thresh = (1u<<8) % b;
-    while (i < n) {
-      R = draw_u64(rng, &w);
-      for (j = 0; j < 8; j++) {
-        r = R;
-        if (r >= thresh) x[i++] = r % b;
-        if (i>=n) break;
-        R >>= 8;
-      }
-    }
+  uint32_t thresh = 0x100u % bound;
+  while (i < n) {
+    uint32_t r = draw_byte(rng);
+    uint32_t prod = r*bound;
+    uint32_t lo = prod & 0xffu;
+    if (lo >= thresh) x[i++] = (uint8_t)(prod >> 8);
   }
-  else if (bound <= UINT16_MAX) {
-    uint16_t r, b = bound, thresh = (1u<<16) % b;
-    while (i < n) {
-      R = draw_u64(rng, &w);
-      for (j = 0; j < 4; j++) {
-        r = R;
-        if (r >= thresh) x[i++] = r % b;
-        if (i>=n) break;
-        R >>= 16;
-      }
-    }
-  }
-  else {
-    uint32_t r, b = bound, M = 0-b, thresh = M % b;
-    while (i < n) {
-      R = draw_u64(rng, &w);
-      r = R;
-      if (r >= thresh) x[i++] = r % b;
-      if (i>=n) break; // process left (high) half of R
-      R >>= 32;
-      r = R;
-      if (r >= thresh) x[i++] = r % b;
-    }
-  }
-  exit_u32_mode(rng, w);
 }
 
 static void rand_uint16(uint16_t x[], size_t n, uint16_t bound, randompack_rng *rng) {
-  // Sets x to n random integers in {0, 1,..., bound-1}
-  if (bound == 0) {
-    draw_u16_copy(x, n, rng);
-    return;
+  size_t i = 0;
+  uint32_t thresh = (uint32_t)((uint32_t)0x10000u % bound);
+  int w = enter_u16_mode(rng);
+  while (i < n) {
+    uint32_t r = draw_u16(rng, &w);
+    uint32_t prod = r*bound;
+    uint32_t lo = prod & 0xffffu;
+    if (lo >= thresh) x[i++] = (uint16_t)(prod >> 16);
   }
-  size_t i = 0, j;
-  uint64_t R;
-  int w = enter_u32_mode(rng);
-  if (bound <= UINT8_MAX) {
-    uint8_t r, b = bound, thresh = (1u<<8) % b;
+  exit_u16_mode(rng, w);
+}
+
+static void rand_uint32(uint32_t x[], size_t n, uint32_t bound, randompack_rng *rng) {
+  size_t i = 0;
+  if (bound <= 1000u) {
+    uint32_t thresh = 0x10000u % bound;
+    int w = enter_u16_mode(rng);
     while (i < n) {
-      R = draw_u64(rng, &w);
-      for (j = 0; j < 8; j++) {
-        r = R;
-        if (r >= thresh) x[i++] = r % b;
-        if (i>=n) break;
-        R >>= 8;
-      }
+      uint32_t r = draw_u16(rng, &w);
+      uint32_t prod = r*bound;
+      uint32_t lo = prod & 0xffffu;
+      if (lo >= thresh) x[i++] = prod >> 16;
     }
+    exit_u16_mode(rng, w);
   }
   else {
-    uint16_t r, b = bound, thresh = (1u<<16) % b;
+    uint32_t thresh = (-bound) % bound;
+    int w = enter_u32_mode(rng);
     while (i < n) {
-      R = draw_u64(rng, &w);
-      for (j = 0; j < 4; j++) {
-        r = R;
-        if (r >= thresh) x[i++] = r % b;
-        if (i>=n) break;
-        R >>= 16;
-      }
+      uint32_t r = draw_u32(rng, &w);
+      uint64_t prod = (uint64_t)r*(uint64_t)bound;
+      uint32_t lo = (uint32_t)prod;
+      if (lo >= thresh) x[i++] = (uint32_t)(prod >> 32);
     }
+    exit_u32_mode(rng, w);
   }
-  exit_u32_mode(rng, w);
 }
 
-static void rand_uint8(uint8_t x[], size_t n, uint8_t bound, randompack_rng *rng) {
-  // Sets x to n random integers in {0, 1,..., bound-1}
-  if (bound == 0) {
-    for (size_t i = 0; i < n; i++)
-      x[i] = draw_byte(rng);
-    return;
-  }
-  size_t i = 0, j;
-  uint64_t R;
-  uint8_t r, b = bound, thresh = (1u<<8) % b;
-  int w = enter_u32_mode(rng);
-  while (i < n) {
-    R = draw_u64(rng, &w);
-    for (j = 0; j < 8; j++) {
-      r = R;
-      if (r >= thresh) x[i++] = r % b;
-      if (i>=n) break;
-      R >>= 8;
+static void rand_uint64(uint64_t x[], size_t n, uint64_t bound, randompack_rng *rng) {
+  size_t i = 0;
+  if (bound <= 10000ull) {
+    uint64_t thresh = 0x10000ull % bound;
+    int w = enter_u16_mode(rng);
+    while (i < n) {
+      uint64_t r = draw_u16(rng, &w);
+      uint64_t prod = r*bound;
+      uint64_t lo = prod & 0xffffull;
+      if (lo >= thresh) x[i++] = prod >> 16;
     }
+    exit_u16_mode(rng, w);
   }
-  exit_u32_mode(rng, w);
+  else {
+    uint64_t thresh = (-bound) % bound;
+    int w = enter_u64_mode(rng);
+    while (i < n) {
+      uint64_t r = draw_u64(rng, &w);
+      uint64_t hi, lo;
+      MUL64_WIDE(r, bound, hi, lo);
+      if (lo >= thresh) x[i++] = hi;
+    }
+    exit_u64_mode(rng, w);
+  }
 }
 
-ALWAYS_INLINE void rand_int(int bound, int x[], size_t n, randompack_rng *rng) {
-  rand_uint32((uint32_t*)x, n, bound, rng);
+static void rand_int(int x[], size_t len, int m, uint32_t bound, randompack_rng *rng) {
+  size_t i = 0;
+  if (bound <= 1000) {
+    uint32_t thresh = 0x10000u % bound;
+    int w = enter_u16_mode(rng);
+    while (i < len) {
+      uint32_t r = draw_u16(rng, &w);
+      uint32_t prod = r*bound;
+      uint32_t lo = prod & 0xffffu;
+      if (lo >= thresh) x[i++] = m + (int)(prod >> 16);
+    }
+    exit_u16_mode(rng, w);
+  }
+  else {
+    uint32_t thresh = (-bound) % bound;
+    int w = enter_u32_mode(rng);
+    while (i < len) {
+      uint32_t r = draw_u32(rng, &w);
+      uint64_t prod = (uint64_t)r*(uint64_t)bound;
+      uint32_t lo = (uint32_t)prod;
+      if (lo >= thresh) x[i++] = m + (int)(prod >> 32);
+    }
+    exit_u32_mode(rng, w);
+  }
+}
+
+static void rand_long_long(long long x[], size_t len, long long m, uint64_t bound,
+                           randompack_rng *rng) {
+  size_t i = 0;
+  if (bound <= 10000ull) {
+    uint64_t thresh = 0x10000ull % bound;
+    int w = enter_u16_mode(rng);
+    while (i < len) {
+      uint64_t r = draw_u16(rng, &w);
+      uint64_t prod = r*bound;
+      uint64_t lo = prod & 0xffffull;
+      if (lo >= thresh) x[i++] = m + (long long)(prod >> 16);
+    }
+    exit_u16_mode(rng, w);
+  }
+  else {
+    uint64_t thresh = (-bound) % bound;
+    int w = enter_u64_mode(rng);
+    while (i < len) {
+      uint64_t r = draw_u64(rng, &w);
+      uint64_t hi, lo;
+      MUL64_WIDE(r, bound, hi, lo);
+      if (lo >= thresh) x[i++] = m + (long long)hi;
+    }
+    exit_u64_mode(rng, w);
+  }
 }
 
 static void rand_perm(int p[], int n, randompack_rng *rng) {
   // Fisher-Yates algorithm, stores a random permutation of 0..n-1 in p
   for (int i = 0; i < n; i++) {
     int j;
-    rand_int(i+1, &j, 1, rng);
+    rand_int(&j, 1, 0, i + 1, rng);
     if (j != i) p[i] = p[j];
     p[j] = i;
   }
@@ -246,12 +209,12 @@ static void rand_sample_reservoir(int p[], int n, int k, randompack_rng *rng) {
   int r;
   p[0] = 0;
   for (int i = 0; i < k; i++) {
-    rand_int(i+1, &r, 1, rng);
+    rand_int(&r, 1, 0, i + 1, rng);
     if (r != i) p[i] = p[r];
     p[r] = i;
   }
   for (int i = k; i < n; i++) {
-    rand_int(i+1, &r, 1, rng);
+    rand_int(&r, 1, 0, i + 1, rng);
     if (r < k) p[r] = i;
   }
 }
@@ -271,7 +234,7 @@ static void rand_sample_floyd(int p[], int n, int k, randompack_rng *rng) {
   int out = 0;
   for (int j = n - k; j < n; j++) {
     int t;
-    rand_int(j + 1, &t, 1, rng);
+    rand_int(&t, 1, 0, j + 1, rng);
     int pick = hashtable_has(keys, mask, t) ? j : t;
     hashtable_add(keys, mask, pick);
     p[out++] = pick;

@@ -82,7 +82,7 @@ debug-enabled non-optimized version omit `--buildtype=release`.
     call rng%seed(123)              ! deterministic seed
     call rng%randomize()            ! seed with system entropy
 
-    call rng%u01(x)                 ! Uniform(0,1), double precision
+    call rng%unif(x)                ! Uniform(0,1), double precision
     call rng%normal(x)              ! Standard normal, double precision
     call rng%normal(xf, 1.0, 3.0)   ! N(1,3) variates, real
 
@@ -153,23 +153,21 @@ draws.
 ### Continuous (Float64 / Float32)
 
 Each of the following is a generic that accepts `double precision` or default
-`real` arrays, with the usual parameters:
+`real` arrays, with the usual parameters and defaults:
 
-- `u01` (U(0,1))
-- `unif` (a, b)
-- `norm` (standard normal)
-- `normal` (mu, sigma)
-- `exp` (scale)
-- `lognormal` (mu, sigma)
-- `gamma` (shape, scale)
+- `unif` (a=0, b=1)
+- `normal` (mu=0, sigma=1)
+- `exp` (scale=1)
+- `lognormal` (mu=0, sigma=1)
+- `gamma` (shape, scale=1)
 - `beta` (a, b)
 - `chi2` (nu)
 - `t` (nu)
 - `f` (nu1, nu2)
-- `gumbel` (mu, beta)
+- `gumbel` (mu=0, beta=1)
 - `pareto` (xm, alpha)
-- `weibull` (shape, scale)
-- `skew_normal` (mu, sigma, alpha)
+- `weibull` (shape, scale=1)
+- `skew_normal` (mu=0, sigma=1, alpha)
 
 ```fortran
     double precision :: a(100), b(10,10)
@@ -184,9 +182,9 @@ Each of the following is a generic that accepts `double precision` or default
 ```fortran
     integer(c_int32_t) :: iv(50)
     integer(c_int64_t) :: i64(50)
-    call rng%int(iv, -2_c_int32_t, 3_c_int32_t)
-    call rng%int(i64, 1_c_int64_t, 10_c_int64_t)
-    call rng%int(i64, 1_c_int32_t, 10_c_int32_t)
+    call rng%int(iv, -2, 3)
+    call rng%int(i64, 1, 10)
+    call rng%int(i64, 1, 10)
 ```
 
 ## State control and serialization
@@ -204,10 +202,12 @@ Engine-specific state setters:
 ```fortran
     type(randompack_philox_ctr) :: ctr
     type(randompack_philox_key) :: key
-    ctr%v = [1_c_int64_t, 2_c_int64_t, 3_c_int64_t, 4_c_int64_t]
-    key%v = [5_c_int64_t, 6_c_int64_t]
+    double precision :: x(4)
+    ctr%v = [1, 2, 3, 4]
+    key%v = [5, 6]
     call rng%philox_set_state(ctr, key)
-    call rng%squares_set_state(1_c_int64_t, 2_c_int64_t)
+    call rng%unif(x)
+    call rng%squares_set_state(1, 2)
 ```
 
 ## Errors

@@ -18,15 +18,18 @@ cdef extern from "randompack.h":
     bint randompack_engines(char *engines, char *descriptions, int *nengines,
                             int *eng_maxlen, int *desc_maxlen)
 
-    bint randompack_int(int *x, size_t len, int m, int n, randompack_rng *rng)
+    bint randompack_int(int *x, size_t len, int m, int n,
+                        randompack_rng *rng) nogil
     bint randompack_long_long(long long *x, size_t len, long long m, long long n,
-                              randompack_rng *rng)
+                              randompack_rng *rng) nogil
     bint randompack_uint32(uint32_t *x, size_t len, uint32_t bound,
-                           randompack_rng *rng)
+                           randompack_rng *rng) nogil
     bint randompack_uint64(uint64_t *x, size_t len, uint64_t bound,
-                           randompack_rng *rng)
-    bint randompack_perm(int *x, int n, randompack_rng *rng)
-    bint randompack_sample(int *x, int n, int k, randompack_rng *rng)
+                           randompack_rng *rng) nogil
+    bint randompack_perm(int *x, int n, randompack_rng *rng) nogil
+    bint randompack_sample(int *x, int n, int k, randompack_rng *rng) nogil
+    bint randompack_raw(void *out, size_t nbytes,
+                        randompack_rng *rng) nogil
 
     bint randompack_unif(double *x, size_t n, double a, double b,
                          randompack_rng *rng) nogil
@@ -40,17 +43,17 @@ cdef extern from "randompack.h":
                           randompack_rng *rng) nogil
     bint randompack_beta(double *x, size_t n, double a, double b,
                          randompack_rng *rng) nogil
-    bint randompack_chi2(double *x, size_t n, double df,
+    bint randompack_chi2(double *x, size_t n, double nu,
                          randompack_rng *rng) nogil
-    bint randompack_t(double *x, size_t n, double df,
+    bint randompack_t(double *x, size_t n, double nu,
                       randompack_rng *rng) nogil
-    bint randompack_f(double *x, size_t n, double dfn, double dfd,
+    bint randompack_f(double *x, size_t n, double nu1, double nu2,
                       randompack_rng *rng) nogil
     bint randompack_gumbel(double *x, size_t n, double mu, double beta,
                            randompack_rng *rng) nogil
-    bint randompack_pareto(double *x, size_t n, double a, double xm,
+    bint randompack_pareto(double *x, size_t n, double xm, double alpha,
                            randompack_rng *rng) nogil
-    bint randompack_weibull(double *x, size_t n, double k, double lam,
+    bint randompack_weibull(double *x, size_t n, double shape, double scale,
                             randompack_rng *rng) nogil
     bint randompack_skew_normal(double *x, size_t n, double mu, double sigma,
                                 double alpha, randompack_rng *rng) nogil
@@ -70,17 +73,17 @@ cdef extern from "randompack.h":
                            randompack_rng *rng) nogil
     bint randompack_betaf(float *x, size_t n, float a, float b,
                           randompack_rng *rng) nogil
-    bint randompack_chi2f(float *x, size_t n, float df,
+    bint randompack_chi2f(float *x, size_t n, float nu,
                           randompack_rng *rng) nogil
-    bint randompack_tf(float *x, size_t n, float df,
+    bint randompack_tf(float *x, size_t n, float nu,
                        randompack_rng *rng) nogil
-    bint randompack_ff(float *x, size_t n, float dfn, float dfd,
+    bint randompack_ff(float *x, size_t n, float nu1, float nu2,
                        randompack_rng *rng) nogil
     bint randompack_gumbelf(float *x, size_t n, float mu, float beta,
                             randompack_rng *rng) nogil
-    bint randompack_paretof(float *x, size_t n, float a, float xm,
+    bint randompack_paretof(float *x, size_t n, float xm, float alpha,
                             randompack_rng *rng) nogil
-    bint randompack_weibullf(float *x, size_t n, float k, float lam,
+    bint randompack_weibullf(float *x, size_t n, float shape, float scale,
                              randompack_rng *rng) nogil
     bint randompack_skew_normalf(float *x, size_t n, float mu, float sigma,
                                  float alpha, randompack_rng *rng) nogil

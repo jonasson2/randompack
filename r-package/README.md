@@ -24,7 +24,7 @@ Development version from GitHub:
         rng <- randompack_rng()
 
         # Generate random variates
-        x <- rng$normal(100, mean = 0, sd = 1)
+        x <- rng$normal(100, mu = 0, sigma = 1)
         y <- rng$unif(50, a = 0, b = 1)
         z <- rng$int(20, min = 1, max = 100)
 

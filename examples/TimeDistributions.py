@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # TimeDistributions.py: time continuous distributions (ns/value) in Python.
 
+import argparse
 import math
 import time
 from dataclasses import dataclass
@@ -108,9 +109,19 @@ def make_dists() -> List[Dist]:
 
 
 def main() -> None:
-  chunk = 4096
-  bench_time = 0.2
-  seed = 7
+  parser = argparse.ArgumentParser(
+    description="Time continuous distributions (ns/value) in Python")
+  parser.add_argument("-t", type=float, default=0.2, dest="bench_time",
+                      help="benchmark time per case (seconds)")
+  parser.add_argument("-c", type=int, default=4096, dest="chunk",
+                      help="chunk size (values per call)")
+  parser.add_argument("-s", type=int, default=7, dest="seed",
+                      help="random seed")
+  args = parser.parse_args()
+
+  chunk = args.chunk
+  bench_time = args.bench_time
+  seed = args.seed
 
   rng = np.random.default_rng(seed)
 

@@ -16,8 +16,8 @@ call rng%seed(123_int32)
 call rng%int(idflt, 1, 9)
 call rng%int(i32, 1_int32, 9_int32)
 call rng%int(i64, 1_int64, 9_int64)
-call rng%int(ic32, 1_c_int32_t, 9_c_int32_t)
-call rng%int(ic64, 1_c_int64_t, 9_c_int64_t)
+call rng%int(ic32, 1, 9)
+call rng%int(ic64, 1, 9)
 write(*,'(A)') hdr
 write(*,fmt) 'default integer', kind(idflt), idflt
 write(*,fmt) 'integer(int32)', kind(i32), i32

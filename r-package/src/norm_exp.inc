@@ -10,7 +10,6 @@
 #include <stdint.h>
 #include <math.h>
 #include <string.h>
-#include "printX.h"
 #include "randompack.h"
 #include "ziggurat_constants.h"
 #undef NDEBUG

@@ -35,21 +35,11 @@ contains
   procedure, private :: seed32 => rp_seed32
   procedure, private :: seed64 => rp_seed64
   generic :: seed => seed32, seed64
-  procedure, private :: u01_vec
-  procedure, private :: u01_mat
-  procedure, private :: u01f_vec
-  procedure, private :: u01f_mat
-  generic :: u01 => u01_vec, u01_mat, u01f_vec, u01f_mat
   procedure, private :: unif_vec
   procedure, private :: unif_mat
   procedure, private :: uniff_vec
   procedure, private :: uniff_mat
   generic :: unif => unif_vec, unif_mat, uniff_vec, uniff_mat
-  procedure, private :: norm_vec
-  procedure, private :: norm_mat
-  procedure, private :: normf_vec
-  procedure, private :: normf_mat
-  generic :: norm => norm_vec, norm_mat, normf_vec, normf_mat
   procedure, private :: normal_vec
   procedure, private :: normal_mat
   procedure, private :: normalf_vec
@@ -129,7 +119,9 @@ contains
   procedure, private :: set_state64
   generic :: set_state => set_state32, set_state64
   procedure :: philox_set_state => rp_philox_set_state
-  procedure :: squares_set_state => rp_squares_set_state
+  procedure, private :: squares_set_state32 => rp_squares_set_state32
+  procedure, private :: squares_set_state64 => rp_squares_set_state64
+  generic :: squares_set_state => squares_set_state32, squares_set_state64
   procedure :: last_error => rp_last_error
   final :: rp_finalize
 end type randompack_rng

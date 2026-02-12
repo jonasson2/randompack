@@ -1,14 +1,4 @@
-*.obj
-*.o
-*.d
-*.a
-*.so
-*.lib
-*.ppt
-*.asv
-*.tgz
-*.gz
-*.log
+# R
 *.Rbuildignore
 *.RData
 *.Rhistory
@@ -18,22 +8,56 @@
 *.Rcheck
 .Rlib
 .R*
+r-package/docs/
+.Rproj.user
+
+# PYTHON
+build/
+dist/
+__pycache__/
+.eggs/
+.mesonpy-*/
+docs/_build/
+docs/..doctrees/
+.pytest_cache/
+randompack.egg-info/
+docs/reference/generated/
+
+# REBUILDABLE DOC
 *.html
 *.pdf
-a.out
+tests/*.txt
+article/
+
+# BACKUPS
 *~
 #*#
 .#*
+*.asv
+*.tgz
+*.gz
+
+# MISCELLANEOUS
+a.out
 .DS_Store
-tests/*.txt
 doc/
-r-package/docs/
+/nogit/
+*.ppt
+*.log
+
+C BUILD FILES AND FOLDERS
+*.obj
+*.o
+*.d
+*.a
+*.so
+*.lib
 build*/
 lib/
 bin/
-article/
-/nogit/
-.Rproj.user
+release/
+
+CLONED C-PACKAGES
 chacha-opt/
 pcg-dxsm/
 Random123/

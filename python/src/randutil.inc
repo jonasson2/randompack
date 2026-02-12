@@ -73,9 +73,16 @@ static void rand_init(randompack_rng *rng) {
 
 static void rand_init_randomize(randompack_rng *rng) {
   if (rng->engine == CHACHA20) {
-    entropy_fill(rng, &rng->state.u8[0],  32); // key (8 uints)
-    entropy_fill(rng, &rng->state.u8[32], 12); // nonce (3 uints)
-    rng->state.u32[11] = 0;                    // counter (1 uint)
+    uint8_t tmp[44];
+    entropy_fill(rng, tmp, sizeof(tmp));
+    for (int i = 0; i < 11; i++) {
+      uint32_t v = (uint32_t)tmp[4*i] |
+        ((uint32_t)tmp[4*i + 1] << 8) |
+        ((uint32_t)tmp[4*i + 2] << 16) |
+        ((uint32_t)tmp[4*i + 3] << 24);
+      rng->state.u32[i] = v;
+    }
+    rng->state.u32[11] = 0;
   }
   else if (rng->engine == FAST) {
     uint64_t tmp[4];
@@ -116,23 +123,27 @@ static bool seed_seq_seed(uint32_t *w, int nw, uint32_t seed32, uint32_t *spawn_
   return true;
 }
 
-static void store_u64_le(uint8_t *dst, uint64_t v) {
-  dst[0] = v;
-  dst[1] = v >> 8;
-  dst[2] = v >> 16;
-  dst[3] = v >> 24;
-  dst[4] = v >> 32;
-  dst[5] = v >> 40;
-  dst[6] = v >> 48;
-  dst[7] = v >> 56;
-}
+// static void store_u64_le(uint8_t *dst, uint64_t v) {
+//   dst[0] = v;
+//   dst[1] = v >> 8;
+//   dst[2] = v >> 16;
+//   dst[3] = v >> 24;
+//   dst[4] = v >> 32;
+//   dst[5] = v >> 40;
+//   dst[6] = v >> 48;
+//   dst[7] = v >> 56;
+// }
 
 static void set_state(uint64_t *state, int nstate, randompack_rng *rng) {  
   rng->buf_word = BUFSIZE;
   rng->buf_byte = 0;
   if (rng->engine == CHACHA20) {
-    for (int i = 0; i < nstate; i++)
-      store_u64_le(rng->state.u8 + 8*i, state[i]);
+    int k = 0;
+    for (int i = 0; i < nstate; i++) {
+      uint64_t v = state[i];
+      rng->state.u32[k++] = (uint32_t)v;
+      rng->state.u32[k++] = (uint32_t)(v >> 32);
+    }
   }
   else if (rng->engine == FAST) {
     rng->state.xo.s0[0] = state[0];

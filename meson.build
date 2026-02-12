@@ -170,6 +170,9 @@ if accel_bug_workaround or (want_fortran and not build_fortran_opt.auto())
   if fc.get_id() == 'gcc'
     add_project_arguments('-fno-backtrace', language: 'fortran')
   endif
+  if host_machine.system() == 'darwin'
+    add_project_link_arguments('-Wl,-no_warn_duplicate_libraries', language: 'fortran')
+  endif
   add_project_arguments('-Wno-do-subscript', language : 'fortran')
   add_project_arguments(
     fc.get_supported_arguments(['-Wno-function-elimination']),

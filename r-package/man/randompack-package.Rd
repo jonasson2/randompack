@@ -16,7 +16,7 @@ generate random variates:
 \preformatted{
   rng <- randompack_rng()                # Default: x256++simd
   rng <- randompack_rng("pcg64")         # Specify engine
-  x <- rng$normal(100, mean=1, sigma=2)  # Generate 100 N(1,2) variates
+  x <- rng$normal(100, mu=1, sigma=2)    # Generate 100 N(1,2) variates
 }
 }
 

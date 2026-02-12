@@ -55,16 +55,17 @@ of length \code{len}.
 \item{\code{rng$normal(len)}}{Standard normal variates (mean 0 and standard
 deviation 1).}
 \item{\code{rng$normal(len, mu, sigma)}}{Normal variates with mean \code{mu}
-and standard deviation \code{sigma}.}
+and standard deviation \code{sigma} (defaults 0 and 1).}
 \item{\code{rng$skew_normal(len, mu, sigma, alpha)}}{Skew-normal variates with
-location \code{mu}, scale \code{sigma}, and shape \code{alpha}.}
+location \code{mu} and scale \code{sigma} (defaults 0 and 1), and shape
+\code{alpha} (required).}
 \item{\code{rng$lognormal(len, mu, sigma)}}{Lognormal variates derived from an
-underlying normal distribution.}
+underlying normal distribution (defaults 0 and 1).}
 \item{\code{rng$exp(len)}}{Standard exponential variates (scale 1).}
 \item{\code{rng$exp(len, scale)}}{Exponential variates with scale
 \code{scale}.}
 \item{\code{rng$gamma(len, shape, scale)}}{Gamma variates with given shape and
-scale.}
+scale (default 1).}
 \item{\code{rng$chi2(len, nu)}}{Chi-square variates with \code{nu} degrees of
 freedom.}
 \item{\code{rng$beta(len, a, b)}}{Beta variates with shape parameters \code{a}
@@ -74,11 +75,11 @@ freedom.}
 \item{\code{rng$f(len, nu1, nu2)}}{F variates with \code{nu1} and \code{nu2}
 degrees of freedom.}
 \item{\code{rng$gumbel(len, mu, beta)}}{Gumbel variates with location \code{mu}
-and scale \code{beta}.}
+and scale \code{beta} (defaults 0 and 1).}
 \item{\code{rng$pareto(len, xm, alpha)}}{Pareto variates with minimum value
 \code{xm} and shape \code{alpha}.}
 \item{\code{rng$weibull(len, shape, scale)}}{Weibull variates with given shape
-and scale.}
+and scale (default 1).}
 \item{\code{rng$mvn(n, Sigma, mu = NULL)}}{Multivariate normal variates as an
 \code{n} by \code{d} matrix, where \code{d} is the dimension of
 \code{Sigma}.}
@@ -142,7 +143,7 @@ x <- rng$unif(5)
 x <- rng$normal(100)                    # Standard normal
 x <- rng$normal(100, 1, 2)              # N(1,2)
 x <- rng$skew_normal(100, mu=0, sigma=1, alpha=2)
-x <- rng$lognormal(5, mu=0, sigma=1)
+x <- rng$lognormal(5)
 x <- rng$beta(5, a=2, b=3)
 Sigma <- diag(2)
 x <- rng$mvn(10, Sigma, mu=c(1,2))

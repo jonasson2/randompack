@@ -32,7 +32,7 @@ methods_continuous <- list(
           PACKAGE = "randompack")
   },
 
-  skew_normal = function(len, mu = 0, sigma = 1, alpha = 0) {
+  skew_normal = function(len, mu = 0, sigma = 1, alpha) {
     if (is.null(self$ptr)) stop("RNG is not initialized")
     len <- as.integer(len)
     if (length(len) != 1L || is.na(len) || len < 0L)
@@ -51,7 +51,7 @@ methods_continuous <- list(
           PACKAGE = "randompack")
   },
 
-  lognormal = function(len, mu, sigma) {
+  lognormal = function(len, mu = 0, sigma = 1) {
     if (is.null(self$ptr)) stop("RNG is not initialized")
     len <- as.integer(len)
     if (length(len) != 1L || is.na(len) || len < 0L)
@@ -67,7 +67,7 @@ methods_continuous <- list(
           PACKAGE = "randompack")
   },
 
-  gumbel = function(len, mu, beta) {
+  gumbel = function(len, mu = 0, beta = 1) {
     if (is.null(self$ptr)) stop("RNG is not initialized")
     len <- as.integer(len)
     if (length(len) != 1L || is.na(len) || len < 0L)
@@ -112,7 +112,7 @@ methods_continuous <- list(
     .Call("randompack_exp_R", self$ptr, len, scale, PACKAGE = "randompack")
   },
 
-  gamma = function(len, shape, scale) {
+  gamma = function(len, shape, scale = 1) {
     if (is.null(self$ptr)) stop("RNG is not initialized")
     len <- as.integer(len)
     if (length(len) != 1L || is.na(len) || len < 0L)
@@ -185,7 +185,7 @@ methods_continuous <- list(
     .Call("randompack_f_R", self$ptr, len, nu1, nu2, PACKAGE = "randompack")
   },
 
-  weibull = function(len, shape, scale) {
+  weibull = function(len, shape, scale = 1) {
     if (is.null(self$ptr)) stop("RNG is not initialized")
     len <- as.integer(len)
     if (length(len) != 1L || is.na(len) || len < 0L)
