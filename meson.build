@@ -5,6 +5,7 @@ project('randompack', 'c',
     'warning_level=3',
     'buildtype=debug',
     'default_library=both',
+    'b_lto=true',
   ]
 )
 
