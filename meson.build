@@ -53,25 +53,22 @@ if perf_opt
 endif
 
 simd_opt = get_option('simd')
-if simd_opt == 'avx2'
-  add_project_arguments('-mavx2', language : 'c')
-elif simd_opt == 'auto'
-  if host_machine.cpu_family() in ['x86', 'x86_64'] and cc.has_argument('-mavx2')
-    if not meson.is_cross_build()
-      avx2_check = cc.run('''
-        #include <immintrin.h>
-        int main(void) {
-        #if defined(__GNUC__) || defined(__clang__) || defined(__INTEL_COMPILER)
-          return __builtin_cpu_supports("avx2") ? 0 : 1;
-        #else
-          return 1;
-        #endif
-        }
-      ''')
-      if avx2_check.returncode() == 0
-        add_project_arguments('-mavx2', language : 'c')
-      endif
+build_avx2 = false
+avx2_c_args = []
+
+if simd_opt != 'baseline'
+  if host_machine.cpu_family() in ['x86', 'x86_64']
+    if cc.get_id() in ['gcc', 'clang', 'appleclang', 'msvc']
+      build_avx2 = true
     endif
+  endif
+endif
+
+if build_avx2
+  if cc.get_id() == 'msvc'
+    avx2_c_args = ['/arch:AVX2']
+  else
+    avx2_c_args = cc.get_supported_arguments(['-mavx2'])
   endif
 endif
 
@@ -169,9 +166,6 @@ if accel_bug_workaround or (want_fortran and not build_fortran_opt.auto())
   fc = meson.get_compiler('fortran')
   if fc.get_id() == 'gcc'
     add_project_arguments('-fno-backtrace', language: 'fortran')
-  endif
-  if host_machine.system() == 'darwin'
-    add_project_link_arguments('-Wl,-no_warn_duplicate_libraries', language: 'fortran')
   endif
   add_project_arguments('-Wno-do-subscript', language : 'fortran')
   add_project_arguments(

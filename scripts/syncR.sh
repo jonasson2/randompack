@@ -1,6 +1,10 @@
 #!/bin/sh
 # MAKE THE R PACKAGE MATCH THE C PACKAGE
 set -eu
+[ -f .randompack-root ] || {
+  echo "syncR.sh: run this from the repository root (missing .randompack-root)" 1>&2
+  exit 1
+}
 ROOT=$(cd "$(dirname "$0")" && pwd)
 
 # SYNC SOURCE FILES

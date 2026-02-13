@@ -1,3 +1,10 @@
 [build-system]
-requires = ["setuptools>=64", "wheel", "Cython>=3.0", "numpy>=1.22"]
-build-backend = "setuptools.build_meta"
+requires = ["meson-python>=0.16", "meson>=1.2", "ninja", "numpy>=1.22"]
+build-backend = "mesonpy"
+
+[project]
+name = "randompack"
+version = "0.1.0"
+license = { file = "LICENSE" }
+requires-python = ">=3.9"
+dependencies = ["numpy>=1.22"]

@@ -19,5 +19,8 @@ sfc64, Philox-4x64, Squares64, and ChaCha20.
 See `Rng` for the main interface and `engines()` for the complete list.
 """
 
+from importlib.metadata import version as _version
+__version__ = _version("randompack")
+
 from ._core import Rng, engines
 __all__ = ["Rng", "engines"]

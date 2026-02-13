@@ -1,3 +1,0 @@
-include LICENSE
-recursive-include src *
-recursive-include randompack *.pyx *.pxd *.py

@@ -1,12 +1,27 @@
+randompack_inc = [inc] + fortran_inc
+
 randompack_src = files(
   'randompack.c',
   'printX.c',
 )
-
 randompack_src += fortran_src
 
 u01_hires = get_option('u01_hires')
 u01_hires_args = u01_hires ? ['-DU01_HIRES'] : []
+
+build_avx2_define = build_avx2 ? ['-DBUILD_AVX2'] : []
+base_c_args = u01_hires_args + accel_bug_args + build_avx2_define
+
+avx2_objs = []
+if build_avx2
+  avx2_obj = object_library(
+    'randompack_avx2',
+    files('avx2.c'),
+    include_directories: randompack_inc,
+    c_args: avx2_c_args + build_avx2_define,
+  )
+  avx2_objs = avx2_obj
+endif
 
 if accel_bug_workaround
   randompack_src += files(
@@ -14,14 +29,13 @@ if accel_bug_workaround
     'lapack_dpstrf.f')
 endif
 
-randompack_inc = [inc] + fortran_inc
-
 librandompack_static = static_library(
   'randompack',
   randompack_src,
+  objects: avx2_objs,
   include_directories: randompack_inc,
   dependencies: [blas_dep] + math_deps,
-  c_args: u01_hires_args + accel_bug_args,
+  c_args: base_c_args,
   pic: true,
   install: true,
 )
@@ -29,9 +43,10 @@ librandompack_static = static_library(
 librandompack = shared_library(
   'randompack',
   randompack_src,
+  objects: avx2_objs,
   include_directories: randompack_inc,
   dependencies: [blas_dep] + math_deps,
-  c_args: u01_hires_args + accel_bug_args,
+  c_args: base_c_args,
   install: true,
 )
 
@@ -44,7 +59,7 @@ randompack_dep = declare_dependency(
   link_with: librandompack,
   include_directories: randompack_inc,
   dependencies: [blas_dep] + math_deps,
-  compile_args: u01_hires_args + accel_bug_args,
+  compile_args: base_c_args,
 )
 
 if get_option('build_test_variants')
@@ -52,9 +67,10 @@ if get_option('build_test_variants')
     # Pretend HAVE128 is disabled
     'randompack_no128',
     randompack_src,
+    objects: avx2_objs,
     include_directories: randompack_inc,
     dependencies: [blas_dep] + math_deps,
-    c_args: ['-DRANDOMPACK_PRETEND_NO128'] + accel_bug_args,
+    c_args: ['-DRANDOMPACK_PRETEND_NO128'] + base_c_args,
     pic: true,
     install: false,
   )
@@ -63,6 +79,24 @@ if get_option('build_test_variants')
     link_with: librandompack_no128,
     include_directories: randompack_inc,
     dependencies: [blas_dep] + math_deps,
-    compile_args: accel_bug_args,
+    compile_args: base_c_args,
+  )
+
+  librandompack_nosimd = static_library(
+    # Pretend SIMD is disabled
+    'randompack_nosimd',
+    randompack_src,
+    include_directories: randompack_inc,
+    dependencies: [blas_dep] + math_deps,
+    c_args: ['-DPRETEND_NOSIMD'] + u01_hires_args + accel_bug_args,
+    pic: true,
+    install: false,
+  )
+
+  randompack_nosimd_dep = declare_dependency(
+    link_with: librandompack_nosimd,
+    include_directories: randompack_inc,
+    dependencies: [blas_dep] + math_deps,
+    compile_args: ['-DPRETEND_NOSIMD'] + u01_hires_args + accel_bug_args,
   )
 endif

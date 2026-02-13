@@ -3,9 +3,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#if HAVE_AVX2
-#include <immintrin.h>
-#elif HAVE_NEON
+#if HAVE_NEON
 #include <arm_neon.h>
 #endif
 
@@ -13,16 +11,7 @@
 // 23-bit: k*2^-23 for k=0..2^23−1; 24-bit: k*2^-24 for k=0..2^24−1.
 ALWAYS_INLINE void rand_float_8x23(float x[], size_t len, uint32_t u32[]) {
   size_t i = 0;
-#if HAVE_AVX2
-  __m256 scale = _mm256_set1_ps(0x1.0p-23f);
-  for (; i + 7 < len; i += 8) {
-    __m256i r = _mm256_loadu_si256((const __m256i_u *)(u32 + i));
-    r = _mm256_srli_epi32(r, 9);
-    __m256 d = _mm256_cvtepi32_ps(r);
-    d = _mm256_mul_ps(d, scale);
-    _mm256_storeu_ps(x + i, d);
-  }
-#elif HAVE_NEON
+#if HAVE_NEON
   float32x4_t scale = vdupq_n_f32(0x1.0p-23f);
   for (; i + 3 < len; i += 4) {
     uint32x4_t r = vld1q_u32(u32 + i);
@@ -39,16 +28,7 @@ ALWAYS_INLINE void rand_float_8x23(float x[], size_t len, uint32_t u32[]) {
 
 ALWAYS_INLINE void rand_float_8x24(float x[], size_t len, uint32_t u32[]) {
   size_t i = 0;
-#if HAVE_AVX2
-  __m256 scale = _mm256_set1_ps(0x1.0p-24f);
-  for (; i + 7 < len; i += 8) {
-    __m256i r = _mm256_loadu_si256((const __m256i_u *)(u32 + i));
-    r = _mm256_srli_epi32(r, 8);
-    __m256 d = _mm256_cvtepi32_ps(r);
-    d = _mm256_mul_ps(d, scale);
-    _mm256_storeu_ps(x + i, d);
-  }
-#elif HAVE_NEON
+#if HAVE_NEON
   float32x4_t scale = vdupq_n_f32(0x1.0p-24f);
   for (; i + 3 < len; i += 4) {
     uint32x4_t r = vld1q_u32(u32 + i);
@@ -64,6 +44,12 @@ ALWAYS_INLINE void rand_float_8x24(float x[], size_t len, uint32_t u32[]) {
 }
 
 ALWAYS_INLINE void rand_float(float x[], size_t len, randompack_rng *rng) {
+#if defined(BUILD_AVX2)
+  if (rng->cpu_has_avx2) {
+    rand_float_avx2(x, len, rng);
+    return;
+  }
+#endif
   int w = enter_u32_mode(rng);
   size_t i = 0;
   while (i < len) {

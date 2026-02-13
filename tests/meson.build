@@ -50,7 +50,16 @@ if get_option('build_test_variants')
     c_args : ['-DRANDOMPACK_PRETEND_NO128'],
   )
 
-  test('RunTestNo128', test_no128, args : ['-v'])
+  test_nosimd = executable(
+    'RunTestNoSimd',
+    test_sources + extra_util,
+    dependencies : [randompack_nosimd_dep],
+  )
+
+  test_variants = find_program('sh')
+  test('TestVariants', test_variants,
+    args : [files('RunTestVariants.sh'), meson.current_build_dir()],
+    depends : [test_no128, test_nosimd])
 
 endif
 
