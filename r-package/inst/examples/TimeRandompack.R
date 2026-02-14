@@ -15,17 +15,25 @@ if (!nzchar(engine)) engine <- "x256++simd"
 rng <- randompack::randompack_rng(engine=engine)
 
 chunk = 4096
-bench_time = 0.2            # seconds per distribution
+bench_time = 0.4            # seconds per distribution
 reps = max(1, floor(1e6 / chunk))
 
 cat(sprintf("Engine: %s\n", if (nzchar(engine)) engine else "<default>"))
 cat(sprintf("%-18s %8s\n", "Distribution", "ns/value"))
 
-# Warmup (JIT/bytecode, first-call effects, CPU boosting)
-t0 <- proc.time()[["elapsed"]]
-for (i in 1:30000) rng$unif(1000)
-t1 <- proc.time()[["elapsed"]]
-cat(sprintf("Warmup time: %.3f s\n\n", t1 - t0))
+warmup = function(seconds) {
+  t0 <- proc.time()[["elapsed"]]
+  while ((proc.time()[["elapsed"]] - t0) < seconds) {
+    rng$unif(1000)
+  }
+  proc.time()[["elapsed"]] - t0
+}
+
+cat(sprintf("Platform:  %s\n", R.version$platform))
+cat(sprintf("Engine:    %s\n", if (nzchar(engine)) engine else "<default>"))
+cat(sprintf("Time/case: %.3f s\n", bench_time))
+warm <- warmup(0.1)
+cat(sprintf("Warmup:    %.3f s\n\n", warm))
 
 time_dist = function(f, chunk, reps, bench_time) {
   calls = 0
@@ -41,62 +49,46 @@ time_dist = function(f, chunk, reps, bench_time) {
   1e9 * (t1 - t0) / (calls * chunk)
 }
 
-# u01
-ns = time_dist(function() rng$unif(chunk), chunk, reps, bench_time)
-cat(sprintf("%-18s %8.2f\n", "u01", ns))
+run_case = function(name, f_rp) {
+  rp_ns = time_dist(f_rp, chunk, reps, bench_time)
+  cat(sprintf("%-18s %8.2f\n", name, rp_ns))
+}
 
-# unif(2,5)
-ns = time_dist(function() rng$unif(chunk, 2, 5), chunk, reps, bench_time)
-cat(sprintf("%-18s %8.2f\n", "unif(2,5)", ns))
+run_case("u01",
+         function() rng$unif(chunk))
 
-# norm
-ns = time_dist(function() rng$normal(chunk), chunk, reps, bench_time)
-cat(sprintf("%-18s %8.2f\n", "norm", ns))
+run_case("unif(2,5)",
+         function() rng$unif(chunk, 2, 5))
 
-# normal(2,3)
-ns = time_dist(function() rng$normal(chunk, 2, 3), chunk, reps, bench_time)
-cat(sprintf("%-18s %8.2f\n", "normal(2,3)", ns))
+run_case("norm",
+         function() rng$normal(chunk))
 
-# lognormal(0,1)
-ns = time_dist(function() rng$lognormal(chunk, 0, 1), chunk, reps, bench_time)
-cat(sprintf("%-18s %8.2f\n", "lognormal(0,1)", ns))
+run_case("normal(2,3)",
+         function() rng$normal(chunk, 2, 3))
 
-# gumbel(0,1)
-ns = time_dist(function() rng$gumbel(chunk, 0, 1), chunk, reps, bench_time)
-cat(sprintf("%-18s %8.2f\n", "gumbel(0,1)", ns))
+run_case("exp(1)",
+         function() rng$exp(chunk, 1))
 
-# pareto(1,2)
-ns = time_dist(function() rng$pareto(chunk, 1, 2), chunk, reps, bench_time)
-cat(sprintf("%-18s %8.2f\n", "pareto(1,2)", ns))
+run_case("exp(2)",
+         function() rng$exp(chunk, 2))
 
-# exp(1)
-ns = time_dist(function() rng$exp(chunk, 1), chunk, reps, bench_time)
-cat(sprintf("%-18s %8.2f\n", "exp(1)", ns))
+run_case("lognormal(0,1)",
+         function() rng$lognormal(chunk, 0, 1))
 
-# exp(2)
-ns = time_dist(function() rng$exp(chunk, 2), chunk, reps, bench_time)
-cat(sprintf("%-18s %8.2f\n", "exp(2)", ns))
+run_case("gamma(2,3)",
+         function() rng$gamma(chunk, 2, 3))
 
-# gamma(2,3)
-ns = time_dist(function() rng$gamma(chunk, 2, 3), chunk, reps, bench_time)
-cat(sprintf("%-18s %8.2f\n", "gamma(2,3)", ns))
+run_case("chi2(5)",
+         function() rng$chi2(chunk, 5))
 
-# chi2(5)
-ns = time_dist(function() rng$chi2(chunk, 5), chunk, reps, bench_time)
-cat(sprintf("%-18s %8.2f\n", "chi2(5)", ns))
+run_case("beta(2,5)",
+         function() rng$beta(chunk, 2, 5))
 
-# beta(2,5)
-ns = time_dist(function() rng$beta(chunk, 2, 5), chunk, reps, bench_time)
-cat(sprintf("%-18s %8.2f\n", "beta(2,5)", ns))
+run_case("t(10)",
+         function() rng$t(chunk, 10))
 
-# t(10)
-ns = time_dist(function() rng$t(chunk, 10), chunk, reps, bench_time)
-cat(sprintf("%-18s %8.2f\n", "t(10)", ns))
+run_case("F(5,10)",
+         function() rng$f(chunk, 5, 10))
 
-# F(5,10)
-ns = time_dist(function() rng$f(chunk, 5, 10), chunk, reps, bench_time)
-cat(sprintf("%-18s %8.2f\n", "F(5,10)", ns))
-
-# weibull(2,1)
-ns = time_dist(function() rng$weibull(chunk, 2, 1), chunk, reps, bench_time)
-cat(sprintf("%-18s %8.2f\n", "weibull(2,1)", ns))
+run_case("weibull(2,1)",
+         function() rng$weibull(chunk, 2, 1))

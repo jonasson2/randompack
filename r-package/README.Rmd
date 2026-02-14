@@ -1,3 +1,8 @@
+---
+title: "randompack"
+output: html_document
+---
+
 # randompack
 
 This package provides R bindings to the C library Randompack, a random number

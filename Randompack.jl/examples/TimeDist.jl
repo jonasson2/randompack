@@ -1,5 +1,9 @@
+# TimeDist.jl
+# Compare base/Distributions vs Randompack (ns/value)
+
 using Random
 using Distributions
+using Randompack
 using Printf
 
 function compute_reps(chunk::Int)
@@ -51,37 +55,49 @@ function time_dist!(chunk::Int, reps::Int, bench_time::Float64,
 end
 
 function main()
+  engine = ""
   chunk = 4096
   bench_time = 0.2
-  args = ARGS
   i = 1
-  while i <= length(args)
-    arg = args[i]
+  while i <= length(ARGS)
+    arg = ARGS[i]
     if arg == "-h" || arg == "--help"
-      println("Usage: julia TimeDistributions.jl [-c chunk]")
+      println("Usage: julia TimeDist.jl [engine] [-c chunk]")
+      println("  engine     RNG engine name (default: x256++simd)")
       println("  -c chunk   number of draws per call (default: 4096)")
       return
     elseif arg == "-c" || arg == "--chunk"
-      if i == length(args)
+      if i == length(ARGS)
         error("missing value for -c")
       end
       i += 1
-      chunk = parse(Int, args[i])
+      chunk = parse(Int, ARGS[i])
       if chunk <= 0
         error("chunk must be positive")
       end
-    else
+    elseif startswith(arg, "-")
       error("unknown argument: " * arg)
+    elseif engine == ""
+      engine = arg
+    else
+      error("unexpected argument: " * arg)
     end
     i += 1
   end
-  reps = compute_reps(chunk)
+  if isempty(engine)
+    engine = "x256++simd"
+  end
 
+  reps = compute_reps(chunk)
   buf = Vector{Float64}(undef, chunk)
   sink = Ref{Float64}(0.0)
 
+  rng = rng_create(engine)
+
   d_logn = LogNormal(0, 1)
-  d_exp1 = Exponential(1)
+  d_unif = Uniform(2, 5)
+  d_norm = Normal(2, 3)
+  d_exp2 = Exponential(2)
   d_gumbel = Gumbel(0, 1)
   d_pareto = Pareto(1, 2)
   d_gam = Gamma(2, 3)
@@ -90,102 +106,143 @@ function main()
   d_t = TDist(10)
   d_f = FDist(5, 10)
   d_w = Weibull(2, 1)
-  d_unif = Uniform(2, 5)
-  d_norm = Normal(2, 3)
-  d_exp2 = Exponential(2)
 
   # Warmup: ensure JIT compile and keep CPU "awake" for at least 0.1s
   rand!(buf); consume!(sink, buf)
   randn!(buf); consume!(sink, buf)
-  rand!(d_exp1, buf); consume!(sink, buf)
-  rand!(d_w, buf); consume!(sink, buf)
-  begin
-    @inbounds for i in 1:chunk
-      buf[i] = 2 + 3 * buf[i]
-    end
-    consume!(sink, buf)
-  end
+  randexp!(buf); consume!(sink, buf)
+  rand!(d_gam, buf); consume!(sink, buf)
+  random_unif!(rng, buf); consume!(sink, buf)
   warmup!(0.1)
 
-  println("Distribution       ns/value")
+  @printf("Engine: %s\n", engine)
+  @printf("%-14s %10s %11s %8s\n", "Distribution", "Base", "Randompack",
+          "Factor")
 
-  function run(name::String, fill!::Function)
-    ns = time_dist!(chunk, reps, bench_time, fill!, sink)
-    @printf("%-18s %8.2f\n", name, ns)
+  function run(name::String, fill_base!::Function, fill_rp!::Function)
+    base_ns = time_dist!(chunk, reps, bench_time, fill_base!, sink)
+    rp_ns = time_dist!(chunk, reps, bench_time, fill_rp!, sink)
+    factor = base_ns / rp_ns
+    @printf("%-14s %10.2f %11.2f %8.2f\n", name, base_ns, rp_ns, factor)
   end
 
-  run("u01", () -> begin
+  run("unif(0,1)", () -> begin
     rand!(buf)
+    consume!(sink, buf)
+  end, () -> begin
+    random_unif!(rng, buf)
     consume!(sink, buf)
   end)
 
   run("unif(2,5)", () -> begin
     rand!(d_unif, buf)
     consume!(sink, buf)
+  end, () -> begin
+    random_unif!(rng, buf; a=2, b=5)
+    consume!(sink, buf)
   end)
 
-  run("norm", () -> begin
+  run("std.normal", () -> begin
     randn!(buf)
+    consume!(sink, buf)
+  end, () -> begin
+    random_normal!(rng, buf)
     consume!(sink, buf)
   end)
 
   run("normal(2,3)", () -> begin
     rand!(d_norm, buf)
     consume!(sink, buf)
+  end, () -> begin
+    random_normal!(rng, buf; mu=2, sigma=3)
+    consume!(sink, buf)
   end)
 
-  run("exp(1)", () -> begin
-    rand!(d_exp1, buf)
+  run("std.exp", () -> begin
+    randexp!(buf)
+    consume!(sink, buf)
+  end, () -> begin
+    random_exp!(rng, buf; scale=1)
     consume!(sink, buf)
   end)
 
   run("exp(2)", () -> begin
     rand!(d_exp2, buf)
     consume!(sink, buf)
+  end, () -> begin
+    random_exp!(rng, buf; scale=2)
+    consume!(sink, buf)
   end)
 
   run("lognormal(0,1)", () -> begin
     rand!(d_logn, buf)
+    consume!(sink, buf)
+  end, () -> begin
+    random_lognormal!(rng, buf; mu=0, sigma=1)
     consume!(sink, buf)
   end)
 
   run("gumbel(0,1)", () -> begin
     rand!(d_gumbel, buf)
     consume!(sink, buf)
+  end, () -> begin
+    random_gumbel!(rng, buf; mu=0, beta=1)
+    consume!(sink, buf)
   end)
 
   run("pareto(1,2)", () -> begin
     rand!(d_pareto, buf)
+    consume!(sink, buf)
+  end, () -> begin
+    random_pareto!(rng, buf; xm=1, alpha=2)
     consume!(sink, buf)
   end)
 
   run("gamma(2,3)", () -> begin
     rand!(d_gam, buf)
     consume!(sink, buf)
+  end, () -> begin
+    random_gamma!(rng, buf; shape=2, scale=3)
+    consume!(sink, buf)
   end)
 
   run("chi2(5)", () -> begin
     rand!(d_chi, buf)
+    consume!(sink, buf)
+  end, () -> begin
+    random_chi2!(rng, buf; nu=5)
     consume!(sink, buf)
   end)
 
   run("beta(2,5)", () -> begin
     rand!(d_beta, buf)
     consume!(sink, buf)
+  end, () -> begin
+    random_beta!(rng, buf; a=2, b=5)
+    consume!(sink, buf)
   end)
 
   run("t(10)", () -> begin
     rand!(d_t, buf)
+    consume!(sink, buf)
+  end, () -> begin
+    random_t!(rng, buf; nu=10)
     consume!(sink, buf)
   end)
 
   run("F(5,10)", () -> begin
     rand!(d_f, buf)
     consume!(sink, buf)
+  end, () -> begin
+    random_f!(rng, buf; nu1=5, nu2=10)
+    consume!(sink, buf)
   end)
 
   run("weibull(2,1)", () -> begin
     rand!(d_w, buf)
+    consume!(sink, buf)
+  end, () -> begin
+    random_weibull!(rng, buf; shape=2, scale=1)
     consume!(sink, buf)
   end)
 

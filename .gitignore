@@ -10,6 +10,7 @@
 .R*
 r-package/docs/
 .Rproj.user
+r-package/README.html
 
 # PYTHON
 build/
@@ -17,15 +18,14 @@ dist/
 __pycache__/
 .eggs/
 .mesonpy-*/
-docs/_build/
-docs/..doctrees/
+**/docs/_build/
+**/docs/..doctrees/
 .pytest_cache/
 randompack.egg-info/
 docs/reference/generated/
 release-python/
 
 # REBUILDABLE DOC
-*.html
 *.pdf
 tests/*.txt
 article/
@@ -41,7 +41,6 @@ article/
 # MISCELLANEOUS
 a.out
 .DS_Store
-doc/
 /nogit/
 *.ppt
 *.log

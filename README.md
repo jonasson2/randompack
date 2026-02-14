@@ -171,197 +171,198 @@ Randompack relies on the Meson/Ninja build system. Install these programs if
 they are not already available.
 
 To build an optimized release version of Randompack:
-
-        meson setup build --buildtype=release
-        meson compile -C build
-
+```sh
+    meson setup build --buildtype=release
+    meson compile -C build
+```
 To run the test suite:
-
-        meson test -C build
-
+```sh
+    meson test -C build
+```
 To install the library and headers into the default installation directory
 (usually `/usr/local`):
-
-        sudo meson install -C build
-
+```sh
+    sudo meson install -C build
+```
 To prescribe a local installation directory, include a --prefix option when
 configuring the build, for example:
-
-        meson setup build --buildtype=release --prefix=$HOME/opt
-        meson install -C build
-
+```sh
+    meson setup build --buildtype=release --prefix=$HOME/opt
+    meson install -C build
+```
 After installation, Randompack can be used by other projects via pkg-config:
-
-        pkg-config --cflags --libs randompack
-
+```sh
+    pkg-config --cflags --libs randompack
+```
 ## C API overview (by example)
 
 The examples subfolodr contains additional example programs.
 
 ### Minimal example: N(0,1), automatically randomized rng, default engine
+```c
+    #include <stdio.h>
+    #include "randompack.h"
 
-        #include <stdio.h>
-        #include "randompack.h"
-
-        int main(void) {
-          randompack_rng *rng = randompack_create(0);
-          double x[5];
-          randompack_norm(x, 5, rng);
-          for (int i = 0; i < 5; i++) printf("%g\n", x[i]);
-          randompack_free(rng);
-          return 0;
-        }
-
+    int main(void) {
+      randompack_rng *rng = randompack_create(0);
+      double x[5];
+      randompack_norm(x, 5, rng);
+      for (int i = 0; i < 5; i++) printf("%g\n", x[i]);
+      randompack_free(rng);
+      return 0;
+    }
+```
 ### N(3,2), PCG64 engine, seeded with 42
+```c
+    #include <stdio.h>
+    #include "randompack.h"
 
-        #include <stdio.h>
-        #include "randompack.h"
-
-        int main(void) {
-          randompack_rng *rng = randompack_create("pcg64");
-          randompack_seed(42, 0, 0, rng);
-          double x[5];
-          randompack_normal(x, 5, 3.0, 2.0, rng);
-          for (int i = 0; i < 5; i++) printf("%g\n", x[i]);
-          randompack_free(rng);
-          return 0;
-        }
-
+    int main(void) {
+      randompack_rng *rng = randompack_create("pcg64");
+      randompack_seed(42, 0, 0, rng);
+      double x[5];
+      randompack_normal(x, 5, 3.0, 2.0, rng);
+      for (int i = 0; i < 5; i++) printf("%g\n", x[i]);
+      randompack_free(rng);
+      return 0;
+    }
+```
 ### Secondary distributions
+```c
+    #include <stdio.h>
+    #include "randompack.h"
 
-        #include <stdio.h>
-        #include "randompack.h"
-
-        int main(void) {
-          randompack_rng *rng = randompack_create(0);
-          randompack_seed(7, 0, 0, rng);
-          double x[5];
-          randompack_chi2(x, 5, 5, rng);
-          randompack_weibull(x, 5, 2, 3, rng);
-          randompack_skew_normal(x, 5, 0, 1, 1, rng);
-          randompack_free(rng);
-          return 0;
-        }
-
+    int main(void) {
+      randompack_rng *rng = randompack_create(0);
+      randompack_seed(7, 0, 0, rng);
+      double x[5];
+      randompack_chi2(x, 5, 5, rng);
+      randompack_weibull(x, 5, 2, 3, rng);
+      randompack_skew_normal(x, 5, 0, 1, 1, rng);
+      randompack_free(rng);
+      return 0;
+    }
+```
 ### Integer range example
+```c
+    #include <stdio.h>
+    #include "randompack.h"
 
-        #include <stdio.h>
-        #include "randompack.h"
-
-        int main(void) {
-          randompack_rng *rng = randompack_create(0);
-          randompack_seed(7, 0, 0, rng);
-          int xi[5];
-          long long xl[5];
-          randompack_int(xi, 5, -3, 8, rng);
-          randompack_long_long(xl, 5, -10, 10, rng);
-          for (int i = 0; i < 5; i++)
-            printf("%d %lld\n", xi[i], xl[i]);
-          randompack_free(rng);
-          return 0;
-        }
-
+    int main(void) {
+      randompack_rng *rng = randompack_create(0);
+      randompack_seed(7, 0, 0, rng);
+      int xi[5];
+      long long xl[5];
+      randompack_int(xi, 5, -3, 8, rng);
+      randompack_long_long(xl, 5, -10, 10, rng);
+      for (int i = 0; i < 5; i++)
+        printf("%d %lld\n", xi[i], xl[i]);
+      randompack_free(rng);
+      return 0;
+    }
+```
 ### Raw bitstream example
+```c
+    #include <stdio.h>
+    #include "randompack.h"
 
-        #include <stdio.h>
-        #include "randompack.h"
-
-        int main(void) {
-          randompack_rng *rng = randompack_create(0);
-          long long xi[2];
-          unsigned char xb[1];
-          randompack_raw(xi, sizeof(xi), rng);
-          randompack_raw(xb, sizeof(xb), rng);
-          printf("%lld %lld %u\n", xi[0], xi[1], (unsigned)xb[0]);
-          randompack_free(rng);
-          return 0;
-        }
-
+    int main(void) {
+      randompack_rng *rng = randompack_create(0);
+      long long xi[2];
+      unsigned char xb[1];
+      randompack_raw(xi, sizeof(xi), rng);
+      randompack_raw(xb, sizeof(xb), rng);
+      printf("%lld %lld %u\n", xi[0], xi[1], (unsigned)xb[0]);
+      randompack_free(rng);
+      return 0;
+    }
+```
 ### Example with full error checking
-        #include <stdio.h>
-        #include "randompack.h"
+```c
+    #include <stdio.h>
+    #include "randompack.h"
 
-        int main(void) {
-          bool ok;
-          double x[10];
-          randompack_rng *rng = 0;
-          rng = randompack_create("x256++");
-          if (!rng) {
-            fprintf(stderr, "rng creation failed\n");
-            return 1;
-          }
-          ok = randompack_seed(12345, 0, 0, rng);
-          if (!ok) goto end;
-          ok = randompack_norm(x, 10, rng);
-          if (!ok) goto end;
-          for (int i = 0; i < 10; i++) printf("% .17g\n", x[i]);
+    int main(void) {
+      bool ok;
+      double x[10];
+      randompack_rng *rng = 0;
+      rng = randompack_create("x256++");
+      if (!rng) {
+        fprintf(stderr, "rng creation failed\n");
+        return 1;
+      }
+      ok = randompack_seed(12345, 0, 0, rng);
+      if (!ok) goto end;
+      ok = randompack_norm(x, 10, rng);
+      if (!ok) goto end;
+      for (int i = 0; i < 10; i++) printf("% .17g\n", x[i]);
 
-        end:
-          char *msg = randompack_last_error(rng);
-          if (msg)
-            fprintf(stderr, "randompack error: %s\n", msg);
-          randompack_free(rng);
-          return msg ? 1 : 0;
-        }
-
+    end:
+      char *msg = randompack_last_error(rng);
+      if (msg)
+        fprintf(stderr, "randompack error: %s\n", msg);
+      randompack_free(rng);
+      return msg ? 1 : 0;
+    }
+```
 ### Threads example demonstrating spawn key seeding
-
 In this example each thread uses the same base seed but a different spawn key
 (the thread id), producing reproducible independent substreams. Note that the
 example relies on assert() for simplicity – if compiled with -DNDEBUG these
 checks become inactive. The example relies on pthreads, usually not available on
 Windows.
+```c
+    // Simple pthread example.
+    // Launch M threads. Each thread derives an independent RNG stream from a
+    // common seed via a spawn key and computes max(U(0,1)) over N draws.
 
-        // Simple pthread example.
-        // Launch M threads. Each thread derives an independent RNG stream from a
-        // common seed via a spawn key and computes max(U(0,1)) over N draws.
+    #include <stdint.h>
+    #include <stdio.h>
+    #include <pthread.h>
 
-        #include <stdint.h>
-        #include <stdio.h>
-        #include <pthread.h>
+    #include "randompack.h"
 
-        #include "randompack.h"
+    enum { M = 10, N = 100000 };
+    static int seed = 42;
 
-        enum { M = 10, N = 100000 };
-        static int seed = 42;
+    typedef struct {
+      int stream_id;
+      double result;
+    } job;
 
-        typedef struct {
-          int stream_id;
-          double result;
-        } job;
+    static void *worker(void *arg) {
+      job *j = arg;
+      randompack_rng *rng = randompack_create(0);
+      if (!rng) return 0;
+      uint32_t spawn_key[1];
+      spawn_key[0] = j->stream_id;
+      if (!randompack_seed(seed, spawn_key, 1, rng)) {
+        randompack_free(rng);
+        return 0;
+      }
+      double m = 0;
+      for (int i = 0; i < N; i++) {
+        double u;
+        randompack_u01(&u, 1, rng);
+        if (u > m) m = u;
+      }
+      j->result = m;
+      randompack_free(rng);
+      return 0;
+    }
 
-        static void *worker(void *arg) {
-          job *j = arg;
-          randompack_rng *rng = randompack_create(0);
-          if (!rng) return 0;
-          uint32_t spawn_key[1];
-          spawn_key[0] = j->stream_id;
-          if (!randompack_seed(seed, spawn_key, 1, rng)) {
-            randompack_free(rng);
-            return 0;
-          }
-          double m = 0;
-          for (int i = 0; i < N; i++) {
-            double u;
-            randompack_u01(&u, 1, rng);
-            if (u > m) m = u;
-          }
-          j->result = m;
-          randompack_free(rng);
-          return 0;
-        }
-
-        int main(void) {
-          pthread_t th[M];
-          job jobs[M];
-          for (int i = 0; i < M; i++) {
-            jobs[i].stream_id = i;
-            jobs[i].result = 0;
-            pthread_create(&th[i], 0, worker, &jobs[i]);
-          }
-          for (int i = 0; i < M; i++)
-            pthread_join(th[i], 0);
-          for (int i = 0; i < M; i++)
-            printf("stream %d: max = %.6f\n", i, jobs[i].result);
-          return 0;
-        }
+    int main(void) {
+      pthread_t th[M];
+      job jobs[M];
+      for (int i = 0; i < M; i++) {
+        jobs[i].stream_id = i;
+        jobs[i].result = 0;
+        pthread_create(&th[i], 0, worker, &jobs[i]);
+      }
+      for (int i = 0; i < M; i++)
+        pthread_join(th[i], 0);
+      for (int i = 0; i < M; i++)
+        printf("stream %d: max = %.6f\n", i, jobs[i].result);
+      return 0;
+    }
+```

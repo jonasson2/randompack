@@ -255,6 +255,42 @@ static void TestXoshiro256ssAgainstRust(void) {
   randompack_free(rng);
 }
 
+static void TestFastAgainstRust(void) {
+  // Rust reference: xoshiro256++ with jump() to form four streams, interleaved.
+  uint64_t state[4] = {
+    1234567890123456789ull,
+    1ull,
+    2ull,
+    9876543210987654321ull
+  };
+  randompack_rng *rng = randompack_create("x256++simd");
+  check_rng_clean(rng);
+  bool ok = randompack_set_state(state, 4, rng);
+  check_success(ok, rng);
+  uint64_t x[10];
+  ok = randompack_uint64(x, 10, 0, rng);
+  check_success(ok, rng);
+  uint64_t rust[10] = {
+    7481289576166103649ULL,
+    3711477825876208215ULL,
+    10504489571862109290ULL,
+    2643019566307506446ULL,
+    14954838225025987065ULL,
+    5229132898082227265ULL,
+    14520407634720921881ULL,
+    9191202137237659578ULL,
+    13925222450416462367ULL,
+    10964539199822853794ULL
+  };
+  xCheck(equal_vec64(x, rust, 10));
+  printMsg("COMPARISON WITH RUST FAST (4-stream interleave):");
+  printMsg("Rust fast draws:");
+  for (int i = 0; i < 10; i++) print64("rust", rust[i]);
+  printMsg("randompack fast draws:");
+  for (int i = 0; i < 10; i++) print64("rp", x[i]);
+  randompack_free(rng);
+}
+
 void TestReference(void) {
   TestChaCha20AgainstRFC8439();
   if (!is_little_endian()) return;
@@ -262,4 +298,5 @@ void TestReference(void) {
   TestPhiloxAgainstRandom123();
   TestXoshiro256ppAgainstRust();
   TestXoshiro256ssAgainstRust();
+  TestFastAgainstRust();
 }

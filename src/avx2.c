@@ -12,7 +12,15 @@
 #include <string.h>
 #include "buffer_draw.inc"
 
-bool cpu_has_avx2(void) {
+#if defined(_MSC_VER)
+#define HIDDEN
+#elif defined(__GNUC__) || defined(__clang__)
+#define HIDDEN __attribute__((visibility("hidden")))
+#else
+#define HIDDEN
+#endif
+
+HIDDEN bool cpu_has_avx2(void) {
 #if defined(_MSC_VER)
   int info[4];
   __cpuid(info, 1);
@@ -63,7 +71,7 @@ bool cpu_has_avx2(void) {
   (outv) = r_; \
 } while (0)
 
-void fill_fast_avx2(randompack_rng *rng, size_t len) {
+HIDDEN void fill_fast_avx2(randompack_rng *rng, size_t len) {
   uint64_t *out = rng->buf.u64 + rng->buf_word;
   xo256 *st = &rng->state.xo;
   VEC_T s0 = VEC_LOAD(&st->s0[0]);
@@ -81,7 +89,7 @@ void fill_fast_avx2(randompack_rng *rng, size_t len) {
   VEC_STORE(&st->s3[0], s3);
 }
 
-void rand_dble_avx2(double x[], size_t len, randompack_rng *rng) {
+HIDDEN void rand_dble_avx2(double x[], size_t len, randompack_rng *rng) {
   int w = enter_u64_mode(rng);
   size_t i = 0;
   while (i < len) {
@@ -118,7 +126,7 @@ void rand_dble_avx2(double x[], size_t len, randompack_rng *rng) {
   exit_u64_mode(rng, w);
 }
 
-void rand_float_avx2(float x[], size_t len, randompack_rng *rng) {
+HIDDEN void rand_float_avx2(float x[], size_t len, randompack_rng *rng) {
   int w = enter_u32_mode(rng);
   size_t i = 0;
   while (i < len) {

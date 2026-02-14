@@ -56,18 +56,18 @@ def make_dists() -> List[Dist]:
   def lognormal_0_1(rng: np.random.Generator, n: int) -> None:
     rng.lognormal(0.0, 1.0, n)
 
+  def exp_1(rng: np.random.Generator, n: int) -> None:
+    rng.exponential(1.0, n)
+
+  def exp_2(rng: np.random.Generator, n: int) -> None:
+    rng.exponential(2.0, n)
+
   def gumbel_0_1(rng: np.random.Generator, n: int) -> None:
     rng.gumbel(0.0, 1.0, n)
 
   def pareto_1_2(rng: np.random.Generator, n: int) -> None:
     # Pareto Type I with xm=1, alpha=2: X = xm*(1+Y) where Y ~ Pareto(alpha) in NumPy.
     rng.pareto(2.0, n) + 1.0
-
-  def exp_1(rng: np.random.Generator, n: int) -> None:
-    rng.exponential(1.0, n)
-
-  def exp_2(rng: np.random.Generator, n: int) -> None:
-    rng.exponential(2.0, n)
 
   def gamma_2_3(rng: np.random.Generator, n: int) -> None:
     rng.gamma(2.0, 3.0, n)
@@ -84,27 +84,26 @@ def make_dists() -> List[Dist]:
   def f_5_10(rng: np.random.Generator, n: int) -> None:
     rng.f(5.0, 10.0, n)
 
-  def weibull_2_3(rng: np.random.Generator, n: int) -> None:
-    # Weibull with shape k=2, scale=3.
-    rng.weibull(2.0, n) * 3.0
+  def weibull_2_1(rng: np.random.Generator, n: int) -> None:
+    # Weibull with shape k=2, scale=1.
+    rng.weibull(2.0, n)
 
   return [
-    Dist("u01", u01),
     Dist("u01", u01),
     Dist("unif(2,5)", unif_2_5),
     Dist("norm", norm),
     Dist("normal(2,3)", normal_2_3),
+    Dist("exp(1)", exp_1),
+    Dist("exp(2)", exp_2),
     Dist("lognormal(0,1)", lognormal_0_1),
     Dist("gumbel(0,1)", gumbel_0_1),
     Dist("pareto(1,2)", pareto_1_2),
-    Dist("exp(1)", exp_1),
-    Dist("exp(2)", exp_2),
     Dist("gamma(2,3)", gamma_2_3),
     Dist("chi2(5)", chi2_5),
     Dist("beta(2,5)", beta_2_5),
     Dist("t(10)", t_10),
     Dist("F(5,10)", f_5_10),
-    Dist("weibull(2,3)", weibull_2_3),
+    Dist("weibull(2,1)", weibull_2_1),
   ]
 
 

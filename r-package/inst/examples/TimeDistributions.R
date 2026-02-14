@@ -35,7 +35,7 @@ ns = time_dist(function() runif(chunk), chunk, reps, bench_time)
 cat(sprintf("%-18s %8.2f\n", "u01", ns))
 
 # unif(2,5)
-ns = time_dist(function() 2 + 3*runif(chunk), chunk, reps, bench_time)
+ns = time_dist(function() runif(chunk, min=2, max=5), chunk, reps, bench_time)
 cat(sprintf("%-18s %8.2f\n", "unif(2,5)", ns))
 
 # norm
@@ -43,7 +43,7 @@ ns = time_dist(function() rnorm(chunk), chunk, reps, bench_time)
 cat(sprintf("%-18s %8.2f\n", "norm", ns))
 
 # normal(2,3)
-ns = time_dist(function() 2 + 3*rnorm(chunk), chunk, reps, bench_time)
+ns = time_dist(function() rnorm(chunk, mean=2, sd=3), chunk, reps, bench_time)
 cat(sprintf("%-18s %8.2f\n", "normal(2,3)", ns))
 
 # exp(1)
