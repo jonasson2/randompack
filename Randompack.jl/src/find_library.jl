@@ -38,6 +38,16 @@ end
 
 function __init__()
   _libpath[] = _choose_libpath()
+  if Sys.islinux()
+    try
+      Libdl.dlopen("libm.so.6", Libdl.RTLD_GLOBAL)
+    catch
+    end
+  end
   _try_preload_openblas()
-  Libdl.dlopen(_libpath[], Libdl.RTLD_GLOBAL)
+  flags = Libdl.RTLD_GLOBAL
+  if Sys.islinux()
+    flags = flags | Libdl.RTLD_DEEPBIND
+  end
+  Libdl.dlopen(_libpath[], flags)
 end

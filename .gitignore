@@ -57,6 +57,16 @@ lib/
 bin/
 release/
 
+# JULIA
+.juliaup/
+Randompack.jl/.juliaup/
+.julia/
+Randompack.jl/.julia/
+.julia_depot/
+*.jl.cov
+*.jl.mem
+Randompack.jl/Manifest.toml
+
 CLONED C-PACKAGES
 chacha-opt/
 pcg-dxsm/
