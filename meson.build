@@ -17,7 +17,9 @@ host_system = host_machine.system()
 # BLAS selection
 # -------------------------------------------------
 
+builtin_blas = get_option('builtin_blas')
 blas_order_option = get_option('blas_order')
+blas_search_order = []
 
 if blas_order_option == 'auto'
   if host_system == 'windows'
@@ -116,6 +118,9 @@ foreach blas_name : blas_search_order
   endif
 endforeach
 
+if builtin_blas
+  message('Using built-in BLAS from src/blas.f')
+endif
 if blas_dep.found()
   message('Using BLAS library: ' + blas_found)
 else
@@ -134,9 +139,10 @@ accel_bug_args = accel_bug_workaround ? ['-DACCEL_BUG_WORKAROUND'] : []
 # -------------------------------------------------
 
 build_fortran_opt = get_option('build_fortran')
-want_fortran = accel_bug_workaround or build_fortran_opt.enabled()
+force_fortran = accel_bug_workaround or builtin_blas
+want_fortran = force_fortran or build_fortran_opt.enabled()
 
-if build_fortran_opt.auto() and not accel_bug_workaround
+if build_fortran_opt.auto() and not force_fortran
   add_languages('fortran', required: true)
   fc = meson.get_compiler('fortran')
   add_project_arguments('-Wno-do-subscript', language : 'fortran')
@@ -161,7 +167,7 @@ if build_fortran_opt.auto() and not accel_bug_workaround
   endif
 endif
 
-if accel_bug_workaround or (want_fortran and not build_fortran_opt.auto())
+if force_fortran or (want_fortran and not build_fortran_opt.auto())
   add_languages('fortran', required: true)
   fc = meson.get_compiler('fortran')
   if fc.get_id() == 'gcc'

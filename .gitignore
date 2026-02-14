@@ -24,6 +24,7 @@ __pycache__/
 randompack.egg-info/
 docs/reference/generated/
 release-python/
+wheelhouse/
 
 # REBUILDABLE DOC
 *.pdf
@@ -44,6 +45,7 @@ a.out
 /nogit/
 *.ppt
 *.log
+misc/blas
 
 C BUILD FILES AND FOLDERS
 *.obj

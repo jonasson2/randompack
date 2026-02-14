@@ -4,6 +4,12 @@ option('blas_order',
   description: 'Comma-separated list of BLAS libraries to search for (e.g., "mkl,openblas,accelerate") or "auto" for platform default'
 )
 
+option('builtin_blas',
+  type: 'boolean',
+  value: false,
+  description: 'Use src/blas.f instead of system BLAS libraries'
+)
+
 option('u01_hires',
   type: 'boolean',
   value: false,

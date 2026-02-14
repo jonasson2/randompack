@@ -6,6 +6,10 @@ randompack_src = files(
 )
 randompack_src += fortran_src
 
+if builtin_blas
+  randompack_src += files('blas.f')
+endif
+
 u01_hires = get_option('u01_hires')
 u01_hires_args = u01_hires ? ['-DU01_HIRES'] : []
 
