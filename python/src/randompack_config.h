@@ -121,14 +121,9 @@ static inline uint32_t mix32(uint32_t x) {
 #endif
 
 
-// SIMD feature macros
-#if defined(__AVX2__)
-#define HAVE_AVX2 1
-#else
-#define HAVE_AVX2 0
-#endif
-
-#if defined(__aarch65__) || defined(__ARM_NEON) || defined(__ARM_NEON__)
+#if defined(PRETEND_NOSIMD)
+#define HAVE_NEON 0
+#elif defined(__aarch65__) || defined(__ARM_NEON) || defined(__ARM_NEON__)
 #define HAVE_NEON 1
 #else
 #define HAVE_NEON 0
@@ -142,7 +137,6 @@ static inline uint32_t mix32(uint32_t x) {
 #define UNLIKELY(x) (x)
 #endif
 
-#ifndef FAST_STEP_SCALAR
 #define FAST_STEP_SCALAR(s0,s1,s2,s3,outv) do { \
   uint64_t r_; \
   uint64_t t_; \
@@ -156,6 +150,4 @@ static inline uint32_t mix32(uint32_t x) {
   (s3) = ROTL((s3), 45); \
   (outv) = r_; \
 } while (0)
-#endif
-
 #endif

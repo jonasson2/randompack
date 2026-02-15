@@ -4,43 +4,41 @@ project('randompack', 'c',
 
 py = import('python').find_installation(pure: false)
 cc = meson.get_compiler('c')
-
 py_dep = py.dependency()
 
 numpy_inc = run_command(py, ['-c', 'import numpy; print(numpy.get_include())'],
-                        check: true).stdout().strip()
-
+  check: true).stdout().strip()
 inc = include_directories('src', numpy_inc)
 
 wrap_sources = files('randompack/_core.c')
 core_sources = files('src/randompack.c')
 
+deps = [py_dep]
+
+host_system = host_machine.system()
+
 math_dep = cc.find_library('m', required: false)
-
-lapack_dep = dependency('lapack', required: false)
-if not lapack_dep.found()
-  lapack_dep = cc.find_library('lapack', required: false)
-endif
-if not lapack_dep.found()
-  error('LAPACK not found (needed for MVN / dpotrf_)')
-endif
-
-blas_dep = dependency('blas', required: false)
-if not blas_dep.found()
-  blas_dep = cc.find_library('blas', required: false)
-endif
-if not blas_dep.found()
-  error('BLAS not found (needed for MVN)')
-endif
-
-deps = [py_dep, lapack_dep, blas_dep]
 if math_dep.found()
   deps += [math_dep]
 endif
 
+extra_sources = []
+
+if host_system == 'darwin'
+  # Use Apple Accelerate (BLAS + LAPACK). Do NOT compile the fallback Fortran.
+  accel_dep = dependency('appleframeworks', modules: ['Accelerate'], required: true)
+  deps += [accel_dep]
+  add_languages('fortran', required: true)
+  extra_sources += files('src/lapack_dpstf2.f', 'src/lapack_dpstrf.f')
+else
+  # Windows/Linux: build and link the bundled BLAS/LAPACK subset.
+  add_languages('fortran', required: true)
+  extra_sources += files('src/blas.f')
+endif
+
 py.extension_module(
   '_core',
-  sources: wrap_sources + core_sources,
+  sources: wrap_sources + core_sources + extra_sources,
   include_directories: inc,
   dependencies: deps,
   install: true,
