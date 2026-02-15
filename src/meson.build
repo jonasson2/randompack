@@ -23,7 +23,7 @@ if builtin_blas
     pic: true,
     install: false,
   )
-  blas_objs = blas_lib.extract_all_objects()
+  blas_objs = [blas_lib.extract_all_objects()]
 endif
 
 u01_hires = get_option('u01_hires')
@@ -42,7 +42,7 @@ if build_avx2
     pic: true,
     install: false,
   )
-  avx2_objs = avx2_lib.extract_all_objects()
+  avx2_objs = [avx2_lib.extract_all_objects()]
 endif
 
 extra_objs = avx2_objs + blas_objs
@@ -64,6 +64,8 @@ librandompack_static = static_library(
   install: true,
 )
 
+randompack_lto = fortran_interface ? ['b_lto=false'] : ['b_lto=true']
+
 librandompack = shared_library(
   'randompack',
   randompack_src,
@@ -71,7 +73,7 @@ librandompack = shared_library(
   include_directories: randompack_inc,
   dependencies: [blas_dep] + math_deps,
   c_args: base_c_args,
-  override_options: ['b_lto=true'],
+  override_options: randompack_lto,
   install: true,
 )
 
