@@ -15,9 +15,8 @@ static float tail_draw_f(randompack_rng *rng, uint32_t rabs, int *w) {
   float xx, yy;
   for (;;) {
     // Switch to 1.0 - U to avoid log(0.0), see GH 13361
-    xx = -ziggurat_nor_inv_r_f*
-      (float)openlibm_log1p((double)-draw_u01f(rng, w));
-    yy = -(float)openlibm_log1p((double)-draw_u01f(rng, w));
+    xx = -ziggurat_nor_inv_r_f*openlibm_log1pf(-draw_u01f(rng, w));
+    yy = -openlibm_log1pf(-draw_u01f(rng, w));
     if (yy + yy > xx * xx)
       return ((rabs >> 8) & 0x1) ? -(ziggurat_nor_r_f + xx)
                                  : ziggurat_nor_r_f + xx;
@@ -49,7 +48,7 @@ ALWAYS_INLINE float draw_normf(randompack_rng *rng, int *w) {
     else {
       float h = fi_float[idx - 1] - fi_float[idx];
       float y = draw_u01f(rng, w);
-      if (h*y + fi_float[idx] < (float)openlibm_exp((double)(-x*x/2))) {
+      if (h*y + fi_float[idx] < openlibm_expf(-x*x/2)) {
         make_half_full32(rng, w);
         return x;
       }
@@ -78,8 +77,7 @@ ALWAYS_INLINE float standard_exponential_unlikely_f(randompack_rng *rng,
   while (true) { // added loop to replace recursion, to allow speedup.
     if (UNLIKELY(idx == 0)) {
       // Switch to 1.0 - U to avoid log(0.0), see GH 13361
-      return ziggurat_exp_r_f -
-        (float)openlibm_log1p((double)-draw_u01f(rng, w));
+      return ziggurat_exp_r_f - openlibm_log1pf(-draw_u01f(rng, w));
     }
     else {
       float y = draw_u01f(rng, w);
@@ -89,7 +87,7 @@ ALWAYS_INLINE float standard_exponential_unlikely_f(randompack_rng *rng,
         float f1 = fe_float[idx-1], f0 = fe_float[idx];
         float yh = y*(f1 - f0);
         if (yh >= r1*wi*f1) return x;
-        if (UNLIKELY(f1 - yh < (float)openlibm_exp((double)-x))) return x;
+        if (UNLIKELY(f1 - yh < openlibm_expf(-x))) return x;
       }
       r = draw_u32(rng, w);
       r >>= 1;
@@ -114,21 +112,20 @@ ALWAYS_INLINE float draw_expf(randompack_rng *rng, int *w) {
     float x = r*wi;
     if (LIKELY(r < ki)) return x;
     if (UNLIKELY(idx == 0)) {
-      x = ziggurat_exp_r_f -
-        (float)openlibm_log1p((double)-draw_u01f(rng, w));
+      x = ziggurat_exp_r_f - openlibm_log1pf(-draw_u01f(rng, w));
       make_half_full32(rng, w);
       return x;
     }
     float y = draw_u01f(rng, w);
     uint32_t dk = (1U << 24) - ki;
     uint32_t dr = (1U << 24) - r;
-    if (y <= dr*slope_f[idx]) { // below tangent
+    if (y <= dr*slope_expf[idx]) { // below tangent
       make_half_full32(rng, w);
       return x;
     }
     if (y*dk <= dr) { // below secant
       float f0 = fe_float[idx-1], f1 = fe_float[idx];
-      if (f1 + y*(f0 - f1) < (float)openlibm_exp((double)-x)) { // or below pdf
+      if (f1 + y*(f0 - f1) < openlibm_expf(-x)) { // or below pdf
         make_half_full32(rng, w);
         return x;
       }
@@ -184,10 +181,9 @@ ALWAYS_INLINE void rand_expf(float *x, size_t len, randompack_rng *rng) {
     if (ri < ke2f[idx])           // ke2f = kef*2
       x[i++] = xi;                // fast accept
     else if (idx == 0)            // tail
-      x[i++] = ziggurat_exp_r_f -
-        (float)openlibm_log1p((double)-draw_u01f(rng, &w));
+      x[i++] = ziggurat_exp_r_f - openlibm_log1pf(-draw_u01f(rng, &w));
     else if ((fe_float[idx-1] - fe_float[idx])*draw_u01f(rng, &w) +
-      fe_float[idx] < (float)openlibm_exp((double)-xi))
+      fe_float[idx] < openlibm_expf(-xi))
       x[i++] = xi;                // wedge accept
   }
   exit_u32_mode(rng, w);

@@ -23,24 +23,24 @@ static int LastNonzeroColumn(int m, int n, double A[]) {
 static void rand_lognormal(double x[], size_t len, double mu, double sigma,
   randompack_rng *rng) {
   rand_norm(x, len, rng); // N(0,1)
-#if defined(__APPLE__)
-  for (size_t i = 0; i < len; ) {
-    size_t chunk;
-    if (len - i > (size_t)INT_MAX) {
-      chunk = (size_t)INT_MAX;
-    }
-    else {
-      chunk = len - i;
-    }
-    int n = (int)chunk;
-    if (mu != 0 || sigma != 1)
-      for (size_t j = 0; j < chunk; j++) x[i + j] = mu + sigma*x[i + j];
-    vvexp(x + i, x + i, &n);
-    i += chunk;
-  }
-#else
+// #if defined(__APPLE__)
+//   for (size_t i = 0; i < len; ) {
+//     size_t chunk;
+//     if (len - i > (size_t)INT_MAX) {
+//       chunk = (size_t)INT_MAX;
+//     }
+//     else {
+//       chunk = len - i;
+//     }
+//     int n = (int)chunk;
+//     if (mu != 0 || sigma != 1)
+//       for (size_t j = 0; j < chunk; j++) x[i + j] = mu + sigma*x[i + j];
+//     vvexp(x + i, x + i, &n);
+//     i += chunk;
+//   }
+// #else
   for (size_t i = 0; i < len; i++) x[i] = openlibm_exp(mu + sigma*x[i]);
-#endif
+// #endif
 }
 
 // All the rand_uintXX, rand_int and rand_long_long are strict-aliasing-safe
