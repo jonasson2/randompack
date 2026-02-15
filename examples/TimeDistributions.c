@@ -226,7 +226,7 @@ int main(int argc, char **argv) {
   printf("time per value:   ns/value\n");
   printf("bench_time:       %.3f s per distribution\n", bench_time);
   printf("chunk:            %d\n\n", chunk);
-  printf("%-13s %8s %8s\n", "Distribution", "double", "float");
+  printf("%-13s %9s %8s\n", "Distribution", "double", "float");
   for (int i = 0; i < LEN(dists); i++) {
     double par[3];
     par[0] = (double)dists[i].id;
@@ -243,7 +243,7 @@ int main(int argc, char **argv) {
     double nsd = time_double(chunk, bench_time, fill_wrapper, par, rngd);
     double nsf = time_float(chunk, bench_time, fill_wrapperf, parf, rngf);
     printf("%-13s", dists[i].name);
-    printf(" %8.2f %8.2f\n", nsd, nsf);
+    printf(" %9.2f %8.2f\n", nsd, nsf);
   }
   randompack_free(rngd);
   randompack_free(rngf);

@@ -65,6 +65,10 @@ struct randompack_rng {
   } buf;
 };
 
+double openlibm_log(double x);
+double openlibm_log1p(double x);
+double openlibm_exp(double x);
+
 #if defined(BUILD_AVX2)
 bool cpu_has_avx2(void);
 void fill_fast_avx2(randompack_rng *rng, size_t len);

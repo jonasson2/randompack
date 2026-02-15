@@ -19,6 +19,7 @@ void TestUint64(void);
 void TestNorm(void);
 void TestContinuous(void);
 void TestHelpers(void);
+void TestOpenlibm(void);
 void TestSeed(void);
 void TestSetState(void);
 void TestReference(void);

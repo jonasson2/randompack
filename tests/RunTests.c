@@ -89,6 +89,7 @@ int main(int argc, char **argv) {
   vprint("\n");
   vprint(headr_fmt, "TEST OF", "PASSED", "FAILED");
   run_test("Helpers",  TestHelpers);
+  run_test("Openlibm", TestOpenlibm);
   run_test("Create",   TestCreate);
   run_test("Seed",     TestSeed);
   run_test("Buffer",   TestBuffer);

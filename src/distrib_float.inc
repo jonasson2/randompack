@@ -38,7 +38,8 @@ static void rand_lognormalf(float x[], size_t len, float mu, float sigma,
     i += chunk;
   }
 #else
-  for (size_t i = 0; i < len; i++) x[i] = expf(mu + sigma*x[i]);
+  for (size_t i = 0; i < len; i++)
+    x[i] = (float)openlibm_exp((double)(mu + sigma*x[i]));
 #endif
 }
 
@@ -57,8 +58,10 @@ ALWAYS_INLINE void fill_gamma_shape1f(float *x, size_t len, float shape,
         float u  = draw_u01f(rng, &w);
         float z2 = z*z;
         float z4 = z2*z2;
+        float lu = (float)openlibm_log((double)u);
+        float lv3 = (float)openlibm_log((double)v3);
         if (u < 1.0f - 0.0331f*z4 ||
-            logf(u) < 0.5f*z2 + d*(1.0f - v3 + logf(v3))) {
+            lu < 0.5f*z2 + d*(1.0f - v3 + lv3)) {
           x[i] = d*v3;
           break;
         }
@@ -80,7 +83,8 @@ ALWAYS_INLINE void fill_gammaf(float *x, size_t len, float shape, float scale,
     int w = enter_u32_mode(rng);
     for (size_t i = 0; i < len; i++) {
       float u = draw_u01f(rng, &w);
-      x[i] *= expf(logf(u)/shape);
+      float lu = (float)openlibm_log((double)u);
+      x[i] *= (float)openlibm_exp((double)(lu/shape));
     }
     exit_u32_mode(rng, w);
   }
@@ -161,8 +165,10 @@ ALWAYS_INLINE void fill_gumbelf(float *x, size_t len, float mu, float beta,
     i += chunk;
   }
 #else
-  for (size_t i = 0; i < len; i++)
-    x[i] = mu - beta*logf(-logf(x[i]));
+  for (size_t i = 0; i < len; i++) {
+    float lx = (float)openlibm_log((double)x[i]);
+    x[i] = mu - beta*(float)openlibm_log((double)-lx);
+  }
 #endif
 }
 
@@ -170,7 +176,7 @@ ALWAYS_INLINE void fill_paretof(float *x, size_t len, float xm, float alpha,
   randompack_rng *rng) {
   rand_expf(x, len, rng);
   for (size_t i = 0; i < len; i++)
-    x[i] = xm*expf(x[i]/alpha);
+    x[i] = xm*(float)openlibm_exp((double)(x[i]/alpha));
 }
 
 ALWAYS_INLINE void fill_weibullf(float *x, size_t len, float shape,

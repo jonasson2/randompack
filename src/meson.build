@@ -2,12 +2,29 @@ randompack_inc = [inc] + fortran_inc
 
 randompack_src = files(
   'randompack.c',
+  'openlibm.c',
   'printX.c',
 )
 randompack_src += fortran_src
 
+blas_objs = []
 if builtin_blas
-  randompack_src += files('blas.f')
+  fc = meson.get_compiler('fortran')
+  blas_f_args = fc.get_supported_arguments([
+    '-Wno-compare-reals',
+    '-Wno-unused-dummy-argument',
+    '-Wno-obsolescent',
+    '-Wno-maybe-uninitialized',
+    '-Wno-surprising',
+  ])
+  blas_lib = static_library(
+    'randompack_blas',
+    files('blas.f'),
+    fortran_args: blas_f_args,
+    pic: true,
+    install: false,
+  )
+  blas_objs = blas_lib.extract_all_objects()
 endif
 
 u01_hires = get_option('u01_hires')
@@ -29,6 +46,8 @@ if build_avx2
   avx2_objs = avx2_lib.extract_all_objects()
 endif
 
+extra_objs = avx2_objs + blas_objs
+
 if accel_bug_workaround
   randompack_src += files(
     'lapack_dpstf2.f',
@@ -38,7 +57,7 @@ endif
 librandompack_static = static_library(
   'randompack',
   randompack_src,
-  objects: avx2_objs,
+  objects: extra_objs,
   include_directories: randompack_inc,
   dependencies: [blas_dep] + math_deps,
   c_args: base_c_args,
@@ -49,7 +68,7 @@ librandompack_static = static_library(
 librandompack = shared_library(
   'randompack',
   randompack_src,
-  objects: avx2_objs,
+  objects: extra_objs,
   include_directories: randompack_inc,
   dependencies: [blas_dep] + math_deps,
   c_args: base_c_args,
@@ -74,7 +93,7 @@ if get_option('build_test_variants')
     # Pretend HAVE128 is disabled
     'randompack_no128',
     randompack_src,
-    objects: avx2_objs,
+    objects: extra_objs,
     include_directories: randompack_inc,
     dependencies: [blas_dep] + math_deps,
     c_args: ['-DRANDOMPACK_PRETEND_NO128'] + base_c_args,
@@ -93,6 +112,7 @@ if get_option('build_test_variants')
     # Pretend SIMD is disabled
     'randompack_nosimd',
     randompack_src,
+    objects: blas_objs,
     include_directories: randompack_inc,
     dependencies: [blas_dep] + math_deps,
     c_args: ['-DPRETEND_NOSIMD'] + u01_hires_args + accel_bug_args,

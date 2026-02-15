@@ -33,8 +33,8 @@ static double norm_tail_draw(randompack_rng *rng, uint64_t rabs, int *w) {
   double xx, yy;
   for (;;) {
     /* Switch to 1.0 - U to avoid log(0.0), see GH 13361 */
-    xx = -ziggurat_nor_inv_r * log1p(-draw_u01(rng, w));
-    yy = -log1p(-draw_u01(rng, w));
+    xx = -ziggurat_nor_inv_r * openlibm_log1p(-draw_u01(rng, w));
+    yy = -openlibm_log1p(-draw_u01(rng, w));
     if (LIKELY(yy + yy > xx * xx))
       return ((rabs >> 8) & 0x1) ? -(ziggurat_nor_r + xx) : ziggurat_nor_r + xx;
   }
@@ -72,7 +72,7 @@ ALWAYS_INLINE double draw_norm(randompack_rng *rng, int *w) {
     }
     double h = fi_double[idx - 1] - fi_double[idx];
     double y = draw_u01(rng, w);
-    if (h*y + fi_double[idx] < exp(-0.5*x*x)) {
+    if (h*y + fi_double[idx] < openlibm_exp(-0.5*x*x)) {
       make_half_full(rng, w);
       return x;
     }
@@ -100,7 +100,7 @@ ALWAYS_INLINE double standard_exponential_unlikely(randompack_rng *rng,
   while (true) { // added loop to replace recursion, to allow speedup.
     if (UNLIKELY(idx == 0)) {
       /* Switch to 1.0 - U to avoid log(0.0), see GH 13361 */
-      return ziggurat_exp_r - log1p(-draw_u01(rng, w));
+      return ziggurat_exp_r - openlibm_log1p(-draw_u01(rng, w));
     }
     else {
       double y = draw_u01(rng, w);
@@ -110,7 +110,7 @@ ALWAYS_INLINE double standard_exponential_unlikely(randompack_rng *rng,
 		  double f1 = fe_double[idx-1], f0 = fe_double[idx];
 		  double yh = y*(f1 - f0);
 		  if (yh >= r1*wi*f1) return x;
-		  if (UNLIKELY(f1 - yh < exp(-x))) return x;
+		  if (UNLIKELY(f1 - yh < openlibm_exp(-x))) return x;
 		}
       r = draw_u64(rng, w);
       r >>= 3;
@@ -136,7 +136,7 @@ ALWAYS_INLINE double draw_exp(randompack_rng *rng, int *w) {
     x = r*we_double[idx];;
     if (LIKELY(r < ki)) return x;
     if (UNLIKELY(idx == 0)) { // 0.045%
-      x = ziggurat_exp_r + log1p(-draw_u01(rng, w));
+      x = ziggurat_exp_r + openlibm_log1p(-draw_u01(rng, w));
       make_half_full(rng, w);
       return x;
     }
@@ -149,7 +149,7 @@ ALWAYS_INLINE double draw_exp(randompack_rng *rng, int *w) {
     }
     if (y*dk <= dr) { // below secant (0.030%)
       double f0 = fe_double[idx-1], f1 = fe_double[idx];
-      if (f1 + y*(f0 - f1) < exp(-x)) { // below curve (0.020%)
+      if (f1 + y*(f0 - f1) < openlibm_exp(-x)) { // below curve (0.020%)
         make_half_full(rng, w);
         return x;
       }

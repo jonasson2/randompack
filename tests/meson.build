@@ -20,6 +20,7 @@ test_sources = files(
   'TestSeed.c',
   'TestSetState.c',
   'TestHelpers.c',
+  'TestOpenlibm.c',
   'TestBuffer.c',
 )
 

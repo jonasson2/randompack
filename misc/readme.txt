@@ -37,8 +37,8 @@ gh run download <run-id> -n wheels-windows-latest -D dist
 python -m twine check dist/*
 python -m twine upload --repository testpypi dist/*  # test upload
 
-Test install:
--------------
+Test upload:
+------------
 python -m venv /tmp/rp-test
 source /tmp/rp-test/bin/activate
 pip install -i https://test.pypi.org/simple randompack
