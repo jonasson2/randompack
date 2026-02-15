@@ -11,7 +11,7 @@ numpy_inc = run_command(py, ['-c', 'import numpy; print(numpy.get_include())'],
 inc = include_directories('src', numpy_inc)
 
 wrap_sources = files('randompack/_core.c')
-core_sources = files('src/randompack.c', 'src/openlibm.c')
+core_sources = files('src/randompack.c')
 
 deps = [py_dep]
 

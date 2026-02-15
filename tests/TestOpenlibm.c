@@ -4,6 +4,7 @@
 #include "TestUtil.h"
 #include "xCheck.h"
 #include "randompack_internal.h"
+#include "openlibm.inc"
 
 static bool near(double a, double b, double tol) {
   double diff = fabs(a - b);

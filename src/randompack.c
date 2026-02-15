@@ -13,6 +13,7 @@
 #include "randompack.h"
 #include "randompack_internal.h"
 #include "BlasGateway.h"
+#include "openlibm.inc"
 #include "crypto_random.inc"
 
 typedef struct {

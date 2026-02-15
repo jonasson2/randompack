@@ -2,7 +2,6 @@ randompack_inc = [inc] + fortran_inc
 
 randompack_src = files(
   'randompack.c',
-  'openlibm.c',
   'printX.c',
 )
 randompack_src += fortran_src
