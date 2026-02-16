@@ -43,8 +43,8 @@ time_distributions = executable(
 )
 
 time_logarithms = executable(
-  'TimeLogarithms',
-  ['TimeLogarithms.c'] + common_util,
+  'TimeLogExp',
+  ['TimeLogExp.c', '../src/sleef.c'] + common_util,
   dependencies : [randompack_dep],
   c_args: avx2_c_args + cc.get_supported_arguments(['-mfma']),
 )
