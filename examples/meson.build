@@ -42,6 +42,13 @@ time_distributions = executable(
   dependencies : [randompack_dep],
 )
 
+time_logarithms = executable(
+  'TimeLogarithms',
+  ['TimeLogarithms.c'] + common_util,
+  dependencies : [randompack_dep],
+  c_args: avx2_c_args + cc.get_supported_arguments(['-mfma']),
+)
+
 time_integers = executable(
   'TimeIntegers',
   ['TimeIntegers.c'] + common_util,
