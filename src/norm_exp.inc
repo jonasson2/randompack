@@ -90,16 +90,18 @@ ALWAYS_INLINE double draw_norm(randompack_rng *rng, int *w) {
       return x;
     }
     double y = draw_u01(rng, w);
-    uint64_t dr = (1ULL << 53) - r;
-    uint64_t dk = (1ULL << 53) - ki;
+    uint64_t dr = (1ULL << 52) - r;
+    double tangent = dr*slope_norm[idx];
     if (LIKELY(idx > 52)) {
+      if (y <= tangent) goto ok; // below tangent
+      uint64_t dk = (1ULL << 52) - ki;
       if (y*dk > dr) continue;              // above secant
-      if (y <= dr*slope_norm[idx]) goto ok; // below tangent
       goto check;
     }
     else if (LIKELY(idx < 52)) {
+      if (y > tangent) continue;                // above tangent
+      uint64_t dk = (1ULL << 52) - ki;
       if (y*dk <= dr) goto ok;                             // below secant
-      if (y > dr*slope_norm[idx]) continue;                // above tangent
     }
   check:
     f0 = fi_double[idx-1], f1 = fi_double[idx];
