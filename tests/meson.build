@@ -20,6 +20,9 @@ test_sources = files(
   'TestSeed.c',
   'TestSetState.c',
   'TestHelpers.c',
+  'TestFullMantissa.c',
+  'TestLogExp.c',
+  'TestAvx2.c',
   'TestOpenlibm.c',
   'TestBuffer.c',
 )
@@ -35,6 +38,7 @@ run_tests = executable(
   'RunTests',
   test_sources + extra_util,
   dependencies : [randompack_dep],
+  c_args : ['-DRANDOMPACK_TEST_HOOKS'],
 )
 
 test('RunTests', run_tests, args : ['-v'])

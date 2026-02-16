@@ -20,6 +20,16 @@
 #define HIDDEN
 #endif
 
+#if defined(RANDOMPACK_TEST_HOOKS)
+static int avx2_used = 0;
+HIDDEN int randompack_avx2_used(void) {
+  return avx2_used;
+}
+HIDDEN void randompack_avx2_reset(void) {
+  avx2_used = 0;
+}
+#endif
+
 HIDDEN bool cpu_has_avx2(void) {
 #if defined(_MSC_VER)
   int info[4];
@@ -78,6 +88,9 @@ HIDDEN void fill_fast_avx2(randompack_rng *rng, size_t len) {
   VEC_T s1 = VEC_LOAD(&st->s1[0]);
   VEC_T s2 = VEC_LOAD(&st->s2[0]);
   VEC_T s3 = VEC_LOAD(&st->s3[0]);
+#if defined(RANDOMPACK_TEST_HOOKS)
+  avx2_used++;
+#endif
   for (size_t i = 0; i < len; i += 4) {
     VEC_T r;
     FAST_STEP_VEC(s0, s1, s2, s3, r);

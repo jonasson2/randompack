@@ -14,6 +14,7 @@
 #include "randompack_internal.h"
 #include "BlasGateway.h"
 #include "openlibm.inc"
+#include "log_exp.inc"
 #include "crypto_random.inc"
 
 typedef struct {
@@ -79,6 +80,7 @@ randompack_rng *randompack_create(const char *engine) {
   // Create engine
   if (!ALLOC(rng, 1)) return 0;
   rng->engine = INVALID;
+  rng->fast_logexp = false;
   rng->cpu_has_avx2 = false;
   if (!select_engine(engine, rng)) {
     rng->last_error = "unknown engine name (spelling error in requested engine)";
@@ -144,6 +146,17 @@ bool randompack_full_mantissa(randompack_rng *rng, bool enable) {
   }
   rng->last_error = 0;
   rng->usefullmantissa = enable;
+  return true;
+}
+
+bool randompack_fast_logexp(randompack_rng *rng, bool enable) {
+  if (!rng) return false;
+  if (rng->engine == INVALID) {
+    rng->last_error = "randompack fast_logexp: invalid rng";
+    return false;
+  }
+  rng->last_error = 0;
+  rng->fast_logexp = enable;
   return true;
 }
 

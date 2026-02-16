@@ -85,6 +85,7 @@ function main()
   d_gumbel = Gumbel(0, 1)
   d_pareto = Pareto(1, 2)
   d_gam = Gamma(2, 3)
+  d_gam2 = Gamma(0.5, 2)
   d_chi = Chisq(5)
   d_beta = Beta(2, 5)
   d_t = TDist(10)
@@ -161,6 +162,11 @@ function main()
 
   run("gamma(2,3)", () -> begin
     rand!(d_gam, buf)
+    consume!(sink, buf)
+  end)
+
+  run("gamma(0.5,2)", () -> begin
+    rand!(d_gam2, buf)
     consume!(sink, buf)
   end)
 

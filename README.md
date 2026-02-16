@@ -89,6 +89,7 @@ A small set of support functions is provided to
 - report the last error condition
 - initialize generators from a seed
 - enable or disable full mantissas for double-precision draws
+- enable or disable fast log/exp implementations when available
 - set generator state explicitly
 - serialize and deserialize generator state
 

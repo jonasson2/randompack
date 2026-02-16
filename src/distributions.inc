@@ -23,24 +23,9 @@ static int LastNonzeroColumn(int m, int n, double A[]) {
 static void rand_lognormal(double x[], size_t len, double mu, double sigma,
   randompack_rng *rng) {
   rand_norm(x, len, rng); // N(0,1)
-// #if defined(__APPLE__)
-//   for (size_t i = 0; i < len; ) {
-//     size_t chunk;
-//     if (len - i > (size_t)INT_MAX) {
-//       chunk = (size_t)INT_MAX;
-//     }
-//     else {
-//       chunk = len - i;
-//     }
-//     int n = (int)chunk;
-//     if (mu != 0 || sigma != 1)
-//       for (size_t j = 0; j < chunk; j++) x[i + j] = mu + sigma*x[i + j];
-//     vvexp(x + i, x + i, &n);
-//     i += chunk;
-//   }
-// #else
-  for (size_t i = 0; i < len; i++) x[i] = openlibm_exp(mu + sigma*x[i]);
-// #endif
+  if (mu != 0 || sigma != 1)
+    for (size_t i = 0; i < len; i++) x[i] = mu + sigma*x[i];
+  exp_inplace(x, len, rng);
 }
 
 // All the rand_uintXX, rand_int and rand_long_long are strict-aliasing-safe
@@ -260,46 +245,60 @@ static void rand_sample(int p[], int n, int k, randompack_rng *rng) {
 
 ALWAYS_INLINE void fill_gamma_shape1(double *x, size_t len, double shape,
                                      double scale, randompack_rng *rng) {
-  double d = shape - 1.0/3.0, dscale = d*scale;
-  double c = 1.0/sqrt(9.0*d);
+  double d = shape - 1/3.0, dscale = d*scale;
+  double c = 1/sqrt(9*d), v3, z, v;
   rand_norm(x, len, rng);
   int w = enter_u64_mode(rng);
-  //for (size_t i = 0; i < len; i++) x[i] = draw_norm(rng, &w);
   for (size_t i = 0; i < len; i++) {
     for (;;) {
-      double z = x[i];
-      double v = 1.0 + c*z;
-      if (v > 0.0) {
-        double v3 = v*v*v;
-        double u  = draw_u01(rng, &w);
-        double z2 = z*z;
-        double z4 = z2*z2;
-        if (u < 1.0 - 0.0331*z4 ||
-            openlibm_log(u) < 0.5*z2 + d*(1.0 - v3 + openlibm_log(v3))) {
-          x[i] = dscale*v3;
-          break;
+      z = x[i];
+      v = 1 + c*z;
+      if (v > 0) {
+        double u, z2 = z*z, z4 = z2*z2, logu, logv3;
+        v3 = v*v*v;
+        u = draw_u01(rng, &w);
+        if (u < 1 - 0.0331*z4) goto accept;
+        // compute logs:
+        if (rng->fast_logexp) {
+          logu = log(u);
+          logv3 = log(v3);
         }
+        else {
+          logu = openlibm_log(u);
+          logv3 = openlibm_log(v3);
+        }
+        if (logu < 0.5*z2 + d*(1 - v3 + logv3)) goto accept;
       }
-		make_half_full(rng, &w);
+      make_half_full(rng, &w);
       x[i] = draw_norm(rng, &w);
-    }
+      continue;
+    accept:
+      x[i] = dscale*v3;
+      break;
+    }    
   }
   exit_u64_mode(rng, w);
 }
 
 ALWAYS_INLINE void fill_gamma(double *x, size_t len, double shape, double scale,
-                                     randompack_rng *rng) {
-  if (shape >= 1.0) {
-    fill_gamma_shape1(x, len, shape, rng);
+  randompack_rng *rng) {
+  if (shape >= 1) {
+    fill_gamma_shape1(x, len, shape, scale, rng);
   }
-  else {
-    fill_gamma_shape1(x, len, shape + 1, rng);
-	 int w = enter_u64_mode(rng);
-    for (size_t i = 0; i < len; i++) {
-      double u = draw_u01(rng, &w);
-      x[i] *= openlibm_exp(openlibm_log(u)/shape);
-    }
-	 exit_u64_mode(rng, w);
+  else {  // shape < 1
+	 double inv_shape = 1.0/shape;
+	 double t[512];
+	 fill_gamma_shape1(x, len, shape + 1, scale, rng);
+	 size_t i = 0;
+	 while (i < len) {
+		size_t n = len - i < 256 ? len - i : 256;
+		rand_dble(t, n, rng);
+		log_inplace(t, n, rng);
+		for (size_t j = 0; j < n; j++) t[j] *= inv_shape;
+		exp_inplace(t, n, rng);
+		for (size_t j = 0; j < n; j++) x[i + j] *= t[j];
+		i += n;
+	 }
   }
 }
 
@@ -363,43 +362,28 @@ ALWAYS_INLINE void fill_chi2(double *x, size_t len, double nu,
 ALWAYS_INLINE void fill_gumbel(double *x, size_t len, double mu, double beta,
   randompack_rng *rng) {
   rand_dble(x, len, rng); // x in [0,1)
-#if defined(__APPLE__)
-  for (size_t i = 0; i < len; ) {
-    size_t chunk;
-    if (len - i > (size_t)INT_MAX) {
-      chunk = (size_t)INT_MAX;
-    }
-    else {
-      chunk = len - i;
-    }
-    int n = (int)chunk;
-    vvlog(x + i, x + i, &n);
-    for (size_t j = 0; j < chunk; j++) x[i + j] = -x[i + j];
-    vvlog(x + i, x + i, &n);
-    for (size_t j = 0; j < chunk; j++)
-      x[i + j] = mu - beta*x[i + j];
-    i += chunk;
-  }
-#else
-  for (size_t i = 0; i < len; i++)
-    x[i] = mu - beta*openlibm_log(-openlibm_log(x[i]));
-#endif
+  log_inplace(x, len, rng);
+  for (size_t i = 0; i < len; i++) x[i] = -x[i];
+  log_inplace(x, len, rng);
+  for (size_t i = 0; i < len; i++) x[i] = mu - beta*x[i];
 }
 
 ALWAYS_INLINE void fill_pareto(double *x, size_t len, double xm, double alpha,
                                randompack_rng *rng) {
   rand_exp(x, len, rng);
-  for (size_t i = 0; i < len; i++)
-    x[i] = xm*openlibm_exp(x[i]/alpha);
+  for (size_t i = 0; i < len; i++) x[i] = x[i]/alpha;
+  exp_inplace(x, len, rng);
+  for (size_t i = 0; i < len; i++) x[i] *= xm;
 }
 
 ALWAYS_INLINE void fill_weibull(double *x, size_t len, double shape,
-                                double scale, randompack_rng *rng) {
+  double scale, randompack_rng *rng) {
   rand_exp(x, len, rng); // x[i] = E ~ Exp(1) using ziggurat exponential
   double inv_shape = 1/shape;
-  if (scale == 1)
-  for (size_t i = 0; i < len; i++)
-    x[i] = scale*openlibm_exp(inv_shape*openlibm_log(e));
+  log_inplace(x, len, rng);
+  for (size_t i = 0; i < len; i++) x[i] *= inv_shape;
+  exp_inplace(x, len, rng);
+  if (scale != 1) for (size_t i = 0; i < len; i++) x[i] *= scale;
 }
 
 ALWAYS_INLINE void fill_skew_normal(double *x, size_t len, double mu,

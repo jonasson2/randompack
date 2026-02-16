@@ -111,6 +111,7 @@ int main(int argc, char **argv) {
   std::exponential_distribution<double> exp_1(1);     // lambda = 1/scale
   std::exponential_distribution<double> exp_2(0.5);   // scale=2 => lambda=0.5
   std::gamma_distribution<double> gamma_2_3(2, 3);    // shape=2, scale=3
+  std::gamma_distribution<double> gamma_0_5_2(0.5, 2);    // shape=0.5, scale=2
   std::gamma_distribution<double> chi2_5(2.5, 2);     // chi2(5) = Gamma(5/2, 2)
   std::weibull_distribution<double> weibull_2_1(2, 1);// shape=2, scale=1
 
@@ -190,6 +191,12 @@ int main(int argc, char **argv) {
   run("gamma(2,3)", [&]() {
     for (int i = 0; i < chunk; i++)
       x[i] = gamma_2_3(rng);
+    consume_double(x[chunk - 1]);
+  });
+
+  run("gamma(0.5,2)", [&]() {
+    for (int i = 0; i < chunk; i++)
+      x[i] = gamma_0_5_2(rng);
     consume_double(x[chunk - 1]);
   });
 

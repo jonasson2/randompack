@@ -246,6 +246,7 @@ int main(int argc, char **argv) {
     { EXP1,    "exp(1)",      1, 0 },
     { EXP2,    "exp(2)",      2, 0 },
     { GAMMA,   "gamma(2,3)",  2, 3 },
+    { GAMMA,   "gamma(0.5,2)",  0.5, 2 },
     { BETA,    "beta(2,5)",   2, 5 },
     { CHI2,    "chi2(5)",     5, 0 },
     { WEIBULL, "weibull(2,3)",2, 3 },

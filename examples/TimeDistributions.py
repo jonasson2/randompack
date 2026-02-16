@@ -72,6 +72,9 @@ def make_dists() -> List[Dist]:
 def gamma_2_3(rng: np.random.Generator, n: int) -> None:
   rng.gamma(2.0, 3.0, n)
 
+def gamma_0_5_2(rng: np.random.Generator, n: int) -> None:
+  rng.gamma(0.5, 2.0, n)
+
   def chi2_5(rng: np.random.Generator, n: int) -> None:
     rng.chisquare(5.0, n)
 
@@ -99,6 +102,7 @@ def gamma_2_3(rng: np.random.Generator, n: int) -> None:
     Dist("gumbel(0,1)", gumbel_0_1),
     Dist("pareto(1,2)", pareto_1_2),
     Dist("gamma(2,3)", gamma_2_3),
+    Dist("gamma(0.5,2)", gamma_0_5_2),
     Dist("chi2(5)", chi2_5),
     Dist("beta(2,5)", beta_2_5),
     Dist("t(10)", t_10),

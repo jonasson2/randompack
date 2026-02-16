@@ -30,15 +30,19 @@ u01_hires = get_option('u01_hires')
 u01_hires_args = u01_hires ? ['-DU01_HIRES'] : []
 
 build_avx2_define = build_avx2 ? ['-DBUILD_AVX2'] : []
+test_hooks_define = get_option('build_tests') ? ['-DRANDOMPACK_TEST_HOOKS'] : []
 base_c_args = u01_hires_args + accel_bug_args + build_avx2_define
 
 avx2_objs = []
 if build_avx2
   avx2_lib = static_library(
     'randompack_avx2',
-    files('avx2.c'),
+    files(
+      'avx2.c',
+      'sleef.c',
+    ),
     include_directories: randompack_inc,
-    c_args: avx2_c_args + build_avx2_define,
+    c_args: avx2_c_args + build_avx2_define + test_hooks_define,
     pic: true,
     install: false,
   )

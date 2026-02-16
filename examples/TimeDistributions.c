@@ -53,6 +53,7 @@ static void print_help(void) {
   printf("  -t seconds    Benchmark time per distribution (default 0.1)\n");
   printf("  -c chunk      Chunk size (values per call, default 4096)\n");
   printf("  -s seed       RNG seed (default 7)\n\n");
+  printf("  -f            Use fast log/exp implementations when available\n\n");
   printf("Engines:\n");
   print_engines();
   printf("\nNotes:\n");
@@ -60,7 +61,7 @@ static void print_help(void) {
 }
 
 static bool get_options(int argc, char **argv, char **engine, double *bench_time,
-                        int *chunk, int *seed, bool *help) {
+                        int *chunk, int *seed, bool *fast_logexp, bool *help) {
   opterr = 0;
   optind = 1;
   int opt;
@@ -68,8 +69,9 @@ static bool get_options(int argc, char **argv, char **engine, double *bench_time
   *bench_time = 0.1;
   *chunk = 4096;
   *seed = 7;
+  *fast_logexp = false;
   *help = false;
-  while ((opt = getopt(argc, argv, "he:t:c:s:")) != -1) {
+  while ((opt = getopt(argc, argv, "he:t:c:s:f")) != -1) {
     switch (opt) {
       case 'h':
         *help = true;
@@ -89,6 +91,9 @@ static bool get_options(int argc, char **argv, char **engine, double *bench_time
         break;
       case 's':
         *seed = atoi(optarg);
+        break;
+      case 'f':
+        *fast_logexp = true;
         break;
       default:
         return false;
@@ -180,8 +185,10 @@ int main(int argc, char **argv) {
   char *engine;
   double bench_time;
   int chunk, seed;
+  bool fast_logexp;
   bool help;
-  if (!get_options(argc, argv, &engine, &bench_time, &chunk, &seed, &help) || help) {
+  if (!get_options(argc, argv, &engine, &bench_time, &chunk, &seed,
+      &fast_logexp, &help) || help) {
     print_help();
     return help ? 0 : 1;
   }
@@ -197,6 +204,15 @@ int main(int argc, char **argv) {
     if (rngf)
       randompack_free(rngf);
     return 1;
+  }
+  if (fast_logexp) {
+    if (!randompack_fast_logexp(rngd, true) ||
+        !randompack_fast_logexp(rngf, true)) {
+      fprintf(stderr, "randompack_fast_logexp failed\n");
+      randompack_free(rngd);
+      randompack_free(rngf);
+      return 1;
+    }
   }
   if (!randompack_seed(seed, 0, 0, rngd) || !randompack_seed(seed, 0, 0, rngf)) {
     fprintf(stderr, "randompack_seed failed\n");
@@ -216,6 +232,7 @@ int main(int argc, char **argv) {
     { GUMBEL,    "gumbel(0,1)",    2, { 0, 1} },
     { PARETO,    "pareto(1,2)",    2, { 1, 2} },
     { GAMMA,     "gamma(2,3)",     2, { 2, 3} },
+    { GAMMA,     "gamma(0.5,2)",   2, { 0.5, 2} },
     { BETA,      "beta(2,5)",      2, { 2, 5} },
     { CHI2,      "chi2(5)",        1, { 5, 0} },
     { T,         "t(10)",          1, {10, 0} },
@@ -226,6 +243,7 @@ int main(int argc, char **argv) {
   printf("time per value:   ns/value\n");
   printf("bench_time:       %.3f s per distribution\n", bench_time);
   printf("chunk:            %d\n\n", chunk);
+  printf("fast_logexp:      %s\n\n", fast_logexp ? "on" : "off");
   printf("%-14s %8s %8s\n", "Distribution", "double", "float");
   for (int i = 0; i < LEN(dists); i++) {
     double par[3];

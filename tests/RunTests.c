@@ -90,6 +90,9 @@ int main(int argc, char **argv) {
   vprint(headr_fmt, "TEST OF", "PASSED", "FAILED");
   run_test("Helpers",  TestHelpers);
   run_test("Openlibm", TestOpenlibm);
+  run_test("FullMantissa", TestFullMantissa);
+  run_test("LogExp",   TestLogExp);
+  run_test("Avx2",     TestAvx2);
   run_test("Create",   TestCreate);
   run_test("Seed",     TestSeed);
   run_test("Buffer",   TestBuffer);

@@ -56,6 +56,10 @@ fprintf('%-18s %8.2f\n', 'exp(2)', ns);
 ns = time_dist(@() gamrnd(2,3,chunk,1), chunk, reps, bench_time);
 fprintf('%-18s %8.2f\n', 'gamma(2,3)', ns);
 
+% gamma(0.5,2)
+ns = time_dist(@() gamrnd(0.5,2,chunk,1), chunk, reps, bench_time);
+fprintf('%-18s %8.2f\n', 'gamma(0.5,2)', ns);
+
 % chi2(5)
 ns = time_dist(@() chi2rnd(5,chunk,1), chunk, reps, bench_time);
 fprintf('%-18s %8.2f\n', 'chi2(5)', ns);
