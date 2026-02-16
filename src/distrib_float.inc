@@ -59,8 +59,7 @@ ALWAYS_INLINE void fill_gamma_shape1f(float *x, size_t len, float shape,
         float z2 = z*z;
         float z4 = z2*z2;
         if (u < 1.0f - 0.0331f*z4 ||
-            openlibm_logf(u) < 0.5f*z2 +
-              d*(1.0f - v3 + openlibm_logf(v3))) {
+            openlibm_logf(u) < 0.5f*z2 + d*(1.0f - v3 + openlibm_logf(v3))) {
           x[i] = d*v3;
           break;
         }

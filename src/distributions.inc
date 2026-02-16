@@ -259,8 +259,8 @@ static void rand_sample(int p[], int n, int k, randompack_rng *rng) {
 #include "randompack_config.h"
 
 ALWAYS_INLINE void fill_gamma_shape1(double *x, size_t len, double shape,
-                                            randompack_rng *rng) {
-  double d = shape - 1.0/3.0;
+                                     double scale, randompack_rng *rng) {
+  double d = shape - 1.0/3.0, dscale = d*scale;
   double c = 1.0/sqrt(9.0*d);
   rand_norm(x, len, rng);
   int w = enter_u64_mode(rng);
@@ -276,7 +276,7 @@ ALWAYS_INLINE void fill_gamma_shape1(double *x, size_t len, double shape,
         double z4 = z2*z2;
         if (u < 1.0 - 0.0331*z4 ||
             openlibm_log(u) < 0.5*z2 + d*(1.0 - v3 + openlibm_log(v3))) {
-          x[i] = d*v3;
+          x[i] = dscale*v3;
           break;
         }
       }
@@ -301,7 +301,6 @@ ALWAYS_INLINE void fill_gamma(double *x, size_t len, double shape, double scale,
     }
 	 exit_u64_mode(rng, w);
   }
-  if (scale != 1) for (size_t i = 0; i < len; i++) x[i] *= scale;
 }
 
 ALWAYS_INLINE void fill_beta(double *x, size_t len, double a, double b,
@@ -388,18 +387,19 @@ ALWAYS_INLINE void fill_gumbel(double *x, size_t len, double mu, double beta,
 }
 
 ALWAYS_INLINE void fill_pareto(double *x, size_t len, double xm, double alpha,
-  randompack_rng *rng) {
+                               randompack_rng *rng) {
   rand_exp(x, len, rng);
   for (size_t i = 0; i < len; i++)
     x[i] = xm*openlibm_exp(x[i]/alpha);
 }
 
 ALWAYS_INLINE void fill_weibull(double *x, size_t len, double shape,
-  double scale, randompack_rng *rng) {
+                                double scale, randompack_rng *rng) {
   rand_exp(x, len, rng); // x[i] = E ~ Exp(1) using ziggurat exponential
   double inv_shape = 1/shape;
+  if (scale == 1)
   for (size_t i = 0; i < len; i++)
-    x[i] = scale*pow(x[i], inv_shape);
+    x[i] = scale*openlibm_exp(inv_shape*openlibm_log(e));
 }
 
 ALWAYS_INLINE void fill_skew_normal(double *x, size_t len, double mu,

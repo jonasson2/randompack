@@ -69,8 +69,8 @@ def make_dists() -> List[Dist]:
     # Pareto Type I with xm=1, alpha=2: X = xm*(1+Y) where Y ~ Pareto(alpha) in NumPy.
     rng.pareto(2.0, n) + 1.0
 
-  def gamma_2_3(rng: np.random.Generator, n: int) -> None:
-    rng.gamma(2.0, 3.0, n)
+def gamma_2_3(rng: np.random.Generator, n: int) -> None:
+  rng.gamma(2.0, 3.0, n)
 
   def chi2_5(rng: np.random.Generator, n: int) -> None:
     rng.chisquare(5.0, n)
