@@ -10,7 +10,7 @@
 #include "randompack_config.h"
 #include "printX.h"
 #include "xCheck.h"
-#include "TestUtil.h"
+#include "test_util.h"
 
 // ChaCha20 test against RFC 8439 Section 2.3.2
 // Authoritative source:

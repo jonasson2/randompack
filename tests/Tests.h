@@ -22,6 +22,7 @@ void TestHelpers(void);
 void TestOpenlibm(void);
 void TestFullMantissa(void);
 void TestLogExp(void);
+void TestSleefMath(void);
 void TestAvx2(void);
 void TestSeed(void);
 void TestSetState(void);

@@ -70,7 +70,7 @@ if build_avx2
   if cc.get_id() == 'msvc'
     avx2_c_args = ['/arch:AVX2']
   else
-    avx2_c_args = cc.get_supported_arguments(['-mavx2'])
+    avx2_c_args = cc.get_supported_arguments(['-mavx2', '-mfma'])
   endif
 endif
 

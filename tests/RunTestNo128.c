@@ -1,7 +1,7 @@
 // RunTestNo128.c
 #include <stdio.h>
 #include <string.h>
-#include "TestUtil.h"
+#include "test_util.h"
 
 void TestCreate(void);
 

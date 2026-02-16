@@ -1,7 +1,8 @@
 // -*- C -*-
 // Tests for full_mantissa flag
 #include <math.h>
-#include "TestUtil.h"
+#include "test_util.h"
+#include "test_cdfs.h"
 #include "xCheck.h"
 
 static void check_unif(randompack_rng *rng, char *engine) {
@@ -26,7 +27,7 @@ static void check_exp2(randompack_rng *rng, char *engine) {
   check_success(ok, rng);
   for (int i = 0; i < n; i++) {
     double xi = x[i];
-    u[i] = xi <= 0 ? 0 : 1 - exp(-xi/2);
+    u[i] = test_cdf_exp(xi, 2);
   }
   check_u01_distribution(u, n, "exp(2)", engine);
   FREE(x);
@@ -43,7 +44,7 @@ static void check_lognormal(randompack_rng *rng, char *engine) {
   for (int i = 0; i < n; i++) {
     double xi = x[i];
     if (xi <= 0) u[i] = 0;
-    else u[i] = normcdf((log(xi) - 2)/3);
+    else u[i] = test_cdf_lognormal(xi, 2, 3);
   }
   check_u01_distribution(u, n, "lognormal(2,3)", engine);
   FREE(x);
@@ -60,7 +61,7 @@ static void check_weibull(randompack_rng *rng, char *engine) {
   for (int i = 0; i < n; i++) {
     double xi = x[i];
     if (xi <= 0) u[i] = 0;
-    else u[i] = 1 - exp(-pow(xi/3, 2));
+    else u[i] = test_cdf_weibull(xi, 2, 3);
   }
   check_u01_distribution(u, n, "weibull(2,3)", engine);
   FREE(x);

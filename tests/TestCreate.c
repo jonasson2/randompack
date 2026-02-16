@@ -8,7 +8,7 @@
 #include "randompack.h"
 #include "printX.h"
 #include "xCheck.h"
-#include "TestUtil.h"
+#include "test_util.h"
 
 // Return the first n uint64 draws from the given engine with fixed seed 123.
 // Check that everything works cleanly (unbounded draw)

@@ -2,7 +2,7 @@
 #include <math.h>
 #include <stdbool.h>
 #include <stdlib.h>
-#include "TestUtil.h"
+#include "test_util.h"
 #include "randompack_config.h"
 #include "printX.h"
 #include "randompack.h"

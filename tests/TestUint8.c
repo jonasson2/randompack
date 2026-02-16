@@ -5,7 +5,7 @@
 
 #include "randompack.h"
 #include "printX.h"
-#include "TestUtil.h"
+#include "test_util.h"
 #include "xCheck.h"
 
 // Helper: create an RNG and fill n uint8 values with a given bound.

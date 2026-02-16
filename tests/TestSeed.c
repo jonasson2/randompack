@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "randompack.h"
-#include "TestUtil.h"
+#include "test_util.h"
 #include "xCheck.h"
 
 static void draw_stream(char *engine, uint64_t *x, int n,

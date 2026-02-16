@@ -1,6 +1,6 @@
 // -*- C -*-
 // Test AVX2 path is used when available
-#include "TestUtil.h"
+#include "test_util.h"
 #include "xCheck.h"
 #include "randompack_internal.h"
 
@@ -17,7 +17,7 @@ void TestAvx2(void) {
   }
   randompack_avx2_reset();
   uint64_t x[8];
-  bool ok = randompack_uint64(x, LEN(x), rng);
+  bool ok = randompack_uint64(x, LEN(x), 0, rng);
   check_success(ok, rng);
   xCheck(randompack_avx2_used() > 0);
   randompack_free(rng);

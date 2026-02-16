@@ -9,9 +9,9 @@
 #include "xCheck.h"
 #include "randompack.h"
 #include "randompack_config.h"
-#include "MatrixTestUtil.h"
+#include "test_matrix_util.h"
 #include "BlasGateway.h"
-#include "TestUtil.h"    // create_seeded_rng, check_rng_clean, check_success, check_failure,
+#include "test_util.h"    // create_seeded_rng, check_rng_clean, check_success, check_failure,
                          // mean/var helpers, almostEqual/almostZero, etc.
 #include "printX.h"
 

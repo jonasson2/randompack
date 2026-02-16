@@ -6,7 +6,7 @@
 #include <string.h>
 #include "randompack.h"
 #include "randompack_config.h"
-#include "TestUtil.h"
+#include "test_util.h"
 #include "xCheck.h"
 
 enum { STATE_MIN_NEED_TEST = 56 + 8*BUFSIZE }; // The tests version of STATE_MIN_NEED

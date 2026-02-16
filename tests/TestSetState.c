@@ -7,7 +7,7 @@
 
 #include "randompack.h"
 #include "randompack_config.h"
-#include "TestUtil.h"
+#include "test_util.h"
 #include "xCheck.h"
 
 static int engine_nstate(char *engine) {

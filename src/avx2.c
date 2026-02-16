@@ -21,11 +21,16 @@
 #endif
 
 #if defined(RANDOMPACK_TEST_HOOKS)
+#if defined(__GNUC__) || defined(__clang__)
+#define TEST_HOOK __attribute__((visibility("default")))
+#else
+#define TEST_HOOK
+#endif
 static int avx2_used = 0;
-HIDDEN int randompack_avx2_used(void) {
+TEST_HOOK int randompack_avx2_used(void) {
   return avx2_used;
 }
-HIDDEN void randompack_avx2_reset(void) {
+TEST_HOOK void randompack_avx2_reset(void) {
   avx2_used = 0;
 }
 #endif

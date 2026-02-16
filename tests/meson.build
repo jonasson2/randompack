@@ -22,6 +22,7 @@ test_sources = files(
   'TestHelpers.c',
   'TestFullMantissa.c',
   'TestLogExp.c',
+  'TestSleefMath.c',
   'TestAvx2.c',
   'TestOpenlibm.c',
   'TestBuffer.c',
@@ -29,7 +30,8 @@ test_sources = files(
 
 extra_util = files(
   'xCheck.c',
-  'TestUtil.c',
+  'test_util.c',
+  'test_cdfs.c',
   'incbet.c',
   'igam.c',
 )

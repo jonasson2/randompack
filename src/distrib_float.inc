@@ -42,8 +42,20 @@ ALWAYS_INLINE void fill_gamma_shape1f(float *x, size_t len, float shape,
         float u  = draw_u01f(rng, &w);
         float z2 = z*z;
         float z4 = z2*z2;
-        if (u < 1.0f - 0.0331f*z4 ||
-            openlibm_logf(u) < 0.5f*z2 + d*(1.0f - v3 + openlibm_logf(v3))) {
+        if (u < 1.0f - 0.0331f*z4) {
+          x[i] = dscale*v3;
+          break;
+        }
+        float logu, logv3;
+        if (rng->fast_logexp) {
+          logu = logf(u);
+          logv3 = logf(v3);
+        }
+        else {
+          logu = openlibm_logf(u);
+          logv3 = openlibm_logf(v3);
+        }
+        if (logu < 0.5f*z2 + d*(1.0f - v3 + logv3)) {
           x[i] = dscale*v3;
           break;
         }
@@ -61,14 +73,19 @@ ALWAYS_INLINE void fill_gammaf(float *x, size_t len, float shape, float scale,
     fill_gamma_shape1f(x, len, shape, scale, rng);
   }
   else {
+    float inv_shape = 1.0f/shape;
+    float t[512];
     fill_gamma_shape1f(x, len, shape + 1.0f, scale, rng);
-    int w = enter_u32_mode(rng);
-    for (size_t i = 0; i < len; i++) {
-      float u = draw_u01f(rng, &w);
-      float lu = openlibm_logf(u);
-      x[i] *= openlibm_expf(lu/shape);
+    size_t i = 0;
+    while (i < len) {
+      size_t n = len - i < 256 ? len - i : 256;
+      rand_float(t, n, rng);
+      logf_inplace(t, n, rng);
+      for (size_t j = 0; j < n; j++) t[j] *= inv_shape;
+      expf_inplace(t, n, rng);
+      for (size_t j = 0; j < n; j++) x[i + j] *= t[j];
+      i += n;
     }
-    exit_u32_mode(rng, w);
   }
 }
 

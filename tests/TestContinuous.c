@@ -5,7 +5,8 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include "TestUtil.h"
+#include "test_util.h"
+#include "test_cdfs.h"
 #include "randompack.h"
 #include "randompack_config.h"
 #include "printX.h"
@@ -71,108 +72,47 @@ typedef struct {
   double p2;
 } illegal_case;
 
-static double t_cdf(double x, double nu) {
-  double t2 = x*x;
-  double z = nu/(nu + t2);
-  double p = 0.5*incbet(0.5*nu, 0.5, z);
-  return (x >= 0) ? 1 - p : p;
-}
-
-static double gumbel_cdf(double x, double mu, double beta) {
-  return exp(-exp(-(x - mu)/beta));
-}
-
-static double pareto_cdf(double x, double xm, double alpha) {
-  if (x < xm) return 0;
-  return 1 - pow(xm/x, alpha);
-}
-
-static double weibull_cdf(double x, double shape, double scale) {
-  if (x <= 0) return 0;
-  return 1 - exp(-pow(x/scale, shape));
-}
-
-static double f_cdf(double x, double nu1, double nu2) {
-  if (x <= 0) return 0;
-  double z = (nu1*x)/(nu1*x + nu2);
-  return incbet(0.5*nu1, 0.5*nu2, z);
-}
-
-static double chi2_cdf_wrap(double x, double nu) {
-  return chi2_cdf(x, (int)nu);
-}
-
-static double skew_normal_cdf(double x, double mu, double sigma, double alpha) {
-  // Only works for alpha=0 => same as normal
-  (void)alpha;
-  return normcdf((x - mu)/sigma);
-}
-
-static double lognormal_cdf(double x, double mu, double sigma) {
-  if (x <= 0) return 0;
-  return normcdf((log(x) - mu)/sigma);
-}
-
-static double norm_cdf(double x) {
-  return normcdf(x);
-}
-
-static double normal_cdf(double x, double mu, double sigma) {
-  return normcdf((x - mu)/sigma);
-}
-
-static double exp_cdf(double x, double scale) {
-  if (x <= 0) return 0;
-  return 1 - exp(-x/scale);
-}
-
-static double beta_cdf(double x, double a, double b) {
-  if (x <= 0) return 0;
-  if (x >= 1) return 1;
-  return incbet(a, b, x);
-}
-
 static const dist_spec dist_specs[] = {
   { "norm", 0, 1, { 0 }, { 0 }, { 0 }, SUPPORT_NONE,
     { .d0 = randompack_norm }, { .d0 = randompack_normf },
-    { .c0 = norm_cdf } },
+    { .c0 = test_cdf_norm } },
   { "normal", 2, 3, { 0, 1, -3 }, { 1, 2, 0.5 }, { 0 }, SUPPORT_NONE,
     { .d2 = randompack_normal }, { .d2 = randompack_normalf },
-    { .c2 = normal_cdf } },
+    { .c2 = test_cdf_normal } },
   { "exp", 1, 2, { 1, 2 }, { 0 }, { 0 }, SUPPORT_NONNEG,
     { .d1 = randompack_exp }, { .d1 = randompack_expf },
-    { .c1 = exp_cdf } },
+    { .c1 = test_cdf_exp } },
   { "lognormal", 2, 3, { 0, -0.7, 1.2 }, { 1, 0.4, 1.3 }, { 0 },
     SUPPORT_NONNEG,
     { .d2 = randompack_lognormal }, { .d2 = randompack_lognormalf },
-    { .c2 = lognormal_cdf } },
+    { .c2 = test_cdf_lognormal } },
   { "gamma", 2, 3, { 0.7, 2, 0.3 }, { 1, 1, 3 }, { 0 }, SUPPORT_NONNEG,
     { .d2 = randompack_gamma }, { .d2 = randompack_gammaf },
     { .c2 = gamma_cdf } },
   { "beta", 2, 3, { 0.5, 2, 0.7 }, { 0.5, 5, 3 }, { 0 }, SUPPORT_UNIT,
     { .d2 = randompack_beta }, { .d2 = randompack_betaf },
-    { .c2 = beta_cdf } },
+    { .c2 = test_cdf_beta } },
   { "chi2", 1, 2, { 1, 10 }, { 0 }, { 0 }, SUPPORT_NONNEG,
     { .d1 = randompack_chi2 }, { .d1 = randompack_chi2f },
-    { .c1 = chi2_cdf_wrap } },
+    { .c1 = test_cdf_chi2 } },
   { "t", 1, 2, { 1, 30 }, { 0 }, { 0 }, SUPPORT_NONE,
     { .d1 = randompack_t }, { .d1 = randompack_tf },
-    { .c1 = t_cdf } },
+    { .c1 = test_cdf_t } },
   { "gumbel", 2, 2, { 0, 2 }, { 1, 0.5 }, { 0 }, SUPPORT_NONE,
     { .d2 = randompack_gumbel }, { .d2 = randompack_gumbelf },
-    { .c2 = gumbel_cdf } },
+    { .c2 = test_cdf_gumbel } },
   { "pareto", 2, 2, { 1, 2 }, { 1.5, 0.7 }, { 0 }, SUPPORT_PARETO,
     { .d2 = randompack_pareto }, { .d2 = randompack_paretof },
-    { .c2 = pareto_cdf } },
+    { .c2 = test_cdf_pareto } },
   { "weibull", 2, 3, { 1, 0.7, 3 }, { 1, 2, 0.5 }, { 0 }, SUPPORT_NONNEG,
     { .d2 = randompack_weibull }, { .d2 = randompack_weibullf },
-    { .c2 = weibull_cdf } },
+    { .c2 = test_cdf_weibull } },
   { "f", 2, 2, { 1, 30 }, { 1, 40 }, { 0 }, SUPPORT_NONNEG,
     { .d2 = randompack_f }, { .d2 = randompack_ff },
-    { .c2 = f_cdf } },
+    { .c2 = test_cdf_f } },
   { "skew-normal", 3, 1, { 0 }, { 1 }, { 0 }, SUPPORT_NONE,
     { .d3 = randompack_skew_normal }, { .d3 = randompack_skew_normalf },
-    { .c3 = skew_normal_cdf } },
+    { .c3 = test_cdf_skew_normal } },
 };
 
 static const illegal_case illegal_cases[] = {

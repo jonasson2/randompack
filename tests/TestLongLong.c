@@ -6,7 +6,7 @@
 #include "randompack.h"
 #include "printX.h"
 #include "randompack_config.h"
-#include "TestUtil.h"
+#include "test_util.h"
 #include "xCheck.h"
 
 // Helper: create an RNG and fill n long long in [min, max].

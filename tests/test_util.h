@@ -177,6 +177,7 @@ static const double TEST_P_VALUE = 1e-12;
 
 bool equal_vec(int *a, int *b, int n);                      // a = b?
 bool equal_vecd(double *a, double *b, int n);               // a = b?
+bool equal_vecf(float *a, float *b, int n);                 // a = b?
 bool equal_vec8(uint8_t *a, uint8_t *b, int n);             // a = b?
 bool equal_vec16(uint16_t *a, uint16_t *b, int n);          // a = b?
 bool equal_vec32(uint32_t *a, uint32_t *b, int n);          // a = b?
@@ -188,7 +189,9 @@ bool everywhere_different(uint64_t *a, uint64_t *b, int n); // ai ≠ bi for all
 //------------------------------------------------------------------------------
 
 int almostSame(double a, double b);
+int almostSamef(float a, float b);
 int almostEqual(double a[], double b[], int n);
+int almostEqualf(float a[], float b[], int n);
 int almostAllSame(double a[], int n);
 int almostZero(double a[], int n);
 

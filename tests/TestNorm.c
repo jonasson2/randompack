@@ -4,7 +4,7 @@
 #include <math.h>
 #include <stdbool.h>
 
-#include "TestUtil.h"
+#include "test_util.h"
 #include "randompack.h"
 #include "randompack_config.h"
 #include "printX.h"

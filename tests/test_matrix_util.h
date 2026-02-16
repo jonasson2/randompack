@@ -9,7 +9,7 @@
 
 #include "BlasGateway.h"
 #include "randompack_config.h"
-#include "TestUtil.h"
+#include "test_util.h"
 
 static inline void copytranspose(int m, int n, double A[], int ldA, double B[], int ldB) {
   // Set B to the transpose of the m×n matrix A. Matrices must not overlap.

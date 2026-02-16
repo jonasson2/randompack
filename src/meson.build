@@ -39,6 +39,7 @@ if build_avx2
     'randompack_avx2',
     files(
       'avx2.c',
+      'inplace_logexp.c',
       'sleef.c',
     ),
     include_directories: randompack_inc,

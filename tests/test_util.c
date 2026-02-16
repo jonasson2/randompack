@@ -7,10 +7,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "TestUtil.h"
+#include "test_util.h"
 #include "randompack.h"
 #include "randompack_config.h"
-#include "MatrixTestUtil.h"
+#include "test_matrix_util.h"
 #include "xCheck.h"
 #include "printX.h"
 
@@ -72,6 +72,11 @@ bool equal_vec(int *a, int *b, int n) {
 }
 
 bool equal_vecd(double *a, double *b, int n) {
+  for (int i = 0; i < n; i++) if (a[i] != b[i]) return false;
+  return true;
+}
+
+bool equal_vecf(float *a, float *b, int n) {
   for (int i = 0; i < n; i++) if (a[i] != b[i]) return false;
   return true;
 }
@@ -139,8 +144,33 @@ int almostSame(double a, double b) {
   return relabsdiff(&a, &b, 1) < 5.0e-14;
 }
 
+static float relabsdifff(float a[], float b[], int n) {
+  if (n == 0) return 0;
+  float maxab = 1;
+  float maxdiff = 0;
+  for (int i = 0; i < n; i++) {
+    float ai = a[i];
+    float bi = b[i];
+    float diff = fabsf(ai - bi);
+    if (diff > maxdiff) maxdiff = diff;
+    float ab = fmaxf(fabsf(ai), fabsf(bi));
+    if (ab > maxab) maxab = ab;
+  }
+  return maxdiff/maxab;
+}
+
+int almostSamef(float a, float b) {
+  float diff = fabsf(a - b);
+  float scale = fmaxf(1, fmaxf(fabsf(a), fabsf(b)));
+  return diff <= 5.0e-6f*scale;
+}
+
 int almostEqual(double a[], double b[], int n) {
   return relabsdiff(a, b, n) < 5.0e-14;
+}
+
+int almostEqualf(float a[], float b[], int n) {
+  return relabsdifff(a, b, n) < 5.0e-6f;
 }
 
 int almostAllSame(double a[], int n) {

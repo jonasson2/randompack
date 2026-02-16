@@ -9,7 +9,7 @@
 #include "printX.h"
 #include "Tests.h"
 #include "xCheck.h"
-#include "TestUtil.h"
+#include "test_util.h"
 
 static int NTOTAL = 0, NFAIL = 0;
 static char *headr_fmt = "%-20s %8s %8s\n";
@@ -92,6 +92,7 @@ int main(int argc, char **argv) {
   run_test("Openlibm", TestOpenlibm);
   run_test("FullMantissa", TestFullMantissa);
   run_test("LogExp",   TestLogExp);
+  run_test("SleefMath",TestSleefMath);
   run_test("Avx2",     TestAvx2);
   run_test("Create",   TestCreate);
   run_test("Seed",     TestSeed);

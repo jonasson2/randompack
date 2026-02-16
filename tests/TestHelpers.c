@@ -2,7 +2,7 @@
 // Tests for helper/statistics utilities.
 #include <stdbool.h>
 
-#include "TestUtil.h"
+#include "test_util.h"
 #include "xCheck.h"
 
 bool test_moments_4vec(void) {

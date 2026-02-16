@@ -7,7 +7,7 @@
 #include "randompack.h"
 #include "randompack_config.h"
 #include "printX.h"
-#include "TestUtil.h"
+#include "test_util.h"
 #include "xCheck.h"
 
 static void draw_bounded_randoms(char *engine, uint64_t *x, int len, uint64_t bound,

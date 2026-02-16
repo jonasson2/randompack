@@ -1,7 +1,7 @@
 // -*- C -*-
 #include <stdbool.h>
 #include "randompack.h"
-#include "TestUtil.h"
+#include "test_util.h"
 #include "xCheck.h"
 #include "printX.h"
 
