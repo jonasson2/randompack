@@ -54,15 +54,12 @@ if perf_opt
   )
 endif
 
-simd_opt = get_option('simd')
 build_avx2 = false
 avx2_c_args = []
 
-if simd_opt != 'baseline'
-  if host_machine.cpu_family() in ['x86', 'x86_64']
-    if cc.get_id() in ['gcc', 'clang', 'appleclang', 'msvc']
-      build_avx2 = true
-    endif
+if host_machine.cpu_family() in ['x86', 'x86_64']
+  if cc.get_id() in ['gcc', 'clang', 'appleclang', 'msvc']
+    build_avx2 = true
   endif
 endif
 
@@ -138,36 +135,39 @@ accel_bug_args = accel_bug_workaround ? ['-DACCEL_BUG_WORKAROUND'] : []
 # Optional Fortran support
 # -------------------------------------------------
 
-build_fortran_opt = get_option('build_fortran')
 force_fortran = accel_bug_workaround or builtin_blas
-want_fortran = force_fortran or build_fortran_opt.enabled()
+want_fortran = force_fortran
 
-if build_fortran_opt.auto() and not force_fortran
-  add_languages('fortran', required: true)
-  fc = meson.get_compiler('fortran')
-  add_project_arguments('-Wno-do-subscript', language : 'fortran')
-  add_project_arguments(
-    fc.get_supported_arguments(['-Wno-function-elimination']),
-    language : 'fortran'
-  )
+if not force_fortran
+  add_languages('fortran', required: false)
+  if meson.has_language('fortran')
+    fc = meson.get_compiler('fortran')
+    add_project_arguments('-Wno-do-subscript', language : 'fortran')
+    add_project_arguments(
+      fc.get_supported_arguments(['-Wno-function-elimination']),
+      language : 'fortran'
+    )
 
-  kind_check = fc.run('program rp_kind_check\n' +
-                      '  use, intrinsic :: iso_c_binding\n' +
-                      '  implicit none\n' +
-                      '  if (kind(1.0) /= c_float) stop 1\n' +
-                      '  if (kind(1.0d0) /= c_double) stop 2\n' +
-                      '  if (kind(1) /= c_int) stop 3\n' +
-                      'end program\n',
-                      name: 'fortran kind check'
-                     )
+    kind_check = fc.run('program rp_kind_check\n' +
+                        '  use, intrinsic :: iso_c_binding\n' +
+                        '  implicit none\n' +
+                        '  if (kind(1.0) /= c_float) stop 1\n' +
+                        '  if (kind(1.0d0) /= c_double) stop 2\n' +
+                        '  if (kind(1) /= c_int) stop 3\n' +
+                        'end program\n',
+                        name: 'fortran kind check'
+                       )
 
-  want_fortran = kind_check.compiled() and kind_check.returncode() == 0
-  if not want_fortran
-    warning('Fortran kinds do not match C kinds; disabling Fortran interface')
+    want_fortran = kind_check.compiled() and kind_check.returncode() == 0
+    if not want_fortran
+      warning('Fortran kinds do not match C kinds; disabling Fortran interface')
+    endif
+  else
+    want_fortran = false
   endif
 endif
 
-if force_fortran or (want_fortran and not build_fortran_opt.auto())
+if force_fortran
   add_languages('fortran', required: true)
   fc = meson.get_compiler('fortran')
   if fc.get_id() == 'gcc'

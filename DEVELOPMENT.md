@@ -76,17 +76,81 @@ cd <project-root>                  # enter project root
 scripts/syncR.sh                   # copy C sources from src to r-package/src
 R CMD build r-package              # build library in randompack_<version>.tar.gz
 R CMD INSTALL randompack_*.tar.gz  # replace * with actual version if > 1 .tar.gz file
-– do this both first-time and after changes to C library; then restart R
+– do this both first-time and 
+  after changes to C library; 
+  then restart R
 
 USE:
 R                                  # start R
 > library(randompack)              # load into session
 
-Testing
-–––––––
-meson test -C release       # run meson defined tests
-release/tests/RunTests -v   # run the tests in verbose mode
-release/tests/RunTests -h   # show help for test runner
+Normal testing
+––––––––––––––
+meson test -C release              # run meson defined tests for C and Fortran
+release/tests/RunTests -v          # run C tests in verbose mode
+release/tests/RunTests -h          # show help for test runner
+release/tests/RunFortranTests      # Run only the Fortran tests
 
-cd 
-pytest -q                   $
+cd python
+pytest -q                          # quiet testing of the Python Randompack
+pytest                             # verbose testing
+
+cd <project-root>
+R CMD check randompack_*.tar.gz    # comprehensive CRAN-style full package check
+cd r-package                       # enter the package folder
+R                                  # start R
+> install.packages("testthat")     # first time only
+> testthat::test_local()           # run quick testthat tests
+
+cd Randompack.jl                   # enter Julia folder
+export JULIA_PROJECT=.             # unless set in .zshrc/.bashrc
+julia test/runtests.jl             # run the Julia tests
+
+Benchmarking
+––––––––––––
+cd <project-root>                           # enter project root folder
+export JULIA_PROJECT=Randompack.jl          # if not set in .zshrc/.bashrc
+
+release/examples/TimeDistC                  # benchmark C randompack
+release/examples/TimeDistFortran            # benchmark Fortran randompack
+Rscript r-package/inst/examples/TimeDist.R  # compare R-randompack with base-R and Dqrng
+julia Randompack.jl/examples/TimeDist.jl    # compare Julia randompack with the built-in
+python python/examples/TimeDist.py          # compare Python-randompack with numpy.random
+
+release/examples/TimeDistC -h               # display short help
+.                                           # the other benchmark programs also accept -h
+
+Extra Testing
+–––––––––––––
+meson setup testvar -Dtest_variants=true  # Build and run testvariants that simulate
+ninja -c testvar                          # computers: (a) without SIMD support and
+meson test -C testvar                     # (b) without 64×64→128 integer multiply
+
+TestU01:
+In some folder:
+wget http://simul.iro.umontreal.ca/testu01/TestU01.zip  # Download official TestU01
+unzip TestU01.zip                                       # – unzip it
+cd TestU01-1.2.3                                        # – and install it 
+configure --prefix=<prefix>                             # E.g. $HOME/lib
+make -j                                                 #
+make install                                            #
+meson setup -C release -Dbuildtype=release \            #
+    -DTestU01=<prefix>                                  # or edit meson_config.txt
+cd release/examples                                     #
+TestU01Driver -h                                        # help
+TestU01Driver -c                                        # Crush (minutes)
+Test(01Driver -b                                        # BigCrush (hours)
+
+PractRand:
+[This only works on x86_64 Linux]
+cd to <project-root>/misc
+Download from https://sourceforge.net/projects/pracrand/files
+unzip and enter PractRand folder
+g++ -O3 -std=c++11 -pthread -Iinclude src/*.cpp src/RNGs/*.cpp src/RNGs/other/*.cpp 
+  tools/RNG_test.cpp -o ../../release/examples/RNG_test
+cd <project-root>/release/examples
+
+RawStream | Rng_test stdin64           # default engine, runs "forever"
+RawStream -e x128+ | RNG_test stdin64  # x128+ fails fast
+RawStream -h                           # help
+Rng_test -h                            # help

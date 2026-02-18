@@ -6,11 +6,5 @@ add scripts to benchmark and test
 yggdrasil
 cran
 wheels
-describe how we do the "test_variant" tests, and what they do
 describe how we do without blas on linux if it's not present (in Julia/Python?)
-discuss hires
-discuss TestU01
-when we might not build_fortran (that's for R isn't it? or what?)
-when do we not build examples/tests?
-what is the simd meson option?
 what does option('perf') do 

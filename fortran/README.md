@@ -47,10 +47,9 @@ You need the following software available on your system:
 
 ### Build options
 
-Some build options may be set by editing meson_configure.txt in the project root. These
+Some build options may be set by editing meson_options.txt in the project root. These
 include the order to search for a BLAS library, whether to build the accompanying tests
-and examples, and a few more technical options. Make sure that `build_fortran` is either
-`auto` or `enabled`.
+and examples, and a few more technical options.
 
 ### Selecting compilers
 

@@ -4,6 +4,14 @@
 //
 //    meson setup -C release -Dbuildtype=release -DTestU01=<prefix>
 //    meson compile -C release
+//
+// Then get help with:
+//
+//    release/examples/TestU01Driver -h
+//
+// and run, for example for Small Crush:
+//
+//    release/examples/TestU01Driver -c
 
 #include <stdio.h>
 #include <stdint.h>

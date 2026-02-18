@@ -1,3 +1,5 @@
+# See DEVELOPER.md for explanations for some of these options.
+
 option('blas_order', 
   type: 'string', 
   value: 'auto',
@@ -10,22 +12,11 @@ option('builtin_blas',
   description: 'Use src/blas.f instead of system BLAS libraries'
 )
 
-option('u01_hires',
-  type: 'boolean',
-  value: false,
-  description: 'Build a U01_HIRES variant library'
-)
-
+# Creates <build-dir>/examples/Test01Driver
 option('TestU01',
   type: 'string',
-  value: '',
+  value: '/Users/jonasson/lib/testu01',
   description: 'Prefix for TestU01 install (enable when non-empty)'
-)
-
-option('build_fortran',
-  type: 'feature',
-  value: 'auto',
-  description: 'Build the Fortran interface (set value to disabled to exclude it)'
 )
 
 option('build_examples',
@@ -40,16 +31,10 @@ option('build_tests',
   description: 'Build tests'
 )
 
-option('simd', 
-  type: 'combo', 
-  choices: ['auto', 'baseline', 'avx2'], 
-  value: 'auto'
-)
-
-option('build_test_variants',
+option('test_variants',
   type: 'boolean',
   value: false,
-  description: 'Build internal test variant: no128'
+  description: 'Build internal test variants: no128 and nosimd'
 )
 
 option('perf', type: 'boolean', value: false, description: 'Enable performance benchmarking flags/macros')

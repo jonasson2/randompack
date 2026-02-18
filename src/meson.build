@@ -26,12 +26,9 @@ if builtin_blas
   blas_objs = [blas_lib.extract_all_objects()]
 endif
 
-u01_hires = get_option('u01_hires')
-u01_hires_args = u01_hires ? ['-DU01_HIRES'] : []
-
 build_avx2_define = build_avx2 ? ['-DBUILD_AVX2'] : []
 test_hooks_define = get_option('build_tests') ? ['-DRANDOMPACK_TEST_HOOKS'] : []
-base_c_args = u01_hires_args + accel_bug_args + build_avx2_define
+base_c_args = accel_bug_args + build_avx2_define
 
 avx2_objs = []
 if build_avx2
@@ -94,7 +91,7 @@ randompack_dep = declare_dependency(
   compile_args: base_c_args,
 )
 
-if get_option('build_test_variants')
+if get_option('test_variants')
   librandompack_no128 = static_library(
     # Pretend HAVE128 is disabled
     'randompack_no128',
@@ -121,7 +118,7 @@ if get_option('build_test_variants')
     objects: blas_objs,
     include_directories: randompack_inc,
     dependencies: [blas_dep] + math_deps,
-    c_args: ['-DPRETEND_NOSIMD'] + u01_hires_args + accel_bug_args,
+    c_args: ['-DPRETEND_NOSIMD'] + accel_bug_args,
     pic: true,
     install: false,
   )
@@ -130,6 +127,6 @@ if get_option('build_test_variants')
     link_with: librandompack_nosimd,
     include_directories: randompack_inc,
     dependencies: [blas_dep] + math_deps,
-    compile_args: ['-DPRETEND_NOSIMD'] + u01_hires_args + accel_bug_args,
+    compile_args: ['-DPRETEND_NOSIMD'] + accel_bug_args,
   )
 endif

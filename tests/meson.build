@@ -56,7 +56,7 @@ if build_fortran
   test('RunFortranTests', fortran_tests)
 endif
 
-if get_option('build_test_variants')
+if get_option('test_variants')
   test_no128 = executable(
     'RunTestNo128',
     [

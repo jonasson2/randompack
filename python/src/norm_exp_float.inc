@@ -71,7 +71,6 @@ ALWAYS_INLINE void rand_normf(float *buf, size_t len, randompack_rng *rng) {
   exit_u32_mode(rng, w);
 }
 
-#ifndef U01_HIRES
 ALWAYS_INLINE float standard_exponential_unlikely_f(randompack_rng *rng,
   uint8_t idx, uint32_t ki, float wi, uint32_t r, float x, int *w) {
   while (true) { // added loop to replace recursion, to allow speedup.
@@ -163,29 +162,3 @@ ALWAYS_INLINE void rand_expf(float *buf, size_t len, randompack_rng *rng) {
   }
   exit_u32_mode(rng, w);
 }
-#else
-// This version takes the index from the high bits and uses 24 bits for x. Because of that
-// wef must be halved and kef doubled; gensig.c constructs zig_new.h with these.
-#include "zig_new.h"
-ALWAYS_INLINE void rand_expf(float *x, size_t len, randompack_rng *rng) {
-  int w = enter_u32_mode(rng);
-  uint32_t ri;
-  uint8_t idx;
-  float xi;
-  size_t i = 0;
-  while (i < len) {
-    ri = draw_u32(rng, &w);
-    idx = ri >> 24;
-    ri &= 0x00FFFFFFu;
-    xi = ri*wehf[idx];            // wehf = we_float/2
-    if (ri < ke2f[idx])           // ke2f = kef*2
-      x[i++] = xi;                // fast accept
-    else if (idx == 0)            // tail
-      x[i++] = ziggurat_exp_r_f - openlibm_log1pf(-draw_u01f(rng, &w));
-    else if ((fe_float[idx-1] - fe_float[idx])*draw_u01f(rng, &w) +
-      fe_float[idx] < openlibm_expf(-xi))
-      x[i++] = xi;                // wedge accept
-  }
-  exit_u32_mode(rng, w);
-}
-#endif
