@@ -15,6 +15,8 @@ def pick_engine():
 def test_int_vector_matrix():
     rng = rp.Rng(pick_engine())
     rng.seed(123)
+    x = rng.int()
+    assert np.isscalar(x)
     x = rng.int(-2, 3, size=50)
     assert np.all((-2 <= x) & (x <= 3))
     m = np.empty((6, 9), dtype=np.int64)

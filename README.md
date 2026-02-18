@@ -89,7 +89,7 @@ A small set of support functions is provided to
 - report the last error condition
 - initialize generators from a seed
 - enable or disable full mantissas for double-precision draws
-- enable or disable fast log/exp implementations when available
+- enable or disable bitexact log/exp implementations
 - set generator state explicitly
 - serialize and deserialize generator state
 
@@ -100,6 +100,15 @@ substreams via optional spawn keys. For the counter based generators, the
 explicit state setting allows explicit setting of both counter and key. State
 serialization supports checkpointing and allows simulations to be stopped and
 restarted exactly.
+
+## Cross platform consistency
+
+Given the same engine and seed, samples obtained on different platforms 
+(programming language/computer/compiler/OS/architecture) agree. For uniform, 
+normal, exponential, and integer distributions the agreement is bit-exact 
+(x == y holds). For the remaining distributions, samples agree to within ca. 
+2 ulp. If the `bitexact` parameter is set to `true` the agreement is bit-exact 
+for all distributions.
 
 ## Verification
 

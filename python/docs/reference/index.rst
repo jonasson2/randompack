@@ -96,4 +96,3 @@ Rng Methods
    generated/randompack.Rng.t.rst
    generated/randompack.Rng.unif.rst
    generated/randompack.Rng.weibull.rst
-

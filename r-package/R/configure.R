@@ -46,6 +46,7 @@ methods_configure <- list(
     invisible(self)
   },
 
+
   set_state = function(state) {
     if (is.null(self$ptr)) stop("RNG is not initialized")
     state <- as_u32_vec(state, "state", even = TRUE)

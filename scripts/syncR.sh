@@ -5,7 +5,7 @@ set -eu
   echo "syncR.sh: run this from the repository root (missing .randompack-root)" 1>&2
   exit 1
 }
-ROOT=$(cd "$(dirname "$0")" && pwd)
+ROOT=$(cd "$(dirname "$0")/.." && pwd)
 
 # SYNC SOURCE FILES
 rsync -av --delete \

@@ -80,7 +80,7 @@ randompack_rng *randompack_create(const char *engine) {
   // Create engine
   if (!ALLOC(rng, 1)) return 0;
   rng->engine = INVALID;
-  rng->fast_logexp = false;
+  rng->bitexact = false;
   rng->cpu_has_avx2 = false;
   if (!select_engine(engine, rng)) {
     rng->last_error = "unknown engine name (spelling error in requested engine)";
@@ -149,14 +149,14 @@ bool randompack_full_mantissa(randompack_rng *rng, bool enable) {
   return true;
 }
 
-bool randompack_fast_logexp(randompack_rng *rng, bool enable) {
+bool randompack_bitexact(randompack_rng *rng, bool enable) {
   if (!rng) return false;
   if (rng->engine == INVALID) {
-    rng->last_error = "randompack fast_logexp: invalid rng";
+    rng->last_error = "randompack bitexact: invalid rng";
     return false;
   }
   rng->last_error = 0;
-  rng->fast_logexp = enable;
+  rng->bitexact = enable;
   return true;
 }
 

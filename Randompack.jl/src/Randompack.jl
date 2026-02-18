@@ -67,8 +67,12 @@ include("interface_continuous.jl")
 include("interface_discrete.jl")
 include("interface_advanced.jl")
 
-public engines, duplicate, randomize!, full_mantissa!,
-       set_state!, philox_set_state!, squares_set_state!, pcg64_set_state!,
-       serialize, deserialize!
+@static if VERSION >= v"1.11"
+  Base.eval(@__MODULE__, Expr(:public,
+    :engines, :duplicate, :randomize!, :full_mantissa!, :set_state!,
+    :philox_set_state!, :squares_set_state!, :pcg64_set_state!,
+    :serialize, :deserialize!
+  ))
+end
 
 end # module

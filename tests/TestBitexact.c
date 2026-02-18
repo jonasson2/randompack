@@ -1,5 +1,5 @@
 // -*- C -*-
-// Tests for fast_logexp flag
+// Tests for bitexact flag
 #include <limits.h>
 #include <math.h>
 #include "test_util.h"
@@ -72,12 +72,12 @@ static void check_weibull(randompack_rng *rng, char *engine) {
   FREE(u);
 }
 
-void TestLogExp(void) {
+void TestBitexact(void) {
   char *engines[] = {"x256++simd", "pcg64"};
   for (int i = 0; i < LEN(engines); i++) {
     char *engine = engines[i];
     randompack_rng *rng = create_seeded_rng(engine, 123);
-    bool ok = randompack_fast_logexp(rng, true);
+    bool ok = randompack_bitexact(rng, false);
     check_success(ok, rng);
     check_unif(rng, engine);
     check_exp2(rng, engine);

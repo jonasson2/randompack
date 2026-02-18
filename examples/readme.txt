@@ -17,8 +17,8 @@ EXAMPLE, TEST AND TIMING PROGRAMS FOR RANDOMPACK
       RunTests -vv                           # more verbosity
     cd ../examples    
     TimeEngines                              # run timing programs
-    TimeDistributions                        #
-    TimeInteger                              #
+    TimeDistC                                #
+    TimeIntegers                             #
     RunRandom                                # example driver
     RawStream -e x128+ | RNG_test stdin64    # test with PractRand (fails)
     RawStream -e pcg64 | RNG_test stdin64    # test with PractRand (doesn't fail)

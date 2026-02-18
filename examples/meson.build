@@ -37,8 +37,8 @@ time_fast_direct = executable(
 )
 
 time_distributions = executable(
-  'TimeDistributions',
-  ['TimeDistributions.c', 'TimeUtil.c'] + common_util,
+  'TimeDistC',
+  ['TimeDistC.c', 'TimeUtil.c'] + common_util,
   dependencies : [randompack_dep],
 )
 
@@ -74,10 +74,20 @@ raw_stream = executable(
 )
 
 if build_fortran
+  darwin_link_args = host_machine.system() == 'darwin' ? ['-Wl,-no_warn_duplicate_libraries'] : []
   check_fortran_ints = executable(
     'CheckFortranInts',
     'CheckFortranInts.f90',
+    link_language: 'fortran',
     dependencies : [randompack_dep],
+    link_args : darwin_link_args,
+  )
+  time_distributions_f = executable(
+    'TimeDistFortran',
+    'TimeDistFortran.f90',
+    link_language: 'fortran',
+    dependencies : [randompack_dep],
+    link_args : darwin_link_args,
   )
 endif
 

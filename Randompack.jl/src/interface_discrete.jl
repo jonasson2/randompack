@@ -164,7 +164,7 @@ function random_perm!(rng::RNG, p::AbstractVector{T}) where {T<:_PermTypes}
   end
   tmp = Vector{Cint}(undef, n)
   ok = GC.@preserve tmp begin
-    ccall((:randompack_perm, _libpath[]), Bool, (Ptr{Cint}, Cint, RNGPtr),
+    ccall(_sym(:randompack_perm), Bool, (Ptr{Cint}, Cint, RNGPtr),
           pointer(tmp), Cint(n), rng.ptr)
   end
   _check_ok(ok, rng.ptr, "randompack_perm failed")
@@ -240,7 +240,7 @@ function random_sample!(rng::RNG, s::AbstractVector{T}, n::Integer) where {T<:_P
   end
   tmp = Vector{Cint}(undef, k)
   ok = GC.@preserve tmp begin
-    ccall((:randompack_sample, _libpath[]), Bool, (Ptr{Cint}, Cint, Cint, RNGPtr),
+    ccall(_sym(:randompack_sample), Bool, (Ptr{Cint}, Cint, Cint, RNGPtr),
           pointer(tmp), Cint(n), Cint(k), rng.ptr)
   end
   _check_ok(ok, rng.ptr, "randompack_sample failed")

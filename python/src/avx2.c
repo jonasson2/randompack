@@ -2,6 +2,31 @@
 
 #include "randompack_internal.h"
 
+#if !defined(__x86_64__) && !defined(_M_X64)
+
+bool cpu_has_avx2(void) {
+  return false;
+}
+
+void fill_fast_avx2(randompack_rng *rng, size_t len) {
+  (void)rng;
+  (void)len;
+}
+
+void rand_dble_avx2(double x[], size_t len, randompack_rng *rng) {
+  (void)x;
+  (void)len;
+  (void)rng;
+}
+
+void rand_float_avx2(float x[], size_t len, randompack_rng *rng) {
+  (void)x;
+  (void)len;
+  (void)rng;
+}
+
+#else
+
 #if defined(_MSC_VER)
 #include <intrin.h>
 #else
@@ -18,6 +43,21 @@
 #define HIDDEN __attribute__((visibility("hidden")))
 #else
 #define HIDDEN
+#endif
+
+#if defined(RANDOMPACK_TEST_HOOKS)
+#if defined(__GNUC__) || defined(__clang__)
+#define TEST_HOOK __attribute__((visibility("default")))
+#else
+#define TEST_HOOK
+#endif
+static int avx2_used = 0;
+TEST_HOOK int randompack_avx2_used(void) {
+  return avx2_used;
+}
+TEST_HOOK void randompack_avx2_reset(void) {
+  avx2_used = 0;
+}
 #endif
 
 HIDDEN bool cpu_has_avx2(void) {
@@ -78,6 +118,9 @@ HIDDEN void fill_fast_avx2(randompack_rng *rng, size_t len) {
   VEC_T s1 = VEC_LOAD(&st->s1[0]);
   VEC_T s2 = VEC_LOAD(&st->s2[0]);
   VEC_T s3 = VEC_LOAD(&st->s3[0]);
+#if defined(RANDOMPACK_TEST_HOOKS)
+  avx2_used++;
+#endif
   for (size_t i = 0; i < len; i += 4) {
     VEC_T r;
     FAST_STEP_VEC(s0, s1, s2, s3, r);
@@ -168,3 +211,5 @@ HIDDEN void rand_float_avx2(float x[], size_t len, randompack_rng *rng) {
   }
   exit_u32_mode(rng, w);
 }
+
+#endif

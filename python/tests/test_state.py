@@ -43,6 +43,11 @@ def test_full_mantissa_toggle():
     rng.full_mantissa(False)
 
 
+def test_bitexact_create():
+    rng = rp.Rng(pick_engine(), bitexact=True)
+    rng.unif(10)
+
+
 def test_serialize_deserialize():
     rng = rp.Rng(pick_engine())
     rng.seed(555)

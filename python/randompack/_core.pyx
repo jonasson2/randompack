@@ -111,6 +111,11 @@ cdef inline np.ndarray _prep_out_int(randompack_rng *rng, object out, object dty
     is_i64[0] = arr.dtype == np.dtype(np.int64)
     return arr
 
+cdef inline object _return_scalar(np.ndarray arr, object out, object size):
+    if out is None and size is None:
+        return arr[0]
+    return arr
+
 cdef class Rng:
     """
     Random number generator.
@@ -121,6 +126,8 @@ cdef class Rng:
         Name of the random number generator engine to use. If omitted,
         a default engine is selected. Available engines can be listed
         using `engines()`.
+    bitexact : bool, optional
+        If True, use bitexact log/exp for distributions that rely on them.
 
     Notes
     -----
@@ -136,11 +143,12 @@ cdef class Rng:
     >>> rng2 = randompack.Rng(engine="philox")
     >>> rng2.seed(123)
     >>> rng2.normal(3)
+    >>> rng3 = randompack.Rng(engine="pcg64", bitexact=True)  # make samples bit-identical across platforms (x==y true)
     """
 
     cdef randompack_rng *ptr
     
-    def __cinit__(self, engine=None):
+    def __cinit__(self, engine=None, bitexact=False):
         self.ptr = NULL
         if engine is None:
             self.ptr = randompack_create(NULL)
@@ -155,6 +163,9 @@ cdef class Rng:
             randompack_free(self.ptr)
             self.ptr = NULL
             raise ValueError((<bytes>msg).decode())
+        if bitexact:
+            if not randompack_bitexact(self.ptr, True):
+                _raise_last_error(self.ptr)
 
     def __dealloc__(self):
         if self.ptr != NULL:
@@ -555,7 +566,7 @@ cdef class Rng:
         ----------
         size : int or tuple of int, optional
             Output shape. Cannot be given together with `out`. If `size` is None, a
-            1-element array is returned.
+            a scalar is returned.
         a : float, default 0.0
             Lower bound of the sampling interval.
         b : float, default 1.0
@@ -603,7 +614,7 @@ cdef class Rng:
                                       <float>b_d, self.ptr)
         if not ok:
             _raise_last_error(self.ptr)
-        return arr
+        return _return_scalar(arr, out, size)
 
     def normal(self, size=None, *, mu=0.0, sigma=1.0, out=None, dtype=None):
         """Draw samples from a normal distribution.
@@ -616,7 +627,7 @@ cdef class Rng:
         ----------
         size : int or tuple of int, optional
             Output shape. Cannot be given together with `out`. If `size` is None, a
-            1-element array is returned.
+            a scalar is returned.
         mu : float, default 0.0
             Mean of the distribution.
         sigma : float, default 1.0
@@ -674,7 +685,7 @@ cdef class Rng:
                                         <float>sigma_d, self.ptr)
         if not ok:
             _raise_last_error(self.ptr)
-        return arr
+        return _return_scalar(arr, out, size)
 
     def exp(self, size=None, *, scale=1.0, out=None, dtype=None):
         """Draw samples from an exponential distribution.
@@ -687,7 +698,7 @@ cdef class Rng:
         ----------
         size : int or tuple of int, optional
             Output shape. Cannot be given together with `out`. If `size` is None, a
-            1-element array is returned.
+            a scalar is returned.
         scale : float, default 1.0
             Scale parameter. Must satisfy scale > 0.
         out : numpy.ndarray, optional
@@ -734,7 +745,7 @@ cdef class Rng:
                 ok = randompack_expf(<float *>ptr, n_elem, <float>scale_d, self.ptr)
         if not ok:
             _raise_last_error(self.ptr)
-        return arr
+        return _return_scalar(arr, out, size)
 
     def lognormal(self, size=None, *, mu=0.0, sigma=1.0, out=None, dtype=None):
         """
@@ -749,7 +760,7 @@ cdef class Rng:
         ----------
         size : int or tuple of int, optional
             Output shape. Cannot be given together with `out`. If `size` is None, a
-            1-element array is returned.
+            a scalar is returned.
         mu : float, default 0.0
             Mean of the underlying normal distribution.
         sigma : float, default 1.0
@@ -794,7 +805,7 @@ cdef class Rng:
                                            <float>sigma_d, self.ptr)
         if not ok:
             _raise_last_error(self.ptr)
-        return arr
+        return _return_scalar(arr, out, size)
 
     def gamma(self, size=None, *, shape, scale=1.0, out=None, dtype=None):
         """
@@ -808,7 +819,7 @@ cdef class Rng:
         ----------
         size : int or tuple of int, optional
             Output shape. Cannot be given together with `out`. If `size` is None, a
-            1-element array is returned.
+            a scalar is returned.
         shape : float
             Shape parameter. Must satisfy shape > 0.
         scale : float, default 1.0
@@ -856,7 +867,7 @@ cdef class Rng:
                                        <float>scale_d, self.ptr)
         if not ok:
             _raise_last_error(self.ptr)
-        return arr
+        return _return_scalar(arr, out, size)
 
     def beta(self, size=None, *, a, b, out=None, dtype=None):
         """
@@ -869,7 +880,7 @@ cdef class Rng:
         ----------
         size : int or tuple of int, optional
             Output shape. Cannot be given together with `out`. If `size` is None, a
-            1-element array is returned.
+            a scalar is returned.
         a : float
             First shape parameter. Must satisfy a > 0.
         b : float
@@ -915,7 +926,7 @@ cdef class Rng:
                                       <float>b_d, self.ptr)
         if not ok:
             _raise_last_error(self.ptr)
-        return arr
+        return _return_scalar(arr, out, size)
 
     def chi2(self, size=None, *, nu, out=None, dtype=None):
         """
@@ -928,7 +939,7 @@ cdef class Rng:
         ----------
         size : int or tuple of int, optional
             Output shape. Cannot be given together with `out`. If `size` is None, a
-            1-element array is returned.
+            a scalar is returned.
         nu : float
             Degrees of freedom. Must satisfy nu > 0.
         out : numpy.ndarray, optional
@@ -970,7 +981,7 @@ cdef class Rng:
                 ok = randompack_chi2f(<float *>ptr, n_elem, <float>nu_d, self.ptr)
         if not ok:
             _raise_last_error(self.ptr)
-        return arr
+        return _return_scalar(arr, out, size)
 
     def t(self, size=None, *, nu, out=None, dtype=None):
         """
@@ -983,7 +994,7 @@ cdef class Rng:
         ----------
         size : int or tuple of int, optional
             Output shape. Cannot be given together with `out`. If `size` is None, a
-            1-element array is returned.
+            a scalar is returned.
         nu : float
             Degrees of freedom. Must satisfy nu > 0.
         out : numpy.ndarray, optional
@@ -1026,7 +1037,7 @@ cdef class Rng:
                 ok = randompack_tf(<float *>ptr, n_elem, <float>nu_d, self.ptr)
         if not ok:
             _raise_last_error(self.ptr)
-        return arr
+        return _return_scalar(arr, out, size)
 
     def f(self, size=None, *, nu1, nu2, out=None, dtype=None):
         """
@@ -1039,7 +1050,7 @@ cdef class Rng:
         ----------
         size : int or tuple of int, optional
             Output shape. Cannot be given together with `out`. If `size` is None, a
-            1-element array is returned.
+            a scalar is returned.
         nu1 : float
             Degrees of freedom for the numerator. Must satisfy nu1 > 0.
         nu2 : float
@@ -1085,7 +1096,7 @@ cdef class Rng:
                                    <float>nu2_d, self.ptr)
         if not ok:
             _raise_last_error(self.ptr)
-        return arr
+        return _return_scalar(arr, out, size)
 
     def gumbel(self, size=None, *, mu=0.0, beta=1.0, out=None, dtype=None):
         """
@@ -1099,7 +1110,7 @@ cdef class Rng:
         ----------
         size : int or tuple of int, optional
             Output shape. Cannot be given together with `out`. If `size` is None, a
-            1-element array is returned.
+            a scalar is returned.
         mu : float, default 0.0
             Location parameter.
         beta : float, default 1.0
@@ -1146,7 +1157,7 @@ cdef class Rng:
                                         <float>beta_d, self.ptr)
         if not ok:
             _raise_last_error(self.ptr)
-        return arr
+        return _return_scalar(arr, out, size)
 
     def pareto(self, size=None, *, xm, alpha, out=None, dtype=None):
         """
@@ -1159,7 +1170,7 @@ cdef class Rng:
         ----------
         size : int or tuple of int, optional
             Output shape. Cannot be given together with `out`. If `size` is None, a
-            1-element array is returned.
+            a scalar is returned.
         xm : float
             Minimum value. Must satisfy xm > 0.
         alpha : float
@@ -1205,7 +1216,7 @@ cdef class Rng:
                                         <float>alpha_d, self.ptr)
         if not ok:
             _raise_last_error(self.ptr)
-        return arr
+        return _return_scalar(arr, out, size)
 
     def weibull(self, size=None, *, shape, scale=1.0, out=None, dtype=None):
         """
@@ -1219,7 +1230,7 @@ cdef class Rng:
         ----------
         size : int or tuple of int, optional
             Output shape. Cannot be given together with `out`. If `size` is None, a
-            1-element array is returned.
+            a scalar is returned.
         shape : float
             Shape parameter. Must satisfy shape > 0.
         scale : float, default 1.0
@@ -1264,7 +1275,7 @@ cdef class Rng:
                                          <float>scale_d, self.ptr)
         if not ok:
             _raise_last_error(self.ptr)
-        return arr
+        return _return_scalar(arr, out, size)
 
     def skew_normal(self, size=None, *, mu=0.0, sigma=1.0, alpha, out=None, dtype=None):
         """
@@ -1278,7 +1289,7 @@ cdef class Rng:
         ----------
         size : int or tuple of int, optional
             Output shape. Cannot be given together with `out`. If `size` is None, a
-            1-element array is returned.
+            a scalar is returned.
         mu : float, default 0.0
             Location parameter.
         sigma : float, default 1.0
@@ -1328,7 +1339,7 @@ cdef class Rng:
                                              self.ptr)
         if not ok:
             _raise_last_error(self.ptr)
-        return arr
+        return _return_scalar(arr, out, size)
 
     def mvn(self, size=None, Sigma=None, mu=None, out=None):
         """Draw samples from a multivariate normal distribution.
@@ -1345,7 +1356,7 @@ cdef class Rng:
         ----------
         size : int, optional
             Number of draws. Cannot be given together with `out`. If `size` is None,
-            a single draw is returned.
+            a single-row array is returned.
         Sigma : array_like
             Covariance matrix. Must be square.
         mu : array_like, optional
@@ -1453,7 +1464,7 @@ cdef class Rng:
             Upper bound (inclusive). Must be given together with `a`.
         size : int or tuple of int, optional
             Output shape. Cannot be given together with `out`. If `size` is None, a
-            1-element array is returned.
+            a scalar is returned.
         out : numpy.ndarray, optional
             Output array. Must be contiguous, writeable, and of dtype int32 or int64.
         dtype : numpy.dtype or str, optional
@@ -1527,7 +1538,7 @@ cdef class Rng:
                     ok = randompack_int(<int *>ptr, n_elem, a32, b32, self.ptr)
         if not ok:
             _raise_last_error(self.ptr)
-        return arr
+        return _return_scalar(arr, out, size)
 
     def perm(self, n, *, out=None):
         """

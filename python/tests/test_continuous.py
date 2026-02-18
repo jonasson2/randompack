@@ -19,6 +19,8 @@ def assert_finite(x):
 def test_unif_normal_float64():
     rng = rp.Rng(pick_engine())
     rng.seed(123)
+    x = rng.unif()
+    assert np.isscalar(x)
     x = rng.unif(100)
     assert np.all((0 <= x) & (x <= 1))
     assert_finite(x)
@@ -78,6 +80,8 @@ def test_unif_normal_float32():
 def test_other_continuous_float64():
     rng = rp.Rng(pick_engine())
     rng.seed(123)
+    x = rng.exp()
+    assert np.isscalar(x)
     x = rng.lognormal(100, mu=0.0, sigma=1.0)
     assert np.all(x >= 0)
     assert_finite(x)

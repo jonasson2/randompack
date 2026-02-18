@@ -47,7 +47,7 @@ ALWAYS_INLINE void fill_gamma_shape1f(float *x, size_t len, float shape,
           break;
         }
         float logu, logv3;
-        if (rng->fast_logexp) {
+        if (!rng->bitexact) {
           logu = logf(u);
           logv3 = logf(v3);
         }

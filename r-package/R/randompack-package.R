@@ -8,6 +8,7 @@
 #' \preformatted{
 #'   rng <- randompack_rng()                # Default: x256++simd
 #'   rng <- randompack_rng("pcg64")         # Specify engine
+#'   rng <- randompack_rng("pcg64", bitexact=TRUE)  # make samples bit-identical across platforms (x==y true)
 #'   x <- rng$normal(100, mu=1, sigma=2)    # Generate 100 N(1,2) variates
 #' }
 #'

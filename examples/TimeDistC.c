@@ -1,5 +1,5 @@
 // -*- C -*-
-// TimeDistributions.c: time distributions (ns/value), double and float.
+// TimeDistC.c: time distributions (ns/value), double and float.
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -45,15 +45,15 @@ static void print_engines(void) {
 }
 
 static void print_help(void) {
-  printf("TimeDistributions — time distributions (ns/value), double and float\n");
-  printf("Usage: TimeDistributions [options]\n\n");
+  printf("TimeDistC — time distributions (ns/value), double and float\n");
+  printf("Usage: TimeDistC [options]\n\n");
   printf("Options:\n");
   printf("  -h            Show this help message\n");
   printf("  -e engine     RNG engine (default x256++simd)\n");
   printf("  -t seconds    Benchmark time per distribution (default 0.1)\n");
   printf("  -c chunk      Chunk size (values per call, default 4096)\n");
-  printf("  -s seed       RNG seed (default 7)\n\n");
-  printf("  -f            Use fast log/exp implementations when available\n\n");
+  printf("  -s seed       RNG seed (default 7)\n");
+  printf("  -b            Use bitexact log/exp implementations\n\n");
   printf("Engines:\n");
   print_engines();
   printf("\nNotes:\n");
@@ -61,7 +61,7 @@ static void print_help(void) {
 }
 
 static bool get_options(int argc, char **argv, char **engine, double *bench_time,
-                        int *chunk, int *seed, bool *fast_logexp, bool *help) {
+                        int *chunk, int *seed, bool *bitexact, bool *help) {
   opterr = 0;
   optind = 1;
   int opt;
@@ -69,9 +69,9 @@ static bool get_options(int argc, char **argv, char **engine, double *bench_time
   *bench_time = 0.1;
   *chunk = 4096;
   *seed = 7;
-  *fast_logexp = false;
+  *bitexact = false;
   *help = false;
-  while ((opt = getopt(argc, argv, "he:t:c:s:f")) != -1) {
+  while ((opt = getopt(argc, argv, "he:t:c:s:b")) != -1) {
     switch (opt) {
       case 'h':
         *help = true;
@@ -92,8 +92,8 @@ static bool get_options(int argc, char **argv, char **engine, double *bench_time
       case 's':
         *seed = atoi(optarg);
         break;
-      case 'f':
-        *fast_logexp = true;
+      case 'b':
+        *bitexact = true;
         break;
       default:
         return false;
@@ -185,10 +185,10 @@ int main(int argc, char **argv) {
   char *engine;
   double bench_time;
   int chunk, seed;
-  bool fast_logexp;
+  bool bitexact;
   bool help;
   if (!get_options(argc, argv, &engine, &bench_time, &chunk, &seed,
-      &fast_logexp, &help) || help) {
+      &bitexact, &help) || help) {
     print_help();
     return help ? 0 : 1;
   }
@@ -205,10 +205,10 @@ int main(int argc, char **argv) {
       randompack_free(rngf);
     return 1;
   }
-  if (fast_logexp) {
-    if (!randompack_fast_logexp(rngd, true) ||
-        !randompack_fast_logexp(rngf, true)) {
-      fprintf(stderr, "randompack_fast_logexp failed\n");
+  if (bitexact) {
+    if (!randompack_bitexact(rngd, true) ||
+        !randompack_bitexact(rngf, true)) {
+      fprintf(stderr, "randompack_bitexact failed\n");
       randompack_free(rngd);
       randompack_free(rngf);
       return 1;
@@ -243,7 +243,7 @@ int main(int argc, char **argv) {
   printf("time per value:   ns/value\n");
   printf("bench_time:       %.3f s per distribution\n", bench_time);
   printf("chunk:            %d\n\n", chunk);
-  printf("fast_logexp:      %s\n\n", fast_logexp ? "on" : "off");
+  printf("bitexact:         %s\n\n", bitexact ? "on" : "off");
   printf("%-14s %8s %8s\n", "Distribution", "double", "float");
   for (int i = 0; i < LEN(dists); i++) {
     double par[3];

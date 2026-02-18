@@ -11,64 +11,11 @@
 #include <time.h>
 #include <limits.h>
 #include "randompack.h"
-#include "randompack_config.h"
+#include "randompack_internal.h"
 #include "BlasGateway.h"
-#if HAVE128
-#include "cwg128_64.h"
-#include "pcg64.h"
-#else
-#include "pcg64_emul.h"
-#endif
+#include "openlibm.inc"
+#include "log_exp.inc"
 #include "crypto_random.inc"
-
-typedef struct randompack_rng randompack_rng;
-
-typedef enum {
-  INVALID,
-  X128P,
-  XORO,
-  X256SS,
-  X256PP,
-  SQUARES,
-  SFC64,
-  PCG64,
-  PHILOX,
-  CHACHA20,
-  SYS,
-  CWG128,
-  FAST,
-} rng_engine;
-
-typedef void (*engine_fill)(randompack_rng *rng, size_t len);
-
-typedef struct {
-  uint64_t s0[4], s1[4], s2[4], s3[4];
-} xo256;
-
-struct randompack_rng {
-  union {
-	 uint8_t  u8[48];
-    uint32_t u32[16];
-    uint64_t u64[8];
-    xo256    xo;
-    pcg64_t pcg;
-    #if HAVE128
-    cwg128_64_t cwg;
-    #endif
-  } state;
-  rng_engine engine;
-  int buf_word;
-  int buf_byte;
-  char *last_error;
-  engine_fill fill;
-  bool usefullmantissa;
-  union {
-    uint8_t u8[8*BUFSIZE];
-    uint16_t u16[4*BUFSIZE];
-    uint32_t u32[2*BUFSIZE];
-    uint64_t u64[BUFSIZE];
-  } buf;
-};
 
 typedef struct {
   char *name;
@@ -84,18 +31,18 @@ typedef struct {
 #include "distributions.inc"
 
 static rng_entry rng_table[] = {
-  {"x256++simd","xorshift256++, with SIMD accelaration (4x64)",FAST,    4, fill_x256ppsimd},
-  {"x256++",   "xoshiro256++, Vigna & Blackman, 2019 (4x64)",  X256PP,  4, fill_x256pp    },
-  {"x256**",   "xoshiro256**, Vigna & Blackman, 2019 (4x64)",  X256SS,  4, fill_x256ss    },
-  {"xoro++",   "xoroshiro128++, Vigna & Blackman, 2016 (2x64)",XORO,    2, fill_xoro128pp },
-  {"x128+",    "xorshift128+, Vigna, 2014 (2x64)",             X128P,   2, fill_x128p     },
-  {"pcg64",    "PCG64-DXSM, O'Neill, 2014 (4x64)",             PCG64,   4, fill_pcg64     },
-  {"sfc64",    "sfc64, Chris Doty-Humphrey, 2013 (4x64)",      SFC64,   4, fill_sfc64     },
-  {"cwg128",   "cwg128-64, Działa, 2022 (5x64)",               CWG128,  5, fill_cwg128    },
-  {"philox",   "Philox-4x64, Salmon & Moraes, 2011 (6x64)",    PHILOX,  6, fill_philox    },
-  {"squares",  "squares64, Widynski, 2021 (2x64)",             SQUARES, 2, fill_squares   },
-  {"chacha20", "ChaCha20, Bernstein, 2008 (6x64)",             CHACHA20,6, fill_chacha    },
-  {"system",   "Operating system entropy source",              SYS,     0, fill_csprng    },
+  {"x256++simd","xorshift256++, with SIMD accelaration (4x64)",FAST,    4,fill_fast     },
+  {"x256++",   "xoshiro256++, Vigna & Blackman, 2019 (4x64)",  X256PP,  4,fill_x256pp   },
+  {"x256**",   "xoshiro256**, Vigna & Blackman, 2019 (4x64)",  X256SS,  4,fill_x256ss   },
+  {"xoro++",   "xoroshiro128++, Vigna & Blackman, 2016 (2x64)",XORO,    2,fill_xoro128pp},
+  {"x128+",    "xorshift128+, Vigna, 2014 (2x64)",             X128P,   2,fill_x128p    },
+  {"pcg64",    "PCG64-DXSM, O'Neill, 2014 (4x64)",             PCG64,   4,fill_pcg64    },
+  {"sfc64",    "sfc64, Chris Doty-Humphrey, 2013 (4x64)",      SFC64,   4,fill_sfc64    },
+  {"cwg128",   "cwg128-64, Działa, 2022 (5x64)",               CWG128,  5,fill_cwg128   },
+  {"philox",   "Philox-4x64, Salmon & Moraes, 2011 (6x64)",    PHILOX,  6,fill_philox   },
+  {"squares",  "squares64, Widynski, 2021 (2x64)",             SQUARES, 2,fill_squares  },
+  {"chacha20", "ChaCha20, Bernstein, 2008 (6x64)",             CHACHA20,6,fill_chacha   },
+  {"system",   "Operating system entropy source",              SYS,     0,fill_csprng   },
 };
 
 static rng_entry *find_entry(rng_engine e) {
@@ -109,7 +56,7 @@ static bool select_engine(const char *s, randompack_rng *rng) {
   if (!rng) return false;
   if (!s) {
     rng->engine = FAST; // default engine
-    rng->fill   = fill_x256ppsimd;
+    rng->fill   = fill_fast;
     return true;
   }
   char t[64];
@@ -133,10 +80,16 @@ randompack_rng *randompack_create(const char *engine) {
   // Create engine
   if (!ALLOC(rng, 1)) return 0;
   rng->engine = INVALID;
+  rng->bitexact = false;
+  rng->cpu_has_avx2 = false;
   if (!select_engine(engine, rng)) {
     rng->last_error = "unknown engine name (spelling error in requested engine)";
     return rng;
   }
+#if defined(BUILD_AVX2)
+  rng->cpu_has_avx2 = cpu_has_avx2();
+  if (rng->engine == FAST && rng->cpu_has_avx2) rng->fill = fill_fast_avx2;
+#endif
   rng_entry *ent = find_entry(rng->engine);
   (void)ent;
   rand_init_randomize(rng);
@@ -149,7 +102,7 @@ bool randompack_seed(int seed, uint32_t *spawn_key, int nkey, randompack_rng *rn
     rng->last_error = "randompack seed: invalid rng";
     return false;
   }
- uint32_t seed32 = seed;
+  uint32_t seed32 = seed;
   // Use Melissa O'Neill's seed sequence
   if (nkey < 0 || (nkey > 0 && !spawn_key)) {
     rng->last_error = "randompack seed: invalid spawn_key arguments";
@@ -193,6 +146,17 @@ bool randompack_full_mantissa(randompack_rng *rng, bool enable) {
   }
   rng->last_error = 0;
   rng->usefullmantissa = enable;
+  return true;
+}
+
+bool randompack_bitexact(randompack_rng *rng, bool enable) {
+  if (!rng) return false;
+  if (rng->engine == INVALID) {
+    rng->last_error = "randompack bitexact: invalid rng";
+    return false;
+  }
+  rng->last_error = 0;
+  rng->bitexact = enable;
   return true;
 }
 
@@ -324,6 +288,9 @@ bool randompack_deserialize(const uint8_t *buf, int len, randompack_rng *rng) {
     rng->last_error = "randompack deserialize: allocation failed";
     return false;
   }
+#if defined(BUILD_AVX2)
+  if (rng->engine == FAST && rng->cpu_has_avx2) rng->fill = fill_fast_avx2;
+#endif
   return true;
 }
 
@@ -483,7 +450,7 @@ bool randompack_int(int x[], size_t len, int m, int n, randompack_rng *rng) {
   else
     rng->last_error = 0;
   if (rng->last_error) return false;
-  uint32_t bound = (uint32_t)(n - m) + 1u;
+  uint32_t bound = (uint32_t)n - (uint32_t)m + 1u;
   if (bound == 0) {
     align32(rng);
     draw_raw_copy((uint8_t*)x, 4*len, rng);
@@ -503,13 +470,13 @@ bool randompack_long_long(long long x[], size_t len, long long m, long long n,
   else
     rng->last_error = 0;
   if (rng->last_error) return false;
-  uint64_t bound = (uint64_t)(n - m) + 1ull;
+  uint64_t bound = (uint64_t)n - (uint64_t)m + 1u;
   if (bound == 0) {
     align64(rng);
     draw_raw_copy((uint8_t*)x, 8*len, rng);
   }
   else
-	 rand_long_long(x, len, m, bound, rng);
+    rand_long_long(x, len, m, bound, rng);
   return true;
 }
 

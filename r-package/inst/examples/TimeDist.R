@@ -11,18 +11,20 @@ if (!requireNamespace("dqrng", quietly = TRUE)) {
 }
 
 args <- commandArgs(trailingOnly = TRUE)
+bitexact <- any(args == "-b")
+args <- args[args != "-b"]
 engine <- if (length(args) >= 1L) args[[1]] else ""
 if (!nzchar(engine)) engine <- "x256++simd"
 
-rng <- randompack::randompack_rng(engine=engine)
+rng <- randompack::randompack_rng(engine=engine, bitexact=bitexact)
 
 chunk = 4096
-bench_time = 0.4
+bench_time = 0.2
 reps = max(1, floor(1e6 / chunk))
 
 cat(sprintf("Platform:  %s\n", R.version$platform))
 cat(sprintf("Engine:    %s\n", engine))
-cat(sprintf("Time/case: %.3f s\n\n", bench_time))
+cat(sprintf("Time/case: %.3f s\n", bench_time))
 
 time_dist = function(f, chunk, reps, bench_time) {
   calls = 0

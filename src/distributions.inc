@@ -259,7 +259,7 @@ ALWAYS_INLINE void fill_gamma_shape1(double *x, size_t len, double shape,
         u = draw_u01(rng, &w);
         if (u < 1 - 0.0331*z4) goto accept;
         // compute logs:
-        if (rng->fast_logexp) {
+        if (!rng->bitexact) {
           logu = log(u);
           logv3 = log(v3);
         }

@@ -22,29 +22,14 @@ void vvlogf(float *y, const float *x, const int *n);
 static void rand_lognormalf(float x[], size_t len, float mu, float sigma,
   randompack_rng *rng) {
   rand_normf(x, len, rng); // N(0,1)
-#if defined(__APPLE__)
-  for (size_t i = 0; i < len; ) {
-    size_t chunk;
-    if (len - i > (size_t)INT_MAX) {
-      chunk = (size_t)INT_MAX;
-    }
-    else {
-      chunk = len - i;
-    }
-    int n = (int)chunk;
-    if (mu != 0 || sigma != 1)
-      for (size_t j = 0; j < chunk; j++) x[i + j] = mu + sigma*x[i + j];
-    vvexpf(x + i, x + i, &n);
-    i += chunk;
-  }
-#else
-  for (size_t i = 0; i < len; i++) x[i] = expf(mu + sigma*x[i]);
-#endif
+  if (mu != 0 || sigma != 1)
+    for (size_t i = 0; i < len; i++) x[i] = mu + sigma*x[i];
+  expf_inplace(x, len, rng);
 }
 
 ALWAYS_INLINE void fill_gamma_shape1f(float *x, size_t len, float shape,
-  randompack_rng *rng) {
-  float d = shape - 1.0f/3.0f;
+  float scale, randompack_rng *rng) {
+  float d = shape - 1.0f/3.0f, dscale = d*scale;
   float c = 1.0f/sqrtf(9.0f*d);
   rand_normf(x, len, rng);
   int w = enter_u32_mode(rng);
@@ -57,9 +42,21 @@ ALWAYS_INLINE void fill_gamma_shape1f(float *x, size_t len, float shape,
         float u  = draw_u01f(rng, &w);
         float z2 = z*z;
         float z4 = z2*z2;
-        if (u < 1.0f - 0.0331f*z4 ||
-            logf(u) < 0.5f*z2 + d*(1.0f - v3 + logf(v3))) {
-          x[i] = d*v3;
+        if (u < 1.0f - 0.0331f*z4) {
+          x[i] = dscale*v3;
+          break;
+        }
+        float logu, logv3;
+        if (!rng->bitexact) {
+          logu = logf(u);
+          logv3 = logf(v3);
+        }
+        else {
+          logu = openlibm_logf(u);
+          logv3 = openlibm_logf(v3);
+        }
+        if (logu < 0.5f*z2 + d*(1.0f - v3 + logv3)) {
+          x[i] = dscale*v3;
           break;
         }
       }
@@ -73,18 +70,23 @@ ALWAYS_INLINE void fill_gamma_shape1f(float *x, size_t len, float shape,
 ALWAYS_INLINE void fill_gammaf(float *x, size_t len, float shape, float scale,
   randompack_rng *rng) {
   if (shape >= 1.0f) {
-    fill_gamma_shape1f(x, len, shape, rng);
+    fill_gamma_shape1f(x, len, shape, scale, rng);
   }
   else {
-    fill_gamma_shape1f(x, len, shape + 1.0f, rng);
-    int w = enter_u32_mode(rng);
-    for (size_t i = 0; i < len; i++) {
-      float u = draw_u01f(rng, &w);
-      x[i] *= expf(logf(u)/shape);
+    float inv_shape = 1.0f/shape;
+    float t[512];
+    fill_gamma_shape1f(x, len, shape + 1.0f, scale, rng);
+    size_t i = 0;
+    while (i < len) {
+      size_t n = len - i < 256 ? len - i : 256;
+      rand_float(t, n, rng);
+      logf_inplace(t, n, rng);
+      for (size_t j = 0; j < n; j++) t[j] *= inv_shape;
+      expf_inplace(t, n, rng);
+      for (size_t j = 0; j < n; j++) x[i + j] *= t[j];
+      i += n;
     }
-    exit_u32_mode(rng, w);
   }
-  if (scale != 1.0f) for (size_t i = 0; i < len; i++) x[i] *= scale;
 }
 
 ALWAYS_INLINE void fill_betaf(float *x, size_t len, float a, float b,
@@ -143,42 +145,28 @@ ALWAYS_INLINE void fill_chi2f(float *x, size_t len, float nu,
 ALWAYS_INLINE void fill_gumbelf(float *x, size_t len, float mu, float beta,
   randompack_rng *rng) {
   rand_float(x, len, rng); // x in [0,1)
-#if defined(__APPLE__)
-  for (size_t i = 0; i < len; ) {
-    size_t chunk;
-    if (len - i > (size_t)INT_MAX) {
-      chunk = (size_t)INT_MAX;
-    }
-    else {
-      chunk = len - i;
-    }
-    int n = (int)chunk;
-    vvlogf(x + i, x + i, &n);
-    for (size_t j = 0; j < chunk; j++) x[i + j] = -x[i + j];
-    vvlogf(x + i, x + i, &n);
-    for (size_t j = 0; j < chunk; j++)
-      x[i + j] = mu - beta*x[i + j];
-    i += chunk;
-  }
-#else
-  for (size_t i = 0; i < len; i++)
-    x[i] = mu - beta*logf(-logf(x[i]));
-#endif
+  logf_inplace(x, len, rng);
+  for (size_t i = 0; i < len; i++) x[i] = -x[i];
+  logf_inplace(x, len, rng);
+  for (size_t i = 0; i < len; i++) x[i] = mu - beta*x[i];
 }
 
 ALWAYS_INLINE void fill_paretof(float *x, size_t len, float xm, float alpha,
   randompack_rng *rng) {
   rand_expf(x, len, rng);
-  for (size_t i = 0; i < len; i++)
-    x[i] = xm*expf(x[i]/alpha);
+  for (size_t i = 0; i < len; i++) x[i] = x[i]/alpha;
+  expf_inplace(x, len, rng);
+  for (size_t i = 0; i < len; i++) x[i] *= xm;
 }
 
 ALWAYS_INLINE void fill_weibullf(float *x, size_t len, float shape,
   float scale, randompack_rng *rng) {
   rand_expf(x, len, rng);
   float inv_shape = 1.0f/shape;
-  for (size_t i = 0; i < len; i++)
-    x[i] = scale*powf(x[i], inv_shape);
+  logf_inplace(x, len, rng);
+  for (size_t i = 0; i < len; i++) x[i] *= inv_shape;
+  expf_inplace(x, len, rng);
+  if (scale != 1.0f) for (size_t i = 0; i < len; i++) x[i] *= scale;
 }
 
 ALWAYS_INLINE void fill_skew_normalf(float *x, size_t len, float mu,

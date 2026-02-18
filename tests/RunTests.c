@@ -91,8 +91,7 @@ int main(int argc, char **argv) {
   run_test("Helpers",  TestHelpers);
   run_test("Openlibm", TestOpenlibm);
   run_test("FullMantissa", TestFullMantissa);
-  run_test("LogExp",   TestLogExp);
-  run_test("SleefMath",TestSleefMath);
+  run_test("Bitexact", TestBitexact);
   run_test("Avx2",     TestAvx2);
   run_test("Create",   TestCreate);
   run_test("Seed",     TestSeed);

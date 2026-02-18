@@ -23,6 +23,12 @@ interface
     logical(c_bool), value :: enable
   end function
 
+  logical(c_bool) function crp_bitexact(rngp, enable) bind(C, name="randompack_bitexact")
+    import :: c_ptr, c_bool
+    type(c_ptr), value :: rngp
+    logical(c_bool), value :: enable
+  end function
+
   logical(c_bool) function crp_seed(seed, spawn_key, n_key, rngp) bind(C, name="randompack_seed")
     import :: c_int32_t, c_ptr, c_bool, c_int
     integer(c_int32_t), value :: seed

@@ -167,6 +167,8 @@ def main() -> None:
                       help="benchmark time per case (seconds)")
   parser.add_argument("-c", type=int, default=4096, dest="chunk",
                       help="chunk size (values per call)")
+  parser.add_argument("-b", action="store_true", dest="bitexact",
+                      help="use bitexact log/exp in randompack")
   args = parser.parse_args()
 
   engine = args.engine if args.engine else "x256++simd"
@@ -174,7 +176,7 @@ def main() -> None:
   bench_time = args.bench_time
 
   np_rng = np.random.default_rng(7)
-  rp_rng = rp.Rng(engine)
+  rp_rng = rp.Rng(engine, bitexact=args.bitexact)
 
   t0 = time.perf_counter()
   while time.perf_counter() - t0 < 0.1:

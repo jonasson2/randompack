@@ -198,10 +198,6 @@ endif
 
 subdir('src')
 
-if build_fortran
-  subdir('fortran/tests')
-endif
-
 pkg.generate(
   librandompack,
   name: 'randompack',

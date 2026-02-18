@@ -5,7 +5,7 @@
 #include <R_ext/Rdynload.h>
 
 // .Call entry points
-SEXP randompack_create_R(SEXP engine);
+SEXP randompack_create_R(SEXP engine, SEXP bitexact);
 SEXP randompack_seed_R(SEXP ptr, SEXP seed, SEXP spawn_key);
 SEXP randompack_randomize_R(SEXP ptr);
 SEXP randompack_duplicate_R(SEXP ptr);
@@ -37,7 +37,7 @@ SEXP randompack_engines_R(void);
 SEXP randompack_free_R(SEXP ptr);
 
 static const R_CallMethodDef CallEntries[] = {
-  {"randompack_create_R",      (DL_FUNC)&randompack_create_R,      1},
+  {"randompack_create_R",      (DL_FUNC)&randompack_create_R,      2},
   {"randompack_seed_R",        (DL_FUNC)&randompack_seed_R,        3},
   {"randompack_randomize_R",   (DL_FUNC)&randompack_randomize_R,   1},
   {"randompack_duplicate_R",  (DL_FUNC)&randompack_duplicate_R,  1},

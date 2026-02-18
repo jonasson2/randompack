@@ -58,13 +58,15 @@ function main()
   engine = ""
   chunk = 4096
   bench_time = 0.2
+  bitexact = false
   i = 1
   while i <= length(ARGS)
     arg = ARGS[i]
     if arg == "-h" || arg == "--help"
-      println("Usage: julia TimeDist.jl [engine] [-c chunk]")
+      println("Usage: julia TimeDist.jl [engine] [-c chunk] [-b]")
       println("  engine     RNG engine name (default: x256++simd)")
       println("  -c chunk   number of draws per call (default: 4096)")
+      println("  -b         use bitexact log/exp in randompack")
       return
     elseif arg == "-c" || arg == "--chunk"
       if i == length(ARGS)
@@ -75,6 +77,8 @@ function main()
       if chunk <= 0
         error("chunk must be positive")
       end
+    elseif arg == "-b" || arg == "--bitexact"
+      bitexact = true
     elseif startswith(arg, "-")
       error("unknown argument: " * arg)
     elseif engine == ""
@@ -92,7 +96,7 @@ function main()
   buf = Vector{Float64}(undef, chunk)
   sink = Ref{Float64}(0.0)
 
-  rng = rng_create(engine)
+  rng = rng_create(engine; bitexact=bitexact)
 
   d_logn = LogNormal(0, 1)
   d_unif = Uniform(2, 5)

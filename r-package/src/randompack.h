@@ -28,6 +28,11 @@ bool randompack_full_mantissa( // Use full mantissa for doubles (default false)
   bool enable           // in      true → 53-bit mantissa, false → 52-bit
 );
 
+bool randompack_bitexact( // Use bitexact log/exp (default false)
+  randompack_rng *rng,  // in/out  Random number generator
+  bool enable           // in      true → openlibm, false → system/vforce/sleef
+);
+
 bool randompack_seed( // Create RNG with given type and seed, false on error
   int seed,             // in      Any integer seed; expanded with a hash to fill state
   uint32_t *spawn_key,  // in      Optional spawn key array (may be 0 if n_key==0)

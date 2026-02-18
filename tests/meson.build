@@ -21,8 +21,7 @@ test_sources = files(
   'TestSetState.c',
   'TestHelpers.c',
   'TestFullMantissa.c',
-  'TestLogExp.c',
-  'TestSleefMath.c',
+  'TestBitexact.c',
   'TestAvx2.c',
   'TestOpenlibm.c',
   'TestBuffer.c',
@@ -44,6 +43,18 @@ run_tests = executable(
 )
 
 test('RunTests', run_tests, args : ['-v'])
+
+if build_fortran
+  darwin_link_args = host_machine.system() == 'darwin' ? ['-Wl,-no_warn_duplicate_libraries'] : []
+  fortran_tests = executable(
+    'RunFortranTests',
+    '../fortran/tests/run_fortran_tests.f90',
+    link_language: 'fortran',
+    dependencies: [randompack_dep],
+    link_args : darwin_link_args,
+  )
+  test('RunFortranTests', fortran_tests)
+endif
 
 if get_option('build_test_variants')
   test_no128 = executable(

@@ -1,11 +1,25 @@
+using Libdl
+
+const _sym_cache = Dict{Symbol, Ptr{Cvoid}}()
+
+@inline function _sym(name::Symbol)::Ptr{Cvoid}
+  h = _libhandle[]
+  h == C_NULL && error("Randompack library not loaded (did __init__ run?)")
+  p = get(_sym_cache, name, C_NULL)
+  p == C_NULL || return p
+  p = Libdl.dlsym(h, name)
+  _sym_cache[name] = p
+  return p
+end
+
 function _free(ptr::RNGPtr)
   ptr == C_NULL && return nothing
-  ccall((:randompack_free, _libpath[]), Cvoid, (RNGPtr,), ptr)
+  ccall(_sym(:randompack_free), Cvoid, (RNGPtr,), ptr)
   return nothing
 end
 
 function _last_error(ptr::RNGPtr)
-  msg = ccall((:randompack_last_error, _libpath[]), Cstring, (RNGPtr,), ptr)
+  msg = ccall(_sym(:randompack_last_error), Cstring, (RNGPtr,), ptr)
   msg == C_NULL && return nothing
   s = unsafe_string(msg)
   return isempty(s) ? nothing : s
@@ -13,7 +27,7 @@ end
 
 function _check_ok(ok::Bool, rngptr::RNGPtr, fallback::AbstractString)
   ok && return nothing
-  msgp = ccall((:randompack_last_error, _libpath[]), Cstring, (RNGPtr,), rngptr)
+  msgp = ccall(_sym(:randompack_last_error), Cstring, (RNGPtr,), rngptr)
   if msgp == C_NULL
     throw(ErrorException(fallback))
   end
@@ -172,25 +186,25 @@ const _IntTypes = Union{Int8, Int16, Int32, Int64, UInt8, UInt16, UInt32, UInt64
 @inline function _uint_fallback(::Type{UInt64}); return "randompack_uint64 failed"; end
 
 function _kernel_uint!(rngptr::RNGPtr, x::Ptr{UInt8}, n::Csize_t, bound::UInt8, fallback::AbstractString)
-  ok = ccall((:randompack_uint8, _libpath[]), Bool, (Ptr{UInt8}, Csize_t, UInt8, RNGPtr), x, n, bound, rngptr)
+  ok = ccall(_sym(:randompack_uint8), Bool, (Ptr{UInt8}, Csize_t, UInt8, RNGPtr), x, n, bound, rngptr)
   _check_ok(ok, rngptr, fallback)
   return nothing
 end
 
 function _kernel_uint!(rngptr::RNGPtr, x::Ptr{UInt16}, n::Csize_t, bound::UInt16, fallback::AbstractString)
-  ok = ccall((:randompack_uint16, _libpath[]), Bool, (Ptr{UInt16}, Csize_t, UInt16, RNGPtr), x, n, bound, rngptr)
+  ok = ccall(_sym(:randompack_uint16), Bool, (Ptr{UInt16}, Csize_t, UInt16, RNGPtr), x, n, bound, rngptr)
   _check_ok(ok, rngptr, fallback)
   return nothing
 end
 
 function _kernel_uint!(rngptr::RNGPtr, x::Ptr{UInt32}, n::Csize_t, bound::UInt32, fallback::AbstractString)
-  ok = ccall((:randompack_uint32, _libpath[]), Bool, (Ptr{UInt32}, Csize_t, UInt32, RNGPtr), x, n, bound, rngptr)
+  ok = ccall(_sym(:randompack_uint32), Bool, (Ptr{UInt32}, Csize_t, UInt32, RNGPtr), x, n, bound, rngptr)
   _check_ok(ok, rngptr, fallback)
   return nothing
 end
 
 function _kernel_uint!(rngptr::RNGPtr, x::Ptr{UInt64}, n::Csize_t, bound::UInt64, fallback::AbstractString)
-  ok = ccall((:randompack_uint64, _libpath[]), Bool, (Ptr{UInt64}, Csize_t, UInt64, RNGPtr), x, n, bound, rngptr)
+  ok = ccall(_sym(:randompack_uint64), Bool, (Ptr{UInt64}, Csize_t, UInt64, RNGPtr), x, n, bound, rngptr)
   _check_ok(ok, rngptr, fallback)
   return nothing
 end
@@ -212,13 +226,13 @@ function _fill1!(rng::RNG, A::AbstractArray{Float64}, ::Val{sym},
   rng.ptr == C_NULL && throw(ErrorException("RNG pointer is NULL"))
   fill_strided! = function(S::StridedArray{Float64})
     x = reshape(S, :)
-    ok = ccall((sym, _libpath[]), Bool, (Ptr{Float64}, Csize_t, Float64, RNGPtr),
+    ok = ccall(_sym(sym), Bool, (Ptr{Float64}, Csize_t, Float64, RNGPtr),
                pointer(x), Csize_t(length(x)), p1, rng.ptr)
     _check_ok(ok, rng.ptr, fallback)
     return nothing
   end
   fill_tmp! = function(tmp::Vector{Float64})
-    ok = ccall((sym, _libpath[]), Bool, (Ptr{Float64}, Csize_t, Float64, RNGPtr),
+    ok = ccall(_sym(sym), Bool, (Ptr{Float64}, Csize_t, Float64, RNGPtr),
                pointer(tmp), Csize_t(length(tmp)), p1, rng.ptr)
     _check_ok(ok, rng.ptr, fallback)
     return nothing
@@ -231,13 +245,13 @@ function _fill1!(rng::RNG, A::AbstractArray{Float32}, ::Val{sym},
   rng.ptr == C_NULL && throw(ErrorException("RNG pointer is NULL"))
   fill_strided! = function(S::StridedArray{Float32})
     x = reshape(S, :)
-    ok = ccall((sym, _libpath[]), Bool, (Ptr{Float32}, Csize_t, Float32, RNGPtr),
+    ok = ccall(_sym(sym), Bool, (Ptr{Float32}, Csize_t, Float32, RNGPtr),
                pointer(x), Csize_t(length(x)), p1, rng.ptr)
     _check_ok(ok, rng.ptr, fallback)
     return nothing
   end
   fill_tmp! = function(tmp::Vector{Float32})
-    ok = ccall((sym, _libpath[]), Bool, (Ptr{Float32}, Csize_t, Float32, RNGPtr),
+    ok = ccall(_sym(sym), Bool, (Ptr{Float32}, Csize_t, Float32, RNGPtr),
                pointer(tmp), Csize_t(length(tmp)), p1, rng.ptr)
     _check_ok(ok, rng.ptr, fallback)
     return nothing
@@ -250,14 +264,14 @@ function _fill2!(rng::RNG, A::AbstractArray{Float64}, ::Val{sym},
   rng.ptr == C_NULL && throw(ErrorException("RNG pointer is NULL"))
   fill_strided! = function(S::StridedArray{Float64})
     x = reshape(S, :)
-    ok = ccall((sym, _libpath[]), Bool,
+    ok = ccall(_sym(sym), Bool,
                (Ptr{Float64}, Csize_t, Float64, Float64, RNGPtr), pointer(x),
                Csize_t(length(x)), p1, p2, rng.ptr)
     _check_ok(ok, rng.ptr, fallback)
     return nothing
   end
   fill_tmp! = function(tmp::Vector{Float64})
-    ok = ccall((sym, _libpath[]), Bool,
+    ok = ccall(_sym(sym), Bool,
                (Ptr{Float64}, Csize_t, Float64, Float64, RNGPtr), pointer(tmp),
                Csize_t(length(tmp)), p1, p2, rng.ptr)
     _check_ok(ok, rng.ptr, fallback)
@@ -271,14 +285,14 @@ function _fill2!(rng::RNG, A::AbstractArray{Float32}, ::Val{sym},
   rng.ptr == C_NULL && throw(ErrorException("RNG pointer is NULL"))
   fill_strided! = function(S::StridedArray{Float32})
     x = reshape(S, :)
-    ok = ccall((sym, _libpath[]), Bool,
+    ok = ccall(_sym(sym), Bool,
                (Ptr{Float32}, Csize_t, Float32, Float32, RNGPtr), pointer(x),
                Csize_t(length(x)), p1, p2, rng.ptr)
     _check_ok(ok, rng.ptr, fallback)
     return nothing
   end
   fill_tmp! = function(tmp::Vector{Float32})
-    ok = ccall((sym, _libpath[]), Bool,
+    ok = ccall(_sym(sym), Bool,
                (Ptr{Float32}, Csize_t, Float32, Float32, RNGPtr), pointer(tmp),
                Csize_t(length(tmp)), p1, p2, rng.ptr)
     _check_ok(ok, rng.ptr, fallback)
@@ -292,14 +306,14 @@ function _fill3!(rng::RNG, A::AbstractArray{Float64}, ::Val{sym},
   rng.ptr == C_NULL && throw(ErrorException("RNG pointer is NULL"))
   fill_strided! = function(S::StridedArray{Float64})
     x = reshape(S, :)
-    ok = ccall((sym, _libpath[]), Bool,
+    ok = ccall(_sym(sym), Bool,
                (Ptr{Float64}, Csize_t, Float64, Float64, Float64, RNGPtr),
                pointer(x), Csize_t(length(x)), p1, p2, p3, rng.ptr)
     _check_ok(ok, rng.ptr, fallback)
     return nothing
   end
   fill_tmp! = function(tmp::Vector{Float64})
-    ok = ccall((sym, _libpath[]), Bool,
+    ok = ccall(_sym(sym), Bool,
                (Ptr{Float64}, Csize_t, Float64, Float64, Float64, RNGPtr),
                pointer(tmp), Csize_t(length(tmp)), p1, p2, p3, rng.ptr)
     _check_ok(ok, rng.ptr, fallback)
@@ -313,14 +327,14 @@ function _fill3!(rng::RNG, A::AbstractArray{Float32}, ::Val{sym},
   rng.ptr == C_NULL && throw(ErrorException("RNG pointer is NULL"))
   fill_strided! = function(S::StridedArray{Float32})
     x = reshape(S, :)
-    ok = ccall((sym, _libpath[]), Bool,
+    ok = ccall(_sym(sym), Bool,
                (Ptr{Float32}, Csize_t, Float32, Float32, Float32, RNGPtr),
                pointer(x), Csize_t(length(x)), p1, p2, p3, rng.ptr)
     _check_ok(ok, rng.ptr, fallback)
     return nothing
   end
   fill_tmp! = function(tmp::Vector{Float32})
-    ok = ccall((sym, _libpath[]), Bool,
+    ok = ccall(_sym(sym), Bool,
                (Ptr{Float32}, Csize_t, Float32, Float32, Float32, RNGPtr),
                pointer(tmp), Csize_t(length(tmp)), p1, p2, p3, rng.ptr)
     _check_ok(ok, rng.ptr, fallback)

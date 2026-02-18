@@ -42,10 +42,13 @@ static uint32_t read_u32_num(SEXP x, R_xlen_t i, char *name){
 /* ---------- constructors / destructors ---------- */
 #include <string.h>
 
-SEXP randompack_create_R(SEXP engine) {
+SEXP randompack_create_R(SEXP engine, SEXP bitexact_) {
   if (!Rf_isString(engine) || LENGTH(engine) != 1)
     Rf_error("engine must be a length-1 character string");
   const char *name = CHAR(STRING_ELT(engine, 0));
+  int bitexact = Rf_asLogical(bitexact_);
+  if (bitexact == NA_LOGICAL)
+    Rf_error("bitexact must be TRUE or FALSE");
   randompack_rng *rng = randompack_create(name);
   if (!rng) {
     Rf_error("unknown RNG engine '%s' (check spelling)", name);
@@ -53,6 +56,14 @@ SEXP randompack_create_R(SEXP engine) {
   char *err = randompack_last_error(rng);
   if (err && err[0]) {
     Rf_error("%s", err);
+  }
+  if (bitexact) {
+    bool ok = randompack_bitexact(rng, true);
+    if (!ok) {
+      char *msg = randompack_last_error(rng);
+      if (!msg) msg = "randompack_bitexact failed";
+      Rf_error("%s", msg);
+    }
   }
   SEXP ext = R_MakeExternalPtr(rng, R_NilValue, R_NilValue);
   R_RegisterCFinalizerEx(ext, rng_finalizer, TRUE);
@@ -139,6 +150,7 @@ SEXP randompack_full_mantissa_R(SEXP ext, SEXP enable_){
   }
   return R_NilValue;
 }
+
 
 SEXP randompack_set_state_R(SEXP ext, SEXP state_){
   randompack_rng *rng = (randompack_rng *)R_ExternalPtrAddr(ext);

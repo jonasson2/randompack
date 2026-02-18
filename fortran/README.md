@@ -1,10 +1,30 @@
 # Randompack Fortran Interface
 
-Randompack provides a Fortran 2003+ interface to the Randompack C library. It
-exposes modern RNG engines and a wide range of distributions, with deterministic
-streams across platforms and languages. Randompack is intended to be robust, portable,
-fast, and easy to use, while placing emphasis on correctness and
-reproducibility.
+This package provides Python bindings to the C library Randompack, a random number
+generation toolkit that also includes interfaces for Python, R, and Julia. Randompack
+exposes a collection of modern RNG engines, including xoshiro256++/**, PCG64 DXSM, sfc64,
+Philox, and ChaCha20, together with a range of probability distributions, both integer and
+continuous. The library allows matching random draws across platforms and supported
+language interfaces. It provides unbounded and bounded integer draws, permutations,
+sampling without replacement, and 14 continuous distributions, ranging from basic ones
+(uniform, normal, exponential), through commonly used distributions (beta, gamma), to more
+specialized ones (such as skew-normal). Multivariate normal sampling is also supported.
+
+Through SIMD instructions on modern CPUs, the inherently fast default engine xoshiro256++
+delivers high throughput for bulk generation, typically providing 3–6× faster performance
+than NumPy for uniform, normal, and exponential draws.
+
+For more information, including implementation details, benchmarking results, and
+documentation of engines and distributions, see the main project readme file at
+https://github.com/jonasson2/randompack.
+
+## Cross-platform consistency
+
+Given the same engine and seed, samples obtained on different platforms (programming
+language/computer/compiler/OS/architecture) agree. For uniform, normal, exponential, and
+integer distributions the agreement is bit-exact (x == y holds). For the remaining
+distributions, samples agree to within ca. 2 ulp. If the `bitexact` parameter is set to
+`.true.` the agreement is bit-exact for all distributions.
 
 ## Build
 
@@ -27,16 +47,16 @@ You need the following software available on your system:
 
 ### Build options
 
-Some build options may be set by editing meson_configure.txt in the project
-root. These include the order to search for a BLAS library, whether to build the
-accompanying tests and examples, and a few more technical options. Make sure
-that `build_fortran` is either `auto` or `enabled`.
+Some build options may be set by editing meson_configure.txt in the project root. These
+include the order to search for a BLAS library, whether to build the accompanying tests
+and examples, and a few more technical options. Make sure that `build_fortran` is either
+`auto` or `enabled`.
 
 ### Selecting compilers
 
-By default, Meson searches automatically for compilers, typically choosing gcc
-on a Linux system, clang on macOS, and MSVC on Windows. The compilers can also
-be set explicitly via the CC and FC environment variables.
+By default, Meson searches automatically for compilers, typically choosing gcc on a Linux
+system, clang on macOS, and MSVC on Windows. The compilers can also be set explicitly via
+the CC and FC environment variables.
 
 ### Configuration and installation
 
@@ -62,9 +82,10 @@ It is also possible to build and install with:
     ninja
     ninja install
 ```
-The Fortran module is built from `fortran/src/randompack.f90`. It can also be
-compiled manually, but the Meson build is the supported path. To build a
-debug-enabled non-optimized version omit `--buildtype=release`.
+
+The Fortran module is built from `fortran/src/randompack.f90`. It can also be compiled
+manually, but the Meson build is the supported path. To build a debug-enabled
+non-optimized version omit `--buildtype=release`.
 
 ## Quick start
 ```fortran
@@ -80,6 +101,7 @@ debug-enabled non-optimized version omit `--buildtype=release`.
     type(randompack_rng) :: rng
     call rng%create()               ! default engine (x256++simd)
     call rng%create('pcg64')        ! specified engine
+    call rng%create('pcg64', .true.) ! make samples bit-identical across platforms (x==y true)
     call rng%seed(123)              ! deterministic seed
     call rng%randomize()            ! seed with system entropy
 
@@ -87,23 +109,22 @@ debug-enabled non-optimized version omit `--buildtype=release`.
     call rng%normal(x)              ! Standard normal, double precision
     call rng%normal(xf, 1.0, 3.0)   ! N(1,3) variates, real
 
-    call rng%int(iv, 1, 6)          ! integers in [1,6] <!--  -->
-    call rng%int(lv, 1, 6)          ! long 64 bit integers in [1,6]
+    call rng%int(iv, 1, 6)          ! integers in [1,6] (inclusive)
+    call rng%int(lv, 1, 6)          ! long 64 bit integers in [1,6] (inclusive)
     call rng%free()
     end program
 ```
 ### Notes on types
 
-Newly created rng-s are randomized by default. The package assumes that "double
-precision" is 64 bit and "real" is 32 bit IEEE floating point. This holds on
-virtually all modern platforms and is verified at runtime. The floating point
-random generating functions are generic and calls are dispatched to the
-underlying C `double` or `float` functions depending on the type of the output
-buffer (vector or matrix). Similarly `rng%int` is generic and dispatches to
-either `randompack_int` or `randompack_long_long`, depending on the integer type
-of the output buffer. In general distribution parameters (such as `mu` and
-`sigma`) must have the same type as the buffer. The sole exception `rng%int`,
-which allows an int64 buffer with int32 bounds.
+Newly created rng-s are randomized by default. The package assumes that "double precision"
+is 64 bit and "real" is 32 bit IEEE floating point. This holds on virtually all modern
+platforms and is verified at runtime. The floating point random generating functions are
+generic and calls are dispatched to the underlying C `double` or `float` functions
+depending on the type of the output buffer (vector or matrix). Similarly `rng%int` is
+generic and dispatches to either `randompack_int` or `randompack_long_long`, depending on
+the integer type of the output buffer. In general distribution parameters (such as `mu`
+and `sigma`) must have the same type as the buffer. The sole exception `rng%int`, which
+allows an int64 buffer with int32 bounds.
 
 ## Engines
 
@@ -175,20 +196,16 @@ Each of the following is a generic that accepts `double precision` or default
 ```fortran
     integer(c_int32_t) :: iv(50)
     integer(c_int64_t) :: i64(50)
-    call rng%int(iv, -2, 3)
+    call rng%int(iv, -2, 3)  ! inclusive bounds
     call rng%int(i64, 1, 10)
     call rng%int(i64, 1, 10)
 ```
 ## State control and serialization
 
-Serialize to a byte buffer (portable representation):
 ```fortran
     integer(c_int8_t), allocatable :: buf(:)
     call rng%serialize(buf)
     call rng%deserialize(buf)
-```
-Engine-specific state setters:
-```fortran
     type(randompack_philox_ctr) :: ctr
     type(randompack_philox_key) :: key
     double precision :: x(4)
@@ -200,12 +217,6 @@ Engine-specific state setters:
 ```
 ## Errors
 
-On failure, the Fortran interface raises `error stop` with the underlying error
-message from the C library (when available). `last_error()` returns the most
-recent C-side error string for this RNG instance.
-
-## References
-
-- Main project README: `../README.md`
-- Julia interface: `../Randompack.jl/README.md`
-- R interface: `../r-package/README.md`
+On failure, the Fortran interface raises `error stop` with the underlying error message
+from the C library (when available). `last_error()` returns the most recent C-side error
+string for this RNG instance.

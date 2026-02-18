@@ -4,9 +4,7 @@
 #include <stddef.h>
 #include <string.h>
 
-#if HAVE_AVX2
-#include <immintrin.h>
-#elif HAVE_NEON
+#if HAVE_NEON
 #include <arm_neon.h>
 #endif
 
@@ -15,23 +13,12 @@
 // to 1023 (giving a number in [1,2)), then subtracts 1. Results are exactly
 // k*2^-52 for k=0..2^52−1 and are bit-identical across all implementations.
 //
-// When available, this uses SIMD: AVX2 processes 4 lanes at once, while AArch64
-// NEON uses two 2-lane chains (ILP-friendly) per 4 outputs. Scalar tail handles
-// the last 1-3 values when len is not a multiple of 4.
+// When available, this uses SIMD: AArch64 NEON uses two 2-lane chains
+// (ILP-friendly) per 4 outputs. Scalar tail handles the last 1-3 values when
+// len is not a multiple of 4.
 ALWAYS_INLINE void rand_dble_4x52(double x[], size_t len, uint64_t u64[]) {
   size_t i = 0;
-#if HAVE_AVX2
-  __m256i expo = _mm256_set1_epi64x((long long)0x3ff0000000000000ULL);
-  __m256d one = _mm256_set1_pd(1);
-  for (; i + 3 < len; i += 4) {
-    __m256i r = _mm256_loadu_si256((const __m256i_u *)(u64 + i));
-    r = _mm256_srli_epi64(r, 12);
-    r = _mm256_or_si256(r, expo);
-    __m256d d = _mm256_castsi256_pd(r);
-    d = _mm256_sub_pd(d, one);
-    _mm256_storeu_pd(x + i, d);
-  }
-#elif HAVE_NEON
+#if HAVE_NEON
   uint64x2_t expo = vdupq_n_u64(0x3ff0000000000000ULL);
   float64x2_t one = vdupq_n_f64(1);
   for (; i + 3 < len; i += 4) {
@@ -94,6 +81,12 @@ ALWAYS_INLINE void rand_dble_4x53(double x[], size_t len, uint64_t u64[]) {
 }
 
 ALWAYS_INLINE void rand_dble(double x[], size_t len, randompack_rng *rng) {
+#if defined(BUILD_AVX2)
+  if (rng->cpu_has_avx2) {
+    rand_dble_avx2(x, len, rng);
+    return;
+  }
+#endif
   int w = enter_u64_mode(rng);
   size_t i = 0;
   while (i < len) {

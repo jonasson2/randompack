@@ -1177,7 +1177,7 @@ function random_mvn!(rng::RNG, X::AbstractMatrix{Float64},
   mu_ptr = muvec === nothing ? Ptr{Float64}(C_NULL) : pointer(muvec)
   call = function(out::StridedMatrix{Float64})
     ok = GC.@preserve sig out muvec begin
-      ccall((:randompack_mvn, _libpath[]), Bool,
+      ccall(_sym(:randompack_mvn), Bool,
             (Ptr{Cchar}, Ptr{Float64}, Ptr{Float64}, Cint, Csize_t, Ptr{Float64},
              Cint, Ptr{Float64}, RNGPtr),
             transp, mu_ptr, pointer(sig), Cint(d1), Csize_t(n), pointer(out),

@@ -1,3 +1,21 @@
+# Development note:
+#
+# To installed in editable mode use:
+#
+#   pip install -e . --no-build-isolation
+#
+# This command (via meson-python) automatically runs:
+#   meson setup <build-dir>
+#   meson compile
+#
+# where <build-dir> is in the active Python environment’s site-packages folder
+# (outside randompack's folder tree).
+#
+#
+# Within the same Python environment, simply: >>> import randompack. The
+# editable loader will trigger a rebuild if sources changed. Rerunning pip is
+# only needed if pyproject.toml, package layout, or Python version changes.
+
 project('randompack', 'c',
   version: '0.1.0',
   default_options: ['c_std=c11'])
@@ -10,7 +28,13 @@ numpy_inc = run_command(py, ['-c', 'import numpy; print(numpy.get_include())'],
   check: true).stdout().strip()
 inc = include_directories('src', numpy_inc)
 
-wrap_sources = files('randompack/_core.c')
+cython = find_program('cython', required: true)
+wrap_sources = [custom_target(
+  'cython_core',
+  input: 'randompack/_core.pyx',
+  output: 'randompack__core.c',
+  command: [cython, '-3', '@INPUT@', '-o', '@OUTPUT@'],
+)]
 core_sources = files('src/randompack.c')
 
 deps = [py_dep]

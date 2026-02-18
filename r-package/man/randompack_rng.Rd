@@ -4,10 +4,11 @@
 \alias{randompack_rng}
 \title{Create and Use Random Number Generators}
 \usage{
-randompack_rng(engine = "x256++simd")
+randompack_rng(engine = "x256++simd", bitexact = FALSE)
 }
 \arguments{
 \item{engine}{RNG engine}
+\item{bitexact}{Logical; set TRUE to make samples bit-identical across platforms}
 }
 \value{
 An RNG object with methods for drawing random variates.
@@ -136,6 +137,7 @@ length up to 2; shorter vectors are zero-padded.
 # Create an RNG
 rng <- randompack_rng()                    # Default engine (xoshiro256++)
 rng_pcg <- randompack_rng("pcg64")         # Specify engine
+rng_be <- randompack_rng("pcg64", bitexact=TRUE)  # make samples bit-identical across platforms (x==y true)
 rng_chacha <- randompack_rng("chacha20")
 
 # Continuous distributions

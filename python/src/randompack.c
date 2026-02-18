@@ -13,6 +13,8 @@
 #include "randompack.h"
 #include "randompack_internal.h"
 #include "BlasGateway.h"
+#include "openlibm.inc"
+#include "log_exp.inc"
 #include "crypto_random.inc"
 
 typedef struct {
@@ -78,6 +80,7 @@ randompack_rng *randompack_create(const char *engine) {
   // Create engine
   if (!ALLOC(rng, 1)) return 0;
   rng->engine = INVALID;
+  rng->bitexact = false;
   rng->cpu_has_avx2 = false;
   if (!select_engine(engine, rng)) {
     rng->last_error = "unknown engine name (spelling error in requested engine)";
@@ -143,6 +146,17 @@ bool randompack_full_mantissa(randompack_rng *rng, bool enable) {
   }
   rng->last_error = 0;
   rng->usefullmantissa = enable;
+  return true;
+}
+
+bool randompack_bitexact(randompack_rng *rng, bool enable) {
+  if (!rng) return false;
+  if (rng->engine == INVALID) {
+    rng->last_error = "randompack bitexact: invalid rng";
+    return false;
+  }
+  rng->last_error = 0;
+  rng->bitexact = enable;
   return true;
 }
 
@@ -436,7 +450,7 @@ bool randompack_int(int x[], size_t len, int m, int n, randompack_rng *rng) {
   else
     rng->last_error = 0;
   if (rng->last_error) return false;
-  uint32_t bound = (uint32_t)(n - m) + 1u;
+  uint32_t bound = (uint32_t)n - (uint32_t)m + 1u;
   if (bound == 0) {
     align32(rng);
     draw_raw_copy((uint8_t*)x, 4*len, rng);
@@ -456,13 +470,13 @@ bool randompack_long_long(long long x[], size_t len, long long m, long long n,
   else
     rng->last_error = 0;
   if (rng->last_error) return false;
-  uint64_t bound = (uint64_t)(n - m) + 1ull;
+  uint64_t bound = (uint64_t)n - (uint64_t)m + 1u;
   if (bound == 0) {
     align64(rng);
     draw_raw_copy((uint8_t*)x, 8*len, rng);
   }
   else
-	 rand_long_long(x, len, m, bound, rng);
+    rand_long_long(x, len, m, bound, rng);
   return true;
 }
 

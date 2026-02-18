@@ -15,6 +15,7 @@ NULL
 #' generation across different processes or threads.
 #'
 #' @param engine RNG engine
+#' @param bitexact Logical; set TRUE to make samples bit-identical across platforms
 #'
 #' @return An RNG object with methods for drawing random variates.
 #'
@@ -121,6 +122,7 @@ NULL
 #' # Create an RNG
 #' rng <- randompack_rng()                    # Default engine (xoshiro256++)
 #' rng_pcg <- randompack_rng("pcg64")         # Specify engine
+#' rng_be <- randompack_rng("pcg64", bitexact=TRUE)  # make samples bit-identical across platforms (x==y true)
 #' rng_chacha <- randompack_rng("chacha20")
 #'
 #' # Continuous distributions
@@ -155,8 +157,8 @@ NULL
 #' @seealso \code{\link{randompack_engines}} to list all available engines
 #'
 #' @export
-randompack_rng <- function(engine = "x256++simd") {
-  RandompackRNG$new(engine = engine)
+randompack_rng <- function(engine = "x256++simd", bitexact = FALSE) {
+  RandompackRNG$new(engine = engine, bitexact = bitexact)
 }
 
 #' Available RNG Engines
@@ -187,12 +189,15 @@ RandompackRNG <- R6::R6Class(
     list(
       ptr = NULL,
       engine = NULL,
-      initialize = function(engine = "") {
+      initialize = function(engine = "", bitexact = FALSE) {
         if (is.null(engine)) engine <- ""
         if (!is.character(engine) || length(engine) != 1L)
           stop("engine must be a length-1 character string")
+        if (length(bitexact) != 1L || is.na(bitexact))
+          stop("bitexact must be TRUE or FALSE")
+        bitexact <- as.logical(bitexact)
         self$engine <- engine
-        self$ptr <- .Call("randompack_create_R", engine, PACKAGE = "randompack")
+        self$ptr <- .Call("randompack_create_R", engine, bitexact, PACKAGE = "randompack")
         reg.finalizer(
           self,
           function(e) e$.__enclos_env__$private$finalize(),

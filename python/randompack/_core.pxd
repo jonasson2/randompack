@@ -15,6 +15,7 @@ cdef extern from "randompack.h":
     bint randompack_seed(int seed, uint32_t *spawn_key, int n_key, randompack_rng *rng)
     bint randompack_randomize(randompack_rng *rng)
     bint randompack_full_mantissa(randompack_rng *rng, bint enable)
+    bint randompack_bitexact(randompack_rng *rng, bint enable)
     bint randompack_engines(char *engines, char *descriptions, int *nengines,
                             int *eng_maxlen, int *desc_maxlen)
 

@@ -12,12 +12,14 @@ subroutine rp_free(self)
   end if
 end subroutine
 
-subroutine rp_create(self, engine)
+subroutine rp_create(self, engine, bitexact)
   class(randompack_rng), intent(inout) :: self
   character(len=*), intent(in), optional :: engine
+  logical, intent(in), optional :: bitexact
   character(kind=c_char), allocatable, target :: eng(:)
   character(len=:), allocatable :: emsg
   type(c_ptr) :: p
+  logical(c_bool) :: c_ok
   call check_kinds()
   if (c_associated(self%p)) call self%free()
   if (present(engine)) then
@@ -33,6 +35,12 @@ subroutine rp_create(self, engine)
   emsg = cstr_to_fstring(p)
   if (len(emsg) > 0) then
     error stop "create: "//trim(emsg)
+  end if
+  if (present(bitexact)) then
+    if (bitexact) then
+      c_ok = crp_bitexact(self%p, .true._c_bool)
+      if (.not. c_ok) error stop rp_error_message(self, "bitexact")
+    end if
   end if
 end subroutine
 
@@ -60,6 +68,7 @@ subroutine rp_full_mantissa(self, enable)
   c_ok = crp_full_mantissa(self%p, merge(.true._c_bool, .false._c_bool, enable))
   if (.not. c_ok) error stop rp_error_message(self, "full_mantissa")
 end subroutine
+
 
 subroutine rp_seed32(self, seed, spawn_key)
   class(randompack_rng), intent(inout) :: self

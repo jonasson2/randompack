@@ -36,6 +36,7 @@ library(randompack)
 
 rng <- randompack_rng()                 # default engine (x256++simd)
 rng <- randompack_rng("pcg64")          # specified engine; rng is randomized by default
+rng <- randompack_rng("pcg64", bitexact=TRUE)  # make samples bit-identical across platforms (x==y true)
 randompack_engines()                    # list available engines
 rng$seed(123)                           # deterministic seed
 rng$seed(123, spawn_key=c(1,2))         # independent substreams

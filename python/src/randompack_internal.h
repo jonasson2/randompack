@@ -56,6 +56,7 @@ struct randompack_rng {
   char *last_error;
   engine_fill fill;
   bool usefullmantissa;
+  bool bitexact;
   bool cpu_has_avx2;
   union {
     uint8_t u8[8*BUFSIZE];
@@ -70,6 +71,10 @@ bool cpu_has_avx2(void);
 void fill_fast_avx2(randompack_rng *rng, size_t len);
 void rand_dble_avx2(double x[], size_t len, randompack_rng *rng);
 void rand_float_avx2(float x[], size_t len, randompack_rng *rng);
+#if defined(RANDOMPACK_TEST_HOOKS)
+int randompack_avx2_used(void);
+void randompack_avx2_reset(void);
+#endif
 #endif
 
 #endif

@@ -4,11 +4,12 @@
 
 """
     rng_create()
-    rng_create(engine)
+    rng_create(engine; bitexact=false)
 
 Create a new RNG using the selected engine. The default engine is `x256++simd`. The
 `engine` argument is a string naming the RNG engine to use. Call `Randompack.engines()` to
-list available engine names.
+list available engine names. If `bitexact` is true, the RNG uses bitexact log/exp for
+distributions that rely on them.
 
 Use `Randompack.engines()` to list available names.
 
@@ -16,14 +17,15 @@ Use `Randompack.engines()` to list available names.
 ```julia
 rng = rng_create()
 rng = rng_create("pcg64")
+rng = rng_create("pcg64"; bitexact=true)  # make samples bit-identical across platforms (x==y true)
 ```
 
 # See also
 - Randompack.engines
 - rng_seed!
 """
-function rng_create(engine::AbstractString)
-  p = ccall((:randompack_create, _libpath[]), RNGPtr, (Cstring,), engine)
+function rng_create(engine::AbstractString; bitexact::Bool=false)
+  p = ccall(_sym(:randompack_create), RNGPtr, (Cstring,), engine)
   if p == C_NULL
     throw(ErrorException("unknown RNG engine '$engine' (check spelling)"))
   end
@@ -31,6 +33,10 @@ function rng_create(engine::AbstractString)
   if err !== nothing
     _free(p)
     throw(ErrorException(err))
+  end
+  if bitexact
+    ok = ccall(_sym(:randompack_bitexact), Bool, (RNGPtr, Bool), p, true)
+    _check_ok(ok, p, "randompack_bitexact failed")
   end
   rng = RNG(p)
   finalizer(rng) do r
@@ -40,7 +46,7 @@ function rng_create(engine::AbstractString)
   return rng
 end
 
-rng_create() = rng_create("x256++simd")
+rng_create() = rng_create("x256++simd"; bitexact=false)
 
 """
     rng_seed!(rng, seed)
@@ -69,7 +75,7 @@ function rng_seed!(rng::RNG, seed::Integer; spawn_key=nothing)
   end
   s = Cint(seed)
   if spawn_key === nothing
-    ok = ccall((:randompack_seed, _libpath[]), Bool,
+    ok = ccall(_sym(:randompack_seed), Bool,
                (Cint, Ptr{UInt32}, Cint, RNGPtr),
                s, Ptr{UInt32}(C_NULL), Cint(0), rng.ptr)
     _check_ok(ok, rng.ptr, "randompack_seed failed")
@@ -84,7 +90,7 @@ function rng_seed!(rng::RNG, seed::Integer; spawn_key=nothing)
   end
   n = length(sk)
   if n == 0
-    ok = ccall((:randompack_seed, _libpath[]), Bool,
+    ok = ccall(_sym(:randompack_seed), Bool,
                (Cint, Ptr{UInt32}, Cint, RNGPtr),
                s, Ptr{UInt32}(C_NULL), Cint(0), rng.ptr)
   else
@@ -92,7 +98,7 @@ function rng_seed!(rng::RNG, seed::Integer; spawn_key=nothing)
       throw(ArgumentError("spawn_key too long"))
     end
     ok = GC.@preserve sk begin
-      ccall((:randompack_seed, _libpath[]), Bool,
+      ccall(_sym(:randompack_seed), Bool,
             (Cint, Ptr{UInt32}, Cint, RNGPtr),
             s, pointer(sk), Cint(n), rng.ptr)
     end

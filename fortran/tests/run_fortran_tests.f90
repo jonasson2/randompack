@@ -31,7 +31,7 @@ end module testutil
 
 program test_randompack_fortran
 use, intrinsic :: iso_c_binding, only: c_int32_t, c_int64_t, c_int8_t
-use, intrinsic :: ieee_arithmetic, only: ieee_is_finite
+use, intrinsic :: ieee_arithmetic, only: ieee_is_finite, ieee_set_flag, ieee_underflow
   use randompack
   use testutil
   implicit none
@@ -274,8 +274,8 @@ use, intrinsic :: ieee_arithmetic, only: ieee_is_finite
   call r2%free()
   call r3%free()
 
+  call ieee_set_flag(ieee_underflow, .false.)
   write(*,'(A)') "OK: Fortran randompack tests passed."
-  stop 0
 
 contains
 

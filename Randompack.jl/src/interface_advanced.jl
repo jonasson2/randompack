@@ -33,7 +33,7 @@ function engines()
   n = Ref{Cint}(0)
   eng_max = Ref{Cint}(0)
   desc_max = Ref{Cint}(0)
-  ok = ccall((:randompack_engines, _libpath[]), Bool,
+  ok = ccall(_sym(:randompack_engines), Bool,
              (Ptr{Cchar}, Ptr{Cchar}, Ptr{Cint}, Ptr{Cint}, Ptr{Cint}),
              C_NULL, C_NULL, n, eng_max, desc_max)
   if !ok
@@ -46,7 +46,7 @@ function engines()
   engbuf = Vector{UInt8}(undef, neng * eng_max[])
   descbuf = Vector{UInt8}(undef, neng * desc_max[])
   ok = GC.@preserve engbuf descbuf begin
-    ccall((:randompack_engines, _libpath[]), Bool,
+    ccall(_sym(:randompack_engines), Bool,
           (Ptr{Cchar}, Ptr{Cchar}, Ptr{Cint}, Ptr{Cint}, Ptr{Cint}),
           pointer(engbuf), pointer(descbuf), n, eng_max, desc_max)
   end
@@ -91,7 +91,7 @@ rng2 = Randompack.duplicate(rng1)
 """
 function duplicate(rng::RNG)
   rng.ptr == C_NULL && throw(ErrorException("RNG pointer is NULL"))
-  p = ccall((:randompack_duplicate, _libpath[]), RNGPtr, (RNGPtr,), rng.ptr)
+  p = ccall(_sym(:randompack_duplicate), RNGPtr, (RNGPtr,), rng.ptr)
   if p == C_NULL
     msg = _last_error(rng.ptr)
     throw(ErrorException(msg === nothing ? "randompack_duplicate failed" : msg))
@@ -122,7 +122,7 @@ Randompack.randomize!(rng)
 """
 function randomize!(rng::RNG)
   rng.ptr == C_NULL && throw(ErrorException("RNG pointer is NULL"))
-  ok = ccall((:randompack_randomize, _libpath[]), Bool, (RNGPtr,), rng.ptr)
+  ok = ccall(_sym(:randompack_randomize), Bool, (RNGPtr,), rng.ptr)
   _check_ok(ok, rng.ptr, "randompack_randomize failed")
   return nothing
 end
@@ -143,12 +143,11 @@ Randompack.full_mantissa!(rng, false)  # turn it off again
 """
 function full_mantissa!(rng::RNG, enable::Bool=true)
   rng.ptr == C_NULL && throw(ErrorException("RNG pointer is NULL"))
-  ok = ccall((:randompack_full_mantissa, _libpath[]), Bool, (RNGPtr, Bool),
+  ok = ccall(_sym(:randompack_full_mantissa), Bool, (RNGPtr, Bool),
              rng.ptr, enable)
   _check_ok(ok, rng.ptr, "randompack_full_mantissa failed")
   return nothing
 end
-
 
 # -----------------------------------------------------------------------------
 # State setting
@@ -186,7 +185,7 @@ function _set_state_u64!(rng::RNG, state::AbstractVector{UInt64})
     throw(ArgumentError("state too long"))
   end
   ok = GC.@preserve state begin
-    ccall((:randompack_set_state, _libpath[]), Bool, (Ptr{UInt64}, Cint, RNGPtr),
+    ccall(_sym(:randompack_set_state), Bool, (Ptr{UInt64}, Cint, RNGPtr),
           pointer(state), Cint(n), rng.ptr)
   end
   _check_ok(ok, rng.ptr, "randompack_set_state failed")
@@ -218,7 +217,7 @@ function philox_set_state!(rng::RNG;
   keyv = _u64_vec_from_ints(key)
   ctr = _PhiloxCtr((ctrv[1], ctrv[2], ctrv[3], ctrv[4]))
   k = _PhiloxKey((keyv[1], keyv[2]))
-  ok = ccall((:randompack_philox_set_state, _libpath[]), Bool,
+  ok = ccall(_sym(:randompack_philox_set_state), Bool,
              (_PhiloxCtr, _PhiloxKey, RNGPtr), ctr, k, rng.ptr)
   _check_ok(ok, rng.ptr, "randompack_philox_set_state failed")
   return nothing
@@ -242,7 +241,7 @@ function squares_set_state!(rng::RNG; ctr::Integer, key::Integer)
   rng.ptr == C_NULL && throw(ErrorException("RNG pointer is NULL"))
   c64 = _u64_scalar_checked(ctr)
   k64 = _u64_scalar_checked(key)
-  ok = ccall((:randompack_squares_set_state, _libpath[]), Bool,
+  ok = ccall(_sym(:randompack_squares_set_state), Bool,
              (UInt64, UInt64, RNGPtr), c64, k64, rng.ptr)
   _check_ok(ok, rng.ptr, "randompack_squares_set_state failed")
   return nothing
@@ -267,7 +266,7 @@ function pcg64_set_state!(rng::RNG; state::Integer, inc::Integer)
   rng.ptr == C_NULL && throw(ErrorException("RNG pointer is NULL"))
   st = _u64_scalar_checked(state)
   ic = _u64_scalar_checked(inc)
-  ok = ccall((:randompack_pcg64_set_state, _libpath[]), Bool,
+  ok = ccall(_sym(:randompack_pcg64_set_state), Bool,
              (UInt64, UInt64, RNGPtr), st, ic, rng.ptr)
   _check_ok(ok, rng.ptr, "randompack_pcg64_set_state failed")
   return nothing
@@ -295,7 +294,7 @@ state = Randompack.serialize(rng)
 function serialize(rng::RNG)
   rng.ptr == C_NULL && throw(ErrorException("RNG pointer is NULL"))
   lenref = Ref{Cint}(0)
-  ok = ccall((:randompack_serialize, _libpath[]), Bool, (Ptr{UInt8}, Ptr{Cint},
+  ok = ccall(_sym(:randompack_serialize), Bool, (Ptr{UInt8}, Ptr{Cint},
              RNGPtr), C_NULL, lenref, rng.ptr)
   _check_ok(ok, rng.ptr, "randompack_serialize failed")
   n = lenref[]
@@ -305,7 +304,7 @@ function serialize(rng::RNG)
   buf = Vector{UInt8}(undef, n)
   lenref[] = Cint(n)
   ok = GC.@preserve buf begin
-    ccall((:randompack_serialize, _libpath[]), Bool, (Ptr{UInt8}, Ptr{Cint},
+    ccall(_sym(:randompack_serialize), Bool, (Ptr{UInt8}, Ptr{Cint},
            RNGPtr), pointer(buf), lenref, rng.ptr)
   end
   _check_ok(ok, rng.ptr, "randompack_serialize failed")
@@ -338,7 +337,7 @@ function deserialize!(rng::RNG, bytes::AbstractVector{UInt8})
     throw(ArgumentError("buffer too long"))
   end
   ok = GC.@preserve buf begin
-    ccall((:randompack_deserialize, _libpath[]), Bool, (Ptr{UInt8}, Cint,
+    ccall(_sym(:randompack_deserialize), Bool, (Ptr{UInt8}, Cint,
            RNGPtr), pointer(buf), Cint(n), rng.ptr)
   end
   _check_ok(ok, rng.ptr, "randompack_deserialize failed")
