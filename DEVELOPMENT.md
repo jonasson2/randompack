@@ -1,9 +1,24 @@
+
+Table of contents
+-----------------
+- [C-library](#c-library)
+- [Julia](#julia)
+- [Python](#python)
+- [R-library](#r-library)
+- [Build wheels](#build-wheels)
+- [Normal testing](#normal-testing)
+- [Benchmarking](#benchmarking)
+- [Extra Testing](#extra-testing)
+- [TestU01](#testu01)
+- [PractRand](#practrand)
+
+
 C-library
-–––––––––
+=========
 MESON SETUP:
 scripts/meson-setup.sh release  # optimized
 scripts/meson-setup.sh debug    # debug-enabled
-– these set library "prefix" to ./install
+= these set library "prefix" to ./install
 
 BUILD:
 ninja -C release
@@ -15,7 +30,7 @@ ninja -C release install    # used for Julia and Fortran
 release/examples/RunRandom  # simple example program
 
 Julia
-–––––
+=====
 FIRST TIME SETUP:
 cd Randompack.jl           # the Julia package folder
 export JULIA_PROJECT=.     # use environment defined by ./Project.toml
@@ -41,7 +56,7 @@ Notes:
 (3) or run Julia with julia +1.13
 
 Python
-––––––
+======
 FIRST TIME SETUP:
 cd <project-root>                            # enter project root
 scripts/syncpy.sh                            # copy C sources from src to python/src
@@ -68,15 +83,15 @@ conda activate randompack-dev
 conda install meson meson-python ninja cython pytest numpy
 cd python
 pip install -e . --no-build-isolation
-– optionally specify Python version: "conda create -n randompack-dev python=3.12"
+= optionally specify Python version: "conda create -n randompack-dev python=3.12"
 
 R-library
-–––––––––
+=========
 BUILD:
 cd <project-root>                  # enter project root
 scripts/syncR.sh                   # copy C sources from src to r-package/src
 R CMD install r-package            # create R library             
-– do this both first-time and 
+= do this both first-time and 
   after changes to C library; 
   then restart R
 
@@ -84,8 +99,12 @@ USE:
 R                                  # start R
 > library(randompack)              # load into session
 
+BUILD WHEELS
+============
+See python/readme-wheels.txt
+
 Normal testing
-––––––––––––––
+==============
 meson test -C release              # run meson defined tests for C and Fortran
 release/tests/RunTests -v          # run C tests in verbose mode
 release/tests/RunTests -h          # show help for test runner
@@ -109,12 +128,12 @@ export JULIA_PROJECT=.             # unless set in .zshrc/.bashrc
 julia test/runtests.jl             # run the Julia tests
 
 Benchmarking
-––––––––––––
+============
 cd <projectroot>/release/examples  # enter build folder
 TimeDistC                          # benchmark distributions with C randompack
-TimeDistFortran                    # – distributions with Fortran randompack
-TimeEngines                        # – engines with C bitstream samples
-TimeIntegers                       # – integer sampling with C
+TimeDistFortran                    # = distributions with Fortran randompack
+TimeEngines                        # = engines with C bitstream samples
+TimeIntegers                       # = integer sampling with C
 
 cd <project-root>
 export JULIA_PROJECT=Randompack.jl          # if not set in .zshrc/.bashrc
@@ -126,7 +145,7 @@ release/examples/TimeDistC -h               # display short help
 .                                           # the other benchmark programs also accept -h
 
 Extra Testing
-–––––––––––––
+=============
 meson setup testvar -Dtest_variants=true  # Build and run testvariants that simulate
 ninja -c testvar                          # computers: (a) without SIMD support and
 meson test -C testvar                     # (b) without 64×64→128 integer multiply
@@ -134,8 +153,8 @@ meson test -C testvar                     # (b) without 64×64→128 integer mul
 TestU01:
 In some folder:
 wget http://simul.iro.umontreal.ca/testu01/TestU01.zip  # Download official TestU01
-unzip TestU01.zip                                       # – unzip it
-cd TestU01-1.2.3                                        # – and install it 
+unzip TestU01.zip                                       # = unzip it
+cd TestU01-1.2.3                                        # = and install it 
 configure --prefix=<prefix>                             # E.g. $HOME/lib
 make -j                                                 #
 make install                                            #
