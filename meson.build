@@ -139,8 +139,8 @@ force_fortran = accel_bug_workaround or builtin_blas
 want_fortran = force_fortran
 
 if not force_fortran
-  add_languages('fortran', required: false)
-  if meson.has_language('fortran')
+  has_fortran = add_languages('fortran', required: false)
+  if has_fortran
     fc = meson.get_compiler('fortran')
     add_project_arguments('-Wno-do-subscript', language : 'fortran')
     add_project_arguments(

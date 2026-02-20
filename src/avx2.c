@@ -112,7 +112,7 @@ HIDDEN bool cpu_has_avx2(void) {
 } while (0)
 
 HIDDEN void fill_fast_avx2(randompack_rng *rng, size_t len) {
-  uint64_t *out = rng->buf.u64 + rng->buf_word;
+  uint64_t *out = rng->buf.u64;
   xo256 *st = &rng->state.xo;
   VEC_T s0 = VEC_LOAD(&st->s0[0]);
   VEC_T s1 = VEC_LOAD(&st->s1[0]);
