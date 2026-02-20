@@ -10,8 +10,9 @@ ninja -C release
 ninja -C debug
 
 INSTALL:
-ninja -C release install  # used for Julia and Fortran
-                          # (copies library to ./install)
+ninja -C release install    # used for Julia and Fortran
+                            # (copies library to ./install)
+release/examples/RunRandom  # simple example program
 
 Julia
 –––––
@@ -74,8 +75,7 @@ R-library
 BUILD:
 cd <project-root>                  # enter project root
 scripts/syncR.sh                   # copy C sources from src to r-package/src
-R CMD build r-package              # build library in randompack_<version>.tar.gz
-R CMD INSTALL randompack_*.tar.gz  # replace * with actual version if > 1 .tar.gz file
+R CMD install r-package            # create R library             
 – do this both first-time and 
   after changes to C library; 
   then restart R
@@ -96,7 +96,9 @@ pytest -q                          # quiet testing of the Python Randompack
 pytest                             # verbose testing
 
 cd <project-root>
+R CMD build r-package              # build library in randompack_<version>.tar.gz 
 R CMD check randompack_*.tar.gz    # comprehensive CRAN-style full package check
+.                                  # replace * with actual version if > 1 .tar.gz file
 cd r-package                       # enter the package folder
 R                                  # start R
 > install.packages("testthat")     # first time only
@@ -108,11 +110,14 @@ julia test/runtests.jl             # run the Julia tests
 
 Benchmarking
 ––––––––––––
-cd <project-root>                           # enter project root folder
-export JULIA_PROJECT=Randompack.jl          # if not set in .zshrc/.bashrc
+cd <projectroot>/release/examples  # enter build folder
+TimeDistC                          # benchmark distributions with C randompack
+TimeDistFortran                    # – distributions with Fortran randompack
+TimeEngines                        # – engines with C bitstream samples
+TimeIntegers                       # – integer sampling with C
 
-release/examples/TimeDistC                  # benchmark C randompack
-release/examples/TimeDistFortran            # benchmark Fortran randompack
+cd <project-root>
+export JULIA_PROJECT=Randompack.jl          # if not set in .zshrc/.bashrc
 Rscript r-package/inst/examples/TimeDist.R  # compare R-randompack with base-R and Dqrng
 julia Randompack.jl/examples/TimeDist.jl    # compare Julia randompack with the built-in
 python python/examples/TimeDist.py          # compare Python-randompack with numpy.random
@@ -139,7 +144,9 @@ meson setup -C release -Dbuildtype=release \            #
 cd release/examples                                     #
 TestU01Driver -h                                        # help
 TestU01Driver -c                                        # Crush (minutes)
-Test(01Driver -b                                        # BigCrush (hours)
+TestU01Driver -b                                        # BigCrush (hours)
+TestU01PIT -h                                           # help
+TestU01PIT -c                                           # PIT test normal with Crush
 
 PractRand:
 [This only works on x86_64 Linux]

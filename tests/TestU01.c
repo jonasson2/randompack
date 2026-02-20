@@ -34,13 +34,15 @@ static void test_statistics(char *engine) {
   FREE(x);
 }
 
+void TestU01x(char *engine) {
+  char *e = engine;
+  test_basic(e);
+  test_statistics(e);
+}
+
 void TestU01(void) {
   int n = 0;
   char **engines = get_engines(&n);
-  for (int i = 0; i < n; i++) {
-    char *e = engines[i];
-    test_basic(e);
-    test_statistics(e);
-  }
+  for (int i = 0; i < n; i++) TestU01x(engines[i]);
   free_engines(engines, n);
 }

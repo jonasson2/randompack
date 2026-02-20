@@ -98,3 +98,12 @@ void TestUint64(void) {
   }
   free_engines(engines, n);
 }
+
+void TestUint64x(char *engine) {
+  char *e = engine;
+  printS("\nTesting Uint64 with engine", e);
+  test_edge_cases(e);
+  test_unbounded_nonzero(e);
+  test_balanced_counts(e);
+  test_balanced_bits(e);
+}

@@ -77,3 +77,10 @@ void TestBuffer(void) {
   }
   free_engines(engines, n);
 }
+
+void TestBufferx(char *engine) {
+  char *e = engine;
+  test_split_u64(e);
+  test_unaligned_u16(e);
+  test_unaligned_u32(e);
+}

@@ -1,7 +1,7 @@
 // -*- mode: c -*-
 static inline void fill_x128p(randompack_rng *rng, size_t len) {
   // With parameters (23,18,5), from Vigna (2014, arXiv:1404.0390)
-  uint64_t *out = rng->buf.u64 + rng->buf_word;
+  uint64_t *out = rng->buf.u64;
   size_t n = len;
   uint64_t s0 = rng->state.u64[0];
   uint64_t s1 = rng->state.u64[1];

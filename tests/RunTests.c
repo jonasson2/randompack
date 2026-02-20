@@ -23,10 +23,10 @@ static void print_help(void) {
        "  -v       Verbose tests\n"
        "  -vv      More verbosity\n"
        "  -vvv     Even moren verbosity\n"
-       "  -f N     Set N_STAT_FAST (default 100000)\n"
-       "  -s N     Set N_STAT_SLOW (default 20000)\n"
-       "  -c N     Set N_BAL_CNTS (default 5000000)\n"
-       "  -b N     Set N_BAL_BITS (default 40000)\n");
+       "  -f N     Set N_STAT_FAST (u01, unif, norm, exp; default 100000)\n"
+       "  -s N     Set N_STAT_SLOW (other distributions; default 20000)\n"
+       "  -c N     Set N_BAL_CNTS (uintXX bucket counts; default 5000000)\n"
+       "  -b N     Set N_BAL_BITS (uintXX & int bit counts; default 40000)\n");
 }
 
 static void vprint(char *fmt, ...) {
@@ -68,6 +68,17 @@ static void run_test(char *name, void (*fn)(void)) {
   vprint(table_fmt, name, ntotal - nfail, nfail);
 }
 
+static void run_testx(char *name, void (*fn)(char *), char *engine) {
+  int ntotal, nfail;
+  xCheckInit();
+  fn(engine);
+  ntotal = xCheckNTotal();
+  nfail  = xCheckNFailures();
+  NTOTAL += ntotal;
+  NFAIL  += nfail;
+  vprint(table_fmt, name, ntotal - nfail, nfail);
+}
+
 int main(int argc, char **argv) {
   char *optstring = ":vhf:s:c:b:";
   int c;
@@ -88,29 +99,47 @@ int main(int argc, char **argv) {
   if (TESTVERBOSITY <= 1) printOff();
   vprint("\n");
   vprint(headr_fmt, "TEST OF", "PASSED", "FAILED");
-  run_test("Helpers",  TestHelpers);
-  run_test("Openlibm", TestOpenlibm);
-  run_test("FullMantissa", TestFullMantissa);
-  run_test("Bitexact", TestBitexact);
-  run_test("Avx2",     TestAvx2);
-  run_test("Create",   TestCreate);
-  run_test("Seed",     TestSeed);
-  run_test("Buffer",   TestBuffer);
-  run_test("SetState", TestSetState);
-  run_test("Uint8",    TestUint8);
-  run_test("Uint16",   TestUint16);
-  run_test("Uint32",   TestUint32);
-  run_test("Uint64",   TestUint64);
-  run_test("Reference",TestReference);
-  run_test("Int",      TestInt);
-  run_test("LongLong", TestLongLong);
-  run_test("Perm",     TestPerm);
-  run_test("Sample",   TestSample);
-  run_test("U01",      TestU01);
-  run_test("Unif",     TestUnif);
-  run_test("Normal",   TestNorm);
-  run_test("Continuous",TestContinuous);
-  run_test("Mvn",      TestMvn);
+#if BUFSIZE == 8
+  (void) run_test;
+  char *engine = "x256++simd";
+  run_testx("Buf8-U01",        TestU01x,        engine);
+  run_testx("Buf8-Exp",        TestExpx,       engine);
+  run_testx("Buf8-Bitexact",   TestBitexactx,   engine);
+  run_testx("Buf8-Buffer",     TestBufferx,     engine);
+  run_testx("Buf8-Reference",  TestReferencex,  engine);
+  run_testx("Buf8-Uint32",     TestUint32x,     engine);
+  run_testx("Buf8-Uint64",     TestUint64x,     engine);
+  run_testx("Buf8-Int",        TestIntx,        engine);
+  run_testx("Buf8-Normal",     TestNormx,       engine);
+  run_testx("Buf8-Exp",        TestExpx,        engine);
+  run_testx("Buf8-Continuous", TestContinuousx, engine);
+#else
+  (void) run_testx;
+  run_test("Helpers",     TestHelpers);
+  run_test("Openlibm",    TestOpenlibm);
+  run_test("FullMantissa",TestFullMantissa);
+  run_test("Bitexact",    TestBitexact);
+  run_test("Avx2",        TestAvx2);
+  run_test("Create",      TestCreate);
+  run_test("Seed",        TestSeed);
+  run_test("Buffer",      TestBuffer);
+  run_test("SetState",    TestSetState);
+  run_test("Uint8",       TestUint8);
+  run_test("Uint16",      TestUint16);
+  run_test("Uint32",      TestUint32);
+  run_test("Uint64",      TestUint64);
+  run_test("Reference",   TestReference);
+  run_test("Int",         TestInt);
+  run_test("LongLong",    TestLongLong);
+  run_test("Perm",        TestPerm);
+  run_test("Sample",      TestSample);
+  run_test("U01",         TestU01);
+  run_test("Unif",        TestUnif);
+  run_test("Normal",      TestNorm);
+  run_test("Exp",         TestExp);
+  run_test("Continuous",  TestContinuous);
+  run_test("Mvn",         TestMvn);
+#endif
   vprint(table_fmt, "TOTAL", NTOTAL - NFAIL, NFAIL);
   return (NFAIL > 0);
 }

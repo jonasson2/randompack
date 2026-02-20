@@ -15,7 +15,7 @@ option('builtin_blas',
 # Creates <build-dir>/examples/Test01Driver
 option('TestU01',
   type: 'string',
-  value: '/Users/jonasson/lib/testu01',
+  value: '',
   description: 'Prefix for TestU01 install (enable when non-empty)'
 )
 
@@ -37,4 +37,9 @@ option('test_variants',
   description: 'Build internal test variants: no128 and nosimd'
 )
 
-option('perf', type: 'boolean', value: false, description: 'Enable performance benchmarking flags/macros')
+# Current benchmarking does not show speed-up over -O3 with these options
+option('perf',
+  type: 'boolean',
+  value: false,
+  description: 'Enable performance benchmarking flags/macros'
+)

@@ -86,3 +86,15 @@ void TestBitexact(void) {
     randompack_free(rng);
   }
 }
+
+void TestBitexactx(char *engine) {
+  char *e = engine;
+  randompack_rng *rng = create_seeded_rng(e, 123);
+  bool ok = randompack_bitexact(rng, false);
+  check_success(ok, rng);
+  check_unif(rng, e);
+  check_exp2(rng, e);
+  check_lognormal(rng, e);
+  check_weibull(rng, e);
+  randompack_free(rng);
+}

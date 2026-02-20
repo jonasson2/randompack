@@ -300,3 +300,27 @@ void TestReference(void) {
   TestXoshiro256ssAgainstRust();
   TestFastAgainstRust();
 }
+
+void TestReferencex(char *engine) {
+  char *e = engine;
+  if (!strcmp(e, "chacha20")) {
+    TestChaCha20AgainstRFC8439();
+    return;
+  }
+  if (!is_little_endian()) return;
+  if (!strcmp(e, "pcg64")) {
+    TestAgainstNumpyPCG();
+  }
+  else if (!strcmp(e, "philox")) {
+    TestPhiloxAgainstRandom123();
+  }
+  else if (!strcmp(e, "x256++")) {
+    TestXoshiro256ppAgainstRust();
+  }
+  else if (!strcmp(e, "x256**")) {
+    TestXoshiro256ssAgainstRust();
+  }
+  else if (!strcmp(e, "x256++simd")) {
+    TestFastAgainstRust();
+  }
+}

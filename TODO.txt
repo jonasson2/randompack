@@ -1,10 +1,4 @@
 add benchmarking results (perhaps)
-add cross-reference to DEVELOPMENT.md from all readme-files, mention what it describes
-try to remove make-half-full and time
-add comments to fortran examples
-add scripts to benchmark and test
 yggdrasil
 cran
 wheels
-describe how we do without blas on linux if it's not present (in Julia/Python?)
-what does option('perf') do 

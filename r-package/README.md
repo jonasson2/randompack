@@ -17,7 +17,9 @@ normal, and exponential draws.
 
 For more information, including implementation details, benchmarking results, and
 documentation of engines and distributions, see the main project readme file at
-https://github.com/jonasson2/randompack.
+https://github.com/jonasson2/randompack. The same page also links to DEVELOPMENT.md, which
+contains setup and development instructions, including details specific to the R
+interface.
 
 ## Cross-platform consistency
 

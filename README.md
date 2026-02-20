@@ -35,6 +35,11 @@ The public header file `randompack.h` serves as a compact reference for the C
 API: all user-facing functions are declared there, with comments describing the
 role of each parameter.
 
+The supplied DEVELOPMENT.md file serves as a comprehensive development guide. It
+explains how to configure and build the C core library, set up and rebuild the
+interfaces for the other languages, and run tests and benchmarks. It should be
+used as the main reference for development workflows.
+
 ## Distributions
 
 All distributions are implemented independently of the underlying random number

@@ -3,7 +3,7 @@
 // 2019 by David Blackman and Sebastiano Vigna (vigna@acm.org; public domain).
 
 static inline void fill_x256pp(randompack_rng *rng, size_t len) {
-  uint64_t *out = rng->buf.u64 + rng->buf_word;
+  uint64_t *out = rng->buf.u64;
   size_t n = len;
   uint64_t s0 = rng->state.u64[0];
   uint64_t s1 = rng->state.u64[1];

@@ -29,8 +29,10 @@ endif
 build_avx2_define = build_avx2 ? ['-DBUILD_AVX2'] : []
 test_hooks_define = get_option('build_tests') ? ['-DRANDOMPACK_TEST_HOOKS'] : []
 base_c_args = accel_bug_args + build_avx2_define
+buf8_c_args = base_c_args + ['-DBUFSIZE=8']
 
 avx2_objs = []
+avx2_objs_buf8 = []
 if build_avx2
   avx2_lib = static_library(
     'randompack_avx2',
@@ -45,9 +47,24 @@ if build_avx2
     install: false,
   )
   avx2_objs = [avx2_lib.extract_all_objects()]
+
+  avx2_lib_buf8 = static_library(
+    'randompack_avx2_buf8',
+    files(
+      'avx2.c',
+      'inplace_logexp.c',
+      'sleef.c',
+    ),
+    include_directories: randompack_inc,
+    c_args: avx2_c_args + build_avx2_define + test_hooks_define + ['-DBUFSIZE=8'],
+    pic: true,
+    install: false,
+  )
+  avx2_objs_buf8 = [avx2_lib_buf8.extract_all_objects()]
 endif
 
 extra_objs = avx2_objs + blas_objs
+extra_objs_buf8 = avx2_objs_buf8 + blas_objs
 
 if accel_bug_workaround
   randompack_src += files(
@@ -89,6 +106,24 @@ randompack_dep = declare_dependency(
   include_directories: randompack_inc,
   dependencies: [blas_dep] + math_deps,
   compile_args: base_c_args,
+)
+
+librandompack_buf8 = static_library(
+  'randompack_buf8',
+  randompack_src,
+  objects: extra_objs_buf8,
+  include_directories: randompack_inc,
+  dependencies: [blas_dep] + math_deps,
+  c_args: buf8_c_args,
+  pic: true,
+  install: false,
+)
+
+randompack_buf8_dep = declare_dependency(
+  link_with: librandompack_buf8,
+  include_directories: randompack_inc,
+  dependencies: [blas_dep] + math_deps,
+  compile_args: buf8_c_args,
 )
 
 if get_option('test_variants')

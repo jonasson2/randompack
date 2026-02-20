@@ -68,6 +68,22 @@ static void check_weibull(randompack_rng *rng, char *engine) {
   FREE(u);
 }
 
+
+void TestFullMantissa1(void) {
+  char *engines[] = {"x256++simd", "pcg64"};
+  for (int i = 0; i < LEN(engines); i++) {
+    char *engine = engines[i];
+    randompack_rng *rng = create_seeded_rng(engine, 123);
+    bool ok = randompack_full_mantissa(rng, true);
+    check_success(ok, rng);
+    check_unif(rng, engine);
+    check_exp2(rng, engine);
+    check_lognormal(rng, engine);
+    check_weibull(rng, engine);
+    randompack_free(rng);
+  }
+}
+
 void TestFullMantissa(void) {
   char *engines[] = {"x256++simd", "pcg64"};
   for (int i = 0; i < LEN(engines); i++) {

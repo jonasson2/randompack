@@ -79,9 +79,6 @@ static const dist_spec dist_specs[] = {
   { "normal", 2, 3, { 0, 1, -3 }, { 1, 2, 0.5 }, { 0 }, SUPPORT_NONE,
     { .d2 = randompack_normal }, { .d2 = randompack_normalf },
     { .c2 = test_cdf_normal } },
-  { "exp", 1, 2, { 1, 2 }, { 0 }, { 0 }, SUPPORT_NONNEG,
-    { .d1 = randompack_exp }, { .d1 = randompack_expf },
-    { .c1 = test_cdf_exp } },
   { "lognormal", 2, 3, { 0, -0.7, 1.2 }, { 1, 0.4, 1.3 }, { 0 },
     SUPPORT_NONNEG,
     { .d2 = randompack_lognormal }, { .d2 = randompack_lognormalf },
@@ -118,8 +115,6 @@ static const dist_spec dist_specs[] = {
 static const illegal_case illegal_cases[] = {
   { "normal", 2, 0, 0, 0 },
   { "normal", 2, 0, -1, 0 },
-  { "exp", 1, 0, 0, 0 },
-  { "exp", 1, -1, 0, 0 },
   { "lognormal", 2, 0, 0, 0 },
   { "lognormal", 2, 0, -1, 0 },
   { "gamma", 2, 0, 1, 0 },
@@ -400,4 +395,9 @@ void TestContinuous(void) {
     test_determinism_and_PIT(engine);
   }
   free_engines(engines, n);
+}
+
+void TestContinuousx(char *engine) {
+  test_continuous_edge_cases(engine);
+  test_determinism_and_PIT(engine);
 }

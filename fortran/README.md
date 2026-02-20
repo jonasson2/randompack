@@ -16,7 +16,9 @@ than NumPy for uniform, normal, and exponential draws.
 
 For more information, including implementation details, benchmarking results, and
 documentation of engines and distributions, see the main project readme file at
-https://github.com/jonasson2/randompack.
+https://github.com/jonasson2/randompack. The same page also links to DEVELOPMENT.md, which
+contains setup and development instructions, including details specific to the Fortran
+interface.
 
 ## Cross-platform consistency
 
@@ -98,18 +100,18 @@ non-optimized version omit `--buildtype=release`.
     integer(int64) :: lv(10)
 
     type(randompack_rng) :: rng
-    call rng%create()               ! default engine (x256++simd)
-    call rng%create('pcg64')        ! specified engine
+    call rng%create()                ! default engine (x256++simd)
+    call rng%create('pcg64')         ! specified engine
     call rng%create('pcg64', .true.) ! make samples bit-identical across platforms (x==y true)
-    call rng%seed(123)              ! deterministic seed
-    call rng%randomize()            ! seed with system entropy
+    call rng%seed(123)               ! deterministic seed
+    call rng%randomize()             ! seed with system entropy
 
-    call rng%unif(x)                ! Uniform(0,1), double precision
-    call rng%normal(x)              ! Standard normal, double precision
-    call rng%normal(xf, 1.0, 3.0)   ! N(1,3) variates, real
+    call rng%unif(x)                 ! Uniform(0,1), double precision
+    call rng%normal(x)               ! Standard normal, double precision
+    call rng%normal(xf, 1.0, 3.0)    ! N(1,3) variates, real
 
-    call rng%int(iv, 1, 6)          ! integers in [1,6] (inclusive)
-    call rng%int(lv, 1, 6)          ! long 64 bit integers in [1,6] (inclusive)
+    call rng%int(iv, 1, 6)           ! integers in [1,6] (inclusive)
+    call rng%int(lv, 1, 6)           ! long 64 bit integers in [1,6] (inclusive)
     call rng%free()
     end program
 ```
@@ -186,8 +188,10 @@ Each of the following is a generic that accepts `double precision` or default
 - `skew_normal` (mu=0, sigma=1, alpha)
 ```fortran
     double precision :: a(100), b(10,10)
-    call rng%unif(a, -1.0d0, 2.0d0)
-    call rng%skew_normal(b, 0.0d0, 1.0d0, 2.0d0)
+    real :: c(10)  
+    call rng%unif(a, -1d0, 2d0)             ! 100 double precison Uniform(-1,2) samples
+    call rng%skew_normal(b, 0d0, 1d0, 2d0)  ! 10×10 matrix of skew-normal(0,1,2) samples
+    call rng%exp(b)                         ! 10 single prec. standard exponential samples
 ```
 ### Discrete (integers)
 
@@ -195,9 +199,8 @@ Each of the following is a generic that accepts `double precision` or default
 ```fortran
     integer(c_int32_t) :: iv(50)
     integer(c_int64_t) :: i64(50)
-    call rng%int(iv, -2, 3)  ! inclusive bounds
-    call rng%int(i64, 1, 10)
-    call rng%int(i64, 1, 10)
+    call rng%int(iv, -2, 3)        ! integer samples in [-2,3] (includes 3)
+    call rng%int(i64, 1, 10)       ! 64-bit integer samples in [1,10] 
 ```
 ## State control and serialization
 

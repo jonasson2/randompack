@@ -88,3 +88,11 @@ void TestInt(void) {
   }
   free_engines(engines, n);
 }
+
+void TestIntx(char *engine) {
+  char *e = engine;
+  test_int_simple();
+  test_edge_cases(e, INT_MAX);
+  test_seed_changes_output(e);
+  test_balanced_bits(e);
+}

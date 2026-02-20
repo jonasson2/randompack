@@ -7,6 +7,7 @@ test_sources = files(
   'TestLongLong.c',
   'TestPerm.c',
   'TestSample.c',
+  'TestExp.c',
   'TestNorm.c',
   'TestUnif.c',
   'TestContinuous.c',
@@ -43,6 +44,16 @@ run_tests = executable(
 )
 
 test('RunTests', run_tests, args : ['-v'])
+
+run_tests_buf8 = executable(
+  # Small buffer test to stress the buffer draw machinery
+  'RunTestsBuf8',
+  test_sources + extra_util,
+  dependencies : [randompack_buf8_dep],
+  c_args : ['-DRANDOMPACK_TEST_HOOKS', '-DBUFSIZE=8'],
+)
+
+test('RunTestsBuf8', run_tests_buf8, args : ['-v'])
 
 if build_fortran
   darwin_link_args = host_machine.system() == 'darwin' ? ['-Wl,-no_warn_duplicate_libraries'] : []

@@ -129,3 +129,13 @@ void TestUint32(void) {
   }
   free_engines(engines, n);
 }
+
+void TestUint32x(char *engine) {
+  char *e = engine;
+  printS("\nTesting Uint32 with engine", e);
+  test_edge_cases(e);
+  test_unbounded_determinism(e);
+  test_balanced_counts(e);
+  test_balanced_bits(e);
+  test_mixed_draw(e);
+}
