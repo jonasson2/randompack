@@ -1,6 +1,6 @@
 // -*- mode: c; -*-
 #include <float.h>
-#if defined(__APPLE__)
+#if defined(USE_ACCEL_VV)
 void vvexp(double *y, const double *x, const int *n);
 void vvlog(double *y, const double *x, const int *n);
 #endif

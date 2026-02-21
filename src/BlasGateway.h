@@ -4,10 +4,6 @@
 #include "blasref.h"
 //#include "printX.h"
 
-// Note that randompack_local_dpstrf_ is used instead of dpstrf_ because the latter routine is
-// faulty in Accelerate; lapack_dpstrf.f with Netlib's official code must be compiled and
-// linked against.
-
 static inline void axpy(int n, double alpha, double x[], int incx, double y[], int incy) {
   daxpy_(&n, &alpha, x, &incx, y, &incy);
 }
@@ -71,15 +67,15 @@ static inline void potrf(char *uplo, int n, double a[], int lda, int *info) {
   dpotrf_(uplo, &n, a, &lda, info, 1);
 }
 
-static inline void posv(char *uplo, int n, int nrhs, double a[], int lda, double b[], int ldb,
-	  int *info) {
-  dposv_(uplo, &n, &nrhs, a, &lda, b, &ldb, info, 1);
-}
+// static inline void posv(char *uplo, int n, int nrhs, double a[], int lda, double b[], int ldb,
+// 	  int *info) {
+//   dposv_(uplo, &n, &nrhs, a, &lda, b, &ldb, info, 1);
+// }
 
 static inline void pstrf(char *uplo, int n, double a[], int lda, int piv[], int *rank,
 								 double tol, double work[], int *info) {
-#if defined(ACCEL_BUG_WORKAROUND)
-  randompack_local_dpstrf_(uplo, &n, a, &lda, piv, rank, &tol, work, info, 1);
+#if defined(LOCAL_DPSTRF)
+  rp_dpstrf_(uplo, &n, a, &lda, piv, rank, &tol, work, info, 1);
 #else
   dpstrf_(uplo, &n, a, &lda, piv, rank, &tol, work, info, 1);
 #endif  

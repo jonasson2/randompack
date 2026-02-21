@@ -14,7 +14,7 @@
 //   }
 //   exit_u32_mode(rng, w);
 // }
-#if defined(__APPLE__)
+#if defined(USE_ACCEL_VV)
 void vvexpf(float *y, const float *x, const int *n);
 void vvlogf(float *y, const float *x, const int *n);
 #endif

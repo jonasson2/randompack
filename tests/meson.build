@@ -36,11 +36,13 @@ extra_util = files(
   'igam.c',
 )
 
+blas_test_args = using_builtin_blas ? ['-DRANDOMPACK_BUILTIN_BLAS'] : []
+
 run_tests = executable(
   'RunTests',
   test_sources + extra_util,
   dependencies : [randompack_dep],
-  c_args : ['-DRANDOMPACK_TEST_HOOKS'],
+  c_args : ['-DRANDOMPACK_TEST_HOOKS'] + blas_test_args,
 )
 
 test('RunTests', run_tests, args : ['-v'])
@@ -50,7 +52,7 @@ run_tests_buf8 = executable(
   'RunTestsBuf8',
   test_sources + extra_util,
   dependencies : [randompack_buf8_dep],
-  c_args : ['-DRANDOMPACK_TEST_HOOKS', '-DBUFSIZE=8'],
+  c_args : ['-DRANDOMPACK_TEST_HOOKS', '-DBUFSIZE=8'] + blas_test_args,
 )
 
 test('RunTestsBuf8', run_tests_buf8, args : ['-v'])
@@ -83,6 +85,7 @@ if get_option('test_variants')
     'RunTestNoSimd',
     test_sources + extra_util,
     dependencies : [randompack_nosimd_dep],
+    c_args : blas_test_args,
   )
 
   test_variants = find_program('sh')

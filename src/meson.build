@@ -7,7 +7,7 @@ randompack_src = files(
 randompack_src += fortran_src
 
 blas_objs = []
-if builtin_blas
+if using_builtin_blas
   fc = meson.get_compiler('fortran')
   blas_f_args = fc.get_supported_arguments([
     '-Wno-compare-reals',
@@ -28,7 +28,7 @@ endif
 
 build_avx2_define = build_avx2 ? ['-DBUILD_AVX2'] : []
 test_hooks_define = get_option('build_tests') ? ['-DRANDOMPACK_TEST_HOOKS'] : []
-base_c_args = accel_bug_args + build_avx2_define
+base_c_args = local_dpstrf_args + accel_vv_args + build_avx2_define
 buf8_c_args = base_c_args + ['-DBUFSIZE=8']
 
 avx2_objs = []
@@ -66,10 +66,8 @@ endif
 extra_objs = avx2_objs + blas_objs
 extra_objs_buf8 = avx2_objs_buf8 + blas_objs
 
-if accel_bug_workaround
-  randompack_src += files(
-    'lapack_dpstf2.f',
-    'lapack_dpstrf.f')
+if local_dpstrf
+  randompack_src += files('lapack_dpstrf.f')
 endif
 
 librandompack_static = static_library(
@@ -77,7 +75,7 @@ librandompack_static = static_library(
   randompack_src,
   objects: extra_objs,
   include_directories: randompack_inc,
-  dependencies: [blas_dep] + math_deps,
+  dependencies: blas_deps + math_deps,
   c_args: base_c_args,
   pic: true,
   install: true,
@@ -90,7 +88,7 @@ librandompack = shared_library(
   randompack_src,
   objects: extra_objs,
   include_directories: randompack_inc,
-  dependencies: [blas_dep] + math_deps,
+  dependencies: blas_deps + math_deps,
   c_args: base_c_args,
   override_options: randompack_lto,
   install: true,
@@ -104,7 +102,7 @@ install_headers(
 randompack_dep = declare_dependency(
   link_with: librandompack,
   include_directories: randompack_inc,
-  dependencies: [blas_dep] + math_deps,
+  dependencies: blas_deps + math_deps,
   compile_args: base_c_args,
 )
 
@@ -113,7 +111,7 @@ librandompack_buf8 = static_library(
   randompack_src,
   objects: extra_objs_buf8,
   include_directories: randompack_inc,
-  dependencies: [blas_dep] + math_deps,
+  dependencies: blas_deps + math_deps,
   c_args: buf8_c_args,
   pic: true,
   install: false,
@@ -122,7 +120,7 @@ librandompack_buf8 = static_library(
 randompack_buf8_dep = declare_dependency(
   link_with: librandompack_buf8,
   include_directories: randompack_inc,
-  dependencies: [blas_dep] + math_deps,
+  dependencies: blas_deps + math_deps,
   compile_args: buf8_c_args,
 )
 
@@ -133,7 +131,7 @@ if get_option('test_variants')
     randompack_src,
     objects: extra_objs,
     include_directories: randompack_inc,
-    dependencies: [blas_dep] + math_deps,
+    dependencies: blas_deps + math_deps,
     c_args: ['-DRANDOMPACK_PRETEND_NO128'] + base_c_args,
     pic: true,
     install: false,
@@ -142,7 +140,7 @@ if get_option('test_variants')
   randompack_no128_dep = declare_dependency(
     link_with: librandompack_no128,
     include_directories: randompack_inc,
-    dependencies: [blas_dep] + math_deps,
+    dependencies: blas_deps + math_deps,
     compile_args: base_c_args,
   )
 
@@ -152,8 +150,8 @@ if get_option('test_variants')
     randompack_src,
     objects: blas_objs,
     include_directories: randompack_inc,
-    dependencies: [blas_dep] + math_deps,
-    c_args: ['-DPRETEND_NOSIMD'] + accel_bug_args,
+    dependencies: blas_deps + math_deps,
+    c_args: ['-DPRETEND_NOSIMD'] + local_dpstrf_args + accel_vv_args,
     pic: true,
     install: false,
   )
@@ -161,7 +159,7 @@ if get_option('test_variants')
   randompack_nosimd_dep = declare_dependency(
     link_with: librandompack_nosimd,
     include_directories: randompack_inc,
-    dependencies: [blas_dep] + math_deps,
-    compile_args: ['-DPRETEND_NOSIMD'] + accel_bug_args,
+    dependencies: blas_deps + math_deps,
+    compile_args: ['-DPRETEND_NOSIMD'] + local_dpstrf_args + accel_vv_args,
   )
 endif

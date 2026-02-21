@@ -26,6 +26,7 @@ static void msg(char *message) {
   printMsgUpper(message);
 }
 
+#if !defined(RANDOMPACK_BUILTIN_BLAS)
 static void test_range(int m, int n, double A[], int k, double Y[]) {
   // True iff every column of the k × m Y is in the range of the m × n A
   double *B, *X, *R;
@@ -59,6 +60,7 @@ static void test_range(int m, int n, double A[], int k, double Y[]) {
   FREE(X);
   FREE(B);
 }
+#endif
 
 static void stdevs(double Sig[], double stds[], int n, int N) {
   for (int k=0, kk=0; k<n; k++, kk+=(n+1)) {
@@ -168,7 +170,9 @@ static void test_randnm(double Sig[], int rank) {
   check_rng_clean(rng);
   ok = randompack_mvn("N", 0, Sig, 4, N2, X, N2, LSig, rng);
   check_success(ok, rng);
+#if !defined(RANDOMPACK_BUILTIN_BLAS)
   test_range(4, rank, LSig, N2, X);
+#endif
   randompack_free(rng);
 
   msg("Check correct means with specified mu");

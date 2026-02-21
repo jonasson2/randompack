@@ -1,6 +1,6 @@
 // Include file declaring the reference blas functions
 //
-// Note that randompack_local_dpstrf_ is used instead of dpstrf_ on Apples because the latter routine
+// Note that rp_dpstrf_ is used instead of dpstrf_ on Apples because the latter routine
 // is faulty in Accelerate; lapack_dpstrf.f with Netlib's official code must be compiled
 // and linked against.
 
@@ -51,11 +51,11 @@ void dpotrf_(char *uplo, int *n, double a[], int *lda, int *info, fstrlen lenupl
 void dpstrf_(char *uplo, int *n, double a[], int *lda, int piv[], int *rank, double *tol,
 	     double work[], int *info, fstrlen lenuplo);
 
-void randompack_local_dpstrf_(char *uplo, int *n, double a[], int *lda, int piv[], int *rank,
+void rp_dpstrf_(char *uplo, int *n, double a[], int *lda, int piv[], int *rank,
 	     double *tol, double work[], int *info, fstrlen lenuplo);
 
-void dposv_(char *uplo, int *n, int *nrhs, double a[], int *lda, double b[], int *ldb,
-            int *info, fstrlen lenuplo);
+// void dposv_(char *uplo, int *n, int *nrhs, double a[], int *lda, double b[], int *ldb,
+//             int *info, fstrlen lenuplo);
 
 void dscal_(int *m, double *alpha, double *x, int *incx);
 

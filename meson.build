@@ -17,11 +17,12 @@ host_system = host_machine.system()
 # BLAS selection
 # -------------------------------------------------
 
-builtin_blas = get_option('builtin_blas')
-blas_order_option = get_option('blas_order')
+blas_list_option = get_option('blas_list')
 blas_search_order = []
 
-if blas_order_option == 'auto'
+if blas_list_option == 'none'
+  blas_search_order = []
+elif blas_list_option == 'auto'
   if host_system == 'windows'
     blas_search_order = ['mkl', 'openblas']
   elif host_system == 'darwin'
@@ -30,7 +31,7 @@ if blas_order_option == 'auto'
     blas_search_order = ['openblas', 'mkl']
   endif
 else
-  blas_search_order = blas_order_option.split(',')
+  blas_search_order = blas_list_option.split(',')
   message('Using user-specified BLAS search order: ' + ', '.join(blas_search_order))
 endif
 
@@ -115,12 +116,15 @@ foreach blas_name : blas_search_order
   endif
 endforeach
 
-if builtin_blas
+blas_deps = blas_dep.found() ? [blas_dep] : []
+
+using_builtin_blas = (blas_list_option == 'none') or (not blas_dep.found())
+if using_builtin_blas
   message('Using built-in BLAS from src/blas.f')
 endif
 if blas_dep.found()
   message('Using BLAS library: ' + blas_found)
-else
+elif not using_builtin_blas
   error('No optimized BLAS found, reference implementation not yet available')
 endif
 
@@ -129,14 +133,18 @@ endif
 # -------------------------------------------------
 
 accel_bug_workaround = (blas_found == 'Accelerate')
-accel_bug_args = accel_bug_workaround ? ['-DACCEL_BUG_WORKAROUND'] : []
+local_dpstrf = accel_bug_workaround or using_builtin_blas
+local_dpstrf_args = local_dpstrf ? ['-DLOCAL_DPSTRF'] : []
+accel_vv = (host_system == 'darwin') and (blas_found == 'Accelerate') and (not using_builtin_blas)
+accel_vv_args = accel_vv ? ['-DUSE_ACCEL_VV'] : []
 
 # -------------------------------------------------
 # Optional Fortran support
 # -------------------------------------------------
 
-force_fortran = accel_bug_workaround or builtin_blas
+force_fortran = accel_bug_workaround or using_builtin_blas
 want_fortran = force_fortran
+has_fortran = false
 
 if not force_fortran
   has_fortran = add_languages('fortran', required: false)
@@ -169,6 +177,7 @@ endif
 
 if force_fortran
   add_languages('fortran', required: true)
+  has_fortran = true
   fc = meson.get_compiler('fortran')
   if fc.get_id() == 'gcc'
     add_project_arguments('-fno-backtrace', language: 'fortran')

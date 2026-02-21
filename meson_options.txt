@@ -1,15 +1,9 @@
 # See DEVELOPER.md for explanations for some of these options.
 
-option('blas_order', 
-  type: 'string', 
+option('blas_list',
+  type: 'string',
   value: 'auto',
-  description: 'Comma-separated list of BLAS libraries to search for (e.g., "mkl,openblas,accelerate") or "auto" for platform default'
-)
-
-option('builtin_blas',
-  type: 'boolean',
-  value: false,
-  description: 'Use src/blas.f instead of system BLAS libraries'
+  description: 'Comma-separated list of BLAS libraries to search for (e.g., "mkl,openblas,accelerate"), "auto" for platform default, or "none" to force built-in BLAS'
 )
 
 # Creates <build-dir>/examples/Test01Driver
