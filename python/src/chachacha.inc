@@ -29,7 +29,7 @@ static inline uint64_t bswap64(uint64_t x) {
 }
 
 static inline void fill_chacha(randompack_rng *rng, size_t len) {
-  uint8_t *dst = (uint8_t *)(rng->buf.u64 + rng->buf_word);
+  uint8_t *dst = (uint8_t *)(rng->buf.u64);
   uint8_t zeros[BUFSIZE*8] = {0};
   size_t nbytes = len*8;
   // Big-endian compatibility: counter stored in little-endian bytes.

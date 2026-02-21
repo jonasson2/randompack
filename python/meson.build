@@ -47,17 +47,20 @@ if math_dep.found()
 endif
 
 extra_sources = []
+core_c_args = []
 
 if host_system == 'darwin'
   # Use Apple Accelerate (BLAS + LAPACK). Do NOT compile the fallback Fortran.
   accel_dep = dependency('appleframeworks', modules: ['Accelerate'], required: true)
   deps += [accel_dep]
   add_languages('fortran', required: true)
-  extra_sources += files('src/lapack_dpstf2.f', 'src/lapack_dpstrf.f')
+  extra_sources += files('src/lapack_dpstrf.f')
+  core_c_args += ['-DLOCAL_DPSTRF']
 else
   # Windows/Linux: build and link the bundled BLAS/LAPACK subset.
   add_languages('fortran', required: true)
-  extra_sources += files('src/blas.f')
+  extra_sources += files('src/blas.f', 'src/lapack_dpstrf.f')
+  core_c_args += ['-DLOCAL_DPSTRF']
 endif
 
 py.extension_module(
@@ -65,6 +68,7 @@ py.extension_module(
   sources: wrap_sources + core_sources + extra_sources,
   include_directories: inc,
   dependencies: deps,
+  c_args: core_c_args,
   install: true,
   subdir: 'randompack',
 )

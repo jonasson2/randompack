@@ -28,7 +28,7 @@ typedef struct {
 } while (0)
 
 static inline void fill_cwg128(randompack_rng *rng, size_t len) {
-  uint64_t *out = rng->buf.u64 + rng->buf_word;
+  uint64_t *out = rng->buf.u64;
   // State layout assumed:
   //   rng->state.u64[0:1]: x low, x high
   //   rng->state.u64[2]  : a

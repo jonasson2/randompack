@@ -1,6 +1,6 @@
 // -*- C -*-
 static inline void fill_cwg128(randompack_rng *rng, size_t len) {
-  uint64_t *out = rng->buf.u64 + rng->buf_word;
+  uint64_t *out = rng->buf.u64;
   // State layout assumed:
   //   rng->state.cwg.x    : __uint128_t
   //   rng->state.cwg.a    : uint64_t

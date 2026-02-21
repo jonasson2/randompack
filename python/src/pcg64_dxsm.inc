@@ -9,7 +9,7 @@
 
 static inline void
 fill_pcg64(randompack_rng *rng, size_t len) {
-  uint64_t *out = rng->buf.u64 + rng->buf_word;
+  uint64_t *out = rng->buf.u64;
 
   /* cheap (half-width) multiplier */
   const uint64_t mul = 15750249268501108917ULL;  // Identical to original

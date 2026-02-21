@@ -1,6 +1,6 @@
 // -*- C -*-
 static inline void fill_sfc64(randompack_rng *rng, size_t len) {
-  uint64_t *out = rng->buf.u64 + rng->buf_word;
+  uint64_t *out = rng->buf.u64;
   uint64_t a = rng->state.u64[0];
   uint64_t b = rng->state.u64[1];
   uint64_t c = rng->state.u64[2];

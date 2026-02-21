@@ -1,5 +1,5 @@
 // -*- c -*-
-#if defined(__APPLE__)
+#if defined(USE_ACCEL_VV)
 void vvexp(double *y, const double *x, const int *n);
 void vvlog(double *y, const double *x, const int *n);
 void vvexpf(float *y, const float *x, const int *n);
@@ -15,7 +15,7 @@ void sleef_logf_inplace(float *x, size_t len);
 
 static inline void exp_inplace(double *x, size_t len, randompack_rng *rng) {
   if (!rng->bitexact) {
-#if defined(__APPLE__)
+#if defined(USE_ACCEL_VV)
     for (size_t i = 0; i < len; ) {
       size_t chunk = len - i > (size_t)INT_MAX ? (size_t)INT_MAX : len - i;
       int n = (int)chunk;
@@ -37,7 +37,7 @@ static inline void exp_inplace(double *x, size_t len, randompack_rng *rng) {
 
 static inline void log_inplace(double *x, size_t len, randompack_rng *rng) {
   if (!rng->bitexact) {
-#if defined(__APPLE__)
+#if defined(USE_ACCEL_VV)
     for (size_t i = 0; i < len; ) {
       size_t chunk = len - i > (size_t)INT_MAX ? (size_t)INT_MAX : len - i;
       int n = (int)chunk;
@@ -59,7 +59,7 @@ static inline void log_inplace(double *x, size_t len, randompack_rng *rng) {
 
 static inline void expf_inplace(float *x, size_t len, randompack_rng *rng) {
   if (!rng->bitexact) {
-#if defined(__APPLE__)
+#if defined(USE_ACCEL_VV)
     for (size_t i = 0; i < len; ) {
       size_t chunk = len - i > (size_t)INT_MAX ? (size_t)INT_MAX : len - i;
       int n = (int)chunk;
@@ -81,7 +81,7 @@ static inline void expf_inplace(float *x, size_t len, randompack_rng *rng) {
 
 static inline void logf_inplace(float *x, size_t len, randompack_rng *rng) {
   if (!rng->bitexact) {
-#if defined(__APPLE__)
+#if defined(USE_ACCEL_VV)
     for (size_t i = 0; i < len; ) {
       size_t chunk = len - i > (size_t)INT_MAX ? (size_t)INT_MAX : len - i;
       int n = (int)chunk;
