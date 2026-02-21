@@ -23,7 +23,7 @@ if builtin_blas
     pic: true,
     install: false,
   )
-  blas_objs = [blas_lib.extract_all_objects()]
+  blas_objs = [blas_lib.extract_all_objects(recursive: false)]
 endif
 
 build_avx2_define = build_avx2 ? ['-DBUILD_AVX2'] : []
@@ -46,7 +46,7 @@ if build_avx2
     pic: true,
     install: false,
   )
-  avx2_objs = [avx2_lib.extract_all_objects()]
+  avx2_objs = [avx2_lib.extract_all_objects(recursive: false)]
 
   avx2_lib_buf8 = static_library(
     'randompack_avx2_buf8',
@@ -60,7 +60,7 @@ if build_avx2
     pic: true,
     install: false,
   )
-  avx2_objs_buf8 = [avx2_lib_buf8.extract_all_objects()]
+  avx2_objs_buf8 = [avx2_lib_buf8.extract_all_objects(recursive: false)]
 endif
 
 extra_objs = avx2_objs + blas_objs

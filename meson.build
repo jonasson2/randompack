@@ -181,6 +181,9 @@ if force_fortran
 endif
 
 build_fortran = want_fortran
+fortran_interface = false
+fortran_src = []
+fortran_inc = []
 
 # -------------------------------------------------
 # Includes / subdirectories
