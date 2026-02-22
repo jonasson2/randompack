@@ -11,6 +11,7 @@ ROOT=$(cd "$(dirname "$0")/.." && pwd)
 
 echo RUNNING C AND FORTRAN TESTS
 meson test -C $ROOT/release
+$ROOT/scripts/run-test-variants.sh
 
 echo RUNNING PYTHON TESTS
 cd $ROOT/python

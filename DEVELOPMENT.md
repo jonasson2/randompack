@@ -146,9 +146,7 @@ release/examples/TimeDistC -h               # display short help
 
 Extra Testing
 =============
-meson setup testvar -Dtest_variants=true  # Build and run testvariants that simulate
-ninja -c testvar                          # computers: (a) without SIMD support and
-meson test -C testvar                     # (b) without 64×64→128 integer multiply
+scripts/run-test-variants.sh  # Run built-in BLAS, no128, and nosimd variants
 
 TestU01:
 In some folder:

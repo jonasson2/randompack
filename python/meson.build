@@ -52,55 +52,27 @@ core_c_args = []
 blas_option = get_option('blas')
 blas_dep = disabler()
 blas_found = 'none'
+using_builtin_blas = false
+blas_backends = []
+blas_explicit = (blas_option != 'builtin' and blas_option != 'auto')
 
 if blas_option == 'builtin'
   using_builtin_blas = true
 elif blas_option == 'auto'
-  foreach blas_name : ['accelerate', 'mkl', 'openblas']
-    if blas_name == 'accelerate'
-      if host_system == 'darwin'
-        blas_dep = dependency('appleframeworks', modules: ['Accelerate'], required: false)
-        if blas_dep.found()
-          blas_found = 'Accelerate'
-        endif
-      endif
-    elif blas_name == 'mkl'
-      foreach mkl_variant : ['mkl-dynamic-lp64-iomp', 'mkl-static-lp64-iomp', 'mkl']
-        blas_dep = dependency(mkl_variant, required: false)
-        if blas_dep.found()
-          break
-        endif
-      endforeach
-      if not blas_dep.found()
-        blas_dep = cc.find_library('mkl_rt', required: false)
-      endif
-      if blas_dep.found()
-        blas_found = 'MKL'
-      endif
-    elif blas_name == 'openblas'
-      blas_dep = dependency('openblas', required: false)
-      if not blas_dep.found()
-        blas_dep = cc.find_library('openblas', required: false)
-      endif
-      if blas_dep.found()
-        blas_found = 'OpenBLAS'
-      endif
-    endif
-
-    if blas_dep.found()
-      break
-    endif
-  endforeach
-  using_builtin_blas = not blas_dep.found()
+  blas_backends = ['accelerate', 'mkl', 'openblas']
 else
-  if blas_option == 'accelerate'
+  blas_backends = [blas_option]
+endif
+
+foreach blas_name : blas_backends
+  if blas_name == 'accelerate'
     if host_system == 'darwin'
       blas_dep = dependency('appleframeworks', modules: ['Accelerate'], required: false)
+      if blas_dep.found()
+        blas_found = 'Accelerate'
+      endif
     endif
-    if blas_dep.found()
-      blas_found = 'Accelerate'
-    endif
-  elif blas_option == 'mkl'
+  elif blas_name == 'mkl'
     foreach mkl_variant : ['mkl-dynamic-lp64-iomp', 'mkl-static-lp64-iomp', 'mkl']
       blas_dep = dependency(mkl_variant, required: false)
       if blas_dep.found()
@@ -113,7 +85,7 @@ else
     if blas_dep.found()
       blas_found = 'MKL'
     endif
-  elif blas_option == 'openblas'
+  elif blas_name == 'openblas'
     blas_dep = dependency('openblas', required: false)
     if not blas_dep.found()
       blas_dep = cc.find_library('openblas', required: false)
@@ -122,29 +94,36 @@ else
       blas_found = 'OpenBLAS'
     endif
   else
-    error('Unknown blas option: ' + blas_option)
+    error('Unknown blas option: ' + blas_name)
   endif
 
-  if not blas_dep.found()
-    error('Requested system BLAS not found: ' + blas_option)
+  if blas_dep.found()
+    break
   endif
-  using_builtin_blas = false
+endforeach
+
+if blas_explicit and not blas_dep.found()
+  error('Requested system BLAS not found: ' + blas_option)
+endif
+
+if not blas_dep.found() and not using_builtin_blas
+  using_builtin_blas = true
 endif
 
 blas_deps = blas_dep.found() ? [blas_dep] : []
 deps += blas_deps
 
-if blas_dep.found()
-  message('Using BLAS library: ' + blas_found)
-endif
 if using_builtin_blas
   message('Using built-in BLAS from src/blas.f')
+else
+  message('Using BLAS library: ' + blas_found)
 endif
 
-local_dpstrf = (blas_found == 'Accelerate') or using_builtin_blas
+using_accelerate = (host_system == 'darwin') and (blas_found == 'Accelerate')
+local_dpstrf = using_accelerate or using_builtin_blas
 
 if local_dpstrf
-  add_languages('fortran', required: true)
+  add_languages('fortran', required: true, native: false)
   extra_sources += files('src/lapack_dpstrf.f')
   core_c_args += ['-DLOCAL_DPSTRF']
   if using_builtin_blas
@@ -152,7 +131,7 @@ if local_dpstrf
   endif
 endif
 
-if (host_system == 'darwin') and (blas_found == 'Accelerate') and (not using_builtin_blas)
+if using_accelerate and (not using_builtin_blas)
   core_c_args += ['-DUSE_ACCEL_VV']
 endif
 

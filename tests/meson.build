@@ -1,4 +1,4 @@
-add_languages('cpp', required: true)
+add_languages('cpp', required: true, native: false)
 
 test_sources = files(
   'RunTests.c',
@@ -67,32 +67,6 @@ if build_fortran
     link_args : darwin_link_args,
   )
   test('RunFortranTests', fortran_tests)
-endif
-
-if get_option('test_variants')
-  test_no128 = executable(
-    'RunTestNo128',
-    [
-      'RunTestNo128.c',
-      'TestCreate.c',
-      'TestHelpers.c',
-    ] + extra_util,
-    dependencies : [randompack_no128_dep],
-    c_args : ['-DRANDOMPACK_PRETEND_NO128'],
-  )
-
-  test_nosimd = executable(
-    'RunTestNoSimd',
-    test_sources + extra_util,
-    dependencies : [randompack_nosimd_dep],
-    c_args : blas_test_args,
-  )
-
-  test_variants = find_program('sh')
-  test('TestVariants', test_variants,
-    args : [files('RunTestVariants.sh'), meson.current_build_dir()],
-    depends : [test_no128, test_nosimd])
-
 endif
 
 seedseq_test = executable(

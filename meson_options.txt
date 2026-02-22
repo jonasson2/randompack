@@ -25,15 +25,21 @@ option('build_tests',
   description: 'Build tests'
 )
 
-option('test_variants',
-  type: 'boolean',
-  value: false,
-  description: 'Build internal test variants: no128 and nosimd'
-)
-
 # Current benchmarking does not show speed-up over -O3 with these options
 option('perf',
   type: 'boolean',
   value: false,
   description: 'Enable performance benchmarking flags/macros'
+)
+
+option('force_no128',
+  type: 'boolean',
+  value: false,
+  description: 'Force 64x64->128 emulation (pretend no __int128)'
+)
+
+option('force_nosimd',
+  type: 'boolean',
+  value: false,
+  description: 'Force scalar code paths and disable SIMD builds'
 )
