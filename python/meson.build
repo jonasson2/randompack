@@ -49,77 +49,88 @@ endif
 extra_sources = []
 core_c_args = []
 
-blas_option = get_option('blas')
+conda_option = get_option('conda')
 blas_dep = disabler()
+lapack_dep = disabler()
 blas_found = 'none'
 using_builtin_blas = false
-blas_backends = []
-blas_explicit = (blas_option != 'builtin' and blas_option != 'auto')
+using_accelerate = false
 
-if blas_option == 'builtin'
-  using_builtin_blas = true
-elif blas_option == 'auto'
-  blas_backends = ['accelerate', 'mkl', 'openblas']
+if conda_option
+  blas_dep = dependency('blas', method: 'pkg-config', required: true)
+  lapack_dep = dependency('lapack', method: 'pkg-config', required: true)
+  blas_found = 'pkg-config'
+  deps += [blas_dep, lapack_dep]
+  message('Using BLAS/LAPACK from pkg-config')
 else
-  blas_backends = [blas_option]
-endif
+  blas_option = get_option('blas')
+  blas_backends = []
+  blas_explicit = (blas_option != 'builtin' and blas_option != 'auto')
 
-foreach blas_name : blas_backends
-  if blas_name == 'accelerate'
-    if host_system == 'darwin'
-      blas_dep = dependency('appleframeworks', modules: ['Accelerate'], required: false)
-      if blas_dep.found()
-        blas_found = 'Accelerate'
-      endif
-    endif
-  elif blas_name == 'mkl'
-    foreach mkl_variant : ['mkl-dynamic-lp64-iomp', 'mkl-static-lp64-iomp', 'mkl']
-      blas_dep = dependency(mkl_variant, required: false)
-      if blas_dep.found()
-        break
-      endif
-    endforeach
-    if not blas_dep.found()
-      blas_dep = cc.find_library('mkl_rt', required: false)
-    endif
-    if blas_dep.found()
-      blas_found = 'MKL'
-    endif
-  elif blas_name == 'openblas'
-    blas_dep = dependency('openblas', required: false)
-    if not blas_dep.found()
-      blas_dep = cc.find_library('openblas', required: false)
-    endif
-    if blas_dep.found()
-      blas_found = 'OpenBLAS'
-    endif
+  if blas_option == 'builtin'
+    using_builtin_blas = true
+  elif blas_option == 'auto'
+    blas_backends = ['accelerate', 'mkl', 'openblas']
   else
-    error('Unknown blas option: ' + blas_name)
+    blas_backends = [blas_option]
   endif
 
-  if blas_dep.found()
-    break
+  foreach blas_name : blas_backends
+    if blas_name == 'accelerate'
+      if host_system == 'darwin'
+        blas_dep = dependency('appleframeworks', modules: ['Accelerate'], required: false)
+        if blas_dep.found()
+          blas_found = 'Accelerate'
+        endif
+      endif
+    elif blas_name == 'mkl'
+      foreach mkl_variant : ['mkl-dynamic-lp64-iomp', 'mkl-static-lp64-iomp', 'mkl']
+        blas_dep = dependency(mkl_variant, required: false)
+        if blas_dep.found()
+          break
+        endif
+      endforeach
+      if not blas_dep.found()
+        blas_dep = cc.find_library('mkl_rt', required: false)
+      endif
+      if blas_dep.found()
+        blas_found = 'MKL'
+      endif
+    elif blas_name == 'openblas'
+      blas_dep = dependency('openblas', required: false)
+      if not blas_dep.found()
+        blas_dep = cc.find_library('openblas', required: false)
+      endif
+      if blas_dep.found()
+        blas_found = 'OpenBLAS'
+      endif
+    else
+      error('Unknown blas option: ' + blas_name)
+    endif
+
+    if blas_dep.found()
+      break
+    endif
+  endforeach
+
+  if blas_explicit and not blas_dep.found()
+    error('Requested system BLAS not found: ' + blas_option)
   endif
-endforeach
 
-if blas_explicit and not blas_dep.found()
-  error('Requested system BLAS not found: ' + blas_option)
+  if not blas_dep.found() and not using_builtin_blas
+    using_builtin_blas = true
+  endif
+
+  if using_builtin_blas
+    message('Using built-in BLAS from src/blas.f')
+  else
+    message('Using BLAS library: ' + blas_found)
+    deps += [blas_dep]
+  endif
+
+  using_accelerate = (host_system == 'darwin') and (blas_found == 'Accelerate')
 endif
 
-if not blas_dep.found() and not using_builtin_blas
-  using_builtin_blas = true
-endif
-
-blas_deps = blas_dep.found() ? [blas_dep] : []
-deps += blas_deps
-
-if using_builtin_blas
-  message('Using built-in BLAS from src/blas.f')
-else
-  message('Using BLAS library: ' + blas_found)
-endif
-
-using_accelerate = (host_system == 'darwin') and (blas_found == 'Accelerate')
 local_dpstrf = using_accelerate or using_builtin_blas
 
 if local_dpstrf

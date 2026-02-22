@@ -5,3 +5,10 @@ option('blas',
   value: 'auto',
   description: 'BLAS to use: builtin/accelerate/mkl/openblas/auto'
 )
+
+# Set the following option to true when building on Conda-Forge
+option('conda',
+  type: 'boolean',
+  value: false,
+  description: 'Use pkg-config BLAS/LAPACK from conda'
+)

@@ -1,0 +1,44 @@
+name: macOS arm64 wheels
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: macos-14
+
+    env:
+      FC: gfortran
+      CIBW_ARCHS_MACOS: arm64
+      CIBW_BUILD: "cp310-* cp311-* cp312-* cp313-* cp314-*"
+      CIBW_CONFIG_SETTINGS: "setup-args=-Dblas=accelerate"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build tools
+        run: python -m pip install -U pip cibuildwheel
+
+      - name: Install gfortran
+        run: |
+          brew update
+          brew install gcc
+
+      - name: Add Homebrew to PATH
+        run: |
+          if [ -d /opt/homebrew/bin ]; then echo "/opt/homebrew/bin" >> $GITHUB_PATH; fi
+          if [ -d /usr/local/bin ]; then echo "/usr/local/bin" >> $GITHUB_PATH; fi
+
+      - name: Verify architecture
+        run: uname -m
+
+      - name: Build wheels
+        run: python -m cibuildwheel python/
+
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-macos-arm64
+          path: wheelhouse/*.whl

@@ -69,14 +69,7 @@ Randompack.jl/.julia/
 *.jl.mem
 Randompack.jl/Manifest.toml
 
-CLONED C-PACKAGES
-chacha-opt/
-pcg-dxsm/
-Random123/
-random123/
 xoshiro_test/
-numpy/
-zmgd/
 ziggurat_code/
 ziggurat-test/
-misc/sleef/
+misc/
