@@ -1,0 +1,7 @@
+# Value 'auto' searches accelerate/mkl/openblas with a fallback to builtin when none found
+# The builtin-blas are included with randompack and contain code from the netlib reference blas.
+option('blas',
+  type: 'string',
+  value: 'auto',
+  description: 'BLAS to use: builtin/accelerate/mkl/openblas/auto'
+)

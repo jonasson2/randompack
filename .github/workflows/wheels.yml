@@ -23,6 +23,7 @@ jobs:
       - name: Build wheels
         env:
           CIBW_ARCHS_WINDOWS: AMD64
+          CIBW_CONFIG_SETTINGS: "setup-args=-Dblas=builtin"
         run: python -m cibuildwheel python/
 
       - name: Upload wheels

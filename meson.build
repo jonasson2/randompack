@@ -17,23 +17,7 @@ host_system = host_machine.system()
 # BLAS selection
 # -------------------------------------------------
 
-blas_list_option = get_option('blas_list')
-blas_search_order = []
-
-if blas_list_option == 'none'
-  blas_search_order = []
-elif blas_list_option == 'auto'
-  if host_system == 'windows'
-    blas_search_order = ['mkl', 'openblas']
-  elif host_system == 'darwin'
-    blas_search_order = ['accelerate', 'openblas', 'mkl']
-  else
-    blas_search_order = ['openblas', 'mkl']
-  endif
-else
-  blas_search_order = blas_list_option.split(',')
-  message('Using user-specified BLAS search order: ' + ', '.join(blas_search_order))
-endif
+blas_option = get_option('blas')
 
 if buildtype.startswith('debug')
   add_project_arguments('-DDEBUG_PRINT', language : 'c')
@@ -78,8 +62,54 @@ math_deps = math_dep.found() ? [math_dep] : []
 blas_dep = disabler()
 blas_found = 'none'
 
-foreach blas_name : blas_search_order
-  if blas_name == 'mkl'
+if blas_option == 'builtin'
+  using_builtin_blas = true
+elif blas_option == 'auto'
+  foreach blas_name : ['accelerate', 'mkl', 'openblas']
+    if blas_name == 'accelerate'
+      if host_system == 'darwin'
+        blas_dep = dependency('appleframeworks', modules: 'Accelerate', required: false)
+        if blas_dep.found()
+          blas_found = 'Accelerate'
+        endif
+      endif
+    elif blas_name == 'mkl'
+      foreach mkl_variant : ['mkl-dynamic-lp64-iomp', 'mkl-static-lp64-iomp', 'mkl']
+        blas_dep = dependency(mkl_variant, required: false)
+        if blas_dep.found()
+          break
+        endif
+      endforeach
+      if not blas_dep.found()
+        blas_dep = cc.find_library('mkl_rt', required: false)
+      endif
+      if blas_dep.found()
+        blas_found = 'MKL'
+      endif
+    elif blas_name == 'openblas'
+      blas_dep = dependency('openblas', required: false)
+      if not blas_dep.found()
+        blas_dep = cc.find_library('openblas', required: false)
+      endif
+      if blas_dep.found()
+        blas_found = 'OpenBLAS'
+      endif
+    endif
+
+    if blas_dep.found()
+      break
+    endif
+  endforeach
+  using_builtin_blas = not blas_dep.found()
+else
+  if blas_option == 'accelerate'
+    if host_system == 'darwin'
+      blas_dep = dependency('appleframeworks', modules: 'Accelerate', required: false)
+    endif
+    if blas_dep.found()
+      blas_found = 'Accelerate'
+    endif
+  elif blas_option == 'mkl'
     foreach mkl_variant : ['mkl-dynamic-lp64-iomp', 'mkl-static-lp64-iomp', 'mkl']
       blas_dep = dependency(mkl_variant, required: false)
       if blas_dep.found()
@@ -92,16 +122,7 @@ foreach blas_name : blas_search_order
     if blas_dep.found()
       blas_found = 'MKL'
     endif
-
-  elif blas_name == 'accelerate'
-    if host_system == 'darwin'
-      blas_dep = dependency('appleframeworks', modules: 'Accelerate', required: false)
-      if blas_dep.found()
-        blas_found = 'Accelerate'
-      endif
-    endif
-
-  elif blas_name == 'openblas'
+  elif blas_option == 'openblas'
     blas_dep = dependency('openblas', required: false)
     if not blas_dep.found()
       blas_dep = cc.find_library('openblas', required: false)
@@ -109,23 +130,22 @@ foreach blas_name : blas_search_order
     if blas_dep.found()
       blas_found = 'OpenBLAS'
     endif
+  else
+    error('Unknown blas option: ' + blas_option)
   endif
 
-  if blas_dep.found()
-    break
+  if not blas_dep.found()
+    error('Requested system BLAS not found: ' + blas_option)
   endif
-endforeach
+  using_builtin_blas = false
+endif
 
 blas_deps = blas_dep.found() ? [blas_dep] : []
-
-using_builtin_blas = (blas_list_option == 'none') or (not blas_dep.found())
 if using_builtin_blas
   message('Using built-in BLAS from src/blas.f')
 endif
 if blas_dep.found()
   message('Using BLAS library: ' + blas_found)
-elif not using_builtin_blas
-  error('No optimized BLAS found, reference implementation not yet available')
 endif
 
 # -------------------------------------------------
