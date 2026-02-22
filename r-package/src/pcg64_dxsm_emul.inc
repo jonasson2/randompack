@@ -27,7 +27,7 @@ static inline void mul128_64(uint64_t a_lo, uint64_t a_hi, uint64_t b,
 
 static inline void
 fill_pcg64(randompack_rng *rng, size_t len) {
-  uint64_t *out = rng->buf.u64 + rng->buf_word;
+  uint64_t *out = rng->buf.u64;
   // State layout: (state_lo, state_hi, inc_lo, inc_hi)
   uint64_t next_lo = rng->state.pcg.state_lo;
   uint64_t next_hi = rng->state.pcg.state_hi;

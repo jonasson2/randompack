@@ -14,7 +14,6 @@ rsync -av --delete \
   --exclude='.DS_Store' \
   --exclude='meson.build' \
   --exclude='printX.c' \
-  --exclude='printX.h' \
   --exclude='*_float.inc' \
   --exclude='*_float.h' \
   src/ \

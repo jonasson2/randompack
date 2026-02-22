@@ -67,7 +67,7 @@ philox4x64(philox4x64_ctr_t ctr, philox4x64_key_t key) {
 }
 
 static inline void fill_philox(randompack_rng *rng, size_t len) {
-  uint64_t *out = rng->buf.u64 + rng->buf_word;
+  uint64_t *out = rng->buf.u64;
   randompack_philox_ctr ctr;
   randompack_philox_key key;
   copy64(ctr.v, rng->state.u64, 4);

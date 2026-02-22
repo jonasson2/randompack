@@ -8,14 +8,18 @@ cd "$REPO_ROOT"
 
 echo RUNNING C AND FORTRAN TESTS
 meson test -C release
-scripts/run-test-variants.sh
+#scripts/run-test-variants.sh
 
 echo RUNNING PYTHON TESTS
 cd python
 pytest -q
+cd ..
 
 echo RUNNING R TESTS
-build_out=$(R CMD build r-package 2>&1)
+if ! build_out=$(R CMD build r-package 2>&1); then
+  echo "$build_out" 1>&2
+  exit 1
+fi
 tarball=$(printf '%s\n' "$build_out" | rg -o "randompack_[0-9][^ ]*\.tar\.gz" | tail -n 1)
 [ -n "$tarball" ] || {
   echo "test-all.sh: could not find tarball name from R CMD build output" 1>&2

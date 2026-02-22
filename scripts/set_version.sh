@@ -40,13 +40,13 @@ rm -f Randompack.jl/Project.toml.bak
 
 # Update meson.build (version: 'x.y.z')
 sed -i.bak -E \
-  "s/^  version[[:space:]]*:[[:space:]]*'.*'/  version: '$VER',/" \
+  "s/^  version[[:space:]]*:[[:space:]]*'.*'/  version: '$VER'/" \
   meson.build
 rm -f meson.build.bak
 
 # Update python/meson.build (version: 'x.y.z')
 sed -i.bak -E \
-  "s/^  version[[:space:]]*:[[:space:]]*'.*'/  version: '$VER',/" \
+  "s/^  version[[:space:]]*:[[:space:]]*'.*'/  version: '$VER'/" \
   python/meson.build
 rm -f python/meson.build.bak
 

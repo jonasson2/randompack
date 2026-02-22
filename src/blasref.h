@@ -54,8 +54,8 @@ void dpstrf_(char *uplo, int *n, double a[], int *lda, int piv[], int *rank, dou
 void rp_dpstrf_(char *uplo, int *n, double a[], int *lda, int piv[], int *rank,
 	     double *tol, double work[], int *info, fstrlen lenuplo);
 
-// void dposv_(char *uplo, int *n, int *nrhs, double a[], int *lda, double b[], int *ldb,
-//             int *info, fstrlen lenuplo);
+void dposv_(char *uplo, int *n, int *nrhs, double a[], int *lda, double b[], int *ldb,
+            int *info, fstrlen lenuplo);
 
 void dscal_(int *m, double *alpha, double *x, int *incx);
 

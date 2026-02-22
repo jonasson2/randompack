@@ -7,6 +7,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#define RANDOMPACK_VERSION "0.1.1"
+
 typedef struct randompack_rng randompack_rng;
 typedef struct { uint64_t v[4]; } randompack_philox_ctr;
 typedef struct { uint64_t v[2]; } randompack_philox_key;

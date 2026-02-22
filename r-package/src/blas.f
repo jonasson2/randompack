@@ -174,6 +174,210 @@
       END IF
       RETURN
       END
+      SUBROUTINE DGEMV(TRANS,M,N,ALPHA,A,LDA,X,INCX,BETA,Y,INCY)
+      CHARACTER TRANS
+      DOUBLE PRECISION ALPHA,BETA
+      INTEGER INCX,INCY,LDA,M,N
+      DOUBLE PRECISION A(LDA,*),X(*),Y(*)
+      DOUBLE PRECISION ONE,ZERO
+      PARAMETER (ONE=1.0D+0,ZERO=0.0D+0)
+      DOUBLE PRECISION TEMP
+      INTEGER I,INFO,IX,IY,J,JX,JY,KX,KY,LENX,LENY
+      LOGICAL LSAME
+      EXTERNAL LSAME
+      EXTERNAL XERBLA
+      INTRINSIC MAX
+      INFO = 0
+      IF (.NOT.LSAME(TRANS,'N') .AND. .NOT.LSAME(TRANS,'T') .AND.
+     +    .NOT.LSAME(TRANS,'C')) THEN
+          INFO = 1
+      ELSE IF (M.LT.0) THEN
+          INFO = 2
+      ELSE IF (N.LT.0) THEN
+          INFO = 3
+      ELSE IF (LDA.LT.MAX(1,M)) THEN
+          INFO = 6
+      ELSE IF (INCX.EQ.0) THEN
+          INFO = 8
+      ELSE IF (INCY.EQ.0) THEN
+          INFO = 11
+      END IF
+      IF (INFO.NE.0) THEN
+          RETURN
+      END IF
+      IF ((M.EQ.0) .OR. (N.EQ.0) .OR.
+     +    ((ALPHA.EQ.ZERO).AND. (BETA.EQ.ONE))) RETURN
+      IF (LSAME(TRANS,'N')) THEN
+          LENX = N
+          LENY = M
+      ELSE
+          LENX = M
+          LENY = N
+      END IF
+      IF (INCX.GT.0) THEN
+          KX = 1
+      ELSE
+          KX = 1 - (LENX-1)*INCX
+      END IF
+      IF (INCY.GT.0) THEN
+          KY = 1
+      ELSE
+          KY = 1 - (LENY-1)*INCY
+      END IF
+      IF (BETA.NE.ONE) THEN
+          IF (INCY.EQ.1) THEN
+              IF (BETA.EQ.ZERO) THEN
+                  DO 10 I = 1,LENY
+                      Y(I) = ZERO
+   10             CONTINUE
+              ELSE
+                  DO 20 I = 1,LENY
+                      Y(I) = BETA*Y(I)
+   20             CONTINUE
+              END IF
+          ELSE
+              IY = KY
+              IF (BETA.EQ.ZERO) THEN
+                  DO 30 I = 1,LENY
+                      Y(IY) = ZERO
+                      IY = IY + INCY
+   30             CONTINUE
+              ELSE
+                  DO 40 I = 1,LENY
+                      Y(IY) = BETA*Y(IY)
+                      IY = IY + INCY
+   40             CONTINUE
+              END IF
+          END IF
+      END IF
+      IF (ALPHA.EQ.ZERO) RETURN
+      IF (LSAME(TRANS,'N')) THEN
+          JX = KX
+          IF (INCY.EQ.1) THEN
+              DO 60 J = 1,N
+                  TEMP = ALPHA*X(JX)
+                  DO 50 I = 1,M
+                      Y(I) = Y(I) + TEMP*A(I,J)
+   50             CONTINUE
+                  JX = JX + INCX
+   60         CONTINUE
+          ELSE
+              DO 80 J = 1,N
+                  TEMP = ALPHA*X(JX)
+                  IY = KY
+                  DO 70 I = 1,M
+                      Y(IY) = Y(IY) + TEMP*A(I,J)
+                      IY = IY + INCY
+   70             CONTINUE
+                  JX = JX + INCX
+   80         CONTINUE
+          END IF
+      ELSE
+          JY = KY
+          IF (INCX.EQ.1) THEN
+              DO 100 J = 1,N
+                  TEMP = ZERO
+                  DO 90 I = 1,M
+                      TEMP = TEMP + A(I,J)*X(I)
+   90             CONTINUE
+                  Y(JY) = Y(JY) + ALPHA*TEMP
+                  JY = JY + INCY
+  100         CONTINUE
+          ELSE
+              DO 120 J = 1,N
+                  TEMP = ZERO
+                  IX = KX
+                  DO 110 I = 1,M
+                      TEMP = TEMP + A(I,J)*X(IX)
+                      IX = IX + INCX
+  110             CONTINUE
+                  Y(JY) = Y(JY) + ALPHA*TEMP
+                  JY = JY + INCY
+  120         CONTINUE
+          END IF
+      END IF
+      RETURN
+      END
+
+      SUBROUTINE DSCAL(N,DA,DX,INCX)
+      DOUBLE PRECISION DA
+      INTEGER INCX,N
+      DOUBLE PRECISION DX(*)
+      INTEGER I,M,MP1,NINCX
+      DOUBLE PRECISION ONE
+      PARAMETER (ONE=1.0D+0)
+      INTRINSIC MOD
+      IF (N.LE.0 .OR. INCX.LE.0 .OR. DA.EQ.ONE) RETURN
+      IF (INCX.EQ.1) THEN
+         M = MOD(N,5)
+         IF (M.NE.0) THEN
+            DO I = 1,M
+               DX(I) = DA*DX(I)
+            END DO
+            IF (N.LT.5) RETURN
+         END IF
+         MP1 = M + 1
+         DO I = MP1,N,5
+            DX(I) = DA*DX(I)
+            DX(I+1) = DA*DX(I+1)
+            DX(I+2) = DA*DX(I+2)
+            DX(I+3) = DA*DX(I+3)
+            DX(I+4) = DA*DX(I+4)
+         END DO
+      ELSE
+         NINCX = N*INCX
+         DO I = 1,NINCX,INCX
+            DX(I) = DA*DX(I)
+         END DO
+      END IF
+      RETURN
+      END
+
+      SUBROUTINE DSWAP(N,DX,INCX,DY,INCY)
+      INTEGER INCX,INCY,N
+      DOUBLE PRECISION DX(*),DY(*)
+      DOUBLE PRECISION DTEMP
+      INTEGER I,IX,IY,M,MP1
+      INTRINSIC MOD
+      IF (N.LE.0) RETURN
+      IF (INCX.EQ.1 .AND. INCY.EQ.1) THEN
+         M = MOD(N,3)
+         IF (M.NE.0) THEN
+            DO I = 1,M
+               DTEMP = DX(I)
+               DX(I) = DY(I)
+               DY(I) = DTEMP
+            END DO
+            IF (N.LT.3) RETURN
+         END IF
+         MP1 = M + 1
+         DO I = MP1,N,3
+            DTEMP = DX(I)
+            DX(I) = DY(I)
+            DY(I) = DTEMP
+            DTEMP = DX(I+1)
+            DX(I+1) = DY(I+1)
+            DY(I+1) = DTEMP
+            DTEMP = DX(I+2)
+            DX(I+2) = DY(I+2)
+            DY(I+2) = DTEMP
+         END DO
+      ELSE
+         IX = 1
+         IY = 1
+         IF (INCX.LT.0) IX = (-N+1)*INCX + 1
+         IF (INCY.LT.0) IY = (-N+1)*INCY + 1
+         DO I = 1,N
+            DTEMP = DX(IX)
+            DX(IX) = DY(IY)
+            DY(IY) = DTEMP
+            IX = IX + INCX
+            IY = IY + INCY
+         END DO
+      END IF
+      RETURN
+      END
+
       LOGICAL FUNCTION DISNAN( DIN )
       DOUBLE PRECISION, INTENT(IN) :: DIN
       LOGICAL DLAISNAN
@@ -1019,6 +1223,7 @@
       END IF
       RETURN
       END
+      
       INTEGER FUNCTION ILAENV( ISPEC, NAME, OPTS, N1, N2, N3, N4 )
       CHARACTER*( * )    NAME, OPTS
       INTEGER            ISPEC, N1, N2, N3, N4
@@ -1504,6 +1709,7 @@
       ILAENV = IPARMQ( ISPEC, NAME, OPTS, N1, N2, N3, N4 )
       RETURN
       END
+      
       INTEGER FUNCTION IPARMQ( ISPEC, NAME, OPTS, N, ILO, IHI,
      $                         LWORK )
       INTEGER            IHI, ILO, ISPEC, LWORK, N
@@ -1635,8 +1841,127 @@
       END IF
       LSAME = INTA .EQ. INTB
       END
+
       SUBROUTINE XERBLA( SRNAME, INFO )
       CHARACTER*(*)      SRNAME
       INTEGER            INFO
       INTRINSIC          LEN_TRIM
+      END
+      SUBROUTINE dcopy(N,DX,INCX,DY,INCY)
+      INTEGER INCX,INCY,N
+      DOUBLE PRECISION DX(*),DY(*)
+      INTEGER I,IX,IY,M,MP1
+      INTRINSIC mod
+      IF (n.LE.0) RETURN
+      IF (incx.EQ.1 .AND. incy.EQ.1) THEN
+         m = mod(n,7)
+         IF (m.NE.0) THEN
+            DO i = 1,m
+               dy(i) = dx(i)
+            END DO
+            IF (n.LT.7) RETURN
+         END IF
+         mp1 = m + 1
+         DO i = mp1,n,7
+            dy(i) = dx(i)
+            dy(i+1) = dx(i+1)
+            dy(i+2) = dx(i+2)
+            dy(i+3) = dx(i+3)
+            dy(i+4) = dx(i+4)
+            dy(i+5) = dx(i+5)
+            dy(i+6) = dx(i+6)
+         END DO
+      ELSE
+         ix = 1
+         iy = 1
+         IF (incx.LT.0) ix = (-n+1)*incx + 1
+         IF (incy.LT.0) iy = (-n+1)*incy + 1
+         DO i = 1,n
+            dy(iy) = dx(ix)
+            ix = ix + incx
+            iy = iy + incy
+         END DO
+      END IF
+      RETURN
+      END
+
+      DOUBLE PRECISION FUNCTION dlamch( CMACH )
+      CHARACTER          cmach
+      DOUBLE PRECISION   one, zero
+      parameter( one = 1.0d+0, zero = 0.0d+0 )
+      DOUBLE PRECISION   rnd, eps, sfmin, small, rmach
+      LOGICAL            lsame
+      EXTERNAL           lsame
+      INTRINSIC          digits, epsilon, huge, maxexponent,
+     $                   minexponent, radix, tiny
+      rnd = one
+      IF( one.EQ.rnd ) THEN
+         eps = epsilon(zero) * 0.5
+      ELSE
+         eps = epsilon(zero)
+      END IF
+      IF( lsame( cmach, 'E' ) ) THEN
+         rmach = eps
+      ELSE IF( lsame( cmach, 'S' ) ) THEN
+         sfmin = tiny(zero)
+         small = one / huge(zero)
+         IF( small.GE.sfmin ) THEN
+            sfmin = small*( one+eps )
+         END IF
+         rmach = sfmin
+      ELSE IF( lsame( cmach, 'B' ) ) THEN
+         rmach = radix(zero)
+      ELSE IF( lsame( cmach, 'P' ) ) THEN
+         rmach = eps * radix(zero)
+      ELSE IF( lsame( cmach, 'N' ) ) THEN
+         rmach = digits(zero)
+      ELSE IF( lsame( cmach, 'R' ) ) THEN
+         rmach = rnd
+      ELSE IF( lsame( cmach, 'M' ) ) THEN
+         rmach = minexponent(zero)
+      ELSE IF( lsame( cmach, 'U' ) ) THEN
+         rmach = tiny(zero)
+      ELSE IF( lsame( cmach, 'L' ) ) THEN
+         rmach = maxexponent(zero)
+      ELSE IF( lsame( cmach, 'O' ) ) THEN
+         rmach = huge(zero)
+      ELSE
+         rmach = zero
+      END IF
+      dlamch = rmach
+      RETURN
+      END
+
+      INTEGER FUNCTION idamax(N,DX,INCX)
+      INTEGER incx,n
+      DOUBLE PRECISION dx(*)
+      DOUBLE PRECISION dmax
+      INTEGER i,ix
+      INTRINSIC dabs
+      idamax = 0
+      IF (n.LT.1 .OR. incx.LE.0) RETURN
+      idamax = 1
+      IF (n.EQ.1) RETURN
+      IF (incx.EQ.1) THEN
+         dmax = dabs(dx(1))
+         DO i = 2,n
+            IF (dabs(dx(i)).GT.dmax) THEN
+               idamax = i
+               dmax = dabs(dx(i))
+            END IF
+         END DO
+      ELSE
+         ix = 1
+         dmax = dabs(dx(1))
+         ix = ix + incx
+         DO i = 2,n
+            IF (dabs(dx(ix)).GT.dmax) THEN
+               idamax = i
+               dmax = dabs(dx(ix))
+            END IF
+            ix = ix + incx
+         END DO
+      END IF
+      RETURN
+
       END

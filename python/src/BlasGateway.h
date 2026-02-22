@@ -67,10 +67,10 @@ static inline void potrf(char *uplo, int n, double a[], int lda, int *info) {
   dpotrf_(uplo, &n, a, &lda, info, 1);
 }
 
-// static inline void posv(char *uplo, int n, int nrhs, double a[], int lda, double b[], int ldb,
-// 	  int *info) {
-//   dposv_(uplo, &n, &nrhs, a, &lda, b, &ldb, info, 1);
-// }
+static inline void posv(char *uplo, int n, int nrhs, double a[], int lda, double b[],
+                        int ldb, int *info) {
+  dposv_(uplo, &n, &nrhs, a, &lda, b, &ldb, info, 1);
+}
 
 static inline void pstrf(char *uplo, int n, double a[], int lda, int piv[], int *rank,
 								 double tol, double work[], int *info) {
