@@ -23,7 +23,7 @@ from importlib.metadata import PackageNotFoundError, version as _version
 try:
   __version__ = _version("randompack")
 except PackageNotFoundError:
-  __version__ = "0.1.0"
+  __version__ = None
 
 from ._core import Rng, engines
 __all__ = ["Rng", "engines"]

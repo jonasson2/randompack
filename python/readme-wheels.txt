@@ -6,6 +6,7 @@ gh run list --workflow wheels
 gh run list --workflow wheels --limit 10
 gh run watch
 gh run download <RUN_ID> -D wheelhouse
+– or view on github.com–Actions
 
 And more gh commands:
 ---------------------

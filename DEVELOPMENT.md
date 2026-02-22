@@ -29,6 +29,11 @@ ninja -C release install    # used for Julia and Fortran
                             # (copies library to ./install)
 release/examples/RunRandom  # simple example program
 
+All subprojects
+===============
+scripts/set_version.sh      # sets version number across all the language interfaces
+build-all.sh                # rebuilds all language interfaces
+
 Julia
 =====
 FIRST TIME SETUP:
@@ -101,6 +106,8 @@ R                                  # start R
 
 BUILD WHEELS
 ============
+check_python_wheel.sh  # Build and test a clean Python wheel and sdist (local system only)
+.                      # in <repo-root>/release-python/
 See python/readme-wheels.txt
 
 Normal testing
@@ -147,6 +154,7 @@ release/examples/TimeDistC -h               # display short help
 Extra Testing
 =============
 scripts/run-test-variants.sh  # Run built-in BLAS, no128, and nosimd variants
+scripts/test-all.sh           # Run tests for all language interfaces
 
 TestU01:
 In some folder:

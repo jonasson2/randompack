@@ -1,11 +1,10 @@
 #!/bin/sh
-# MAKE THE R PACKAGE MATCH THE C PACKAGE
 set -eu
-[ -f .randompack-root ] || {
-  echo "syncR.sh: run this from the repository root (missing .randompack-root)" 1>&2
-  exit 1
-}
-ROOT=$(cd "$(dirname "$0")/.." && pwd)
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+REPO_ROOT=$(dirname "$SCRIPT_DIR")
+cd "$REPO_ROOT"
+
+# MAKE THE R PACKAGE MATCH THE C PACKAGE
 
 # SYNC SOURCE FILES
 rsync -av --delete \
@@ -18,24 +17,16 @@ rsync -av --delete \
   --exclude='printX.h' \
   --exclude='*_float.inc' \
   --exclude='*_float.h' \
-  $ROOT/src/ \
-  $ROOT/r-package/src/
+  src/ \
+  r-package/src/
 
 # COPY LICENSE FILE
-cp -f $ROOT/LICENSE $ROOT/r-package/LICENSE.md
+cp -f LICENSE r-package/LICENSE.md
 
 # COMMENT OUT ALL FLOAT INCLUDES
 # Find all source files and comment out any #include with *_float.*
-find $ROOT/r-package/src -type f \( -name "*.c" -o -name "*.h" -o -name "*.inc" \) \
+find r-package/src -type f \( -name "*.c" -o -name "*.h" -o -name "*.inc" \) \
   -exec sed -i.bak 's|^\(#include.*_float\.\)|// \1|' {} \;
 
 # Remove backup files
-rm -f $ROOT/r-package/src/*.bak
-
-# COPY VERSION NUMBER FROM MESON.BUILD TO DESCRIPTION
-ver=$(sed -n "s/.*version[[:space:]]*:[[:space:]]*'\([^']*\)'.*/\1/p" \
-  $ROOT/meson.build | head -n 1)
-[ -n "$ver" ] || { echo "syncR.sh: version not found" 1>&2; exit 1; }
-tmp=$ROOT/r-package/DESCRIPTION.tmp
-sed "s/^Version:.*/Version: $ver/" $ROOT/r-package/DESCRIPTION > $tmp
-mv $tmp $ROOT/r-package/DESCRIPTION
+rm -f r-package/src/*.bak

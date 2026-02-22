@@ -1,22 +1,19 @@
 #!/bin/sh
-# Run test variants in separate build dirs.
 set -eu
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+REPO_ROOT=$(dirname "$SCRIPT_DIR")
+cd "$REPO_ROOT"
 
-[ -f .randompack-root ] || {
-  echo "run-test-variants.sh: run this from the repository root (missing .randompack-root)" 1>&2
-  exit 1
-}
-
-ROOT=$(cd "$(dirname "$0")/.." && pwd)
+# Run test variants in separate build dirs.
 
 echo RUNNING BUILTIN BLAS VARIANT
-meson setup "$ROOT/test-builtin-blas" -Dblas=builtin -Dbuildtype=release
-meson test -C "$ROOT/test-builtin-blas"
+meson setup test-builtin-blas -Dblas=builtin -Dbuildtype=release
+meson test -C test-builtin-blas
 
 echo RUNNING NO128 VARIANT
-meson setup "$ROOT/test-no128" -Dforce_no128=true -Dbuildtype=release
-meson test -C "$ROOT/test-no128"
+meson setup test-no128 -Dforce_no128=true -Dbuildtype=release
+meson test -C test-no128
 
 echo RUNNING NOSIMD VARIANT
-meson setup "$ROOT/test-nosimd" -Dforce_nosimd=true -Dbuildtype=release
-meson test -C "$ROOT/test-nosimd"
+meson setup test-nosimd -Dforce_nosimd=true -Dbuildtype=release
+meson test -C test-nosimd

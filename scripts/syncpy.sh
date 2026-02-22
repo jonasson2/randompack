@@ -1,12 +1,8 @@
+#!/bin/sh
 set -eu
-
-# Ensure we are at repo root
-[ -f .randompack-root ] || {
-  echo "syncpy.sh: run this from the repository root (missing .randompack-root)" 1>&2
-  exit 1
-}
-
-ROOT=$(cd "$(dirname "$0")/.." && pwd)
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+REPO_ROOT=$(dirname "$SCRIPT_DIR")
+cd "$REPO_ROOT"
 
 echo "Syncing C sources to python/src..."
 
@@ -14,10 +10,10 @@ rsync -av --delete \
   --exclude='.DS_Store' \
   --exclude='meson.build' \
   --exclude='printX.c' \
-  $ROOT/src/ \
-  $ROOT/python/src/
+  src/ \
+  python/src/
 
 echo "Copying LICENSE..."
-cp -f $ROOT/LICENSE $ROOT/python/LICENSE
+cp -f LICENSE python/LICENSE
 
 echo "Sync complete."

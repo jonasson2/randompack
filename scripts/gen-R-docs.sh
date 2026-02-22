@@ -1,10 +1,10 @@
-#!/bin/bash
-# Regenerate documentation from roxygen comments
+#!/bin/sh
 set -eu
-[ -f .randompack-root ] || {
-  echo "gendocs.sh: run this from the repository root (missing .randompack-root)" 1>&2
-  exit 1
-}
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+REPO_ROOT=$(dirname "$SCRIPT_DIR")
+cd "$REPO_ROOT"
+
+# Regenerate documentation from roxygen comments
 Rscript -e 'roxygen2::roxygenise("r-package")'
 # Generate HTML for documentation files
 Rscript -e 'tools::Rd2HTML("r-package/man/randompack-package.Rd", out = "randompack-package.html")'

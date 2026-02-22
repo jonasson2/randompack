@@ -1,11 +1,15 @@
 #!/bin/sh
-#
-# release-python.sh
+set -eu
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+REPO_ROOT=$(dirname "$SCRIPT_DIR")
+cd "$REPO_ROOT"
+
+# check-python-wheel.sh
+# Build and test a clean Python wheel and sdist (local system only).
 #
 # Build a clean Python wheel and sdist for the randompack package.
 #
 # Assumptions:
-#   - Script is run from the repository root.
 #   - The Python package lives in ./python/
 #   - meson-python is the build backend.
 #
@@ -18,18 +22,8 @@
 #   6. Copies final artifacts into ./release-python/.
 #
 # The main repository is not modified.
-#
-
-set -e
-
-[ -f .randompack-root ] || {
-  echo "release-python.sh: run this from the repository root (missing .randompack-root)" 1>&2
-  exit 1
-}
-
-repo_root="$(pwd)"
 tmp="${TMPDIR:-/tmp}/randompack-python-release"
-release_dir="$repo_root/release-python"
+release_dir="$PWD/release-python"
 
 echo "Staging in $tmp"
 rm -rf "$tmp"
@@ -68,7 +62,7 @@ deactivate
 mkdir -p "$release_dir"
 cp dist/* "$release_dir/"
 
-cd "$repo_root"
+cd "$REPO_ROOT"
 echo "Release complete."
 echo "Artifacts now in: $release_dir"
 ls -1 "$release_dir"

@@ -9,7 +9,10 @@
 project = 'Randompack'
 copyright = '2026, Kristján Jónasson'
 author = 'Kristján Jónasson'
-release = '0.1.0'
+
+from importlib.metadata import version as _version
+release = _version('randompack')
+version = release
 
 # -- General configuration ---------------------------------------------------
 

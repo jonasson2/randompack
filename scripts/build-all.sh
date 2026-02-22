@@ -1,17 +1,13 @@
 #!/bin/sh
-# Build all language interfaces (per DEVELOPMENT.md)
 set -eu
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+REPO_ROOT=$(dirname "$SCRIPT_DIR")
+cd "$REPO_ROOT"
 
-[ -f .randompack-root ] || {
-  echo "build-all.sh: run this from the repository root (missing .randompack-root)" 1>&2
-  exit 1
-}
-
-ROOT=$(cd "$(dirname "$0")/.." && pwd)
-
-$ROOT/scripts/meson-setup.sh release
-ninja -C $ROOT/release
-ninja -C $ROOT/release install
-$ROOT/scripts/syncpy.sh
-$ROOT/scripts/syncR.sh
-R CMD INSTALL $ROOT/r-package
+# Build all language interfaces (per DEVELOPMENT.md)
+scripts/meson-setup.sh release
+ninja -C release
+ninja -C release install
+scripts/syncpy.sh
+scripts/syncR.sh
+R CMD INSTALL r-package

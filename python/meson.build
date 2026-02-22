@@ -11,14 +11,14 @@
 # where <build-dir> is in the active Python environment’s site-packages folder
 # (outside randompack's folder tree).
 #
-#
 # Within the same Python environment, simply: >>> import randompack. The
 # editable loader will trigger a rebuild if sources changed. Rerunning pip is
 # only needed if pyproject.toml, package layout, or Python version changes.
 
 project('randompack', 'c',
-  version: '0.1.0',
-  default_options: ['c_std=c11'])
+  version: '0.1.1',,,
+  default_options: ['c_std=c11']
+)
 
 py = import('python').find_installation(pure: false)
 cc = meson.get_compiler('c')

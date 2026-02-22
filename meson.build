@@ -1,6 +1,6 @@
 project('randompack', 'c',
-  version : '0.1.0',
-  default_options : [
+  version: '0.1.1',,,
+  default_options: [
     'c_std=c11',
     'warning_level=3',
     'buildtype=debug',
@@ -20,7 +20,7 @@ host_system = host_machine.system()
 blas_option = get_option('blas')
 
 if buildtype.startswith('debug')
-  add_project_arguments('-DDEBUG_PRINT', language : 'c')
+  add_project_arguments('-DDEBUG_PRINT', language: 'c')
 endif
 
 cc = meson.get_compiler('c')
@@ -29,7 +29,7 @@ perf_opt = get_option('perf')
 force_no128 = get_option('force_no128')
 force_nosimd = get_option('force_nosimd')
 if perf_opt
-  add_project_arguments('-DRANDOMPACK_PERF', language : 'c')
+  add_project_arguments('-DRANDOMPACK_PERF', language: 'c')
   add_project_arguments(
     cc.get_supported_arguments([
       '-fno-math-errno',
@@ -37,16 +37,16 @@ if perf_opt
       '-fomit-frame-pointer',
       '-fno-semantic-interposition',
     ]),
-    language : 'c'
+    language: 'c'
   )
 endif
 
 if force_nosimd
-  add_project_arguments('-DPRETEND_NOSIMD', language : 'c')
+  add_project_arguments('-DPRETEND_NOSIMD', language: 'c')
 endif
 
 if force_no128
-  add_project_arguments('-DRANDOMPACK_PRETEND_NO128', language : 'c')
+  add_project_arguments('-DRANDOMPACK_PRETEND_NO128', language: 'c')
 endif
 
 build_avx2 = false
@@ -69,7 +69,7 @@ if build_avx2
 endif
 
 math_dep = cc.find_library('m', required: false)
-math_deps = math_dep.found() ? [math_dep] : []
+math_deps = math_dep.found() ? [math_dep]: []
 
 blas_dep = disabler()
 blas_found = 'none'
@@ -85,7 +85,7 @@ else
   blas_backends = [blas_option]
 endif
 
-foreach blas_name : blas_backends
+foreach blas_name: blas_backends
   if blas_name == 'accelerate'
     if host_system == 'darwin'
       blas_dep = dependency('appleframeworks', modules: 'Accelerate', required: false)
@@ -94,7 +94,7 @@ foreach blas_name : blas_backends
       endif
     endif
   elif blas_name == 'mkl'
-    foreach mkl_variant : ['mkl-dynamic-lp64-iomp', 'mkl-static-lp64-iomp', 'mkl']
+    foreach mkl_variant: ['mkl-dynamic-lp64-iomp', 'mkl-static-lp64-iomp', 'mkl']
       blas_dep = dependency(mkl_variant, required: false)
       if blas_dep.found()
         break
@@ -131,7 +131,7 @@ if not blas_dep.found() and not using_builtin_blas
   using_builtin_blas = true
 endif
 
-blas_deps = blas_dep.found() ? [blas_dep] : []
+blas_deps = blas_dep.found() ? [blas_dep]: []
 if using_builtin_blas
   message('Using built-in BLAS from src/blas.f')
 else
@@ -144,9 +144,9 @@ endif
 
 using_accelerate = (host_system == 'darwin') and (blas_found == 'Accelerate')
 local_dpstrf = using_accelerate or using_builtin_blas
-local_dpstrf_args = local_dpstrf ? ['-DLOCAL_DPSTRF'] : []
+local_dpstrf_args = local_dpstrf ? ['-DLOCAL_DPSTRF']: []
 accel_vv = using_accelerate and (not using_builtin_blas)
-accel_vv_args = accel_vv ? ['-DUSE_ACCEL_VV'] : []
+accel_vv_args = accel_vv ? ['-DUSE_ACCEL_VV']: []
 
 # -------------------------------------------------
 # Optional Fortran support
@@ -161,16 +161,16 @@ if has_fortran
   if fc.get_id() == 'gcc'
     add_project_arguments('-fno-backtrace', language: 'fortran')
   endif
-  add_project_arguments('-Wno-do-subscript', language : 'fortran')
+  add_project_arguments('-Wno-do-subscript', language: 'fortran')
   add_project_arguments(
     fc.get_supported_arguments(['-Wno-function-elimination']),
-    language : 'fortran'
+    language: 'fortran'
   )
 endif
 
 if has_fortran and not need_fortran
   kind_check = fc.run('program rp_kind_check\n' +
-                      '  use, intrinsic :: iso_c_binding\n' +
+                      '  use, intrinsic:: iso_c_binding\n' +
                       '  implicit none\n' +
                       '  if (kind(1.0) /= c_float) stop 1\n' +
                       '  if (kind(1.0d0) /= c_double) stop 2\n' +

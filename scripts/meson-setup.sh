@@ -1,11 +1,8 @@
 #!/bin/sh
 set -eu
-
-# Ensure we are at repo root
-[ -f .randompack-root ] || {
-  echo "meson-setup.sh: run this from the repository root (missing .randompack-root)" 1>&2
-  exit 1
-}
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+REPO_ROOT=$(dirname "$SCRIPT_DIR")
+cd "$REPO_ROOT"
 
 if [ $# -lt 1 ]; then
   echo "usage: scripts/meson-setup.sh <release|debug> [meson args...]" 1>&2
@@ -14,8 +11,6 @@ fi
 
 buildtype="$1"
 shift
-
-ROOT=$(pwd)
 
 case "$buildtype" in
   release|debug)
@@ -27,6 +22,6 @@ case "$buildtype" in
 esac
 
 meson setup release \
-  --prefix "$ROOT/install" \
+  --prefix "$PWD/install" \
   -Dbuildtype="$buildtype" \
   "$@"
