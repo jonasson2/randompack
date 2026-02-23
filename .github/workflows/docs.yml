@@ -10,7 +10,7 @@ jobs:
   build:
     runs-on: macos-14
     env:
-      CIBW_BUILD: "cp313-*"
+      CIBW_BUILD: "cp312-*"
       CIBW_ARCHS_MACOS: arm64
       CIBW_CONFIG_SETTINGS: "setup-args=-Dblas=accelerate"
     steps:

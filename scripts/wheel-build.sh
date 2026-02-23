@@ -5,3 +5,4 @@ gh workflow run linux.yml
 gh workflow run mac-arm.yml
 gh workflow run mac-x86.yml
 gh workflow run windows.yml
+gh workflow run docs.yml
