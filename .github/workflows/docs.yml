@@ -3,7 +3,7 @@ on:
   push:
     branches: [main]
     paths:
-      - "docs/**"
+      - "python/docs/**"
 
 permissions:
   contents: write
@@ -23,15 +23,15 @@ jobs:
       - name: Install docs dependencies
         run: |
           python -m pip install -U pip
-          python -m pip install -r docs/requirements.txt
+          python -m pip install -r python/docs/requirements.txt
 
       - name: Build HTML
-        working-directory: docs
+        working-directory: python/docs
         run: make html
 
       - name: Publish to gh-pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: docs/_build/html
+          publish_dir: python/docs/_build/html
           force_orphan: true
