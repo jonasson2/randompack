@@ -24,11 +24,11 @@ jobs:
       - name: Install gfortran
         run: brew install gcc
 
-        - name: Install gfortran
-          run: brew install gcc
+      - name: Install gfortran
+        run: brew install gcc
 
-        - name: Locate gfortran and export FC
-          run: |
+      - name: Locate gfortran and export FC
+        run: |
             GFORTRAN=$(ls "$(brew --prefix)/bin"/gfortran-* | head -n1)
             echo "Found gfortran at $GFORTRAN"
             echo "FC=$GFORTRAN" >> $GITHUB_ENV
