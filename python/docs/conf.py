@@ -6,6 +6,12 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
+# (for local build:
+#   cd python/
+#   pip install -e .
+#   cd docs
+#   make html)
+
 project = 'Randompack'
 copyright = '2026, Kristján Jónasson'
 author = 'Kristján Jónasson'
@@ -20,7 +26,7 @@ release = data["project"]["version"]
 
 import os
 import sys
-sys.path.insert(0, os.path.abspath(".."))
+from pathlib import Path
 
 extensions = [
     "sphinx.ext.autodoc",
