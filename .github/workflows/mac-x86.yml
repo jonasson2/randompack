@@ -10,7 +10,7 @@ jobs:
     runs-on: macos-13
 
     env:
-      CIBW_ARCHS_MACOS: x86_64
+      CIBW_ARCHS_MACOS: x8664
       CIBW_BUILD: "cp310-* cp311-* cp312-* cp313-* cp314-*"
       CIBW_CONFIG_SETTINGS: "setup-args=-Dblas=accelerate"
       
