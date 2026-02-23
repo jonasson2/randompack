@@ -1,4 +1,4 @@
-name: macOS arm wheels
+name: Linux-wheels
 
 on:
   workflow_dispatch:
@@ -7,12 +7,12 @@ on:
 
 jobs:
   build:
-    runs-on: macos-14
+    runs-on: ubuntu-latest
 
     env:
-      CIBW_ARCHS_MACOS: arm_64
+      CIBW_ARCHS_LINUX: "x86_64"
       CIBW_BUILD: "cp313-*"
-      CIBW_CONFIG_SETTINGS: "setup-args=-Dblas=accelerate"
+      CIBW_CONFIG_SETTINGS: "setup-args=-Dblas=builtin"
       
     steps:
       - uses: actions/checkout@v4
@@ -20,21 +20,12 @@ jobs:
       - name: Install build tools
         run: python -m pip install -U pip cibuildwheel
 
-      - name: Locate gfortran and export FC
-        run: |
-          brew install gcc
-          FC=$(ls "$(brew --prefix)/bin"/gfortran-* | head -n1)
-          echo "FC=$FC" >> "$GITHUB_ENV"
-
-      - name: Verify architecture
-        run: uname -m
-
       - name: Build wheels
         run: python -m cibuildwheel python/
 
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
-          name: wheels-macos-arm
+          name: wheels-linux
           path: wheelhouse/*.whl
           retention-days: 7

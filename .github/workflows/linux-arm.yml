@@ -1,4 +1,4 @@
-name: Linux wheels (aarch64)
+name: Linux-arm-wheels
 
 on:
   workflow_dispatch:
@@ -13,6 +13,7 @@ jobs:
       CIBW_ARCHS_LINUX: aarch64
       CIBW_BUILD: "cp313-*"
       CIBW_CONFIG_SETTINGS: "setup-args=-Dblas=builtin"
+      CIBW_SKIP: "*musllinux*"
 
     steps:
       - uses: actions/checkout@v4
