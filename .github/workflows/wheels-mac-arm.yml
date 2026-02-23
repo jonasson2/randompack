@@ -1,6 +1,6 @@
 name: macOS arm wheels
 
-on:y
+on:
   workflow_dispatch:
   release:
     types: [published]

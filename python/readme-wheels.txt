@@ -1,10 +1,10 @@
 Wheels commands:
 ----------------
 gh workflow list
-gh workflow run wheels        # trigger wheel building
-gh run list --workflow wheels
-gh run list --workflow wheels --limit 10
+gh workflow run xxx.yml        # trigger wheel building
+gh run list
 gh run watch
+gh run list --json databaseId --jq '.[].databaseId'
 gh run download <RUN_ID> -D wheelhouse
 – or view on github.com–Actions
 
