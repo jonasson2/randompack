@@ -1,0 +1,31 @@
+name: Linux wheels (aarch64)
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    env:
+      CIBW_ARCHS_LINUX: aarch64
+      CIBW_BUILD: "cp313-*"
+      CIBW_CONFIG_SETTINGS: "setup-args=-Dblas=builtin"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build tools
+        run: python -m pip install -U pip cibuildwheel
+
+      - name: Build wheels
+        run: python -m cibuildwheel python/
+
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-linux-aarch64
+          path: wheelhouse/*.whl
+          retention-days: 7
