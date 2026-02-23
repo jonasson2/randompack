@@ -10,9 +10,11 @@ project = 'Randompack'
 copyright = '2026, Kristján Jónasson'
 author = 'Kristján Jónasson'
 
-from importlib.metadata import version as _version
-release = _version('randompack')
-version = release
+import pathlib, tomllib
+
+pyproject = pathlib.Path(__file__).parent.parent / "pyproject.toml"
+data = tomllib.loads(pyproject.read_text(encoding="utf-8"))
+release = data["project"]["version"]
 
 # -- General configuration ---------------------------------------------------
 

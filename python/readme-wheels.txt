@@ -5,12 +5,13 @@ gh workflow list
 gh workflow run xxx.yml        # trigger wheel building
 gh run watch
 gh run list
+gh run view <RUN-ID> --log-failed
 gh run list --json databaseId --jq '.[].databaseId'  # just the id-s, use in foreach...
-gh run delete <RUN_ID>
+gh run delete <RUN-ID>
 – or view on github.com–Actions
 
 rm -rf wheelhouse/*
-gh run download <RUN_ID> -D wheelhouse
+gh run download <RUN-ID> -D wheelhouse
 
 And more gh commands:
 ---------------------
