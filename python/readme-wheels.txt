@@ -2,16 +2,18 @@ Wheels commands:
 ----------------
 gh workflow list
 gh workflow run xxx.yml        # trigger wheel building
-gh run list
 gh run watch
-gh run list --json databaseId --jq '.[].databaseId'
+gh run list
+gh run list --json databaseId --jq '.[].databaseId'  # just the id-s, use in foreach...
 gh run download <RUN_ID> -D wheelhouse
+gh run delete <RUN_ID>
 – or view on github.com–Actions
+
 
 And more gh commands:
 ---------------------
 gh release create v0.1.0 --title "v0.1.0" --notes "Initial release."
-<also triggers wheel building>
+(also triggers wheel building)
 
 Prepare upload to PyPi:
 -----------------------
