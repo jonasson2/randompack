@@ -10,33 +10,15 @@ requires-python = ">=3.9"
 dependencies = ["numpy>=1.22"]
 
 [tool.cibuildwheel]
-# build = "cp310-* cp311-* cp312-* cp313-* cp314-*"
-build = "cp313-*"
 skip = "*t-*"
-build-frontend = "build"
-
 test-requires = ["numpy"]
 test-command = """
-python - <<'PY'
-import numpy as np
+python -c "import numpy as np
 import randompack
 rng = randompack.Rng()
 rng.unif(10)
 Sig = np.array([[2,1],[1,2]])
 rng.mvn(4, Sig)
-print("wheel smoke test OK")
-PY
+print('wheel smoke test OK')
+"
 """
-
-[tool.cibuildwheel.linux]
-archs = ["x86_64", "aarch64"]
-config-settings = "setup-args=-Dblas=builtin"
-
-[tool.cibuildwheel.windows]
-archs = ["AMD64"]
-config-settings = "setup-args=-Dblas=builtin"
-
-[tool.cibuildwheel.macos]
-# archs = ["x86_64", "arm64"] set in the .yml file(s)
-config-settings = "setup-args=-Dblas=accelerate"
-repair-wheel-command = "delocate-wheel --require-archs {delocate_archs} -w {dest_dir} -v {wheel}"
