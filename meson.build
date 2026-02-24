@@ -199,10 +199,13 @@ fortran_inc = []
 
 inc = include_directories('src')
 common_inc = include_directories('common')
-common_util = files(
-  'common/Util.c',
-  'common/getopt.c',
-)
+common_util = []
+if get_option('build_examples') or get_option('build_tests')
+  common_util = files(
+    'common/Util.c',
+    'common/getopt.c',
+  )
+endif
 
 if build_fortran_interface
   subdir('fortran')
