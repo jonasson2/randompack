@@ -1,5 +1,11 @@
 add_languages('cpp', required: true, native: false)
 
+common_inc = include_directories('../common')
+common_util = files(
+  '../common/Util.c',
+  '../common/getopt.c',
+)
+
 test_sources = files(
   'RunTests.c',
   'TestCreate.c',

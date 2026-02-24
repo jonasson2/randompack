@@ -1,3 +1,9 @@
+common_inc = include_directories('../common')
+common_util = files(
+  '../common/Util.c',
+  '../common/getopt.c',
+)
+
 threads_dep = dependency('threads', required: false)
 pthreads_ok = false
 if threads_dep.found()
