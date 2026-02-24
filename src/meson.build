@@ -90,7 +90,7 @@ librandompack = shared_library(
   include_directories: randompack_inc,
   dependencies: blas_deps + math_deps,
   c_args: base_c_args,
-  override_options: randompack_lto,
+  #override_options: randompack_lto,
   install: true,
 )
 
