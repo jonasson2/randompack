@@ -9,36 +9,42 @@ mpi_dep = dependency('mpi', required: false)
 run_varmasim = executable(
   'RunRandom',
   ['RunRandom.c'] + common_util,
+  include_directories : [common_inc],
   dependencies : [randompack_dep],
 )
 
 run_exp = executable(
   'RunExp',
   ['RunExp.c'] + common_util,
+  include_directories : [common_inc],
   dependencies : [randompack_dep],
 )
 
 time_engines = executable(
   'TimeEngines',
   ['TimeEngines.c', 'TimeUtil.c'] + common_util,
+  include_directories : [common_inc],
   dependencies : [randompack_dep],
 )
 
 time_fast = executable(
   'TimeFast',
   ['TimeFast.c', 'TimeUtil.c'] + common_util,
+  include_directories : [common_inc],
   dependencies : [randompack_dep],
 )
 
 time_fast_direct = executable(
   'TimeFastDirect',
   ['TimeFastDirect.c'] + common_util,
+  include_directories : [common_inc],
   dependencies : [randompack_dep],
 )
 
 time_distributions = executable(
   'TimeDistC',
   ['TimeDistC.c', 'TimeUtil.c'] + common_util,
+  include_directories : [common_inc],
   dependencies : [randompack_dep],
 )
 
@@ -52,24 +58,28 @@ time_distributions = executable(
 time_integers = executable(
   'TimeIntegers',
   ['TimeIntegers.c'] + common_util,
+  include_directories : [common_inc],
   dependencies : [randompack_dep],
 )
 
 examine_resolution = executable(
   'ExamineResolution',
   'ExamineResolution.c',
+  include_directories : [common_inc],
   dependencies : [randompack_dep],
 )
 
 draw_example = executable(
   'DrawDemo',
   'DrawDemo.c',
+  include_directories : [common_inc],
   dependencies : [randompack_dep],
 )
 
 raw_stream = executable(
   'RawStream',
   ['RawStream.c'] + common_util,
+  include_directories : [common_inc],
   dependencies : [randompack_dep],
 )
 
@@ -107,13 +117,13 @@ if testu01_prefix != ''
     'TestU01Driver',
     'TestU01Driver.c',
     dependencies : [randompack_dep] + testu01_libs,
-    include_directories : [testu01_inc],
+    include_directories : [testu01_inc, common_inc],
   )
   testu01_pit = executable(
     'TestU01PIT',
     'TestU01PIT.c',
     dependencies : [randompack_dep] + testu01_libs,
-    include_directories : [testu01_inc],
+    include_directories : [testu01_inc, common_inc],
   )
 endif
 
@@ -121,6 +131,7 @@ if threads_dep.found() and pthreads_ok
   thread_example = executable(
     'ThreadExample',
     'ThreadExample.c',
+    include_directories : [common_inc],
     dependencies : [randompack_dep, threads_dep],
   )
 endif
@@ -129,6 +140,7 @@ if mpi_dep.found() and threads_dep.found() and pthreads_ok
   mpi_thread_example = executable(
     'MpiThreadExample',
     'MpiThreadExample.c',
+    include_directories : [common_inc],
     dependencies: [
       randompack_dep,
       threads_dep,

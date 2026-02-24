@@ -41,6 +41,7 @@ blas_test_args = using_builtin_blas ? ['-DRANDOMPACK_BUILTIN_BLAS'] : []
 run_tests = executable(
   'RunTests',
   test_sources + extra_util,
+  include_directories: [common_inc],
   dependencies : [randompack_dep],
   c_args : ['-DRANDOMPACK_TEST_HOOKS'] + blas_test_args,
 )
@@ -51,6 +52,7 @@ run_tests_buf8 = executable(
   # Small buffer test to stress the buffer draw machinery
   'RunTestsBuf8',
   test_sources + extra_util,
+  include_directories: [common_inc],
   dependencies : [randompack_buf8_dep],
   c_args : ['-DRANDOMPACK_TEST_HOOKS', '-DBUFSIZE=8'] + blas_test_args,
 )
@@ -72,7 +74,7 @@ endif
 seedseq_test = executable(
   'TestSeedSeq',
   ['TestSeedSeq.cpp'],
-  include_directories : [inc],
+  include_directories : [inc, common_inc],
 )
 
 test('TestSeedSeq', seedseq_test)

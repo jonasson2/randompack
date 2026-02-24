@@ -197,7 +197,8 @@ fortran_inc = []
 # Includes / subdirectories
 # -------------------------------------------------
 
-inc = include_directories('src', 'common')
+inc = include_directories('src')
+common_inc = include_directories('common')
 common_util = files(
   'common/Util.c',
   'common/getopt.c',
