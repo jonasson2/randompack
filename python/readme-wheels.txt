@@ -10,6 +10,10 @@ gh run list --json databaseId --jq '.[].databaseId'  # just the id-s, use in for
 gh run delete <RUN-ID>
 – or view on github.com–Actions
 
+See also:
+scripts/wheel-build.sh
+scripts/wheel-download.sh
+
 rm -rf wheelhouse/*
 gh run download <RUN-ID> -D wheelhouse
 
@@ -22,8 +26,10 @@ Upload to TestPyPI:
 -------------------
 cd <root>/python
 python -m build -s  # build an sdist (<project>.tar.gz) in dist/
-cp wheelhouse/*/*.whl dist
-python -m twine check dist/*
+# These are done by scripts/wheel-download.sh:
+  cp wheelhouse/*/*.whl dist
+  python -m twine check dist/*
+
 python -m twine upload --repository testpypi dist/*  # test upload
 
 Try out what was uploaded:

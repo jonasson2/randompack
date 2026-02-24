@@ -69,7 +69,7 @@ else
 
   if blas_option == 'builtin'
     using_builtin_blas = true
-  elif blas_option == 'auto'
+  elif blas_option == 'auto' or blas_option == 'system'
     blas_backends = ['accelerate', 'mkl', 'openblas']
   else
     blas_backends = [blas_option]
@@ -113,11 +113,11 @@ else
     endif
   endforeach
 
-  if blas_explicit and not blas_dep.found()
+  if (blas_explicit or blas_option == 'system') and not blas_dep.found()
     error('Requested system BLAS not found: ' + blas_option)
   endif
 
-  if not blas_dep.found() and not using_builtin_blas
+  if not blas_dep.found() and not using_builtin_blas and blas_option != 'system'
     using_builtin_blas = true
   endif
 

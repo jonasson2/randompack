@@ -3,7 +3,7 @@
 option('blas',
   type: 'string',
   value: 'auto',
-  description: 'System BLAS: builtin/accelerate/mkl/openblas/auto (auto searches accelerate/mkl/openblas)'
+  description: 'System BLAS: builtin/accelerate/mkl/openblas/auto/system (auto searches accelerate/mkl/openblas)'
 )
 
 # Creates <build-dir>/examples/Test01Driver
@@ -17,6 +17,12 @@ option('build_examples',
   type: 'boolean',
   value: true,
   description: 'Build example programs'
+)
+
+option('build_fortran_interface',
+  type: 'boolean',
+  value: true,
+  description: 'Build the Fortran interface'
 )
 
 option('build_tests',

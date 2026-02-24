@@ -1,4 +1,6 @@
 // -*- mode: c; -*-
+#include <time.h>
+
 static void fill_bytes(uint8_t *a, int len, uint64_t *x) {
   for (int k = 0; k < len; k += 8) {
     uint64_t mixed = rand_splitmix64(x);

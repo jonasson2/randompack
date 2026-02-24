@@ -79,7 +79,7 @@ blas_explicit = (blas_option != 'builtin' and blas_option != 'auto')
 
 if blas_option == 'builtin'
   using_builtin_blas = true
-elif blas_option == 'auto'
+elif blas_option == 'auto' or blas_option == 'system'
   blas_backends = ['accelerate', 'mkl', 'openblas']
 else
   blas_backends = [blas_option]
@@ -123,11 +123,11 @@ foreach blas_name: blas_backends
   endif
 endforeach
 
-if blas_explicit and not blas_dep.found()
+if (blas_explicit or blas_option == 'system') and not blas_dep.found()
   error('Requested system BLAS not found: ' + blas_option)
 endif
 
-if not blas_dep.found() and not using_builtin_blas
+if not blas_dep.found() and not using_builtin_blas and blas_option != 'system'
   using_builtin_blas = true
 endif
 
@@ -155,6 +155,7 @@ accel_vv_args = accel_vv ? ['-DUSE_ACCEL_VV']: []
 need_fortran = local_dpstrf
 has_fortran = add_languages('fortran', required: need_fortran, native: false)
 build_fortran = has_fortran
+build_fortran_interface = build_fortran and get_option('build_fortran_interface')
 
 if has_fortran
   fc = meson.get_compiler('fortran')
@@ -180,9 +181,13 @@ if has_fortran and not need_fortran
                      )
 
   build_fortran = kind_check.compiled() and kind_check.returncode() == 0
+  build_fortran_interface = build_fortran and get_option('build_fortran_interface')
   if not build_fortran
     warning('Fortran kinds do not match C kinds; disabling Fortran interface')
   endif
+endif
+if build_fortran and not build_fortran_interface
+  message('Fortran interface disabled by build_fortran_interface option')
 endif
 fortran_interface = false
 fortran_src = []
@@ -198,7 +203,7 @@ common_util = files(
   'common/getopt.c',
 )
 
-if build_fortran
+if build_fortran_interface
   subdir('fortran')
 endif
 

@@ -57,7 +57,7 @@ run_tests_buf8 = executable(
 
 test('RunTestsBuf8', run_tests_buf8, args : ['-v'])
 
-if build_fortran
+if build_fortran_interface
   darwin_link_args = host_machine.system() == 'darwin' ? ['-Wl,-no_warn_duplicate_libraries'] : []
   fortran_tests = executable(
     'RunFortranTests',

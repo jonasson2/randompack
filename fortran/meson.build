@@ -1,4 +1,4 @@
-fortran_interface = build_fortran
+fortran_interface = build_fortran_interface
 fortran_src = []
 fortran_inc = []
 

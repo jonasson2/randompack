@@ -3,7 +3,7 @@
 option('blas',
   type: 'string',
   value: 'auto',
-  description: 'BLAS to use: builtin/accelerate/mkl/openblas/auto'
+  description: 'BLAS to use: builtin/accelerate/mkl/openblas/auto/system'
 )
 
 # Set the following option to true when building on Conda-Forge
