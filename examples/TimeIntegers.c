@@ -72,20 +72,21 @@ static double time_int_range(int chunk, double bench_time, int m, int n, randomp
   if (reps < 1)
     reps = 1;
   int calls = 0;
-  double t0 = get_time();
-  double t = t0;
-  while (t - t0 < bench_time) {
+  uint64_t t0 = clock_nsec();
+  uint64_t deadline = t0 + (uint64_t)(bench_time*1e9);
+  uint64_t t = t0;
+  while (t < deadline) {
     for (int i = 0; i < reps; i++) {
       ASSERT(randompack_int(buf, chunk, m, n, rng));
       consume_u64(buf[chunk - 1]);
     }
     calls += reps;
-    t = get_time();
+    t = clock_nsec();
   }
   FREE(buf);
   if (calls == 0)
     return 0;
-  return 1000000000*(t - t0)/(calls*chunk);
+  return (t - t0)/((double)calls*chunk);
 }
 
 static double time_uint8_bound(int chunk, double bench_time, uint8_t bound,
@@ -96,20 +97,21 @@ static double time_uint8_bound(int chunk, double bench_time, uint8_t bound,
   if (reps < 1)
     reps = 1;
   int calls = 0;
-  double t0 = get_time();
-  double t = t0;
-  while (t - t0 < bench_time) {
+  uint64_t t0 = clock_nsec();
+  uint64_t deadline = t0 + (uint64_t)(bench_time*1e9);
+  uint64_t t = t0;
+  while (t < deadline) {
     for (int i = 0; i < reps; i++) {
       ASSERT(randompack_uint8(buf, chunk, bound, rng));
       consume_u64(buf[chunk - 1]);
     }
     calls += reps;
-    t = get_time();
+    t = clock_nsec();
   }
   FREE(buf);
   if (calls == 0)
     return 0;
-  return 1000000000*(t - t0)/(calls*chunk);
+  return (t - t0)/((double)calls*chunk);
 }
 
 static double time_uint64_bound(int chunk, double bench_time, uint64_t bound,
@@ -120,20 +122,21 @@ static double time_uint64_bound(int chunk, double bench_time, uint64_t bound,
   if (reps < 1)
     reps = 1;
   int calls = 0;
-  double t0 = get_time();
-  double t = t0;
-  while (t - t0 < bench_time) {
+  uint64_t t0 = clock_nsec();
+  uint64_t deadline = t0 + (uint64_t)(bench_time*1e9);
+  uint64_t t = t0;
+  while (t < deadline) {
     for (int i = 0; i < reps; i++) {
       ASSERT(randompack_uint64(buf, chunk, bound, rng));
       consume_u64(buf[chunk - 1]);
     }
     calls += reps;
-    t = get_time();
+    t = clock_nsec();
   }
   FREE(buf);
   if (calls == 0)
     return 0;
-  return 1000000000*(t - t0)/(calls*chunk);
+  return (t - t0)/((double)calls*chunk);
 }
 
 static double time_perm(int n, double bench_time, randompack_rng *rng) {
@@ -143,20 +146,21 @@ static double time_perm(int n, double bench_time, randompack_rng *rng) {
   if (reps < 1)
     reps = 1;
   int calls = 0;
-  double t0 = get_time();
-  double t = t0;
-  while (t - t0 < bench_time) {
+  uint64_t t0 = clock_nsec();
+  uint64_t deadline = t0 + (uint64_t)(bench_time*1e9);
+  uint64_t t = t0;
+  while (t < deadline) {
     for (int i = 0; i < reps; i++) {
       ASSERT(randompack_perm(buf, n, rng));
       consume_u64(buf[n - 1]);
     }
     calls += reps;
-    t = get_time();
+    t = clock_nsec();
   }
   FREE(buf);
   if (calls == 0)
     return 0;
-  return 1000000000*(t - t0)/calls;
+  return (t - t0)/calls;
 }
 
 static double time_sample(int n, int k, double bench_time, randompack_rng *rng) {
@@ -166,20 +170,21 @@ static double time_sample(int n, int k, double bench_time, randompack_rng *rng) 
   if (reps < 1)
     reps = 1;
   int calls = 0;
-  double t0 = get_time();
-  double t = t0;
-  while (t - t0 < bench_time) {
+  uint64_t t0 = clock_nsec();
+  uint64_t deadline = t0 + (uint64_t)(bench_time*1e9);
+  uint64_t t = t0;
+  while (t < deadline) {
     for (int i = 0; i < reps; i++) {
       ASSERT(randompack_sample(buf, n, k, rng));
       consume_u64(buf[k - 1]);
     }
     calls += reps;
-    t = get_time();
+    t = clock_nsec();
   }
   FREE(buf);
   if (calls == 0)
     return 0;
-  return 1000000000*(t - t0)/calls;
+  return (t - t0)/calls;
 }
 
 static double time_long_long_range(int chunk, double bench_time, long long m,
@@ -190,20 +195,21 @@ static double time_long_long_range(int chunk, double bench_time, long long m,
   if (reps < 1)
     reps = 1;
   int calls = 0;
-  double t0 = get_time();
-  double t = t0;
-  while (t - t0 < bench_time) {
+  uint64_t t0 = clock_nsec();
+  uint64_t deadline = t0 + (uint64_t)(bench_time*1e9);
+  uint64_t t = t0;
+  while (t < deadline) {
     for (int i = 0; i < reps; i++) {
       ASSERT(randompack_long_long(buf, chunk, m, n, rng));
       consume_u64((uint64_t)buf[chunk - 1]);
     }
     calls += reps;
-    t = get_time();
+    t = clock_nsec();
   }
   FREE(buf);
   if (calls == 0)
     return 0;
-  return 1000000000*(t - t0)/(calls*chunk);
+  return (t - t0)/((double)calls*chunk);
 }
 
 int main(int argc, char **argv) {

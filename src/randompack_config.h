@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #if defined(_MSC_VER)
   #include <intrin.h>
 #endif
@@ -121,6 +122,20 @@ static inline uint32_t mix32(uint32_t x) {
   (lo) = (_mid << 32) | (uint32_t)_p00;                        \
 } while (0)
 #endif
+
+ALWAYS_INLINE uint64_t clock_nsec(void) {
+#ifdef _WIN32
+  LARGE_INTEGER freq, counter;
+  QueryPerformanceFrequency(&freq);
+  QueryPerformanceCounter(&counter);
+  return (uint64_t)((1000000000.0*(double)counter.QuadPart)/(double)freq.QuadPart);
+#elif defined(CLOCK_MONOTONIC)
+  struct timespec ts;
+  if (clock_gettime(CLOCK_MONOTONIC, &ts) == 0)
+    return (uint64_t)ts.tv_sec*1000000000ULL + (uint64_t)ts.tv_nsec;
+#endif
+  return (uint64_t)((1000000000.0*(double)clock())/(double)CLOCKS_PER_SEC);
+}
 
 
 #if defined(PRETEND_NOSIMD)

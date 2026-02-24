@@ -167,76 +167,96 @@ static double time_fn_scalar(int chunk, double bench_time, exp_fn fn, double in[
                              double out[], randompack_rng *rng) {
   int reps = max(1, 1000000/chunk);
   int64_t calls = 0;
-  double total = 0;
+  uint64_t total = 0;
   size_t len = (size_t)chunk;
-  while (total < bench_time) {
+  uint64_t t0 = clock_nsec();
+  uint64_t deadline = t0 + (uint64_t)(bench_time*1e9);
+  uint64_t t = t0;
+  while (t < deadline) {
     ASSERT(randompack_u01(in, len, rng));
-    double t0 = get_time();
+    uint64_t t1 = clock_nsec();
     for (int i = 0; i < reps; i++) {
       apply_fn_scalar(out, in, chunk, fn);
       consume5(out, chunk);
     }
-    total += get_time() - t0;
+    uint64_t t2 = clock_nsec();
+    total += t2 - t1;
     calls += reps;
+    t = clock_nsec();
   }
-  return (calls > 0) ? 1e9*total/((double)calls*chunk) : 0;
+  return (calls > 0) ? total/((double)calls*chunk) : 0;
 }
 
 static double time_fn_scalar_f(int chunk, double bench_time, expf_fn fn, float in[],
                                float out[], randompack_rng *rng) {
   int reps = max(1, 1000000/chunk);
   int64_t calls = 0;
-  double total = 0;
+  uint64_t total = 0;
   size_t len = (size_t)chunk;
-  while (total < bench_time) {
+  uint64_t t0 = clock_nsec();
+  uint64_t deadline = t0 + (uint64_t)(bench_time*1e9);
+  uint64_t t = t0;
+  while (t < deadline) {
     ASSERT(randompack_u01f(in, len, rng));
-    double t0 = get_time();
+    uint64_t t1 = clock_nsec();
     for (int i = 0; i < reps; i++) {
       apply_fn_scalar_f(out, in, chunk, fn);
       consume32(&out[chunk - 1]);
     }
-    total += get_time() - t0;
+    uint64_t t2 = clock_nsec();
+    total += t2 - t1;
     calls += reps;
+    t = clock_nsec();
   }
-  return (calls > 0) ? 1e9*total/((double)calls*chunk) : 0;
+  return (calls > 0) ? total/((double)calls*chunk) : 0;
 }
 
 static double time_fn_vec_d(int chunk, double bench_time, exp_vec_d_fn fn,
                             double in[], double out[], randompack_rng *rng) {
   int reps = max(1, 1000000/chunk);
   int64_t calls = 0;
-  double total = 0;
+  uint64_t total = 0;
   size_t len = (size_t)chunk;
-  while (total < bench_time) {
+  uint64_t t0 = clock_nsec();
+  uint64_t deadline = t0 + (uint64_t)(bench_time*1e9);
+  uint64_t t = t0;
+  while (t < deadline) {
     ASSERT(randompack_u01(in, len, rng));
-    double t0 = get_time();
+    uint64_t t1 = clock_nsec();
     for (int i = 0; i < reps; i++) {
       apply_fn_vec_d(out, in, chunk, fn);
       consume5(out, chunk);
     }
-    total += get_time() - t0;
+    uint64_t t2 = clock_nsec();
+    total += t2 - t1;
     calls += reps;
+    t = clock_nsec();
   }
-  return (calls > 0) ? 1e9*total/((double)calls*chunk) : 0;
+  return (calls > 0) ? total/((double)calls*chunk) : 0;
 }
 
 static double time_fn_vec_f(int chunk, double bench_time, exp_vec_f_fn fn,
                             float in[], float out[], randompack_rng *rng) {
   int reps = max(1, 1000000/chunk);
   int64_t calls = 0;
-  double total = 0;
+  uint64_t total = 0;
   size_t len = (size_t)chunk;
-  while (total < bench_time) {
+  uint64_t t0 = clock_nsec();
+  uint64_t deadline = t0 + (uint64_t)(bench_time*1e9);
+  uint64_t t = t0;
+  while (t < deadline) {
     ASSERT(randompack_u01f(in, len, rng));
-    double t0 = get_time();
+    uint64_t t1 = clock_nsec();
     for (int i = 0; i < reps; i++) {
       apply_fn_vec_f(out, in, chunk, fn);
       consume32(&out[chunk - 1]);
     }
-    total += get_time() - t0;
+    uint64_t t2 = clock_nsec();
+    total += t2 - t1;
     calls += reps;
+    t = clock_nsec();
   }
-  return (calls > 0) ? 1e9*total/((double)calls*chunk) : 0;
+  return (calls > 0) ? total/((double)calls*chunk) : 0;
 }
 
 int main(int argc, char **argv) {
@@ -263,8 +283,13 @@ int main(int argc, char **argv) {
     return 1;
   }
   const double warmup_time = 0.1;
-  double t0 = get_time();
-  while (get_time() - t0 < warmup_time) warmup_cpu(10);
+  uint64_t t0 = clock_nsec();
+  uint64_t deadline = t0 + (uint64_t)(warmup_time*1e9);
+  uint64_t t = t0;
+  while (t < deadline) {
+    warmup_cpu(10);
+    t = clock_nsec();
+  }
   if (chunk % 4 != 0 || chunk % 8 != 0) {
     fprintf(stderr, "chunk must be a multiple of 4 and 8\n");
     randompack_free(rng);

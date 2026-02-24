@@ -13,6 +13,13 @@ pkg = import('pkgconfig')
 buildtype = get_option('buildtype')
 host_system = host_machine.system()
 
+if host_machine.system() != 'windows'  # Ensure <time.h> exposes clock_gettime/CLOCK_*
+  add_project_arguments('-D_POSIX_C_SOURCE=200809L', language: 'c')
+  if host_machine.system() == 'darwin'
+    add_project_arguments('-D_DARWIN_C_SOURCE', language: 'c')
+  endif
+endif
+
 # -------------------------------------------------
 # BLAS selection
 # -------------------------------------------------

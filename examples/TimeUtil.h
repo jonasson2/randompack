@@ -38,21 +38,21 @@ typedef void (*fill_float_fn)( // Callback type: fill out with random floats
 double time_u64( // Benchmark uint64 fill amortizing time-keeping overhead, return ns
   int chunk,             // number of values generated per fill call
   double bench_time,     // repeat until this time (in seconds) has elapsed
-  fill_u64_fn fill, // fill callback producing uint64 output
+  fill_u64_fn fill,      // fill callback producing uint64 output
   randompack_rng *rng    // RNG handle
 );
 
 double time_u32( // Benchmark uint32 fill amortizing time-keeping overhead, return ns
   int chunk,             // number of values generated per fill call
   double bench_time,     // repeat until this time (in seconds) has elapsed
-  fill_u32_fn fill, // fill callback producing uint32 output
+  fill_u32_fn fill,      // fill callback producing uint32 output
   randompack_rng *rng    // RNG handle
 );
 
 double time_double( // Benchmark double fill amortizing time-keeping overhead, return ns
   int chunk,                 // number of values generated per fill call
   double bench_time,         // repeat until this time (in seconds) has elapsed
-  fill_double_fn fill,  // fill callback producing double output
+  fill_double_fn fill,       // fill callback producing double output
   double param[],            // parameters passed to fill (may be 0)
   randompack_rng *rng        // RNG handle
 );
@@ -64,9 +64,5 @@ double time_float( // Benchmark float fill amortizing time-keeping overhead, ret
   float param[],            // parameters passed to fill (may be 0)
   randompack_rng *rng       // RNG handle
 );
-
-typedef void (*fill_u64_cb)(uint64_t out[], int n, void *ctr, void *key);
-
-double time_u64_cb(int chunk, double bench_time, fill_u64_cb fill, void *ctr, void *key);
 
 #endif

@@ -13,8 +13,13 @@ static void fill_u01(double out[], int n, double param[], randompack_rng *rng) {
   randompack_u01(out, len, rng);
 }
 static void warmup_min_time(double seconds) {
-  double t0 = get_time();
-  while (get_time() - t0 < seconds) warmup_cpu(10);
+  uint64_t t0 = clock_nsec();
+  uint64_t deadline = t0 + (uint64_t)(seconds*1e9);
+  uint64_t t = t0;
+  while (t < deadline) {
+    warmup_cpu(10);
+    t = clock_nsec();
+  }
 }
 int main(void) {
   const char *engine = "fast";

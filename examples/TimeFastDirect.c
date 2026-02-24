@@ -86,16 +86,18 @@ static double time_fast_u01(double out[], size_t len, double bench_time,
   size_t reps = 1000000 / len;
   size_t calls = 0;
   if (reps < 1) reps = 1;
-  double t0 = get_time(), t = t0;
-  while (t - t0 < bench_time) {
+  uint64_t t0 = clock_nsec();
+  uint64_t deadline = t0 + (uint64_t)(bench_time*1e9);
+  uint64_t t = t0;
+  while (t < deadline) {
     for (size_t i = 0; i < reps; i++) {
       fill_fast_u01(out, len, st);
       consume_double(&out[len - 1]);
     }
     calls += reps;
-    t = get_time();
+    t = clock_nsec();
   }
-  return (calls > 0) ? 1e9*(t - t0)/((double)(calls*len)) : 0;
+  return (calls > 0) ? (t - t0)/((double)(calls*len)) : 0;
 }
 int main(void) {
   enum { LEN = 4096 };

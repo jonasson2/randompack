@@ -26,27 +26,9 @@
 #include <stdio.h>
 #include <string.h>
 
-// Get current time in seconds (high resolution, monotonic)
-double get_time(void) {
-#ifdef _WIN32
-  LARGE_INTEGER freq, counter;
-  QueryPerformanceFrequency(&freq);
-  QueryPerformanceCounter(&counter);
-  return (double)counter.QuadPart/(double)freq.QuadPart;
-
-#elif defined(CLOCK_MONOTONIC)
-  struct timespec ts;
-  if (clock_gettime(CLOCK_MONOTONIC, &ts) == 0)
-    return (double)ts.tv_sec + 1e-9*(double)ts.tv_nsec;
-
-  // fall through on error
-  return (double)clock()/CLOCKS_PER_SEC;
-
-#else
-  // ISO C fallback (not monotonic, but always available)
-  return (double)clock()/CLOCKS_PER_SEC;
-#endif
-}
+double get_time(void) { // seconds
+  return 1e-9*(double)clock_nsec();
+}  
 
 // Warm up the CPU by drawing n million uint64 randoms with x256++
 void warmup_cpu(int n) {
