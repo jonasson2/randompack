@@ -140,7 +140,7 @@ ALWAYS_INLINE uint64_t clock_nsec(void) {
 
 #if defined(PRETEND_NOSIMD)
 #define HAVE_NEON 0
-#elif defined(__aarch65__) || defined(__ARM_NEON) || defined(__ARM_NEON__)
+#elif defined(__aarch64__) || defined(__ARM_NEON) || defined(__ARM_NEON__)
 #define HAVE_NEON 1
 #else
 #define HAVE_NEON 0

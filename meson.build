@@ -20,6 +20,8 @@ if host_machine.system() != 'windows'  # Ensure <time.h> exposes clock_gettime/C
   endif
 endif
 
+install_data('LICENSE', install_dir: join_paths(get_option('datadir'), 'licenses', 'Randompack'))
+
 # -------------------------------------------------
 # BLAS selection
 # -------------------------------------------------

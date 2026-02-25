@@ -34,6 +34,15 @@ void rand_float_avx2(float x[], size_t len, randompack_rng *rng) {
 #endif
 
 #include <immintrin.h>
+
+// for old gcc:
+#if defined(__GNUC__) && !defined(_MSC_VER)
+#include <cpuid.h>
+#endif
+#ifndef __m256i_u
+typedef __m256i __m256i_u;
+#endif
+
 #include <string.h>
 #include "buffer_draw.inc"
 
