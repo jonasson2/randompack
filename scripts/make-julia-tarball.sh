@@ -5,6 +5,13 @@ SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 REPO_ROOT=$(dirname "$SCRIPT_DIR")
 cd "$REPO_ROOT"
 
+if [ -n "$(git status --porcelain)" ]; then
+  echo "ERROR: git commit before creating tarball\n"
+  echo "Uncommitted changes in:"
+  git status --porcelain
+  exit 1
+fi
+
 VER=$(<VERSION)
 FILENAME=randompack-$VER.tar.gz
 OUT=archives/$FILENAME
