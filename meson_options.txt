@@ -13,16 +13,16 @@ option('TestU01',
   description: 'Prefix for TestU01 install (enable when non-empty)'
 )
 
-option('build_examples',
-  type: 'boolean',
-  value: true,
-  description: 'Build example programs'
-)
-
 option('build_fortran_interface',
   type: 'boolean',
   value: true,
   description: 'Build the Fortran interface'
+)
+
+option('build_examples',
+  type: 'boolean',
+  value: true,
+  description: 'Build example programs'
 )
 
 option('build_tests',

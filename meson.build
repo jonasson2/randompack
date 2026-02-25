@@ -195,23 +195,6 @@ if has_fortran
   )
 endif
 
-if has_fortran and not need_fortran
-  kind_check = fc.run('program rp_kind_check\n' +
-                      '  use, intrinsic:: iso_c_binding\n' +
-                      '  implicit none\n' +
-                      '  if (kind(1.0) /= c_float) stop 1\n' +
-                      '  if (kind(1.0d0) /= c_double) stop 2\n' +
-                      '  if (kind(1) /= c_int) stop 3\n' +
-                      'end program\n',
-                      name: 'fortran kind check'
-                     )
-
-  build_fortran = kind_check.compiled() and kind_check.returncode() == 0
-  build_fortran_interface = build_fortran and get_option('build_fortran_interface')
-  if not build_fortran
-    warning('Fortran kinds do not match C kinds; disabling Fortran interface')
-  endif
-endif
 if build_fortran and not build_fortran_interface
   message('Fortran interface disabled by build_fortran_interface option')
 endif
