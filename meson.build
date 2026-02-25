@@ -171,9 +171,11 @@ if has_fortran
   if fc.get_id() == 'gcc'
     add_project_arguments('-fno-backtrace', language: 'fortran')
   endif
-  add_project_arguments('-Wno-do-subscript', language: 'fortran')
   add_project_arguments(
-    fc.get_supported_arguments(['-Wno-function-elimination']),
+    fc.get_supported_arguments([
+      '-Wno-do-subscript',
+      '-Wno-function-elimination',
+    ]),
     language: 'fortran'
   )
 endif
