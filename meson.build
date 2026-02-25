@@ -127,6 +127,11 @@ foreach blas_name: blas_backends
   elif blas_name == 'openblas'
     blas_dep = dependency('openblas', required: false)
     if not blas_dep.found()
+      blas_dep = cc.find_library('openblas',
+        dirs: [join_paths(get_option('prefix'), 'lib')],
+        required: false)
+    endif
+    if not blas_dep.found()
       blas_dep = cc.find_library('openblas', required: false)
     endif
     if blas_dep.found()
