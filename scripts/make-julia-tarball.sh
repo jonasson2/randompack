@@ -20,7 +20,7 @@ mkdir -p archives
 git archive --format=tar.gz --prefix="randompack-$VER/" -o "$OUT" \
     HEAD meson.build meson_options.txt src LICENSE
 SHA=$(shasum -a 256 "$OUT" | awk '{print $1}')
-printf SHA:$SHA
+printf "%s\n" SHA:$SHA
 cd archives
 git commit -am "Update $FILENAME"
 git push
