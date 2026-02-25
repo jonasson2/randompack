@@ -77,8 +77,17 @@ if build_avx2
   endif
 endif
 
+c_deps = []
+
 math_dep = cc.find_library('m', required: false)
-math_deps = math_dep.found() ? [math_dep]: []
+c_deps += math_dep.found() ? [math_dep] : []
+
+rt_dep = disabler()
+rt_deps = []
+if host_system == 'linux'
+  rt_dep = cc.find_library('rt', required: false)
+  c_deps += rt_dep.found() ? [rt_dep] : []
+endif
 
 blas_dep = disabler()
 blas_found = 'none'
@@ -140,7 +149,8 @@ if not blas_dep.found() and not using_builtin_blas and blas_option != 'system'
   using_builtin_blas = true
 endif
 
-blas_deps = blas_dep.found() ? [blas_dep]: []
+c_deps += blas_dep.found() ? [blas_dep] : []
+
 if using_builtin_blas
   message('Using built-in BLAS from src/blas.f')
 else

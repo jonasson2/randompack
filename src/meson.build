@@ -75,7 +75,7 @@ librandompack_static = static_library(
   randompack_src,
   objects: extra_objs,
   include_directories: randompack_inc,
-  dependencies: blas_deps + math_deps,
+  dependencies: c_deps,
   c_args: base_c_args,
   pic: true,
   install: true,
@@ -88,7 +88,7 @@ librandompack = shared_library(
   randompack_src,
   objects: extra_objs,
   include_directories: randompack_inc,
-  dependencies: blas_deps + math_deps,
+  dependencies: c_deps,
   c_args: base_c_args,
   #override_options: randompack_lto,
   install: true,
@@ -102,7 +102,7 @@ install_headers(
 randompack_dep = declare_dependency(
   link_with: librandompack,
   include_directories: randompack_inc,
-  dependencies: blas_deps + math_deps,
+  dependencies: c_deps,
   compile_args: base_c_args,
 )
 
@@ -111,7 +111,7 @@ librandompack_buf8 = static_library(
   randompack_src,
   objects: extra_objs_buf8,
   include_directories: randompack_inc,
-  dependencies: blas_deps + math_deps,
+  dependencies: c_deps,
   c_args: buf8_c_args,
   pic: true,
   install: false,
@@ -120,6 +120,6 @@ librandompack_buf8 = static_library(
 randompack_buf8_dep = declare_dependency(
   link_with: librandompack_buf8,
   include_directories: randompack_inc,
-  dependencies: blas_deps + math_deps,
+  dependencies: c_deps,
   compile_args: buf8_c_args,
 )
