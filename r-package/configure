@@ -1,0 +1,19 @@
+#!/bin/sh
+# Detect architecture and set AVX2 flags
+ARCH=$(uname -m)
+case "$ARCH" in
+  x86_64|i686|i386)
+    AVX2_CFLAGS="-mavx2 -mfma -DBUILD_AVX2"
+    BUILD_AVX2_DEFINE="-DBUILD_AVX2"
+    ;;
+  *)
+    AVX2_CFLAGS=""
+    BUILD_AVX2_DEFINE=""
+    ;;
+esac
+
+sed -e "s|@AVX2_CFLAGS@|${AVX2_CFLAGS}|g" \
+    -e "s|@BUILD_AVX2_DEFINE@|${BUILD_AVX2_DEFINE}|g" \
+    src/Makevars.in > src/Makevars
+
+exit 0
