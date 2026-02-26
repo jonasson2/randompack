@@ -1,4 +1,6 @@
 // -*- mode: c; -*-
+#include <time.h>
+
 static void fill_bytes(uint8_t *a, int len, uint64_t *x) {
   for (int k = 0; k < len; k += 8) {
     uint64_t mixed = rand_splitmix64(x);
@@ -8,12 +10,8 @@ static void fill_bytes(uint8_t *a, int len, uint64_t *x) {
 
 static void entropy_fill(randompack_rng *rng, void *buffer, size_t len) {
   bool ok = crypto_random(buffer, len);
-  if (!ok) {
-    struct timespec ts;
-    uint64_t x;
-    timespec_get(&ts, TIME_UTC);
-    x = ts.tv_sec;
-    x ^= ((uint64_t)ts.tv_nsec << 32);
+  if (!ok) {  // fallback on esoteric systems
+    uint64_t x = clock_nsec();
     x ^= (uintptr_t)rng;
     fill_bytes(buffer, len, &x);
   }

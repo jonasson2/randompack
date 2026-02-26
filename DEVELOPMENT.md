@@ -104,12 +104,6 @@ USE:
 R                                  # start R
 > library(randompack)              # load into session
 
-BUILD WHEELS
-============
-check_python_wheel.sh  # Build and test a clean Python wheel and sdist (local system only)
-.                      # in <repo-root>/release-python/
-See python/readme-wheels.txt
-
 Normal testing
 ==============
 meson test -C release              # run meson defined tests for C and Fortran
@@ -186,3 +180,90 @@ RawStream | Rng_test stdin64           # default engine, runs "forever"
 RawStream -e x128+ | RNG_test stdin64  # x128+ fails fast
 RawStream -h                           # help
 Rng_test -h                            # help
+
+Julia release
+=============
+Yggdrasil (Julia):
+scripts/make-julia-tarball.sh     # create .tar.gz file with C library in archives/
+shasum -a 256 <tarball-file>      # get its sha
+cd archives                       # clone of github.com/jonasson2/randompack-src
+git commit -am "Release x.y.z"    #
+git push                          #
+git tag vx.y.z                    #
+git push origin vx.y.z            # push new tag
+– update build/build_tarballs.jl  # change version number (2x) and sha
+julia build_tarballs.jl --debug                  # 
+  --verbose --deploy=local                       # Check all platforms
+  x86_64-linux-gnu-libgfortran5-cxx11            # locally
+  [repeat for all platforms]                     #
+git clone git@github.com:jonasson2/Yggdrasil.git #
+update build_tarballs.jl in R/Randompack         # - in the clone
+git commit -m "Add Randompack -vx.y.z            #
+git push                                         # push to Yggdrasil
+gh pr create --repo JuliaPackaging/Yggdrasil \   # open pull request for a merge
+     --title "Add Randompack vX.Y.Z" \           # 
+     --body "New version of Randompack"          #
+
+For Julia General registry:
+Wait for the Yggdrasil merge
+in julia:
+  ] activate Randompack.jl
+  ] add Randompack_jll
+  ] update
+Commit and push randompack (including Randompack.jl)
+Tag it vX.Y.Z
+Comment on the new commit on github: @JuliaRegistrator register
+
+Python PiPY
+===========
+Create wheels:
+Bump version with set_version.sh
+commit, push, and tag randompack
+scripts/wheel-build.sh             # trigger github Actions
+gh run list                        # monitor runs
+gh run view <RUN-ID> --log-failed  # view failed log
+gh run delete <RUN-ID>             # delete run
+.                                  # wait for the actions to complete successfully
+cd python/
+python -m build -s                 # build sdist in dist/
+scripts/wheel-download.sh          # download wheels from GH Actions into dist/
+
+Upload to TestPyPI:
+python -m twine upload --repository testpypi dist/*     # verify on TestPyPI
+python -m venv /tmp/rp-test                             # - using a fresh venv
+source /tmp/rp-test/bin/activate                        # 
+pip install \                                           # try out the new TestPyPI version 
+  --index-url https://test.pypi.org/simple \            #
+  --extra-index-url https://pypi.org/simple \           #
+  randompack                                            #
+python -c "import randompack; print(randompack.Rng())"  #
+deactivate                                              # exit the venv
+
+Upload to PyPI:
+python -m twine upload dist/*   # real upload
+pip install randompack          # try it out
+
+More wheel commands:
+gh workflow list
+gh workflow run xxx.yml  # trigger wheel building
+gh run watch
+gh run list --json databaseId --jq '.[].databaseId'  # just the id-s, use in foreach...
+
+CondaForge
+==========
+see misc/recipe/
+
+CRAN submission
+===============
+scripts/syncR.sh
+From r-package:
+R -e "devtools::document()"
+R -e "devtools::build_readme()"
+R -e "devtools::check_win_devel()"
+R -e "devtools::check_win_release()"
+
+From project root:
+R CMD build r-package
+R CMD check randompack_*.gz
+R CMD check --as-cran randompack_*.gz  # complete checking
+                                       # edit cran-comments.md with results

@@ -5,6 +5,7 @@ SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 REPO_ROOT=$(dirname "$SCRIPT_DIR")
 cd "$REPO_ROOT"/python
 pwd
+
 # Clean the wheelhouse and dist:
 rm -rf wheelhouse/*
 rm dist/*.whl

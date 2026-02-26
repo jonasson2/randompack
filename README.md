@@ -292,6 +292,10 @@ The examples subfolodr contains additional example programs.
       return 0;
     }
 ```
+### State control
+```
+```
+
 ### Example with full error checking
 ```c
     #include <stdio.h>

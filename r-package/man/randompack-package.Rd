@@ -32,6 +32,6 @@ See \code{\link{randompack_rng}} for a complete list.
 \code{\link{randompack_engines}} for a list of available engines
 }
 \author{
-\strong{Maintainer}: Kristján Jonasson \email{jonasson@hi.is}
+\strong{Maintainer}: Kristján Jónasson \email{jonasson@hi.is}
 
 }

@@ -8,6 +8,7 @@ randompack_rng(engine = "x256++simd", bitexact = FALSE)
 }
 \arguments{
 \item{engine}{RNG engine}
+
 \item{bitexact}{Logical; set TRUE to make samples bit-identical across platforms}
 }
 \value{
@@ -58,8 +59,8 @@ deviation 1).}
 \item{\code{rng$normal(len, mu, sigma)}}{Normal variates with mean \code{mu}
 and standard deviation \code{sigma} (defaults 0 and 1).}
 \item{\code{rng$skew_normal(len, mu, sigma, alpha)}}{Skew-normal variates with
-location \code{mu} and scale \code{sigma} (defaults 0 and 1), and shape
-\code{alpha} (required).}
+location \code{mu} and scale \code{sigma} (defaults 0 and 1), and shape \code{alpha}
+(required).}
 \item{\code{rng$lognormal(len, mu, sigma)}}{Lognormal variates derived from an
 underlying normal distribution (defaults 0 and 1).}
 \item{\code{rng$exp(len)}}{Standard exponential variates (scale 1).}
@@ -137,7 +138,6 @@ length up to 2; shorter vectors are zero-padded.
 # Create an RNG
 rng <- randompack_rng()                    # Default engine (xoshiro256++)
 rng_pcg <- randompack_rng("pcg64")         # Specify engine
-rng_be <- randompack_rng("pcg64", bitexact=TRUE)  # make samples bit-identical across platforms (x==y true)
 rng_chacha <- randompack_rng("chacha20")
 
 # Continuous distributions

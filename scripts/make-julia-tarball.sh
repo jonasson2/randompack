@@ -1,5 +1,5 @@
 #!/bin/sh
-# Create an archive for Julia and push it to randompack_src on github
+# Create an archive for Julia
 set -eu
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 REPO_ROOT=$(dirname "$SCRIPT_DIR")
@@ -22,6 +22,6 @@ git archive --format=tar.gz --prefix="randompack-$VER/" -o "$OUT" \
 SHA=$(shasum -a 256 "$OUT" | awk '{print $1}')
 printf "%s\n%s\n" "SHA (update in build/build_tarballs.jl):" "$SHA"
 cd archives
-git commit -am "Update $FILENAME"
-git push
-echo "Created $OUT and pushed it to github."
+# git commit -am "Update $FILENAME"
+# git push
+# echo "Created $OUT and pushed it to github."

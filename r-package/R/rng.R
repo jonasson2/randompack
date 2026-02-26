@@ -122,7 +122,6 @@ NULL
 #' # Create an RNG
 #' rng <- randompack_rng()                    # Default engine (xoshiro256++)
 #' rng_pcg <- randompack_rng("pcg64")         # Specify engine
-#' rng_be <- randompack_rng("pcg64", bitexact=TRUE)  # make samples bit-identical across platforms (x==y true)
 #' rng_chacha <- randompack_rng("chacha20")
 #'
 #' # Continuous distributions
