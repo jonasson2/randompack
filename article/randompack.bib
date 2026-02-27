@@ -1,0 +1,537 @@
+title: Algorithm XXX: Randompack, A Portable C Library for Reproducible Random Number Generation
+
+% xoshiro256++/**, xoroshiro: (jumps come from L'Ecuyer)
+@article{blackman2021scrambled,
+  author  = {Blackman, David and Vigna, Sebastiano},
+  title   = {Scrambled linear pseudorandom number generators},
+  journal = {ACM Transactions on Mathematical Software},
+  year    = {2021},
+  volume  = {47},
+  number  = {4},
+  pages   = {36:1--36:32},
+  doi     = {10.1145/3460772}
+}
+
+% xorshift128+
+@article{vigna2016further,
+  author  = {Vigna, Sebastiano},
+  title   = {Further scramblings of {M}arsaglia's xorshift generators},
+  journal = {Journal of Computational and Applied Mathematics},
+  year    = {2016},
+  volume  = {315},
+  pages   = {175--181},
+  doi     = {10.1016/j.cam.2016.11.006}
+}
+
+% and:
+@article{vigna2014experimental,
+  author  = {Vigna, Sebastiano},
+  title   = {An experimental exploration of Marsaglia's xorshift generators,
+                  scrambled},
+  journal = {arXiv preprint arXiv:1402.6246},
+  year    = {2014}
+}
+
+% pcg64-dxsm and seed_seq_fe128
+@techreport{oneill2014pcg,
+  author      = {O'Neill, Melissa E.},
+  title = {{PCG}: A family of simple fast space-efficient statistically good
+                  algorithms for random number generation},
+  institution = {Harvey Mudd College},
+  year        = {2014},
+  number      = {HMC-CS-2014-0905},
+  note        = {Available at https://www.pcg-random.org/pdf/hmc-cs-2014-0905.pdf}
+}
+
+% cwg128
+@article{dziala2023collatz,
+  title={Collatz-{Weyl} generators: high quality and high throughput parameterized
+                  pseudorandom number generators},
+  author={Dziala, Tomasz R.},
+  journal={arXiv preprint arXiv:2312.17043},
+  year={2023}
+}
+
+% sfc64 and PractRand
+@misc{dotyhumphrey2010practrand,
+  author       = {Doty-Humphrey, Chris},
+  title        = {PractRand: A practical random number generator test suite
+                  (including the {SFC} family of generators)},
+  year         = {2010},
+  howpublished = {\url{http://pracrand.sourceforge.net}},
+  note         = {Accessed 2026-02-23}
+}
+
+% philox
+@inproceedings{salmon2011parallel,
+  author    = {Salmon, John K. and Moraes, Mark A. and Dror, Ron O. and Shaw,
+                  David E.},
+  title     = {Parallel random numbers: As easy as 1, 2, 3},
+  booktitle = {Proceedings of the International Conference for High Performance
+                  Computing, Networking, Storage and Analysis (SC11)},
+  year      = {2011},
+  pages     = {1--12},
+  doi       = {10.1145/2063384.2063405}
+}
+
+@article{widynski2020squares,
+  title={Squares: a fast counter-based RNG},
+  author={Widynski, Bernard},
+  journal={arXiv preprint arXiv:2004.06278},
+  year={2020}
+}
+
+@inproceedings{bernstein2008chacha,
+  author       = {Bernstein, Daniel J.},
+  title        = {{ChaCha}, a variant of {Salsa20}},
+  year         = {2008},
+  booktitle    = {Workshop Record of {SASC} 2008: The State of the Art of Stream
+                  Ciphers},
+  url          = {https://cr.yp.to/chacha/chacha-20080128.pdf}
+}
+
+% Box-Muller method for normal distribution
+@article{box1958normal,
+  author  = {Box, George E. P. and Muller, Mervin E.},
+  title   = {A Note on the Generation of Random Normal Deviates},
+  journal = {The Annals of Mathematical Statistics},
+  year    = {1958},
+  volume  = {29},
+  number  = {2},
+  pages   = {610--611},
+  doi     = {10.1214/aoms/1177706645}
+}
+
+% Polar method for normal distribution
+@article{marsaglia1964polar,
+  author  = {Marsaglia, George and Bray, T. A.},
+  title   = {A Convenient Method for Generating Normal Variables},
+  journal = {SIAM Review},
+  year    = {1964},
+  volume  = {6},
+  number  = {3},
+  pages   = {260--264},
+  doi     = {10.1137/1006063}
+}
+
+% ziggurat
+@article{marsaglia1964tail,
+  author  = {Marsaglia, George},
+  title   = {Generating a variable from the tail of the normal distribution},
+  journal = {Technometrics},
+  year    = {1964},
+  volume  = {6},
+  number  = {1},
+  pages   = {101--102},
+  doi     = {10.1080/00401706.1964.10490150}
+}
+
+% and (this one also for exp)
+@article{marsaglia1984fast,
+  author  = {Marsaglia, George and Tsang, Wai Wan},
+  title   = {A fast, easily implemented method for sampling from decreasing or symmetric unimodal density functions},
+  journal = {SIAM Journal on Scientific and Statistical Computing},
+  year    = {1984},
+  volume  = {5},
+  number  = {2},
+  pages   = {349--359},
+  doi     = {10.1137/0905027}
+}
+
+% current implementation for normal and exp
+@article{marsaglia2000ziggurat,
+  author  = {Marsaglia, George and Tsang, Wai Wan},
+  title   = {The ziggurat method for generating random variables},
+  journal = {Journal of Statistical Software},
+  year    = {2000},
+  volume  = {5},
+  number  = {8},
+  pages   = {1--7},
+  doi     = {10.18637/jss.v005.i08}
+}
+
+% This one is not implemented in NumPy and its improvements are marginal
+@article{doornik2005improved,
+  author  = {Doornik, Jurgen A.},
+  title   = {An improved ziggurat method to generate normal random samples},
+  journal = {SSRN Electronic Journal},
+  year    = {2005},
+  doi     = {10.2139/ssrn.755484}
+}
+
+% Gamma for alpha >= 1 (and see e.g. that for alpha < 1)
+% They replaced a fairly complicated rejection scheme with a remarkably
+% clean and efficient one.
+@article{marsaglia2000gamma,
+  author  = {Marsaglia, George and Tsang, Wai Wan},
+  title   = {A simple method for generating gamma variables},
+  journal = {ACM Transactions on Mathematical Software},
+  year    = {2000},
+  volume  = {26},
+  number  = {3},
+  pages   = {363--372},
+  doi     = {10.1145/358407.358414}
+}
+
+% Rejection sampling, original idea [used in Gamma] and mid-square
+@article{vonneumann1951rejection,
+  author  = {von Neumann, John},
+  title   = {Various techniques used in connection with random digits},
+  journal = {Applied Mathematics Series},
+  year    = {1951},
+  volume  = {12},
+  pages   = {36--38},
+  publisher = {National Bureau of Standards}
+}
+
+% beta  ~ G1/(G1 + G2) where G1 ~ Gamma(a,1), G2 ~ Gamma(b,1)
+
+% T = Z/sqrt(V/nu), V ~ Chi2
+@article{student1908probable,
+  author  = {Student},
+  title   = {The probable error of a mean},
+  journal = {Biometrika},
+  year    = {1908},
+  volume  = {6},
+  number  = {1},
+  pages   = {1--25}
+}
+
+% Chi-2 ~ Gamma(nu/2, 2) and later articles by Pearson
+@article{pearson1900chi,
+  author  = {Pearson, Karl},
+  title   = {On the criterion that a given system of deviations from the
+                  probable in the case of a correlated system of variables is
+                  such that it can be reasonably supposed to have arisen from
+                  random sampling},
+  journal = {Philosophical Magazine},
+  year    = {1900},
+  volume  = {50},
+  pages   = {157--175}
+}
+
+% F ~ (G1/d1)/(G2/d2) where Gi ~ gamma(di/2,2)
+@inproceedings{fisher1924distribution,
+  author    = {Fisher, Ronald A.},
+  title     = {On a distribution yielding the error functions of several well known statistics},
+  booktitle = {Proceedings of the International Congress of Mathematics},
+  year      = {1924},
+  volume    = {2},
+  pages     = {805--813},
+  address   = {Toronto}
+}
+
+% pareto (use inverse CDF sampling)
+@article{pareto1896cours,
+  author  = {Pareto, Vilfredo},
+  title   = {Cours d'économie politique},
+  year    = {1896},
+  publisher = {F. Rouge}
+}
+
+% gumbel (inverse CDF sampling)
+@book{gumbel1958statistics,
+  author    = {Gumbel, Emil Julius},
+  title     = {Statistics of Extremes},
+  publisher = {Columbia University Press},
+  year      = {1958}
+}
+
+% multiplicative congruential generator
+@inproceedings{lehmer1951mathematical,
+  author    = {Lehmer, Derrick Henry},
+  title     = {Mathematical methods in large-scale computing units},
+  booktitle = {Proceedings of the Second Symposium on Large-Scale Digital
+                  Calculating Machinery},
+  series    = {Annals of the Computation Laboratory},
+  volume    = {26},
+  publisher = {Harvard University Press},
+  pages     = {141--146},
+  year      = {1951}
+}
+
+% linear recurrence modulo 2 (basis for GFSR, Mersenne Twister)
+@article{tausworthe1965linear,
+  author  = {Tausworthe, Robert C.},
+  title   = {Random Numbers Generated by Linear Recurrence Modulo Two},
+  journal = {Mathematics of Computation},
+  year    = {1965},
+  volume  = {19},
+  number  = {90},
+  pages   = {201--209},
+  doi     = {10.1090/S0025-5718-1965-0184406-1}
+}
+
+% other "famouse" U01s
+@article{wichmann1982efficient,
+  author  = {Wichmann, B. A. and Hill, I. D.},
+  title   = {Algorithm {AS} 183: An Efficient and Portable Pseudo-Random Number Generator},
+  journal = {Applied Statistics},
+  year    = {1982},
+  volume  = {31},
+  number  = {2},
+  pages   = {188--190},
+  doi     = {10.2307/2347988}
+}
+
+@article{park1988random,
+  author  = {Park, Stephen K. and Miller, Keith W.},
+  title   = {Random number generators: Good ones are hard to find},
+  journal = {Communications of the ACM},
+  year    = {1988},
+  volume  = {31},
+  number  = {10},
+  pages   = {1192--1201},
+  doi     = {10.1145/63039.63042}
+}
+
+@article{luscher1994portable,
+  author  = {L{\"u}scher, Martin},
+  title   = {A portable high-quality random number generator for lattice field theory simulations},
+  journal = {Computer Physics Communications},
+  year    = {1994},
+  volume  = {79},
+  number  = {1},
+  pages   = {100--110},
+  doi     = {10.1016/0010-4655(94)90232-1}
+}
+
+%L'Ecuyer:
+%	•	Formalized and extended the spectral test.
+%	•	Developed practical methods to evaluate the lattice quality of LCGs.
+%	•	Provided tools for selecting good multipliers.
+%
+%This moved PRNG design from folklore to rigorous analysis.
+@article{lecuyer1990spectral,
+  author  = {L'Ecuyer, Pierre},
+  title   = {Tables of linear congruential generators of different sizes and
+                  good lattice structure},
+  journal = {Mathematics of Computation},
+  year    = {1990},
+  volume  = {68},
+  pages   = {249--260}
+}
+
+% Also combined several generators: MRG32k3a
+% Used in R, TestU01. Has jump-ahead support
+@article{lecuyer1999good,
+  author  = {L'Ecuyer, Pierre},
+  title   = {Good parameters and implementations for combined multiple recursive
+                  random number generators},
+  journal = {Operations Research},
+  year    = {1999},
+  volume  = {47},
+  number  = {1},
+  pages   = {159--164},
+  doi     = {10.1287/opre.47.1.159}
+}
+
+% Introduces combined generators with vastly improved period and structure.
+@article{lecuyer1988efficient,
+  author  = {L'Ecuyer, Pierre},
+  title   = {Efficient and portable combined random number generators},
+  journal = {Communications of the ACM},
+  year    = {1988},
+  volume  = {31},
+  number  = {6},
+  pages   = {742--751},
+  doi     = {10.1145/62959.62969}
+}
+
+% Reproducibility
+@article{lecuyer2002streams,
+  author  = {L'Ecuyer, Pierre and Simard, Richard and Chen, Eric J. and Kelton,
+                  W. David},
+  title   = {An object-oriented random-number package with many long streams and
+                  substreams},
+  journal = {Operations Research},
+  year    = {2002},
+  volume  = {50},
+  number  = {6},
+  pages   = {1073--1075},
+  doi     = {10.1287/opre.50.6.1073.358}
+}
+
+% TestU01
+@article{lecuyer2007testu01,
+  author  = {L'Ecuyer, Pierre and Simard, Richard},
+  title   = {TestU01: A C library for empirical testing of random number generators},
+  journal = {ACM Transactions on Mathematical Software},
+  year    = {2007},
+  volume  = {33},
+  number  = {4},
+  doi     = {10.1145/1268776.1268777}
+}
+
+% importance of reproducibility across platforms
+@article{lecuyer2012randomstreams,
+  author  = {L'Ecuyer, Pierre},
+  title   = {Random number generation with multiple streams for sequential and parallel computing},
+  journal = {Proceedings of the Winter Simulation Conference},
+  year    = {2012},
+  pages   = {1--12},
+  doi     = {10.1109/WSC.2012.6465286}
+}
+
+% Survey
+@article{lecuyer2017rng,
+  author  = {L'Ecuyer, Pierre},
+  title   = {Random number generation},
+  journal = {Handbook of Computational Statistics},
+  year    = {2017}
+}
+
+@article{lecuyer2010software,
+  author  = {L'Ecuyer, Pierre},
+  title   = {Random number generators},
+  journal = {International Encyclopedia of Statistical Science},
+  year    = {2010}
+}
+
+% Importance of simulation across platforms
+@inproceedings{lecuyer2015rng,
+  author    = {L'Ecuyer, Pierre},
+  title     = {Random number generators for simulation},
+  booktitle = {Proceedings of the Winter Simulation Conference},
+  year      = {2015},
+  pages     = {28--41},
+  doi       = {10.1109/WSC.2015.7408052}
+}
+
+@misc{lecuyer2024ssmcm,
+  author       = {Pierre L'Ecuyer},
+  title        = {Stochastic Simulation and Monte Carlo Methods},
+  howpublished = {Book draft (course notes for IFT6561), Universit{\'e} de Montr{\'e}al},
+  year         = {2024},
+  month        = feb,
+  note         = {Draft date: 2024-02-02},
+  url          = {https://www-labs.iro.umontreal.ca/~lecuyer/ift6561/book.pdf}
+}
+
+@inproceedings{lecuyer2017history,
+  author    = {L'Ecuyer, Pierre},
+  title     = {History of Uniform Random Number Generation},
+  booktitle = {Proceedings of the 2017 Winter Simulation Conference},
+  year      = {2017},
+  pages     = {202--230},
+  doi       = {10.1109/WSC.2017.8247794}
+}
+
+% Survey of PRNGs
+@article{bhattacharjee2022search,
+  author  = {Bhattacharjee, Kamalika and Das, Sukanta},
+  title   = {A Search for Good Pseudo-random Number Generators: Survey and Empirical Studies},
+  journal = {Computer Science Review},
+  year    = {2022},
+  volume  = {45},
+  pages   = {100471},
+  doi     = {10.1016/j.cosrev.2022.100471}
+}
+
+@article{foreman2024statistical,
+  author  = {Foreman, Sam and Yeung, Yik Chau and Curchod, Basile F. E.},
+  title   = {Statistical Testing of Random Number Generators and Their Improvement Using Randomness Extraction},
+  journal = {Entropy},
+  year    = {2024},
+  volume  = {26},
+  number  = {2},
+  pages   = {150},
+  doi     = {10.3390/e26020150}
+}
+
+% The generator that dominated random number generation for ~20 years 
+@article{matsumoto1998mersenne,
+  author  = {Matsumoto, Makoto and Nishimura, Takuji},
+  title   = {Mersenne Twister: A 623-dimensionally equidistributed uniform
+                  pseudorandom number generator},
+  journal = {ACM Transactions on Modeling and Computer Simulation},
+  year    = {1998},
+  volume  = {8},
+  number  = {1},
+  pages   = {3--30},
+  doi     = {10.1145/272991.272995}
+}
+
+% increments of PCG
+% counters of Philox
+% jumps of Vigna and L'Ecuyer
+
+% First xorshift
+@article{marsaglia2003xorshift,
+  author  = {Marsaglia, George},
+  title   = {Xorshift RNGs},
+  journal = {Journal of Statistical Software},
+  year    = {2003},
+  volume  = {8},
+  number  = {14}
+}
+
+% First major empirical stress-test suite
+@misc{marsaglia1996diehard,
+  author = {Marsaglia, George},
+  title  = {{DIEHARD}: A Battery of Tests of Randomness},
+  year   = {1996},
+  url    = {http://stat.fsu.edu/pub/diehard/}
+}
+
+% SIMD
+@article{saito2006sfmt,
+  author  = {Saito, Mutsuo and Matsumoto, Makoto},
+  title   = {SIMD-oriented Fast Mersenne Twister},
+  journal = {Monte Carlo and Quasi-Monte Carlo Methods},
+  year    = {2006}
+}
+
+% Fix MT
+@article{panneton2006well,
+  author  = {Panneton, François and L'Ecuyer, Pierre and Matsumoto, Makoto},
+  title   = {Improved long-period generators based on linear recurrences modulo 2},
+  journal = {ACM Transactions on Mathematical Software},
+  year    = {2006},
+  volume  = {32},
+  number  = {1}
+}
+
+@article{saito2013mtgp,
+  author  = {Saito, Mutsuo and Matsumoto, Makoto},
+  title   = {Variants of Mersenne Twister suitable for graphic processors},
+  journal = {ACM TOMS},
+  year    = {2013}
+}
+
+@manual{intel2023mkl,
+  title        = {Intel oneAPI Math Kernel Library Developer Reference},
+  author       = {{Intel Corporation}},
+  year         = {2023},
+  note         = {https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl.html}
+}
+
+% R: MT and parallel optional: MRG32k3a
+% Matlab: MT
+% Python's random module: MT
+% NumPy: PCG64 (optional: MT, Philox, SFC64, Xoshiro) since 1.17 2019 MT before
+% Rust: ChaCha12/Xoshiro256++ (optional: PCG,...)
+% Java: LXM-family (home-made) Optional: Xoshiro + more
+% C++ standard library: MT
+% C#: Xoshiro256**
+% Julia: Xoshiro256++ (since 1.7, 2021) MT before
+% Go: PCG64 DXSM
+% JavaScript: Xorshift128+
+% CUDA/PyTorch/TensorFlow: Philox
+
+@Comment "Default" non-cryptographic RNG's on 64-bit platforms:
+
+@Comment xoshiro256++:        Julia, Rust (SmallRng)
+@Comment xoshiro256**:          C#
+@Comment xoroshiro128++:        R's dqrng
+@Comment Mersenne twister:      Base R, Matlab, Python's random module, C++
+@Comment PCG64 (1):               NumPy
+@Comment xorshift128+:           Javascript (V8)
+@Comment LXM (2):                  Java
+@Comment ChaCha12 (3):              Rust (default)
+@Comment ChaCha8 (3):                Go
+
+
+@Comment (1) PCG XSL-RR 128/64
+@Comment (2) L64X128MixRandom
+@Comment (3) Reduced-round ChaCha core (See Bernstein)

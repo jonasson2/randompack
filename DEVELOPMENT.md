@@ -256,11 +256,12 @@ see misc/recipe/
 CRAN submission
 ===============
 scripts/syncR.sh
+
 From r-package:
-R -e "devtools::document()"
-R -e "devtools::build_readme()"
-R -e "devtools::check_win_devel()"
-R -e "devtools::check_win_release()"
+R -e "devtools::document()"            # Creates man docs
+R -e "devtools::build_readme()"        # Creates README.md from README.Rmd
+R -e "devtools::check_win_devel()"     # offline-check of Windows
+R -e "devtools::check_win_release()"   # do.
 
 From project root:
 R CMD build r-package

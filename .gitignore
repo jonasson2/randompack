@@ -29,7 +29,6 @@ wheelhouse/
 # REBUILDABLE DOC
 *.pdf
 tests/*.txt
-article/
 
 # BACKUPS
 *~

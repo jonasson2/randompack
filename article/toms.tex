@@ -1,0 +1,124 @@
+%%
+%% TOMS Algorithm Article
+%% Manuscript format for review
+%%
+\documentclass[manuscript,screen,review]{acmart}
+
+%% Journal information for TOMS
+\setcopyright{rightsretained}
+\acmJournal{TOMS}
+\acmYear{2026}
+\acmVolume{1}
+\acmNumber{1}
+\acmArticle{1}
+\acmMonth{1}
+\acmDOI{10.1145/XXXXXXX}
+
+%% BibTeX command
+\AtBeginDocument{%
+  \providecommand\BibTeX{{%
+    Bib\TeX}}}
+
+%% Bibliography
+\bibliographystyle{ACM-Reference-Format}
+
+\begin{document}
+
+%%
+%% Title
+%%
+\title{Algorithm XXX: Randompack, A Portable C Library for Reproducible Random Number Generation}
+
+%%
+%% Author information - FILL IN YOUR DETAILS
+%%
+\author{Kristján Jónasson}
+\authornote{Corresponding author.}
+\email{jonasson@hi.is}
+\orcid{0000-0000-0000-0000}
+\affiliation{%
+  \institution{University of Iceland}
+  \city{Reykjavík}
+  \country{Iceland}
+}
+
+
+%%
+%% Abstract
+%%
+\begin{abstract}
+\end{abstract}
+
+%%
+%% Keywords
+%%
+\keywords{}
+
+\maketitle
+
+\section{Introduction}
+
+The computer generation of pseudo-random numbers has a history dating back to the first
+computers, with von Neumann's middle-square idea (1946)
+\cite{vonneumann1951rejection,lecuyer2017history} and Lehmer's linear congruential
+generator (LCG, 1949) \cite{lehmer1951mathematical,lecuyer2017history}. The first
+generators were aimed at generating random integers (typically in $[0, 2^k)$) and
+uniformly distributed reals in $[0,1]$ (through division by $2^k$), but soon other
+distributions followed. In fact von Neumann's paper \cite{vonneumann1951rejection} had a
+clever algorithm for drawing exponentially distributed samples, also obtainable by taking
+the logarithm of uniform samples. An early and seminal method for random normals is given
+by Box and Muller \cite{box1958normal}. Other important 20th century milestones are the
+Tausworthe random number generator (RNG) \cite{tausworthe1965linear}, the Wichmann-Hill
+RNG \cite{wichmann1982efficient}, the Park-Miller LCG RNG \cite{park1988random}, RANLUX
+\cite{luscher1994portable} and the Mersenne Twister \cite{matsumoto1998mersenne}.
+
+Parallel to the uniform generator development new methods for generating non-uniform
+variates were developed. The normal distribution plays an important role, and other
+important ones are the exponential and the gamma distributions. Random sampling from
+several other distributions can be done by combining samples from these three (see Section
+xxx). The already mentioned Box-Muller method (1958) requires the evaluation of two
+logarithms, a sine, and a cosine for each pair of samples, but a few years later Marsaglia
+and Bray proposed the polar method where the two trigonometrict functions were replaced by
+a square root and rejection sampling with acceptance rate $\pi/4$. Rejection sampling had
+already been used by von Neuman in his exponential method \cite{vonneumann1951rejection},
+and it plays a central role in the ziggurat method for normal sampling, devised by
+Marsaglia and Tsang in 
+
+
+At the end of the 20th century and especially in the 21st century random number research
+focus shifted to studying the statistical quality of RNGs, ensuring long periods, and
+devising methods to create independent streams of random numbers, spurred on by faster,
+often parallel computers. On a modern computer the Park-Miller RNG will start to repeat
+itself after a few seconds on a single core.
+
+Among the first studies of 
+
+generation of
+normally distributed
+
+Among important milestones in this
+history are the Park-Miller
+
+\section{Design and interface}
+
+\section{Algorithms and implementation}
+
+\section{Evaluation}
+
+\section{Discussion}
+
+%%
+%% Bibliography
+%%
+\bibliography{randompack}
+
+%%
+%% Appendix (optional)
+%%
+\appendix
+
+\section{Algorithm Listings}
+
+\section{Additional Performance Data}
+
+\end{document}
