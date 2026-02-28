@@ -23,6 +23,7 @@ typedef enum {
   XORO,
   X256SS,
   X256PP,
+  RANLUXPP,
   SQUARES,
   SFC64,
   PCG64,
@@ -41,9 +42,9 @@ typedef struct {
 
 struct randompack_rng {
   union {
-    uint8_t u8[48];
-    uint32_t u32[16];
-    uint64_t u64[8];
+    uint8_t u8[72];
+    uint32_t u32[18];
+    uint64_t u64[9];
     xo256 xo;
     pcg64_t pcg;
     #if HAVE128

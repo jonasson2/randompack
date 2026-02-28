@@ -12,9 +12,11 @@
 #include "x256pp_jump.inc"
 
 #if HAVE128
+#include "ranluxpp.inc"
 #include "pcg64_dxsm.inc"
 #include "cwg128.inc"
 #else
+#include "ranluxpp.inc"
 #include "pcg64_dxsm_emul.inc"
 #include "cwg128_emul.inc"
 #endif

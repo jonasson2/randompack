@@ -69,27 +69,42 @@ clever algorithm for drawing exponentially distributed samples, also obtainable 
 the logarithm of uniform samples. An early and seminal method for random normals is given
 by Box and Muller \cite{box1958normal}. Other important 20th century milestones are the
 Tausworthe random number generator (RNG) \cite{tausworthe1965linear}, the Wichmann-Hill
-RNG \cite{wichmann1982efficient}, the Park-Miller LCG RNG \cite{park1988random}, RANLUX
-\cite{luscher1994portable} and the Mersenne Twister \cite{matsumoto1998mersenne}.
+RNG (1982) \cite{wichmann1982efficient}, the Park-Miller LCG (1988) \cite{park1988random},
+RANLUX (1994) \cite{luscher1994portable} and the Mersenne Twister (1998)
+\cite{matsumoto1998mersenne} with its extremely long period, $2^{19937}-1$.
 
 Parallel to the uniform generator development new methods for generating non-uniform
 variates were developed. The normal distribution plays an important role, and other
 important ones are the exponential and the gamma distributions. Random sampling from
 several other distributions can be done by combining samples from these three (see Section
-xxx). The already mentioned Box-Muller method (1958) requires the evaluation of two
-logarithms, a sine, and a cosine for each pair of samples, but a few years later Marsaglia
-and Bray proposed the polar method where the two trigonometrict functions were replaced by
-a square root and rejection sampling with acceptance rate $\pi/4$. Rejection sampling had
-already been used by von Neuman in his exponential method \cite{vonneumann1951rejection},
-and it plays a central role in the ziggurat method for normal sampling, devised by
-Marsaglia and Tsang in 
+xxx). The already mentioned Box-Muller method (1958) requires the evaluation of a square
+root, logarithm, a sine, and a cosine for each pair of samples, but a few years later
+Marsaglia and Bray proposed the polar method where the two trigonometrict functions were
+replaced by rejection sampling with acceptance rate $\pi/4$. Rejection sampling had
+already been used by von Neuman in his exponential method \cite{vonneumann1951rejection}.
+It also plays a central role in the ratio of uniforms method (1977)
+\cite{kinderman1977ratio,leva1992fast} which has an acceptance rate of 73\% and needs two
+uniform samples but only 0.012 logarithms and no square roots per normal sample. The next
+advance, also using rejection, was the ziggurat method (1984,2000) proposed in two stages
+by Marsaglia and Tsang \cite{marsaglia1984fast,marsaglia2000ziggurat}, the revised method
+drawing from the tail using an earlier idea \cite{marsaglia1964tail}. The seminal article
+from 2000 gives algorithms for normal and for exponential variates, both of which are
+implemented in Randompack.
 
+Before 2000 various algorithms had been devised for the gamma
+distribution, all of them based on some sort of rejection and many quite complex. But the
+previously mentioned 2000 article had a notably elegant method for the gamma distribution
+that has since been adopted by most RNG libraries, including Randompack.
 
-At the end of the 20th century and especially in the 21st century random number research
-focus shifted to studying the statistical quality of RNGs, ensuring long periods, and
-devising methods to create independent streams of random numbers, spurred on by faster,
-often parallel computers. On a modern computer the Park-Miller RNG will start to repeat
-itself after a few seconds on a single core.
+At the end of the 20th century and especially in the 21st century the focus in random
+number research shifted to studying the statistical quality of RNGs, ensuring long
+periods, and devising methods to create independent streams of random numbers, spurred on
+by faster, often parallel computers. On a modern computer the Park-Miller RNG will start
+to repeat itself after a few seconds on a single core.
+
+Rigorous tests of statistical random generators were described in Knuth's Art of Computer
+Programming \cite{knuth1969art} and other notable advances were the Diehard test suite
+(1996) \cite{marsaglia1996diehard}, TestU01 (2007) \cite{lecuyer2007testu01} and
 
 Among the first studies of 
 

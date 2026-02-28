@@ -255,7 +255,7 @@ static void TestXoshiro256ssAgainstRust(void) {
   randompack_free(rng);
 }
 
-static void TestFastAgainstRust(void) {
+static void TestXoshiro256ppsimdAgainstRust(void) {
   // Rust reference: xoshiro256++ with jump() to form four streams, interleaved.
   uint64_t state[4] = {
     1234567890123456789ull,
@@ -291,6 +291,43 @@ static void TestFastAgainstRust(void) {
   randompack_free(rng);
 }
 
+static void TestRanluxppAgainstJirka(void) {
+  // git clone https://github.com/jirka-h/ranluxpp-portable, write the following
+  // ranlux-check.c, and compile and run with "gcc ranlux-check.c ranluxpp.c; a.out"
+  // to get xorsum and lastval to compare with.
+  // #include "ranluxpp.h"
+  // #include <stdint.h>
+  // #include <string.h>
+  // int main(void) {
+  //   ranluxpp_t r;
+  //   ranluxpp_init(&r, 0, 2048);
+  //   uint64_t init[9] = {1, 2, 3, 4, 5, 6, 7, 8, 9}, xorsum = 0;
+  //   memcpy(r.x, init, sizeof(init));
+  //   for (int k = 0; k < 100; k++) {
+  //     ranluxpp_nextstate(&r);
+  //     for (int i = 0; i < 9; i++) xorsum ^= r.x[i];
+  //   }
+  //   printf("xorsum:     0x%016" PRIx64 "\n", xorsum);
+  //   printf("last value: 0x%016" PRIx64 "\n", r.x[8]);
+  //   return 0;
+  // }
+  uint64_t xorsum = 0xfe4bac4d5cedb127ULL, lastval = 0xee4ef07d92e6614dULL;
+  uint64_t init[9] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+  uint64_t x[900];
+  randompack_rng *rng = randompack_create("ranlux");
+  check_rng_clean(rng);
+  bool ok = randompack_set_state(init, 9, rng);
+  check_success(ok, rng);
+  ok = randompack_uint64(x, 900, 0, rng);
+  check_success(ok, rng);
+  uint64_t acc = 0;
+  for (int i = 0; i < 900; i++) acc ^= x[i];
+  xCheck(acc == xorsum);
+  xCheck(x[899] == lastval);
+  randompack_free(rng);
+}
+
+
 void TestReference(void) {
   TestChaCha20AgainstRFC8439();
   if (!is_little_endian()) return;
@@ -298,7 +335,8 @@ void TestReference(void) {
   TestPhiloxAgainstRandom123();
   TestXoshiro256ppAgainstRust();
   TestXoshiro256ssAgainstRust();
-  TestFastAgainstRust();
+  TestXoshiro256ppsimdAgainstRust();
+  TestRanluxppAgainstJirka();
 }
 
 void TestReferencex(char *engine) {
@@ -321,6 +359,9 @@ void TestReferencex(char *engine) {
     TestXoshiro256ssAgainstRust();
   }
   else if (!strcmp(e, "x256++simd")) {
-    TestFastAgainstRust();
+    TestXoshiro256ppsimdAgainstRust();
+  }
+  else if (!strcmp(e, "ranlux")) {
+    TestRanluxppAgainstJirka();
   }
 }

@@ -34,13 +34,14 @@ static rng_entry rng_table[] = {
   {"x256++simd","xorshift256++, with SIMD accelaration (4x64)",FAST,    4,fill_fast     },
   {"x256++",   "xoshiro256++, Vigna & Blackman, 2019 (4x64)",  X256PP,  4,fill_x256pp   },
   {"x256**",   "xoshiro256**, Vigna & Blackman, 2019 (4x64)",  X256SS,  4,fill_x256ss   },
-  {"xoro++",   "xoroshiro128++, Vigna & Blackman, 2016 (2x64)",XORO,    2,fill_xoro128pp},
   {"x128+",    "xorshift128+, Vigna, 2014 (2x64)",             X128P,   2,fill_x128p    },
+  {"xoro++",   "xoroshiro128++, Vigna & Blackman, 2016 (2x64)",XORO,    2,fill_xoro128pp},
   {"pcg64",    "PCG64-DXSM, O'Neill, 2014 (4x64)",             PCG64,   4,fill_pcg64    },
+  {"squares",  "squares64, Widynski, 2021 (2x64)",             SQUARES, 2,fill_squares  },
+  {"philox",   "Philox-4x64, Salmon & Moraes, 2011 (6x64)",    PHILOX,  6,fill_philox   },
   {"sfc64",    "sfc64, Chris Doty-Humphrey, 2013 (4x64)",      SFC64,   4,fill_sfc64    },
   {"cwg128",   "cwg128-64, Działa, 2022 (5x64)",               CWG128,  5,fill_cwg128   },
-  {"philox",   "Philox-4x64, Salmon & Moraes, 2011 (6x64)",    PHILOX,  6,fill_philox   },
-  {"squares",  "squares64, Widynski, 2021 (2x64)",             SQUARES, 2,fill_squares  },
+  {"ranlux",   "ranlux++, Sibidanov, 2017 (9x64)",             RANLUXPP,9,fill_ranluxpp },
   {"chacha20", "ChaCha20, Bernstein, 2008 (6x64)",             CHACHA20,6,fill_chacha   },
   {"system",   "Operating system entropy source",              SYS,     0,fill_csprng   },
 };
@@ -108,14 +109,22 @@ bool randompack_seed(int seed, uint32_t *spawn_key, int nkey, randompack_rng *rn
     rng->last_error = "randompack seed: invalid spawn_key arguments";
     return false;
   }
-  uint32_t w[16];
-  bool ok = seed_seq_seed(w, 16, seed32, spawn_key, nkey);
-  if (!ok) {
+  rng_entry *ent = find_entry(rng->engine);
+  int nwords = ent->state_words*2;
+  if (nwords < 1) nwords = 1;
+  uint32_t *w = 0;
+  if (!ALLOC(w, nwords)) {
     rng->last_error = "randompack seed: allocation failed";
     return false;
   }
-  rng_entry *ent = find_entry(rng->engine);
+  bool ok = seed_seq_seed(w, nwords, seed32, spawn_key, nkey);
+  if (!ok) {
+    rng->last_error = "randompack seed: allocation failed";
+    FREE(w);
+    return false;
+  }
   copy32(rng->state.u32, w, ent->state_words*2);
+  FREE(w);
   if (rng->engine == FAST) {
     uint64_t tmp[4];
     copy64(tmp, rng->state.u64, 4);

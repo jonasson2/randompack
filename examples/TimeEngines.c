@@ -128,12 +128,12 @@ int main(int argc, char **argv) {
     double ns32 = time_u32(chunk, bench_time, fill_u32, rng);
     double gb32 = 4/ns32;
     printf("%-18s", name);
-	 printf(" %8.2f", ns64);
-	 printf(" %8.2f", gb64);
-	 printf(" %8.2f", ns32);
-	 printf(" %8.2f", gb32);
+    printf(" %8.2f", ns64);
+    printf(" %8.2f", gb64);
+    printf(" %8.2f", ns32);
+    printf(" %8.2f", gb32);
     printf("\n");
-	 randompack_free(rng);
+    randompack_free(rng);
   }
   FREE(engines);
   FREE(descriptions);
