@@ -1,7 +1,11 @@
-// -*- C -*-
-#include "randompack_config.h"
+#include "mul9x9.h"
+#include <string.h>
+#include <assert.h>
+#include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
+
+static inline void copy64(void *dst, void *src, int n) { memcpy(dst, src, n*8); }
+
 // let:
 //   A = [a0..a8]
 //   B = [b0..b8]
@@ -24,38 +28,7 @@
 //     cy = adc(r[i+j], lo, cy)
 //   cy = adc(r[i+9], c, cy)
 
-#if defined(RANLUXPP_PORTABLE_CARRY) && !defined(RANLUXPP_CARRY_LOGIC) && \
-  !defined(RANLUXPP_CARRY_ADDOVERFLOW)
-#define RANLUXPP_CARRY_LOGIC 1
-#endif
-
-#if defined(RANLUXPP_CARRY_LOGIC)
-ALWAYS_INLINE uint64_t addc_u64(uint64_t a, uint64_t b, uint64_t cin,
-  uint64_t *sum) {
-  uint64_t s = a + b + cin;
-  uint64_t carry = (s < a) || (cin && s == a);
-  *sum = s;
-  return carry;
-}
-#elif defined(RANLUXPP_CARRY_ADDOVERFLOW)
-ALWAYS_INLINE uint64_t addc_u64(uint64_t a, uint64_t b, uint64_t cin,
-  uint64_t *sum) {
-  uint64_t s;
-  bool c0 = __builtin_add_overflow(a, b, &s);
-  bool c1 = __builtin_add_overflow(s, cin, &s);
-  *sum = s;
-  return (uint64_t)(c0 || c1);
-}
-#else
-ALWAYS_INLINE uint64_t addc_u64(uint64_t a, uint64_t b, uint64_t cin,
-  uint64_t *sum) {
-  unsigned long long carry;
-  *sum = __builtin_addcll(a, b, cin, &carry);
-  return (uint64_t)carry;
-}
-#endif
-
-ALWAYS_INLINE void mul9x9(uint64_t *z, const uint64_t *restrict x) {
+void mul9x9(uint64_t *z, const uint64_t *restrict x) {
   static const uint64_t a[9] = {
     0xed7faa90747aaad9ULL,
     0x4cec2c78af55c101ULL,
@@ -79,7 +52,7 @@ ALWAYS_INLINE void mul9x9(uint64_t *z, const uint64_t *restrict x) {
       p += c;
       c = (uint64_t)(p >> 64);
       lo = (uint64_t)p;
-      cy = addc_u64(z[i+j], lo, cy, &z[i+j]);
+      z[i+j] = __builtin_addcll(z[i+j], lo, cy, &cy);
     }
     z[i+9] = c + cy;
   }
@@ -98,7 +71,7 @@ ALWAYS_INLINE void mul9x9(uint64_t *z, const uint64_t *restrict x) {
 
 #include <stdint.h>
 
-ALWAYS_INLINE int addbits(uint64_t *x, uint64_t c, int n) {
+static inline int addbits(uint64_t *x, uint64_t c, int n) {
   uint64_t carry = 0;
   x[0] = __builtin_addcll(x[0], c, 0, &carry);
   for (int i = 1; i < n; i++) {
@@ -108,7 +81,7 @@ ALWAYS_INLINE int addbits(uint64_t *x, uint64_t c, int n) {
   return carry;
 }
 
-ALWAYS_INLINE int subbits(uint64_t *x, uint64_t c, int n) {
+static inline int subbits(uint64_t *x, uint64_t c, int n) {
   uint64_t borrow = 0;
   x[0] = __builtin_subcll(x[0], c, 0, &borrow);
   for (int i = 1; i < n; i++) {
@@ -118,7 +91,7 @@ ALWAYS_INLINE int subbits(uint64_t *x, uint64_t c, int n) {
   return borrow;
 }
 
-ALWAYS_INLINE int addc(uint64_t *r, const uint64_t *y, int n) {
+static inline int addc(uint64_t *r, const uint64_t *y, int n) {
   unsigned long long carry = 0;
   for (int i = 0; i < n; i++) {
     r[i] = __builtin_addcll(r[i], y[i], carry, &carry);
@@ -126,7 +99,7 @@ ALWAYS_INLINE int addc(uint64_t *r, const uint64_t *y, int n) {
   return (int)carry;
 }
 
-ALWAYS_INLINE int subc(uint64_t *r, const uint64_t *y, int n) {
+static inline int subc(uint64_t *r, const uint64_t *y, int n) {
   unsigned long long borrow = 0;
   for (int i = 0; i < n; i++) {
     r[i] = __builtin_subcll(r[i], y[i], borrow, &borrow);
@@ -134,14 +107,14 @@ ALWAYS_INLINE int subc(uint64_t *r, const uint64_t *y, int n) {
   return (int)borrow;
 }
 
-ALWAYS_INLINE void t2get(uint64_t t2[4], uint64_t t1[9]) {
+static inline void t2get(uint64_t t2[4], uint64_t t1[9]) {
   t2[0] = (t1[5] >> 16) | (t1[6] << 48);
   t2[1] = (t1[6] >> 16) | (t1[7] << 48);
   t2[2] = (t1[7] >> 16) | (t1[8] << 48);
   t2[3] =  t1[8] >> 16;
 }
 
-ALWAYS_INLINE int shly240(uint64_t y[9]) {
+static inline int shly240(uint64_t y[9]) {
   int co = (int)((y[5] >> 16) & 1);
   y[8] = (y[5] << 48) | (y[4] >> 16);
   y[7] = (y[4] << 48) | (y[3] >> 16);
@@ -155,7 +128,7 @@ ALWAYS_INLINE int shly240(uint64_t y[9]) {
   return co;
 }
 
-ALWAYS_INLINE void corr_r_minus_cm(uint64_t r[9], int c) {
+static inline void corr_r_minus_cm(uint64_t r[9], int c) {
   uint64_t
 	 c0 = (uint64_t)abs(c),
 	 c3 = ((uint64_t)abs(c)) << 48;
@@ -169,13 +142,14 @@ ALWAYS_INLINE void corr_r_minus_cm(uint64_t r[9], int c) {
   }
 }
 
-ALWAYS_INLINE void mod9x9(uint64_t x[9], uint64_t z[18]) {
+//static inline void remainder(uint64_t x[9], uint64_t z[18]) {
+void mod9x9(uint64_t z[18]) {
   uint64_t t1[9], t2[4], t3[9];
   int c;
   copy64(t1, z + 9, 9);
   t2get(t2, t1);
   copy64(t3, z + 9, 6); t3[5] &= 0xFFFF;
-  copy64(x, z, 9);
+  uint64_t *x = z;
   c = 0;
   c -= subc(x, t1, 9);
   c -= subc(x, t2, 4);
@@ -183,19 +157,4 @@ ALWAYS_INLINE void mod9x9(uint64_t x[9], uint64_t z[18]) {
   c += shly240(t3);
   c += addc(x, t3, 9);
   corr_r_minus_cm(x, c);
-}
-
-ALWAYS_INLINE void fill_ranluxpp(randompack_rng *rng, size_t len) {
-  uint64_t *out = rng->buf.u64;
-  uint64_t s[9];
-  uint64_t z[18];
-  copy64(s, rng->state.u64, 9);
-  size_t i = 0;
-  while (i < len) {
-	 mul9x9(z, s);
-	 mod9x9(s, z);
-    for (int j = 0; j < 9 && i < len; j++, i++)
-      out[i] = s[j];
-  }
-  copy64(rng->state.u64, s, 9);
 }
