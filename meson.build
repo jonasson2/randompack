@@ -206,7 +206,7 @@ fortran_inc = []
 # Includes / subdirectories
 # -------------------------------------------------
 
-inc = include_directories('src')
+inc = include_directories('src', 'third-party')
 
 if build_fortran_interface
   subdir('fortran')

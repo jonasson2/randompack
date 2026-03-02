@@ -249,10 +249,6 @@ gh workflow run xxx.yml  # trigger wheel building
 gh run watch
 gh run list --json databaseId --jq '.[].databaseId'  # just the id-s, use in foreach...
 
-CondaForge
-==========
-see misc/recipe/
-
 CRAN submission
 ===============
 scripts/syncR.sh
