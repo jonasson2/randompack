@@ -90,6 +90,11 @@ static void rand_init_randomize(randompack_rng *rng) {
     rng->state.xo.s2[0] = tmp[2];
     rng->state.xo.s3[0] = tmp[3];
   }
+  else if (rng->engine == RANLUXPP_PORTABLE) {
+    uint64_t seed64 = 0;
+    entropy_fill(rng, &seed64, sizeof(seed64));
+    ranluxpp_portable_seed(rng, seed64);
+  }
   else {
     entropy_fill(rng, rng->state.u64, sizeof(rng->state.u64));
   }
@@ -148,6 +153,9 @@ static void set_state(uint64_t *state, int nstate, randompack_rng *rng) {
     rng->state.xo.s1[0] = state[1];
     rng->state.xo.s2[0] = state[2];
     rng->state.xo.s3[0] = state[3];
+  }
+  else if (rng->engine == RANLUXPP_PORTABLE) {
+    ranluxpp_portable_set_state(rng, state);
   }
   else copy64(rng->state.u64, state, nstate);
 }

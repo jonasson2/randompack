@@ -42,6 +42,9 @@ static rng_entry rng_table[] = {
   {"sfc64",    "sfc64, Chris Doty-Humphrey, 2013 (4x64)",      SFC64,   4,fill_sfc64    },
   {"cwg128",   "cwg128-64, Działa, 2022 (5x64)",               CWG128,  5,fill_cwg128   },
   {"ranlux",   "ranlux++, Sibidanov, 2017 (9x64)",             RANLUXPP,9,fill_ranluxpp },
+  {"ranluxpp_portable",
+   "ranlux++ portable, Jirka Hladky, 2021 (9x64)",
+   RANLUXPP_PORTABLE,9,fill_ranluxpp_portable},
   {"chacha20", "ChaCha20, Bernstein, 2008 (6x64)",             CHACHA20,6,fill_chacha   },
   {"system",   "Operating system entropy source",              SYS,     0,fill_csprng   },
 };
@@ -108,6 +111,18 @@ bool randompack_seed(int seed, uint32_t *spawn_key, int nkey, randompack_rng *rn
   if (nkey < 0 || (nkey > 0 && !spawn_key)) {
     rng->last_error = "randompack seed: invalid spawn_key arguments";
     return false;
+  }
+  if (rng->engine == RANLUXPP_PORTABLE) {
+    uint32_t tmp[2];
+    bool ok = seed_seq_seed(tmp, 2, seed32, spawn_key, nkey);
+    if (!ok) {
+      rng->last_error = "randompack seed: allocation failed";
+      return false;
+    }
+    uint64_t seed64 = ((uint64_t)tmp[1] << 32) | tmp[0];
+    ranluxpp_portable_seed(rng, seed64);
+    rand_init(rng);
+    return true;
   }
   rng_entry *ent = find_entry(rng->engine);
   int nwords = ent->state_words*2;

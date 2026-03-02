@@ -1,35 +1,74 @@
 // -*- C -*-
-static void
-mul9x9(uint64_t *z, const uint64_t *x, const uint64_t *y) {
+#include "randompack_config.h"
+#include <stdint.h>
+
+#if defined(_MSC_VER)
+#include <intrin.h>
+#endif
+
+ALWAYS_INLINE void mul9x9(uint64_t *__restrict__ z,
+                          const uint64_t *__restrict__ y) {
+  static const uint64_t A[9] = {
+    0xed7faa90747aaad9UL,  // word 0
+    0x4cec2c78af55c101UL,  // word 1
+    0xe64dcb31c48228ecUL,  // word 2
+    0x6d8a15a13bee7cb0UL,  // word 3
+    0x20b2ca60cb78c509UL,  // word 4
+    0x256c3d3c662ea36cUL,  // word 5
+    0xff74e54107684ed2UL,  // word 6
+    0x492edfcc0cc8e753UL,  // word 7
+    0xb48c187cf5b22097UL,  // word 8
+  };
+
   uint64_t carry_lo = 0;
-  uint64_t carry_hi = 0;
-  for (int k = 0; k < 18; k++) {
-    uint64_t acc0 = carry_lo;
-    uint64_t acc1 = carry_hi;
-    uint64_t acc2 = 0;
-    for (int i = 0; i < 9; i++) {
-      int j = k - i;
-      if (j < 0 || j >= 9) continue;
-      uint64_t hi, lo;
-      MUL64_WIDE(x[i], y[j], hi, lo);
-      uint64_t t0 = acc0 + lo;
-      uint64_t c0 = (t0 < acc0);
-      acc0 = t0;
-      uint64_t t1 = acc1 + hi;
-      uint64_t c1 = (t1 < acc1);
-      acc1 = t1;
-      uint64_t t2 = acc1 + c0;
-      uint64_t c2 = (t2 < acc1);
-      acc1 = t2;
-      acc2 += c1 + c2;
-    }
-    z[k] = acc0;
-    carry_lo = acc1;
-    carry_hi = acc2;
-  }
+  uint32_t carry_hi = 0;
+
+#define MUL_ACC(i, k)                                   \
+ do {                                                   \
+   uint64_t hi, lo;                                     \
+   MUL64_WIDE(A[i], y[(k)-(i)], hi, lo);                \
+   uint64_t t0 = acc0 + lo;  uint64_t c0 = (t0 < acc0); \
+   acc0 = t0;                                           \
+   uint64_t t1 = acc1 + hi;  uint64_t c1 = (t1 < acc1); \
+   acc1 = t1;                                           \
+   uint64_t t2 = acc1 + c0;  uint32_t c2 = (t2 < acc1); \
+   acc1 = t2;                                           \
+   acc2 += c1 + c2;                                     \
+ } while (0)
+
+#define MUL_WORD(k, i0, i1)                             \
+ do {                                                   \
+   uint64_t acc0 = carry_lo, acc1 = carry_hi;           \
+   uint32_t acc2 = 0;                                   \
+   for (int i = (i0); i <= (i1); i++) MUL_ACC(i, k);    \
+   z[k] = acc0;                                         \
+   carry_lo = acc1; carry_hi = acc2;                    \
+ } while (0)
+
+  MUL_WORD( 0, 0, 0);
+  MUL_WORD( 1, 0, 1);
+  MUL_WORD( 2, 0, 2);
+  MUL_WORD( 3, 0, 3);
+  MUL_WORD( 4, 0, 4);
+  MUL_WORD( 5, 0, 5);
+  MUL_WORD( 6, 0, 6);
+  MUL_WORD( 7, 0, 7);
+  MUL_WORD( 8, 0, 8);
+  MUL_WORD( 9, 1, 8);
+  MUL_WORD(10, 2, 8);
+  MUL_WORD(11, 3, 8);
+  MUL_WORD(12, 4, 8);
+  MUL_WORD(13, 5, 8);
+  MUL_WORD(14, 6, 8);
+  MUL_WORD(15, 7, 8);
+  MUL_WORD(16, 8, 8);
+  z[17] = carry_lo;
+
+#undef MUL_ACC
+#undef MUL_WORD
 }
 
-static uint64_t
+ALWAYS_INLINE uint64_t
 add576(uint64_t *r, const uint64_t *a) {
   uint64_t carry = 0;
   for (int i = 0; i < 9; i++) {
@@ -45,7 +84,7 @@ add576(uint64_t *r, const uint64_t *a) {
   return carry;
 }
 
-static uint64_t
+ALWAYS_INLINE uint64_t
 sub576(uint64_t *r, const uint64_t *a) {
   uint64_t borrow = 0;
   for (int i = 0; i < 9; i++) {
@@ -61,7 +100,7 @@ sub576(uint64_t *r, const uint64_t *a) {
   return borrow;
 }
 
-static int
+ALWAYS_INLINE int
 cmp576(const uint64_t *a, const uint64_t *b) {
   for (int i = 8; i >= 0; i--) {
     if (a[i] > b[i]) return 1;
@@ -70,7 +109,7 @@ cmp576(const uint64_t *a, const uint64_t *b) {
   return 0;
 }
 
-static void
+ALWAYS_INLINE void
 add_small(uint64_t *r, uint64_t k) {
   uint64_t carry = k;
   for (int i = 0; i < 9 && carry != 0; i++) {
@@ -80,7 +119,7 @@ add_small(uint64_t *r, uint64_t k) {
   }
 }
 
-static void
+ALWAYS_INLINE void
 sub_small(uint64_t *r, uint64_t k) {
   uint64_t borrow = k;
   for (int i = 0; i < 9 && borrow != 0; i++) {
@@ -90,7 +129,7 @@ sub_small(uint64_t *r, uint64_t k) {
   }
 }
 
-static void
+ALWAYS_INLINE void
 add_shift240_small(uint64_t *r, uint64_t k) {
   if (k == 0) return;
   uint64_t lo = k<<48;
@@ -111,7 +150,7 @@ add_shift240_small(uint64_t *r, uint64_t k) {
   }
 }
 
-static void
+ALWAYS_INLINE void
 sub_shift240_small(uint64_t *r, uint64_t k) {
   if (k == 0) return;
   uint64_t lo = k<<48;
@@ -132,7 +171,7 @@ sub_shift240_small(uint64_t *r, uint64_t k) {
   }
 }
 
-static void
+ALWAYS_INLINE void
 shift240_left(uint64_t *dst, const uint64_t *src) {
   for (int i = 0; i < 9; i++) dst[i] = 0;
   for (int i = 3; i < 9; i++) {
@@ -142,8 +181,13 @@ shift240_left(uint64_t *dst, const uint64_t *src) {
   }
 }
 
+#if defined(RANLUXPP_PROFILE)
 static void
 mul9x9_remainder(uint64_t *r, const uint64_t *z) {
+#else
+ALWAYS_INLINE void
+mul9x9_remainder(uint64_t *r, const uint64_t *z) {
+#endif
   // m = 2^576 - 2^240 + 1, little-endian u64[9]
   static const uint64_t MOD_M[9] = {
     0x0000000000000001ULL,
@@ -202,33 +246,26 @@ mul9x9_remainder(uint64_t *r, const uint64_t *z) {
   if (cmp576(r, MOD_M) >= 0) sub576(r, MOD_M);
 }
 
-static void
-mul9x9mod(uint64_t *b, const uint64_t *a) {
+ALWAYS_INLINE void
+mul9x9mod(uint64_t *s) {
   uint64_t z[18];
-  mul9x9(z, a, b);
-  mul9x9_remainder(b, z);
+  mul9x9(z, s);
+  mul9x9_remainder(s, z);
 }
 
-static inline void fill_ranluxpp(randompack_rng *rng, size_t len) {
-  static const uint64_t A[9] = {
-    0xed7faa90747aaad9UL,  // word 0
-    0x4cec2c78af55c101UL,  // word 1
-    0xe64dcb31c48228ecUL,  // word 2
-    0x6d8a15a13bee7cb0UL,  // word 3
-    0x20b2ca60cb78c509UL,  // word 4
-    0x256c3d3c662ea36cUL,  // word 5
-    0xff74e54107684ed2UL,  // word 6
-    0x492edfcc0cc8e753UL,  // word 7
-    0xb48c187cf5b22097UL,  // word 8
-  };
+ALWAYS_INLINE void fill_ranluxpp(randompack_rng *rng, size_t len) {
   uint64_t *out = rng->buf.u64;
-  uint64_t s[9];
-  for (int i = 0; i < 9; i++) s[i] = rng->state.u64[i];
-  size_t i = 0;
-  while (i < len) {
-    mul9x9mod(s, A);
-    for (int j = 0; j < 9 && i < len; j++, i++)
-      out[i] = s[j];
+  uint64_t *s = rng->state.u64;
+  size_t nblocks = len/9;
+  size_t rem = len - nblocks*9;
+  for (size_t b = 0; b < nblocks; b++) {
+    mul9x9mod(s);
+    memcpy(out + 9*b, s, 9*sizeof(uint64_t));
   }
-  for (int i = 0; i < 9; i++) rng->state.u64[i] = s[i];
+  if (rem > 0) {
+    mul9x9mod(s);
+    size_t i = nblocks*9;
+    for (size_t j = 0; j < rem; j++)
+      out[i + j] = s[j];
+  }
 }

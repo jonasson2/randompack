@@ -24,6 +24,7 @@ typedef enum {
   X256SS,
   X256PP,
   RANLUXPP,
+  RANLUXPP_PORTABLE,
   SQUARES,
   SFC64,
   PCG64,
@@ -40,11 +41,17 @@ typedef struct {
   uint64_t s0[4], s1[4], s2[4], s3[4];
 } xo256;
 
+typedef struct {
+  uint64_t x[9];
+  uint64_t A[9];
+} rp_ranluxpp_t;
+
 struct randompack_rng {
   union {
     uint8_t u8[72];
     uint32_t u32[18];
     uint64_t u64[9];
+    rp_ranluxpp_t rpp;
     xo256 xo;
     pcg64_t pcg;
     #if HAVE128

@@ -33,6 +33,13 @@ time_engines = executable(
   dependencies : [randompack_dep],
 )
 
+time_ranlux = executable(
+  'TimeRanlux',
+  ['TimeRanlux.c', 'TimeUtil.c', '../misc/ranluxpp-portable/ranluxpp.c'] + common_util,
+  include_directories : [common_inc, include_directories('../misc/ranluxpp-portable')],
+  dependencies : [randompack_dep],
+)
+
 time_fast = executable(
   'TimeFast',
   ['TimeFast.c', 'TimeUtil.c'] + common_util,
