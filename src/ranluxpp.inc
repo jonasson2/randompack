@@ -2,6 +2,9 @@
 #include "randompack_config.h"
 #include <stdlib.h>
 #include <stdbool.h>
+#if defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)
+#include <immintrin.h>
+#endif
 // let:
 //   A = [a0..a8]
 //   B = [b0..b8]
@@ -24,36 +27,33 @@
 //     cy = adc(r[i+j], lo, cy)
 //   cy = adc(r[i+9], c, cy)
 
-#if defined(RANLUXPP_PORTABLE_CARRY) && !defined(RANLUXPP_CARRY_LOGIC) && \
-  !defined(RANLUXPP_CARRY_ADDOVERFLOW)
-#define RANLUXPP_CARRY_LOGIC 1
-#endif
-
-#if defined(RANLUXPP_CARRY_LOGIC)
 ALWAYS_INLINE uint64_t addc_u64(uint64_t a, uint64_t b, uint64_t cin,
   uint64_t *sum) {
-  uint64_t s = a + b + cin;
-  uint64_t carry = (s < a) || (cin && s == a);
-  *sum = s;
-  return carry;
-}
-#elif defined(RANLUXPP_CARRY_ADDOVERFLOW)
-ALWAYS_INLINE uint64_t addc_u64(uint64_t a, uint64_t b, uint64_t cin,
-  uint64_t *sum) {
+#if defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)
+  unsigned char carry = _addcarry_u64((unsigned char)cin, a, b, sum);
+  return (uint64_t)carry;
+#else
   uint64_t s;
   bool c0 = __builtin_add_overflow(a, b, &s);
   bool c1 = __builtin_add_overflow(s, cin, &s);
   *sum = s;
   return (uint64_t)(c0 || c1);
-}
-#else
-ALWAYS_INLINE uint64_t addc_u64(uint64_t a, uint64_t b, uint64_t cin,
-  uint64_t *sum) {
-  unsigned long long carry;
-  *sum = __builtin_addcll(a, b, cin, &carry);
-  return (uint64_t)carry;
-}
 #endif
+}
+
+ALWAYS_INLINE uint64_t subc_u64(uint64_t a, uint64_t b, uint64_t bin,
+  uint64_t *diff) {
+#if defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)
+  unsigned char borrow = _subborrow_u64((unsigned char)bin, a, b, diff);
+  return (uint64_t)borrow;
+#else
+  uint64_t d;
+  bool b0 = __builtin_sub_overflow(a, b, &d);
+  bool b1 = __builtin_sub_overflow(d, bin, &d);
+  *diff = d;
+  return (uint64_t)(b0 || b1);
+#endif
+}
 
 ALWAYS_INLINE void mul9x9(uint64_t *z, const uint64_t *restrict x) {
   static const uint64_t a[9] = {
@@ -100,36 +100,36 @@ ALWAYS_INLINE void mul9x9(uint64_t *z, const uint64_t *restrict x) {
 
 ALWAYS_INLINE int addbits(uint64_t *x, uint64_t c, int n) {
   uint64_t carry = 0;
-  x[0] = __builtin_addcll(x[0], c, 0, &carry);
+  carry = addc_u64(x[0], c, 0, &x[0]);
   for (int i = 1; i < n; i++) {
-	 x[i] = __builtin_addcll(x[i], 0, carry, &carry);
-	 if (!carry) break;
+    carry = addc_u64(x[i], 0, carry, &x[i]);
+    if (!carry) break;
   }
-  return carry;
+  return (int)carry;
 }
 
 ALWAYS_INLINE int subbits(uint64_t *x, uint64_t c, int n) {
   uint64_t borrow = 0;
-  x[0] = __builtin_subcll(x[0], c, 0, &borrow);
+  borrow = subc_u64(x[0], c, 0, &x[0]);
   for (int i = 1; i < n; i++) {
-	 x[i] = __builtin_subcll(x[i], 0, borrow, &borrow);
-	 if (!borrow) break;
+    borrow = subc_u64(x[i], 0, borrow, &x[i]);
+    if (!borrow) break;
   }
-  return borrow;
+  return (int)borrow;
 }
 
 ALWAYS_INLINE int addc(uint64_t *r, const uint64_t *y, int n) {
-  unsigned long long carry = 0;
+  uint64_t carry = 0;
   for (int i = 0; i < n; i++) {
-    r[i] = __builtin_addcll(r[i], y[i], carry, &carry);
+    carry = addc_u64(r[i], y[i], carry, &r[i]);
   }
   return (int)carry;
 }
 
 ALWAYS_INLINE int subc(uint64_t *r, const uint64_t *y, int n) {
-  unsigned long long borrow = 0;
+  uint64_t borrow = 0;
   for (int i = 0; i < n; i++) {
-    r[i] = __builtin_subcll(r[i], y[i], borrow, &borrow);
+    borrow = subc_u64(r[i], y[i], borrow, &r[i]);
   }
   return (int)borrow;
 }
