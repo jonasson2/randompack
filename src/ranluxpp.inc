@@ -68,7 +68,7 @@ ALWAYS_INLINE void mul9x9(uint64_t *z, const uint64_t *restrict x) {
     0x492edfcc0cc8e753ULL,
     0xb48c187cf5b22097ULL,
   };
-  uint64_t lo, hi;
+  uint64_t lo;
   // uint64_t d = 0;
   for (int i=0; i<18; i++) z[i] = 0;
 #ifdef __clang__
@@ -97,11 +97,10 @@ ALWAYS_INLINE void mul9x9(uint64_t *z, const uint64_t *restrict x) {
   for (int i=0; i<9; i++) {
     uint64_t c = 0, cy = 0, d;
     for (int j=0; j<9; j++) {
-      MUL64_WIDE(x[i], a[j], hi, lo);
-      // add128(lo, hi, c, 0, &lo, &c);
-      // z[i+j] = addc64(z[i+j], lo, cy, &cy);
-      lo = addc64(lo, c, 0, &d);
-      c = hi + d;
+      __uint128_t w = (__uint128_t)x[i]*a[j];
+      w += c;
+      lo = (uint64_t)w;
+      c = (uint64_t)(w >> 64);
       z[i+j] = addc64(z[i+j], lo, cy, &cy);
     }
     z[i+9] = c + cy;
