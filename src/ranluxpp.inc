@@ -68,16 +68,34 @@ ALWAYS_INLINE void mul9x9(uint64_t *z, const uint64_t *restrict x) {
     0x492edfcc0cc8e753ULL,
     0xb48c187cf5b22097ULL,
   };
-  uint64_t lo, hi, c, cy;
+  uint64_t lo, hi;
+  // uint64_t d = 0;
   for (int i=0; i<18; i++) z[i] = 0;
 #ifdef __clang__
-  #pragma clang loop unroll(full)
+#pragma clang loop unroll(full)
 #elif !defined(_MSC_VER)
-  #pragma GCC unroll 9
+#pragma GCC unroll 9
 #endif
+  // for (int k=0; k<=16; k++) {
+  //   uint64_t zk = z[k], zkp = z[k+1] + d;
+  //   d = 0;
+  //   for (int j = max(0,k-8); j <= min(8,k); j++) {
+  //     int i = k - j;
+  //     MUL64_WIDE(x[i], a[j], hi, lo);
+  //     // uint64_t cy;
+  //     // zk = addc64(zk, lo, 0, &cy);
+  //     // zkp = addc64(zkp, hi, cy, &cy);
+  //     // d += cy;
+  //     zk += lo;
+  //     hi += zk < lo;
+  //     zkp += hi;
+  //     d += zkp < hi;
+  //   }
+  //   z[k] = zk;
+  //   z[k+1] = zkp;
+  // }
   for (int i=0; i<9; i++) {
-    c = 0;
-    cy = 0;
+    uint64_t c = 0, cy = 0;
     for (int j=0; j<9; j++) {
       MUL64_WIDE(x[i], a[j], hi, lo);
       add128(lo, hi, c, 0, &lo, &hi);
