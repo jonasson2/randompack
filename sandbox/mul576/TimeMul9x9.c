@@ -8,7 +8,6 @@
 
 #include "mul9x9.h"
 #include "mul_jirka.h"
-#include "mod_m.h"
 
 #if defined(_WIN32)
   #include <windows.h>
@@ -36,28 +35,11 @@ static void warmup_cpu(double seconds) {
   uint64_t t = t0;
   volatile double sink = 0;
   while (t < deadline) {
-    for (int i = 0; i < 10000; i++)
-      sink += cos((double)i);
+    for (int i = 0; i < 1000000; i++)
+      sink += (double)i;
     t = clock_nsec();
   }
   (void)sink;
-}
-
-static void mul_jirka_wrap(uint64_t *out, const uint64_t *in, const uint64_t *a) {
-  multiply9x9_jirka(in, a, out);
-}
-
-static void mul9x9_wrap(uint64_t *out, const uint64_t *in, const uint64_t *a) {
-  (void)a;
-  mul9x9(out, in);
-}
-
-static void mod9x9_wrap(uint64_t *x) {
-  mod9x9(x);
-}
-
-static void mod_m_wrap0(const uint64_t *x, uint64_t *out) {
-  mod_m_wrap(x, out);
 }
 
 static double time_mulmod_rp(const uint64_t *a, uint64_t *x, uint64_t *z,
@@ -69,11 +51,16 @@ static double time_mulmod_rp(const uint64_t *a, uint64_t *x, uint64_t *z,
   volatile uint64_t sink = 0;
   while (t < deadline) {
     for (int i = 0; i < chunk; i++) {
-      mul9x9_wrap(z + (size_t)i*18, x + (size_t)i*9, a);
-      mod9x9_wrap(z + (size_t)i*18);
-      sink ^= z[(size_t)i*18 + 17];
+      uint64_t *zi = z + (size_t)i*18;
+      uint64_t *xi = x + (size_t)i*9;
+      for (int r = 0; r < 64; r++) {
+        (void)a;
+        mul9x9(zi, xi);
+        mod9x9(xi, zi);
+        sink ^= xi[8];
+      }
     }
-    calls += (uint64_t)chunk;
+    calls += (uint64_t)chunk*64;
     t = clock_nsec();
   }
   (void)sink;
@@ -81,7 +68,7 @@ static double time_mulmod_rp(const uint64_t *a, uint64_t *x, uint64_t *z,
 }
 
 static double time_mulmod_jirka(const uint64_t *a, uint64_t *x, uint64_t *z,
-  uint64_t *out, int chunk, double bench_time) {
+  int chunk, double bench_time) {
   uint64_t t0 = clock_nsec();
   uint64_t deadline = t0 + (uint64_t)(bench_time*1e9);
   uint64_t t = t0;
@@ -89,11 +76,59 @@ static double time_mulmod_jirka(const uint64_t *a, uint64_t *x, uint64_t *z,
   volatile uint64_t sink = 0;
   while (t < deadline) {
     for (int i = 0; i < chunk; i++) {
-      mul_jirka_wrap(z + (size_t)i*18, x + (size_t)i*9, a);
-      mod_m_wrap0(z + (size_t)i*18, out + (size_t)i*9);
-      sink ^= out[(size_t)i*9 + 8];
+      uint64_t *zi = z + (size_t)i*18;
+      uint64_t *xi = x + (size_t)i*9;
+      for (int r = 0; r < 64; r++) {
+        multiply9x9_jirka(xi, a, zi);
+        mod9x9(xi, zi);
+        sink ^= xi[8];
+      }
     }
-    calls += (uint64_t)chunk;
+    calls += (uint64_t)chunk*64;
+    t = clock_nsec();
+  }
+  (void)sink;
+  return (calls > 0) ? (t - t0)/((double)calls) : 0;
+}
+
+static double time_mul_only(uint64_t *x, uint64_t *z, int chunk, double bench_time) {
+  uint64_t t0 = clock_nsec();
+  uint64_t deadline = t0 + (uint64_t)(bench_time*1e9);
+  uint64_t t = t0;
+  uint64_t calls = 0;
+  volatile uint64_t sink = 0;
+  while (t < deadline) {
+    for (int i = 0; i < chunk; i++) {
+      uint64_t *zi = z + (size_t)i*18;
+      uint64_t *xi = x + (size_t)i*9;
+      for (int r = 0; r < 64; r++) {
+        mul9x9(zi, xi);
+        sink ^= zi[17];
+      }
+    }
+    calls += (uint64_t)chunk*64;
+    t = clock_nsec();
+  }
+  (void)sink;
+  return (calls > 0) ? (t - t0)/((double)calls) : 0;
+}
+
+static double time_mod_only(uint64_t *x, uint64_t *z, int chunk, double bench_time) {
+  uint64_t t0 = clock_nsec();
+  uint64_t deadline = t0 + (uint64_t)(bench_time*1e9);
+  uint64_t t = t0;
+  uint64_t calls = 0;
+  volatile uint64_t sink = 0;
+  while (t < deadline) {
+    for (int i = 0; i < chunk; i++) {
+      uint64_t *zi = z + (size_t)i*18;
+      uint64_t *xi = x + (size_t)i*9;
+      for (int r = 0; r < 64; r++) {
+        mod9x9(xi, zi);
+        sink ^= xi[8];
+      }
+    }
+    calls += (uint64_t)chunk*64;
     t = clock_nsec();
   }
   (void)sink;
@@ -117,12 +152,10 @@ int main(void) {
   const double warmup_time = 0.1;
   uint64_t *x = calloc((size_t)chunk*9, sizeof(*x));
   uint64_t *z = calloc((size_t)chunk*18, sizeof(*z));
-  uint64_t *mout = calloc((size_t)chunk*9, sizeof(*mout));
-  if (!x || !z || !mout) {
+  if (!x || !z) {
     fprintf(stderr, "allocation failed\n");
     free(x);
     free(z);
-    free(mout);
     return 1;
   }
   uint64_t seed = 0x1234567890abcdefULL;
@@ -134,27 +167,28 @@ int main(void) {
   uint64_t z3[18];
   uint64_t m0[9];
   uint64_t m1[9];
-  mul9x9_wrap(z3, x, A);
-  mod9x9_wrap(z3);
-  mul_jirka_wrap(z1, x, A);
-  mod_m_wrap0(z1, m1);
-  for (int i = 0; i < 9; i++) m0[i] = z3[i];
+  mul9x9(z3, x);
+  mod9x9(m0, z3);
+  multiply9x9_jirka(x, A, z1);
+  mod9x9(m1, z1);
   for (int i = 0; i < 9; i++) {
     if (m0[i] != m1[i]) {
       fprintf(stderr, "mod mismatch at word %d\n", i);
       free(x);
       free(z);
-      free(mout);
       return 1;
     }
   }
   warmup_cpu(warmup_time);
   double ns_rp = time_mulmod_rp(A, x, z, chunk, bench_time);
-  double ns_j = time_mulmod_jirka(A, x, z, mout, chunk, bench_time);
+  double ns_j = time_mulmod_jirka(A, x, z, chunk, bench_time);
+  double ns_mul = time_mul_only(x, z, chunk, bench_time);
+  double ns_mod = time_mod_only(x, z, chunk, bench_time);
   printf("TimeMul9x9:       %.1f ns/value\n", ns_rp);
   printf("TimeMul9x9Jirka:  %.1f ns/value\n", ns_j);
+  printf("mul9x9 only:      %.1f ns/value\n", ns_mul);
+  printf("mod9x9 only:      %.1f ns/value\n", ns_mod);
   free(x);
   free(z);
-  free(mout);
   return 0;
 }

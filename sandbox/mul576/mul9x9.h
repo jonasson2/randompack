@@ -4,7 +4,7 @@
 
 #include <stdint.h>
 
-void mul9x9(uint64_t *out, const uint64_t *restrict b);
-void mod9x9(uint64_t *x);
+void mul9x9(uint64_t *z, const uint64_t *restrict x);
+void mod9x9(uint64_t x[9], uint64_t z[18]);
 
 #endif

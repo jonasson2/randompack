@@ -1,4 +1,10 @@
 #include "mul9x9.h"
+#include <string.h>
+#include <assert.h>
+#include <stdio.h>
+#include "../../src/randompack_config.h"
+
+#include <stdlib.h>
 
 // let:
 //   A = [a0..a8]
@@ -22,92 +28,175 @@
 //     cy = adc(r[i+j], lo, cy)
 //   cy = adc(r[i+9], c, cy)
 
-void mul9x9(uint64_t *out, const uint64_t *restrict a,
-  const uint64_t *restrict b) {
-  uint64_t lo, c, cy;
-  __uint128_t p, bi;
-  for (int i=0; i<18; i++) out[i] = 0;
+#ifdef __clang__
+ALWAYS_INLINE uint64_t addc64(uint64_t a, uint64_t b, uint64_t cin, uint64_t *cout) {
+  return __builtin_addcll(a, b, cin, (unsigned long long *)cout);
+}
+ALWAYS_INLINE uint64_t subb64(uint64_t a, uint64_t b, uint64_t bin, uint64_t *bout) {
+  return __builtin_subcll(a, b, bin, (unsigned long long *)bout);
+}
+#elif defined(_MSC_VER)
+ALWAYS_INLINE uint64_t addc64(uint64_t a, uint64_t b, uint64_t cin, uint64_t *cout) {
+  uint64_t result;
+  *cout = _addcarry_u64((unsigned char)cin, a, b, &result);
+  return result;
+}
+ALWAYS_INLINE uint64_t subb64(uint64_t a, uint64_t b, uint64_t bin, uint64_t *bout) {
+  uint64_t result;
+  *bout = _subborrow_u64((unsigned char)bin, a, b, &result);
+  return result;
+}
+#else
+ALWAYS_INLINE uint64_t addc64(uint64_t a, uint64_t b, uint64_t cin, uint64_t *cout) {
+  __uint128_t s = (__uint128_t)a + b + cin;
+  *cout = (uint64_t)(s >> 64);
+  return (uint64_t)s;
+}
+ALWAYS_INLINE uint64_t subb64(uint64_t a, uint64_t b, uint64_t bin, uint64_t *bout) {
+  __uint128_t d = (__uint128_t)a - b - bin;
+  *bout = (d >> 64) ? 1 : 0;
+  return (uint64_t)d;
+}
+#endif
+
+void mul9x9(uint64_t *z, const uint64_t *restrict x) {
+  static const uint64_t a[9] = {
+    0xed7faa90747aaad9ULL,
+    0x4cec2c78af55c101ULL,
+    0xe64dcb31c48228ecULL,
+    0x6d8a15a13bee7cb0ULL,
+    0x20b2ca60cb78c509ULL,
+    0x256c3d3c662ea36cULL,
+    0xff74e54107684ed2ULL,
+    0x492edfcc0cc8e753ULL,
+    0xb48c187cf5b22097ULL,
+  };
+  uint64_t lo, hi, c, cy;
+  for (int i=0; i<18; i++) z[i] = 0;
+#ifdef __clang__
+  #pragma clang loop unroll(full)
+#elif !defined(_MSC_VER)
+  #pragma GCC unroll 9
+#endif
   for (int i=0; i<9; i++) {
     c = 0;
     cy = 0;
-    bi = (__uint128_t)b[i];
     for (int j=0; j<9; j++) {
-      p = bi * a[j];
-      p += c;
-      c = (uint64_t)(p >> 64);
-      lo = (uint64_t)p;
-      out[i+j] = __builtin_addcll(out[i+j], lo, cy, &cy);
+      MUL64_WIDE(x[i], a[j], hi, lo);
+      add128(lo, hi, c, 0, &lo, &hi);
+      c = hi;
+      z[i+j] = addc64(z[i+j], lo, cy, &cy);
     }
-    out[i+9] = c + cy;
+    z[i+9] = c + cy;
   }
 }
 
 // Remainder algorithm:
-// t0 = x[0..8]
-// t1 = x[9..17]
+// [let m = 2^576 - 2^240 + 1]
+// t0 = z[0..8]
+// t1 = z[9..17]
 // t2 = upper 240 bits of t1
 // t3 = lower 336 bits of t1
-// r = t0 - (t1 + t2) + (t3 + t2) * 2^240
-// c = floor(r / 2^576)
-// r = r - c * m
-void mod9x9(uint64_t *x) {
-  uint64_t t1[9], t2[9], t3[9], u[9], v[9], r[9];
-  uint64_t w5, w6, w7, w8, addv;
-  unsigned long long carry, borrow;
-  for (int i = 0; i < 9; i++) t1[i] = x[i+9];
-  w5 = t1[5];
-  w6 = t1[6];
-  w7 = t1[7];
-  w8 = t1[8];
-  t2[0] = (w5 >> 16) | (w6 << 48);
-  t2[1] = (w6 >> 16) | (w7 << 48);
-  t2[2] = (w7 >> 16) | (w8 << 48);
-  t2[3] = (w8 >> 16);
-  for (int i = 4; i < 9; i++) t2[i] = 0;
-  for (int i = 0; i < 5; i++) t3[i] = t1[i];
-  t3[5] = t1[5] & 0xffff;
-  for (int i = 6; i < 9; i++) t3[i] = 0;
-  carry = 0;
-  for (int i = 0; i < 9; i++)
-    u[i] = __builtin_addcll(t1[i], t2[i], carry, &carry);
-  carry = 0;
-  for (int i = 0; i < 9; i++)
-    v[i] = __builtin_addcll(t3[i], t2[i], carry, &carry);
-  borrow = 0;
-  for (int i = 0; i < 9; i++)
-    r[i] = __builtin_subcll(x[i], u[i], borrow, &borrow);
-  carry = 0;
-  for (int i = 0; i < 9; i++) {
-    if (i < 3) addv = 0;
-    else {
-      addv = v[i-3] << 48;
-      if (i >= 4) addv |= v[i-4] >> 16;
-    }
-    r[i] = __builtin_addcll(r[i], addv, carry, &carry);
+// r = t0 - t1 - t2 + (t3 + t2)*2^240
+// c = floor(r/2^576)
+// x = r - c*m
+// [it is easy to see that 0 <= x < m]
+
+#include <stdint.h>
+
+ALWAYS_INLINE int addbits(uint64_t *x, uint64_t c, int n) {
+  uint64_t carry = 0;
+  x[0] = addc64(x[0], c, 0, &carry);
+#ifdef __clang__
+  #pragma clang loop unroll(full)
+#endif
+  for (int i = 1; i < n; i++) {
+    x[i] = addc64(x[i], 0, carry, &carry);
   }
-  int c = (int)carry - (int)borrow;
+  return carry;
+}
+
+ALWAYS_INLINE int subbits(uint64_t *x, uint64_t c, int n) {
+  uint64_t borrow = 0;
+  x[0] = subb64(x[0], c, 0, &borrow);
+#ifdef __clang__
+  #pragma clang loop unroll(full)
+#endif
+  for (int i = 1; i < n; i++) {
+    x[i] = subb64(x[i], 0, borrow, &borrow);
+  }
+  return borrow;
+}
+
+ALWAYS_INLINE int addc(uint64_t *r, const uint64_t *restrict y, int n) {
+  uint64_t carry = 0;
+#ifdef __clang__
+  #pragma clang loop unroll(full)
+#endif
+  for (int i = 0; i < n; i++) {
+    r[i] = addc64(r[i], y[i], carry, &carry);
+  }
+  return (int)carry;
+}
+
+ALWAYS_INLINE int subc(uint64_t *r, const uint64_t *restrict y, int n) {
+  uint64_t borrow = 0;
+#ifdef __clang__
+  #pragma clang loop unroll(full)
+#endif
+  for (int i = 0; i < n; i++) {
+    r[i] = subb64(r[i], y[i], borrow, &borrow);
+  }
+  return (int)borrow;
+}
+
+ALWAYS_INLINE void t2get(uint64_t t2[4], uint64_t t1[9]) {
+  t2[0] = (t1[5] >> 16) | (t1[6] << 48);
+  t2[1] = (t1[6] >> 16) | (t1[7] << 48);
+  t2[2] = (t1[7] >> 16) | (t1[8] << 48);
+  t2[3] =  t1[8] >> 16;
+}
+
+ALWAYS_INLINE int shly240(uint64_t y[9]) {
+  int co = (int)((y[5] >> 16) & 1);
+  y[8] = (y[5] << 48) | (y[4] >> 16);
+  y[7] = (y[4] << 48) | (y[3] >> 16);
+  y[6] = (y[3] << 48) | (y[2] >> 16);
+  y[5] = (y[2] << 48) | (y[1] >> 16);
+  y[4] = (y[1] << 48) | (y[0] >> 16);
+  y[3] =  y[0] << 48;
+  y[2] = 0;
+  y[1] = 0;
+  y[0] = 0;
+  return co;
+}
+
+ALWAYS_INLINE void corr_r_minus_cm(uint64_t r[9], int c) {
+  uint64_t
+    c0 = (uint64_t)abs(c),
+    c3 = ((uint64_t)abs(c)) << 48;
   if (c > 0) {
-    unsigned long long b = 0;
-    r[0] = __builtin_subcll(r[0], (uint64_t)c, 0, &b);
-    for (int i = 1; i < 9; i++)
-      r[i] = __builtin_subcll(r[i], 0, b, &b);
-    unsigned long long c0 = 0;
-    uint64_t add = ((uint64_t)c) << 48;
-    r[3] = __builtin_addcll(r[3], add, 0, &c0);
-    for (int i = 4; i < 9; i++)
-      r[i] = __builtin_addcll(r[i], 0, c0, &c0);
+    subbits(r, c0, 9);
+    addbits(r + 3, c3, 6);
   }
   else if (c < 0) {
-    int n = -c;
-    unsigned long long c0 = 0;
-    r[0] = __builtin_addcll(r[0], (uint64_t)n, 0, &c0);
-    for (int i = 1; i < 9; i++)
-      r[i] = __builtin_addcll(r[i], 0, c0, &c0);
-    unsigned long long b = 0;
-    uint64_t sub = ((uint64_t)n) << 48;
-    r[3] = __builtin_subcll(r[3], sub, 0, &b);
-    for (int i = 4; i < 9; i++)
-      r[i] = __builtin_subcll(r[i], 0, b, &b);
+    addbits(r, c0, 9);
+    subbits(r + 3, c3, 6);
   }
-  for (int i = 0; i < 9; i++) x[i] = r[i];
+}
+
+void mod9x9(uint64_t x[9], uint64_t z[18]) {
+  uint64_t t1[9], t2[4], t3[9];
+  int c;
+  copy64(t1, z + 9, 9);
+  t2get(t2, t1);
+  copy64(t3, z + 9, 6); t3[5] &= 0xFFFF;
+  copy64(x, z, 9);
+  c = 0;
+  c -= subc(x, t1, 9);
+  c -= subc(x, t2, 4);
+  addc(t3, t2, 4);
+  c += shly240(t3);
+  c += addc(x, t3, 9);
+  corr_r_minus_cm(x, c);
 }
