@@ -2,9 +2,8 @@
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
-#include "../../src/randompack_config.h"
-
 #include <stdlib.h>
+#include "../../src/randompack_config.h"
 
 // let:
 //   A = [a0..a8]
@@ -28,36 +27,23 @@
 //     cy = adc(r[i+j], lo, cy)
 //   cy = adc(r[i+9], c, cy)
 
-#ifdef __clang__
-ALWAYS_INLINE uint64_t addc64(uint64_t a, uint64_t b, uint64_t cin, uint64_t *cout) {
-  return __builtin_addcll(a, b, cin, (unsigned long long *)cout);
+ALWAYS_INLINE uint64_t addc64(uint64_t a, uint64_t b, uint64_t cin,
+  uint64_t *cout) {
+  uint64_t s;
+  bool c0 = __builtin_add_overflow(a, b, &s);
+  bool c1 = __builtin_add_overflow(s, cin, &s);
+  *cout = (uint64_t)(c0 || c1);
+  return s;
 }
-ALWAYS_INLINE uint64_t subb64(uint64_t a, uint64_t b, uint64_t bin, uint64_t *bout) {
-  return __builtin_subcll(a, b, bin, (unsigned long long *)bout);
+
+ALWAYS_INLINE uint64_t subb64(uint64_t a, uint64_t b, uint64_t bin,
+  uint64_t *bout) {
+  uint64_t d;
+  bool b0 = __builtin_sub_overflow(a, b, &d);
+  bool b1 = __builtin_sub_overflow(d, bin, &d);
+  *bout = (uint64_t)(b0 || b1);
+  return d;
 }
-#elif defined(_MSC_VER)
-ALWAYS_INLINE uint64_t addc64(uint64_t a, uint64_t b, uint64_t cin, uint64_t *cout) {
-  uint64_t result;
-  *cout = _addcarry_u64((unsigned char)cin, a, b, &result);
-  return result;
-}
-ALWAYS_INLINE uint64_t subb64(uint64_t a, uint64_t b, uint64_t bin, uint64_t *bout) {
-  uint64_t result;
-  *bout = _subborrow_u64((unsigned char)bin, a, b, &result);
-  return result;
-}
-#else
-ALWAYS_INLINE uint64_t addc64(uint64_t a, uint64_t b, uint64_t cin, uint64_t *cout) {
-  __uint128_t s = (__uint128_t)a + b + cin;
-  *cout = (uint64_t)(s >> 64);
-  return (uint64_t)s;
-}
-ALWAYS_INLINE uint64_t subb64(uint64_t a, uint64_t b, uint64_t bin, uint64_t *bout) {
-  __uint128_t d = (__uint128_t)a - b - bin;
-  *bout = (d >> 64) ? 1 : 0;
-  return (uint64_t)d;
-}
-#endif
 
 void mul9x9(uint64_t *z, const uint64_t *restrict x) {
   static const uint64_t a[9] = {

@@ -2,6 +2,7 @@
 #include "randompack_config.h"
 
 #include <stdlib.h>
+#include <stdbool.h>
 
 // let:
 //   A = [a0..a8]
@@ -25,14 +26,7 @@
 //     cy = adc(r[i+j], lo, cy)
 //   cy = adc(r[i+9], c, cy)
 
-#ifdef __clang__
-ALWAYS_INLINE uint64_t addc64(uint64_t a, uint64_t b, uint64_t cin, uint64_t *cout) {
-  return __builtin_addcll(a, b, cin, (unsigned long long *)cout);
-}
-ALWAYS_INLINE uint64_t subb64(uint64_t a, uint64_t b, uint64_t bin, uint64_t *bout) {
-  return __builtin_subcll(a, b, bin, (unsigned long long *)bout);
-}
-#elif defined(_MSC_VER)
+#if defined(_MSC_VER)
 ALWAYS_INLINE uint64_t addc64(uint64_t a, uint64_t b, uint64_t cin, uint64_t *cout) {
   uint64_t result;
   *cout = _addcarry_u64((unsigned char)cin, a, b, &result);
@@ -45,14 +39,18 @@ ALWAYS_INLINE uint64_t subb64(uint64_t a, uint64_t b, uint64_t bin, uint64_t *bo
 }
 #else
 ALWAYS_INLINE uint64_t addc64(uint64_t a, uint64_t b, uint64_t cin, uint64_t *cout) {
-  __uint128_t s = (__uint128_t)a + b + cin;
-  *cout = (uint64_t)(s >> 64);
-  return (uint64_t)s;
+  uint64_t s;
+  bool c0 = __builtin_add_overflow(a, b, &s);
+  bool c1 = __builtin_add_overflow(s, cin, &s);
+  *cout = (uint64_t)(c0 || c1);
+  return s;
 }
 ALWAYS_INLINE uint64_t subb64(uint64_t a, uint64_t b, uint64_t bin, uint64_t *bout) {
-  __uint128_t d = (__uint128_t)a - b - bin;
-  *bout = (d >> 64) ? 1 : 0;
-  return (uint64_t)d;
+  uint64_t d;
+  bool b0 = __builtin_sub_overflow(a, b, &d);
+  bool b1 = __builtin_sub_overflow(d, bin, &d);
+  *bout = (uint64_t)(b0 || b1);
+  return d;
 }
 #endif
 
@@ -68,39 +66,20 @@ ALWAYS_INLINE void mul9x9(uint64_t *z, const uint64_t *restrict x) {
     0x492edfcc0cc8e753ULL,
     0xb48c187cf5b22097ULL,
   };
-  uint64_t lo;
-  // uint64_t d = 0;
+  uint64_t lo, hi, c, cy;
   for (int i=0; i<18; i++) z[i] = 0;
 #ifdef __clang__
 #pragma clang loop unroll(full)
 #elif !defined(_MSC_VER)
 #pragma GCC unroll 9
 #endif
-  // for (int k=0; k<=16; k++) {
-  //   uint64_t zk = z[k], zkp = z[k+1] + d;
-  //   d = 0;
-  //   for (int j = max(0,k-8); j <= min(8,k); j++) {
-  //     int i = k - j;
-  //     MUL64_WIDE(x[i], a[j], hi, lo);
-  //     // uint64_t cy;
-  //     // zk = addc64(zk, lo, 0, &cy);
-  //     // zkp = addc64(zkp, hi, cy, &cy);
-  //     // d += cy;
-  //     zk += lo;
-  //     hi += zk < lo;
-  //     zkp += hi;
-  //     d += zkp < hi;
-  //   }
-  //   z[k] = zk;
-  //   z[k+1] = zkp;
-  // }
   for (int i=0; i<9; i++) {
-    uint64_t c = 0, cy = 0, d;
+    c = 0;
+    cy = 0;
     for (int j=0; j<9; j++) {
-      __uint128_t w = (__uint128_t)x[i]*a[j];
-      w += c;
-      lo = (uint64_t)w;
-      c = (uint64_t)(w >> 64);
+      MUL64_WIDE(x[i], a[j], hi, lo);
+      add128(lo, hi, c, 0, &lo, &hi);
+      c = hi;
       z[i+j] = addc64(z[i+j], lo, cy, &cy);
     }
     z[i+9] = c + cy;
