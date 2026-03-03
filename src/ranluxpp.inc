@@ -95,11 +95,13 @@ ALWAYS_INLINE void mul9x9(uint64_t *z, const uint64_t *restrict x) {
   //   z[k+1] = zkp;
   // }
   for (int i=0; i<9; i++) {
-    uint64_t c = 0, cy = 0;
+    uint64_t c = 0, cy = 0, d;
     for (int j=0; j<9; j++) {
       MUL64_WIDE(x[i], a[j], hi, lo);
-      add128(lo, hi, c, 0, &lo, &hi);
-      c = hi;
+      // add128(lo, hi, c, 0, &lo, &c);
+      // z[i+j] = addc64(z[i+j], lo, cy, &cy);
+      lo = addc64(lo, c, 0, &d);
+      c = hi + d;
       z[i+j] = addc64(z[i+j], lo, cy, &cy);
     }
     z[i+9] = c + cy;
