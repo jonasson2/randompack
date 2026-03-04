@@ -46,11 +46,13 @@ static void test_invalid_args(void) {
 }
 
 static void test_xorfamily_nonzero(void) {
-  uint64_t zero[] = {0,0,0,0};
-  char *engines[] = {"x256++", "x256**", "x256++simd", "xoro++", "x128+"};
+  char *engines[] = {"x256++", "x256**", "x256++simd", "xoro++", "x128+",
+    "ranlux"};
   for (int i = 0; i < LEN(engines); i++) {
+    uint64_t zero[9] = {0};
+    int nstate = engine_nstate(engines[i]);
     randompack_rng *rng = make_rng(engines[i]);
-    bool ok = randompack_set_state(zero, 4, rng);
+    bool ok = randompack_set_state(zero, nstate, rng);
     check_failure(ok, rng);
     randompack_free(rng);
   }
@@ -102,7 +104,7 @@ static void test_determinism(void) {
     ok = randompack_set_state(cases[i].state, cases[i].nstate, rng);
     check_success(ok, rng);
     draw_uints(rng, b, K);
-    xCheck(equal_vec64(a, b, K));
+    CHECK_EQUALV(a, b, K);
     randompack_free(rng);
   }
 }
@@ -120,7 +122,7 @@ static void test_buf_reset(void) {
   uint32_t u1[1];
   ok = randompack_uint32(u1, 1, 0, rng);
   check_success(ok, rng);
-  xCheck(equal_vec32(u0, u1, 1));
+  CHECK_EQUALV(u0, u1, 1);
   randompack_free(rng);
 }
 
@@ -137,7 +139,7 @@ static void test_philox_set_state(void) {
   check_success(ok, rng);
   ok = randompack_uint64(b, LEN(b), 0, rng);
   check_success(ok, rng);
-  xCheck(equal_vec64(a, b, LEN(a)));
+  CHECK_EQUALV(a, b, LEN(a));
   randompack_free(rng);
   rng = make_rng("squares");
   ok = randompack_philox_set_state(ctr, key, rng);
@@ -159,7 +161,7 @@ static void test_pcg_set_state(void) {
   check_success(ok, rng);
   ok = randompack_uint64(b, LEN(b), 0, rng);
   check_success(ok, rng);
-  xCheck(equal_vec64(a, b, LEN(a)));
+  CHECK_EQUALV(a, b, LEN(a));
   randompack_free(rng);
   rng = make_rng("squares");
   ok = randompack_pcg64_set_state(pcgstate, inc, rng);
@@ -182,7 +184,7 @@ static void test_squares_set_state(void) {
   check_success(ok, rng);
   ok = randompack_uint64(b, LEN(b), 0, rng);
   check_success(ok, rng);
-  xCheck(equal_vec64(a, b, LEN(a)));
+  CHECK_EQUALV(a, b, LEN(a));
   randompack_free(rng);
   rng = make_rng("philox");
   ok = randompack_squares_set_state(ctr, key, rng);

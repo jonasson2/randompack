@@ -26,7 +26,14 @@ static void test_int_simple(void) {
   draw_randoms("x256++", b, N, 0, 11, 99);
   xCheck(-3 <= minv(a, N) && maxv(a, N) <= 8);
   xCheck(0 <= minv(b, N) && maxv(b, N) <= 11);
-  for (int i = 0; i < 12; i++) xCheck(a[i] + 3 == b[i]);
+  bool same = true;
+  for (int i = 0; i < 12; i++) {
+    if (a[i] + 3 != b[i]) {
+      same = false;
+      break;
+    }
+  }
+  xCheck(same);
 }
 
 // Edge cases: zero-length, null buffer/rng, and bad bounds, max span.
@@ -36,7 +43,7 @@ static void test_edge_cases(char *engine, int max) {
   bool ok;
   randompack_rng *rng = create_seeded_rng(engine, 123);
   ok = randompack_int(buf, 0, 0, 10, rng); check_success(ok, rng); // len = 0
-  xCheck(equal_vec(buf, orig, 4));
+  CHECK_EQUALV(buf, orig, 4);
   ok = randompack_int(0, 4, 0, 10, rng);    check_failure(ok, rng); // null buffer w/len>0
   ok = randompack_int(buf, 4, 0, max, rng); check_success(ok, rng); // max span   
   ok = randompack_int(buf, 4, -1, max, rng);check_success(ok, rng); // max span + 1
@@ -51,7 +58,7 @@ static void test_seed_changes_output(char *engine) {
   int b[6];
   draw_randoms(engine, a, LEN(a), -5, 5, 42);
   draw_randoms(engine, b, LEN(b), -5, 5, 43);
-  xCheck(!equal_vec(a, b, LEN(a)));
+  CHECK_DIFFV(a, b, LEN(a));
 }
 
 // Balanced bits check for large positive int range.

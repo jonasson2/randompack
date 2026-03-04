@@ -20,7 +20,6 @@ exe = executable(
   'mul9x9.c',
   'mul_jirka.c',
   'mod_m.c',
-  include_directories: include_directories('../../third-party/ranluxpp-portable'),
   dependencies: m_dep.found() ? [m_dep] : [],
   install: false,
 )

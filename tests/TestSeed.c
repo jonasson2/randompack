@@ -46,11 +46,11 @@ static void test_seed_determinism(char **engines, int n) {
     uint64_t x[LEN_STREAM], y[LEN_STREAM], z[LEN_STREAM], r[LEN_STREAM];
     draw_stream(engines[i], x, LEN_STREAM, 42, key, LEN(key));
     draw_stream(engines[i], y, LEN_STREAM, 42, key, LEN(key));
-    xCheck(equal_vec64(x, y, LEN_STREAM));
+    CHECK_EQUALV(x, y, LEN_STREAM);
     draw_stream(engines[i], z, LEN_STREAM, 43, key, LEN(key));
     xCheck(everywhere_different(x, z, LEN_STREAM));
     draw_stream_reseed_same_rng(engines[i], x, r, LEN_STREAM, 42, key, LEN(key));
-    xCheck(equal_vec64(x, r, LEN_STREAM));
+    CHECK_EQUALV(x, r, LEN_STREAM);
   }
 }
 

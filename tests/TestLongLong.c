@@ -24,11 +24,16 @@ static void test_long_long_simple(void) {
   long long a[N], b[N];
   draw_randoms("x256++", a, N, -3, 8, 99);
   draw_randoms("x256++", b, N, 0, 11, 99);
+  TEST_SUPPORT(long long, a, N, -3, 8);
+  TEST_SUPPORT(long long, b, N, 0, 11);
+  bool same = true;
   for (int i = 0; i < N; i++) {
-    xCheck(a[i] >= -3 && a[i] <= 8);
-    xCheck(b[i] >= 0 && b[i] <= 11);
-    xCheck(a[i] + 3 == b[i]);
+    if (a[i] + 3 != b[i]) {
+      same = false;
+      break;
+    }
   }
+  xCheck(same);
 }
 
 static void test_edge_cases(char *engine) {
@@ -37,7 +42,7 @@ static void test_edge_cases(char *engine) {
   bool ok;
   randompack_rng *rng = create_seeded_rng(engine, 123);
   ok = randompack_long_long(buf, 0, 0, 10, rng); check_success(ok, rng);
-  for (int i = 0; i < 4; i++) xCheck(buf[i] == orig[i]);
+  CHECK_EQUALV(buf, orig, LEN(buf));
   ok = randompack_long_long(0, 4, 0, 10, rng);  check_failure(ok, rng);
   ok = randompack_long_long(buf, 4, LLONG_MIN, LLONG_MAX, rng);
   check_success(ok, rng);
@@ -66,12 +71,10 @@ static void test_large_ranges(char *engine) {
   randompack_rng *rng = create_seeded_rng(engine, 321);
   bool ok = randompack_long_long(x, LEN(x), LLONG_MAX - 1000, LLONG_MAX - 1, rng);
   check_success(ok, rng);
-  for (int i = 0; i < LEN(x); i++)
-    xCheck(x[i] >= LLONG_MAX - 1000 && x[i] <= LLONG_MAX - 1);
+  TEST_SUPPORT(long long, x, LEN(x), LLONG_MAX - 1000, LLONG_MAX - 1);
   ok = randompack_long_long(x, LEN(x), LLONG_MIN + 1, LLONG_MIN + 1000, rng);
   check_success(ok, rng);
-  for (int i = 0; i < LEN(x); i++)
-    xCheck(x[i] >= LLONG_MIN + 1 && x[i] <= LLONG_MIN + 1000);
+  TEST_SUPPORT(long long, x, LEN(x), LLONG_MIN + 1, LLONG_MIN + 1000);
   randompack_free(rng);
 }
 

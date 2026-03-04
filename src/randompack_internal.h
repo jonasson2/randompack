@@ -24,7 +24,6 @@ typedef enum {
   X256SS,
   X256PP,
   RANLUXPP,
-  RANLUXPP_PORTABLE,
   SQUARES,
   SFC64,
   PCG64,
@@ -41,21 +40,15 @@ typedef struct {
   uint64_t s0[4], s1[4], s2[4], s3[4];
 } xo256;
 
-typedef struct {
-  uint64_t x[9];
-  uint64_t A[9];
-} rp_ranluxpp_t;
-
 struct randompack_rng {
   union {
-    uint8_t u8[72];
-    uint32_t u32[18];
-    uint64_t u64[9];
-    rp_ranluxpp_t rpp;
-    xo256 xo;
-    pcg64_t pcg;
+    uint8_t u8[48];   // 6 words, used by chacha20
+    uint32_t u32[18]; // 9 words, used when seeding and by chacha20
+    uint64_t u64[9];  // used by most engines
+    xo256 xo;         // 16 words, used by x256++simd
+    pcg64_t pcg;      // 4 words
     #if HAVE128
-    cwg128_64_t cwg;
+    cwg128_64_t cwg;  // 5 words
     #endif
   } state;
   rng_engine engine;

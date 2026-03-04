@@ -35,6 +35,11 @@ bool randompack_bitexact( // Use bitexact log/exp (default false)
   bool enable           // in      true → openlibm, false → system/vforce/sleef
 );
 
+bool randompack_jump( // Jump xor-family rng by 2^p steps, false on error
+  int p,               // in      jump exponent (32/64/96/128/192)
+  randompack_rng *rng  // in/out  Random number generator
+);
+
 bool randompack_seed( // Create RNG with given type and seed, false on error
   int seed,             // in      Any integer seed; expanded with a hash to fill state
   uint32_t *spawn_key,  // in      Optional spawn key array (may be 0 if n_key==0)

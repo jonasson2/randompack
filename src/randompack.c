@@ -27,11 +27,9 @@ typedef struct {
 
 #include "engines.inc"
 #include "buffer_draw.inc"
-#include "randutil.inc"
-#include "distributions.inc"
 
-static rng_entry rng_table[] = {
-  {"x256++simd","xorshift256++, with SIMD accelaration (4x64)",FAST,    4,fill_fast     },
+static rng_entry rng_table[] = {  // x256++simd is default
+  {"x256++simd","xoshiro256++, SIMD accelerated (4x4x64)",     FAST,    4,fill_fast     },
   {"x256++",   "xoshiro256++, Vigna & Blackman, 2019 (4x64)",  X256PP,  4,fill_x256pp   },
   {"x256**",   "xoshiro256**, Vigna & Blackman, 2019 (4x64)",  X256SS,  4,fill_x256ss   },
   {"x128+",    "xorshift128+, Vigna, 2014 (2x64)",             X128P,   2,fill_x128p    },
@@ -42,18 +40,26 @@ static rng_entry rng_table[] = {
   {"sfc64",    "sfc64, Chris Doty-Humphrey, 2013 (4x64)",      SFC64,   4,fill_sfc64    },
   {"cwg128",   "cwg128-64, Działa, 2022 (5x64)",               CWG128,  5,fill_cwg128   },
   {"ranlux",   "ranlux++, Sibidanov, 2017 (9x64)",             RANLUXPP,9,fill_ranluxpp },
-  {"ranluxpp_portable",
-   "ranlux++ portable, Jirka Hladky, 2021 (9x64)",
-   RANLUXPP_PORTABLE,9,fill_ranluxpp_portable},
   {"chacha20", "ChaCha20, Bernstein, 2008 (6x64)",             CHACHA20,6,fill_chacha   },
   {"system",   "Operating system entropy source",              SYS,     0,fill_csprng   },
 };
+// For x256++simd, the state.xo.s0 (4 words) is seeded or initialized with _setup
+// and then jumped to .xo.s1, .xo.s2 and .xo.s3.
 
 static rng_entry *find_entry(rng_engine e) {
   for (int i = 0; i < LEN(rng_table); i++)
     if (rng_table[i].engine == e) return &rng_table[i];
   return 0;
 }
+
+static bool all_zero_state(uint64_t *state, int n) {
+  for (int i = 0; i < n; i++)
+    if (state[i] != 0) return false;
+  return true;
+}
+
+#include "randutil.inc"
+#include "distributions.inc"
 
 static bool select_engine(const char *s, randompack_rng *rng) {
   // set rng->{engine,next} according to the engine name s
@@ -84,7 +90,6 @@ randompack_rng *randompack_create(const char *engine) {
   // Create engine
   if (!ALLOC(rng, 1)) return 0;
   rng->engine = INVALID;
-  rng->bitexact = false;
   rng->cpu_has_avx2 = false;
   if (!select_engine(engine, rng)) {
     rng->last_error = "unknown engine name (spelling error in requested engine)";
@@ -94,9 +99,8 @@ randompack_rng *randompack_create(const char *engine) {
   rng->cpu_has_avx2 = cpu_has_avx2();
   if (rng->engine == FAST && rng->cpu_has_avx2) rng->fill = fill_fast_avx2;
 #endif
-  rng_entry *ent = find_entry(rng->engine);
-  (void)ent;
-  rand_init_randomize(rng);
+  rand_randomize(rng);
+  rand_init(rng);
   return rng;
 }
 
@@ -112,41 +116,24 @@ bool randompack_seed(int seed, uint32_t *spawn_key, int nkey, randompack_rng *rn
     rng->last_error = "randompack seed: invalid spawn_key arguments";
     return false;
   }
-  if (rng->engine == RANLUXPP_PORTABLE) {
-    uint32_t tmp[2];
-    bool ok = seed_seq_seed(tmp, 2, seed32, spawn_key, nkey);
-    if (!ok) {
-      rng->last_error = "randompack seed: allocation failed";
-      return false;
-    }
-    uint64_t seed64 = ((uint64_t)tmp[1] << 32) | tmp[0];
-    ranluxpp_portable_seed(rng, seed64);
-    rand_init(rng);
-    return true;
-  }
-  rng_entry *ent = find_entry(rng->engine);
-  int nwords = ent->state_words*2;
-  if (nwords < 1) nwords = 1;
+  int nwords = get_state_words(rng);
+  int nwords32 = nwords * 2;
   uint32_t *w = 0;
-  if (!ALLOC(w, nwords)) {
+  if (!ALLOC(w, nwords32)) {
     rng->last_error = "randompack seed: allocation failed";
     return false;
   }
-  bool ok = seed_seq_seed(w, nwords, seed32, spawn_key, nkey);
+  bool ok = seed_seq_seed(w, nwords32, seed32, spawn_key, nkey);
   if (!ok) {
     rng->last_error = "randompack seed: allocation failed";
     FREE(w);
     return false;
   }
-  copy32(rng->state.u32, w, ent->state_words*2);
+  copy32(rng->state.u32, w, nwords32);
   FREE(w);
   if (rng->engine == FAST) {
-    uint64_t tmp[4];
-    copy64(tmp, rng->state.u64, 4);
-    rng->state.xo.s0[0] = tmp[0];
-    rng->state.xo.s1[0] = tmp[1];
-    rng->state.xo.s2[0] = tmp[2];
-    rng->state.xo.s3[0] = tmp[3];
+    scatter_to_stream0(rng);
+    fill_stream_states_with_jump(rng);
   }
   rand_init(rng);
   return true;
@@ -158,7 +145,8 @@ bool randompack_randomize(randompack_rng *rng) {
     rng->last_error = "randompack randomize: invalid rng";
     return false;
   }
-  rand_init_randomize(rng);
+  rand_randomize(rng);
+  rand_init(rng);
   return true;
 }
 
@@ -181,6 +169,47 @@ bool randompack_bitexact(randompack_rng *rng, bool enable) {
   }
   rng->last_error = 0;
   rng->bitexact = enable;
+  return true;
+}
+
+bool randompack_jump(int p, randompack_rng *rng) {
+  if (!rng) return false;
+  if (rng->engine == INVALID) {
+    rng->last_error = "randompack_jump: invalid rng";
+    return false;
+  }
+  rng->last_error = 0;
+  if (rng->engine != X256PP && rng->engine != X256SS && rng->engine != FAST &&
+      rng->engine != XORO && rng->engine != X128P) {
+    rng->last_error = "randompack_jump: Only supported for xor-family engines";
+    return false;
+  }
+  if (rng->engine == X256PP || rng->engine == X256SS || rng->engine == FAST) {
+    if (p != 32 && p != 64 && p != 96 && p != 128 && p != 192) {
+      rng->last_error = "unsupported jump exponent (must be 32/64/96/128/192)";
+      return false;
+    }
+  }
+  else {
+    if (p != 32 && p != 64 && p != 96) {
+      rng->last_error = "unsupported jump exponent (must be 32/64/96)";
+      return false;
+    }
+  }
+  if (rng->engine == X256PP || rng->engine == X256SS) {
+    xoshiro256_jump(rng->state.u64, p);
+  }
+  else if (rng->engine == FAST) {
+    x256ppsimd_jump(p, rng);
+  }
+  else if (rng->engine == XORO) {
+    xoroshiro128pp_jump(rng->state.u64, p);
+  }
+  else if (rng->engine == X128P) {
+    xorshift128p_jump(rng->state.u64, p);
+  }
+  rng->buf_word = BUFSIZE;
+  rng->buf_byte = 0;
   return true;
 }
 
@@ -325,27 +354,27 @@ bool randompack_set_state(uint64_t state[], int nstate, randompack_rng *rng) {
   rng->last_error = 0;
   if (!state || nstate < 0) {
     rng->last_error = "randompack set_state: invalid arguments";
-	 return false;
+    return false;
   }
-  rng_entry *ent = find_entry(rng->engine);
+  if (rng->engine == INVALID) {
+    rng->last_error = "randompack set_state: invalid rng";
+    return false;
+  }
+  int nwords = get_state_words(rng);
   if (rng->engine == SYS)
     rng->last_error = "randompack set_state: not supported for system-csprng";
-  else if (nstate != ent->state_words)
+  else if (nwords <= 0)
+    rng->last_error = "randompack set_state: unknown engine";
+  else if (nstate != nwords)
     rng->last_error = "randompack set_state: wrong nstate for this engine";
   else if (rng->engine == X256PP || rng->engine == X256SS || rng->engine == FAST ||
-           rng->engine == XORO || rng->engine == X128P) {
-    bool all_zero = true;
-    for (int i = 0; i < nstate; i++) {
-      if (state[i] != 0) {
-        all_zero = false;
-        break;
-      }
-    }
-    if (all_zero)
+           rng->engine == XORO || rng->engine == X128P || rng->engine == RANLUXPP) {
+    if (all_zero_state(state, nstate))
       rng->last_error = "randompack set_state: all-zero state is invalid";
   }
   if (rng->last_error) return false;
   set_state(state, nstate, rng);
+  normalize_state(rng);
   rand_init(rng);
   return true;
 }
@@ -358,6 +387,7 @@ bool randompack_pcg64_set_state(uint64_t state, uint64_t inc, randompack_rng *rn
     return false;
   }
   pcg64_set_state(state, inc, rng);
+  normalize_state(rng);
   rand_init(rng);
   return true;
 }
@@ -371,6 +401,7 @@ bool randompack_philox_set_state(randompack_philox_ctr ctr, randompack_philox_ke
     return false;
   }
   philox_set_state(ctr, key, rng);
+  normalize_state(rng);
   rand_init(rng);
   return true;
 }

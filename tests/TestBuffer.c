@@ -19,7 +19,7 @@ static void test_split_u64(char *engine) {
   xCheck(randompack_uint64(a, n, 0, r1));
   xCheck(randompack_uint64(b, n1, 0, r2));
   xCheck(randompack_uint64(b + n1, n - n1, 0, r2));
-  xCheck(equal_vec64(a, b, n));
+  CHECK_EQUALV(a, b, n);
   randompack_free(r1);
   randompack_free(r2);
   FREE(a);
@@ -39,7 +39,7 @@ static void test_unaligned_u16(char *engine) {
   xCheck(randompack_uint16(a, n, 0, r1));
   xCheck(randompack_uint8(toss, 3, 0, r2));
   xCheck(randompack_uint16(b, n, 0, r2));
-  xCheck(equal_vec16(a, b, n));
+  CHECK_EQUALV(a, b, n);
   randompack_free(r1);
   randompack_free(r2);
   FREE(a);
@@ -59,7 +59,7 @@ static void test_unaligned_u32(char *engine) {
   xCheck(randompack_uint32(a, n, 0, r1));
   xCheck(randompack_uint8(toss, 1, 0, r2));
   xCheck(randompack_uint32(b, n, 0, r2));
-  xCheck(equal_vec32(a, b, n));
+  CHECK_EQUALV(a, b, n);
   randompack_free(r1);
   randompack_free(r2);
   FREE(a);

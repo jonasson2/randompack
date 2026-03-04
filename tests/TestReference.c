@@ -133,7 +133,7 @@ static void TestAgainstNumpyPCG(void) {
     15760175290616407522ull
   };
 
-  xCheck(equal_vec64(x, py, 3));
+  CHECK_EQUALV(x, py, 3);
 
   printMsg("Python pcg64 (dxsm) draws:");
   print64("py[0]", py[0]);
@@ -166,7 +166,7 @@ static void TestPhiloxAgainstRandom123(void) {
     8379624740030528727ull,
     14229447488281503856ull
   };
-  xCheck(equal_vec64(x, r123, 5));
+  CHECK_EQUALV(x, r123, 5);
   randompack_free(rng);
 }
 
@@ -182,6 +182,10 @@ static void TestXoshiro256ppAgainstRust(void) {
   //     println!("{}", rng.next_u64());
   //     println!("{}", rng.next_u64());
   //     println!("{}", rng.next_u64());
+  //     rng.jump();
+  //     println!("{}", rng.next_u64());
+  //     rng.long_jump();
+  //     println!("{}", rng.next_u64());
   // }
   uint64_t state[4] = {
     1234567890123456789ull,
@@ -193,24 +197,40 @@ static void TestXoshiro256ppAgainstRust(void) {
   check_rng_clean(rng);
   bool ok = randompack_set_state(state, 4, rng);
   check_success(ok, rng);
-  uint64_t x[3];
+  uint64_t x[5];
   ok = randompack_uint64(x, 3, 0, rng);
   check_success(ok, rng);
-  uint64_t rust[3] = {
+  ok = randompack_jump(128, rng);
+  check_success(ok, rng);
+  ok = randompack_uint64(x + 3, 1, 0, rng);
+  check_success(ok, rng);
+  ok = randompack_set_state(state, 4, rng);
+  check_success(ok, rng);
+  ok = randompack_jump(192, rng);
+  check_success(ok, rng);
+  ok = randompack_uint64(x + 4, 1, 0, rng);
+  check_success(ok, rng);
+  uint64_t rust[5] = {
     7481289576166103649ULL,
     14954838225025987065ULL,
-    13925222450416462367ULL
+    13925222450416462367ULL,
+    16774037864912307895ULL,
+    14555093047527680046ULL
   };
-  xCheck(equal_vec64(x, rust, 3));
+  CHECK_EQUALV(x, rust, 5);
   printMsg("COMPARISON WITH RUST X256++:");
   printMsg("Rust x256++ draws:");
   print64("rust[0]", rust[0]);
   print64("rust[1]", rust[1]);
   print64("rust[2]", rust[2]);
+  print64("rust[3]", rust[3]);
+  print64("rust[4]", rust[4]);
   printMsg("randompack x256++ draws:");
   print64("rp[0]", x[0]);
   print64("rp[1]", x[1]);
   print64("rp[2]", x[2]);
+  print64("rp[3]", x[3]);
+  print64("rp[4]", x[4]);
   randompack_free(rng);
 }
 
@@ -226,6 +246,10 @@ static void TestXoshiro256ssAgainstRust(void) {
   //     println!("{}", rng.next_u64());
   //     println!("{}", rng.next_u64());
   //     println!("{}", rng.next_u64());
+  //     rng.jump();
+  //     println!("{}", rng.next_u64());
+  //     rng.long_jump();
+  //     println!("{}", rng.next_u64());
   // }
   uint64_t state[4] = {
     111111222222333333ull, 444444555555666666ull,
@@ -234,83 +258,47 @@ static void TestXoshiro256ssAgainstRust(void) {
   check_rng_clean(rng);
   bool ok = randompack_set_state(state, 4, rng);
   check_success(ok, rng);
-  uint64_t x[3];
+  uint64_t x[5];
   ok = randompack_uint64(x, 3, 0, rng);
   check_success(ok, rng);
-  uint64_t rust[3] = {
+  ok = randompack_jump(128, rng);
+  check_success(ok, rng);
+  ok = randompack_uint64(x + 3, 1, 0, rng);
+  check_success(ok, rng);
+  ok = randompack_set_state(state, 4, rng);
+  check_success(ok, rng);
+  ok = randompack_jump(192, rng);
+  check_success(ok, rng);
+  ok = randompack_uint64(x + 4, 1, 0, rng);
+  check_success(ok, rng);
+  uint64_t rust[5] = {
     14349957828721873287ull,
     17468056612619362601ull,
-    5100482715761765753ull
+    5100482715761765753ull,
+    437786437538516426ull,
+    11305255822621342761ull
   };
-  xCheck(equal_vec64(x, rust, 3));
+  CHECK_EQUALV(x, rust, 5);
   printMsg("COMPARISON WITH RUST X256**:");
   printMsg("Rust x256** draws:");
   print64("rust[0]", rust[0]);
   print64("rust[1]", rust[1]);
   print64("rust[2]", rust[2]);
+  print64("rust[3]", rust[3]);
+  print64("rust[4]", rust[4]);
   printMsg("randompack x256** draws:");
   print64("rp[0]", x[0]);
   print64("rp[1]", x[1]);
   print64("rp[2]", x[2]);
-  randompack_free(rng);
-}
-
-static void TestXoshiro256ppsimdAgainstRust(void) {
-  // Rust reference: xoshiro256++ with jump() to form four streams, interleaved.
-  uint64_t state[4] = {
-    1234567890123456789ull,
-    1ull,
-    2ull,
-    9876543210987654321ull
-  };
-  randompack_rng *rng = randompack_create("x256++simd");
-  check_rng_clean(rng);
-  bool ok = randompack_set_state(state, 4, rng);
-  check_success(ok, rng);
-  uint64_t x[10];
-  ok = randompack_uint64(x, 10, 0, rng);
-  check_success(ok, rng);
-  uint64_t rust[10] = {
-    7481289576166103649ULL,
-    3711477825876208215ULL,
-    10504489571862109290ULL,
-    2643019566307506446ULL,
-    14954838225025987065ULL,
-    5229132898082227265ULL,
-    14520407634720921881ULL,
-    9191202137237659578ULL,
-    13925222450416462367ULL,
-    10964539199822853794ULL
-  };
-  xCheck(equal_vec64(x, rust, 10));
-  printMsg("COMPARISON WITH RUST FAST (4-stream interleave):");
-  printMsg("Rust fast draws:");
-  for (int i = 0; i < 10; i++) print64("rust", rust[i]);
-  printMsg("randompack fast draws:");
-  for (int i = 0; i < 10; i++) print64("rp", x[i]);
+  print64("rp[3]", x[3]);
+  print64("rp[4]", x[4]);
   randompack_free(rng);
 }
 
 static void TestRanluxppAgainstJirka(void) {
-  // git clone https://github.com/jirka-h/ranluxpp-portable, write the following
-  // ranlux-check.c, and compile and run with "gcc ranlux-check.c ranluxpp.c; a.out"
-  // to get xorsum and lastval to compare with.
-  // #include "ranluxpp.h"
-  // #include <stdint.h>
-  // #include <string.h>
-  // int main(void) {
-  //   ranluxpp_t r;
-  //   ranluxpp_init(&r, 0, 2048);
-  //   uint64_t init[9] = {1, 2, 3, 4, 5, 6, 7, 8, 9}, xorsum = 0;
-  //   memcpy(r.x, init, sizeof(init));
-  //   for (int k = 0; k < 100; k++) {
-  //     ranluxpp_nextstate(&r);
-  //     for (int i = 0; i < 9; i++) xorsum ^= r.x[i];
-  //   }
-  //   printf("xorsum:     0x%016" PRIx64 "\n", xorsum);
-  //   printf("last value: 0x%016" PRIx64 "\n", r.x[8]);
-  //   return 0;
-  // }
+  // Reference values obtained from an external ranlux++ implementation.
+  // The reference program seeds state with 1..9, advances 100 states,
+  // and xors all outputs to get xorsum and lastval.
   uint64_t xorsum = 0xfe4bac4d5cedb127ULL, lastval = 0xee4ef07d92e6614dULL;
   uint64_t init[9] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
   uint64_t x[900];
@@ -335,7 +323,6 @@ void TestReference(void) {
   TestPhiloxAgainstRandom123();
   TestXoshiro256ppAgainstRust();
   TestXoshiro256ssAgainstRust();
-  TestXoshiro256ppsimdAgainstRust();
   TestRanluxppAgainstJirka();
 }
 
@@ -357,9 +344,6 @@ void TestReferencex(char *engine) {
   }
   else if (!strcmp(e, "x256**")) {
     TestXoshiro256ssAgainstRust();
-  }
-  else if (!strcmp(e, "x256++simd")) {
-    TestXoshiro256ppsimdAgainstRust();
   }
   else if (!strcmp(e, "ranlux")) {
     TestRanluxppAgainstJirka();

@@ -42,7 +42,7 @@ static void test_determinism(void) {
     draw_randoms(engines[i], xi, LEN_STREAM, 42);
     draw_randoms(engines[i], yi, LEN_STREAM, 42);
     draw_randoms(engines[i], zi, LEN_STREAM, 43);
-    xCheck(equal_vec64(xi, yi, LEN_STREAM));
+    CHECK_EQUALV(xi, yi, LEN_STREAM);
     xCheck(everywhere_different(xi, zi, LEN_STREAM));
     for (int j = i+1; j < n; j++) { // all the later engines
       if (is_excluded_engine(engines[j])) continue;
@@ -116,12 +116,12 @@ static void test_duplicate(void) {
   check_success(ok, rng1);
   ok = randompack_uint64(b, 2, 0, rng2);
   check_success(ok, rng2);
-  xCheck(equal_vec64(a, b, 2));
+  CHECK_EQUALV(a, b, 2);
   ok = randompack_uint64(c, 2, 0, rng1);
   check_success(ok, rng1);
   ok = randompack_uint64(b, 2, 0, rng2);
   check_success(ok, rng2);
-  xCheck(equal_vec64(c, b, 2));
+  CHECK_EQUALV(c, b, 2);
   ok = randompack_uint64(c, 2, 0, rng1);
   check_success(ok, rng1);
   xCheck(everywhere_different(c, b, 2));

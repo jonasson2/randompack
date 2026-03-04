@@ -7,18 +7,29 @@
 #include "randompack_config.h"
 #include "cephes.h"
 
-#define CHECK_VEC_EQUAL(TYPE, a, b, n) do {        \
-  bool same = true;                                \
-  for (int i = 0; i < (n); i++) {                  \
-    if ((a)[i] != (b)[i]) {                        \
-      same = false;                                \
-      break;                                       \
-    }                                              \
-  }                                                \
-  xCheck(same);                                    \
+#define CHECK_EQUALV(a, b, n) do { \
+  bool same = true;                         \
+  for (int i = 0; i < (n); i++) {           \
+    if ((a)[i] != (b)[i]) {                 \
+      same = false;                         \
+      break;                                \
+    }                                       \
+  }                                         \
+  xCheck(same);                             \
  } while (0)
 
-#define CHECK_VEC_DIFFERENT(TYPE, a, b, n) do { \
+#define CHECK_EQUALV_MSG(a, b, n, msg) do { \
+  bool same = true;                                  \
+  for (int i = 0; i < (n); i++) {                    \
+    if ((a)[i] != (b)[i]) {                          \
+      same = false;                                  \
+      break;                                         \
+    }                                                \
+  }                                                  \
+  xCheckMsg(same, msg);                              \
+ } while (0)
+
+#define CHECK_DIFFV(a, b, n) do { \
   bool diff = false;                            \
   for (int i = 0; i < (n); i++) {               \
     if ((a)[i] != (b)[i]) {                     \
@@ -27,6 +38,39 @@
     }                                           \
   }                                             \
   xCheck(diff);                                 \
+ } while (0)
+
+#define CHECK_DIFFV_MSG(a, b, n, msg) do { \
+  bool diff = false;                                     \
+  for (int i = 0; i < (n); i++) {                        \
+    if ((a)[i] != (b)[i]) {                              \
+      diff = true;                                       \
+      break;                                             \
+    }                                                    \
+  }                                                      \
+  xCheckMsg(diff, msg);                                  \
+ } while (0)
+
+#define CHECK_ZEROV(a, n) do { \
+  bool zero = true;            \
+  for (int i = 0; i < (n); i++) { \
+    if ((a)[i] != 0) {         \
+      zero = false;            \
+      break;                   \
+    }                          \
+  }                            \
+  xCheck(zero);                \
+ } while (0)
+
+#define CHECK_ZEROV_MSG(a, n, msg) do { \
+  bool zero = true;                     \
+  for (int i = 0; i < (n); i++) {       \
+    if ((a)[i] != 0) {                  \
+      zero = false;                     \
+      break;                            \
+    }                                   \
+  }                                     \
+  xCheckMsg(zero, msg);                 \
  } while (0)
 
 #define DRAW(engine, seed, CALL) do {									\
@@ -38,71 +82,71 @@
  } while (0)
 
 // Check same seed => same draws, different seeds => different draws
-#define TEST_DETERMINISM0(engine, TYPE, FUNC) do {		\
-	TYPE x[3], y[3], z[3];										\
-	int n = LEN(x);												\
-	DRAW((engine), 42, randompack_##FUNC(x, n, rng));	\
-	DRAW((engine), 42, randompack_##FUNC(y, n, rng));	\
-	DRAW((engine), 43, randompack_##FUNC(z, n, rng));	\
-	CHECK_VEC_EQUAL(TYPE, x, y, n);							\
-	CHECK_VEC_DIFFERENT(TYPE, x, z, n);						\
+#define TEST_DETERMINISM0(engine, TYPE, FUNC) do {    \
+  TYPE x[3], y[3], z[3];                              \
+  int n = LEN(x);                                     \
+  DRAW((engine), 42, randompack_##FUNC(x, n, rng));   \
+  DRAW((engine), 42, randompack_##FUNC(y, n, rng));   \
+  DRAW((engine), 43, randompack_##FUNC(z, n, rng));   \
+  CHECK_EQUALV(x, y, n);                              \
+  CHECK_DIFFV(x, z, n);                               \
  } while (0)
 
-#define TEST_DETERMINISM1(engine, TYPE, FUNC, p1) do {		\
-	TYPE x[3], y[3], z[3];												\
-	int n = LEN(x);														\
-	DRAW((engine), 42, randompack_##FUNC(x, n, (p1), rng));	\
-	DRAW((engine), 42, randompack_##FUNC(y, n, (p1), rng));	\
-	DRAW((engine), 43, randompack_##FUNC(z, n, (p1), rng));	\
-	CHECK_VEC_EQUAL(TYPE, x, y, n);									\
-	CHECK_VEC_DIFFERENT(TYPE, x, z, n);								\
+#define TEST_DETERMINISM1(engine, TYPE, FUNC, p1) do {    \
+  TYPE x[3], y[3], z[3];                                  \
+  int n = LEN(x);                                         \
+  DRAW((engine), 42, randompack_##FUNC(x, n, (p1), rng)); \
+  DRAW((engine), 42, randompack_##FUNC(y, n, (p1), rng)); \
+  DRAW((engine), 43, randompack_##FUNC(z, n, (p1), rng)); \
+  CHECK_EQUALV(x, y, n);                                  \
+  CHECK_DIFFV(x, z, n);                                   \
  } while (0)
 
-#define TEST_DETERMINISM2(engine, TYPE, FUNC, p1, p2) do {			\
-	TYPE x[3], y[3], z[3];														\
-	int n = LEN(x);																\
-	DRAW((engine), 42, randompack_##FUNC(x, n, (p1), (p2), rng));	\
-	DRAW((engine), 42, randompack_##FUNC(y, n, (p1), (p2), rng));	\
-	DRAW((engine), 43, randompack_##FUNC(z, n, (p1), (p2), rng));	\
-	CHECK_VEC_EQUAL(TYPE, x, y, n);											\
-	CHECK_VEC_DIFFERENT(TYPE, x, z, n);										\
+#define TEST_DETERMINISM2(engine, TYPE, FUNC, p1, p2) do {            \
+  TYPE x[3], y[3], z[3];                                              \
+  int n = LEN(x);                                                     \
+  DRAW((engine), 42, randompack_##FUNC(x, n, (p1), (p2), rng));       \
+  DRAW((engine), 42, randompack_##FUNC(y, n, (p1), (p2), rng));       \
+  DRAW((engine), 43, randompack_##FUNC(z, n, (p1), (p2), rng));       \
+  CHECK_EQUALV(x, y, n);                                              \
+  CHECK_DIFFV(x, z, n);                                               \
  } while (0)
 
 // Check that zero-length buffers work ok, and that null buff and null rng fail
-#define TEST_EDGE_CASES0(engine, TYPE, FUNC) do {							\
-	TYPE buf[3] = {1, 2, 3};														\
-	TYPE orig[3] = {1, 2, 3};														\
-	bool ok;																				\
-	randompack_rng *rng = create_seeded_rng((engine), 123);				\
-	ok = randompack_##FUNC(buf, 0, rng); check_success(ok, rng);		\
-	CHECK_VEC_EQUAL(TYPE, buf, orig, LEN(buf));								\
-	ok = randompack_##FUNC(0, LEN(buf), rng); check_failure(ok, rng);	\
-	ok = randompack_##FUNC(buf, LEN(buf), 0); xCheck(!ok);				\
-	randompack_free(rng);															\
+#define TEST_EDGE_CASES0(engine, TYPE, FUNC) do {                       \
+  TYPE buf[3] = {1, 2, 3};                                              \
+  TYPE orig[3] = {1, 2, 3};                                             \
+  bool ok;                                                              \
+  randompack_rng *rng = create_seeded_rng((engine), 123);               \
+  ok = randompack_##FUNC(buf, 0, rng); check_success(ok, rng);          \
+  CHECK_EQUALV(buf, orig, LEN(buf));                                    \
+  ok = randompack_##FUNC(0, LEN(buf), rng); check_failure(ok, rng);     \
+  ok = randompack_##FUNC(buf, LEN(buf), 0); xCheck(!ok);                \
+  randompack_free(rng);                                                 \
  } while (0)
 
-#define TEST_EDGE_CASES1(engine, TYPE, FUNC, p1) do {								\
-	TYPE buf[3] = {1, 2, 3};																\
-	TYPE orig[3] = {1, 2, 3};																\
-	bool ok;																						\
-	randompack_rng *rng = create_seeded_rng((engine), 123);						\
-	ok = randompack_##FUNC(buf, 0, (p1), rng); check_success(ok, rng);		\
-	CHECK_VEC_EQUAL(TYPE, buf, orig, LEN(buf));										\
-	ok = randompack_##FUNC(0, LEN(buf), (p1), rng); check_failure(ok, rng);	\
-	ok = randompack_##FUNC(buf, LEN(buf), (p1), 0); xCheck(!ok);				\
-	randompack_free(rng);																	\
+#define TEST_EDGE_CASES1(engine, TYPE, FUNC, p1) do {                          \
+  TYPE buf[3] = {1, 2, 3};                                                     \
+  TYPE orig[3] = {1, 2, 3};                                                    \
+  bool ok;                                                                    \
+  randompack_rng *rng = create_seeded_rng((engine), 123);                     \
+  ok = randompack_##FUNC(buf, 0, (p1), rng); check_success(ok, rng);          \
+  CHECK_EQUALV(buf, orig, LEN(buf));                                          \
+  ok = randompack_##FUNC(0, LEN(buf), (p1), rng); check_failure(ok, rng);     \
+  ok = randompack_##FUNC(buf, LEN(buf), (p1), 0); xCheck(!ok);                \
+  randompack_free(rng);                                                       \
  } while (0)
 
-#define TEST_EDGE_CASES2(engine, TYPE, FUNC, p1, p2) do {							  \
-	TYPE buf[4] = {1, 2, 3};																	  \
-	TYPE orig[4] = {1, 2, 3};																	  \
-	bool ok;																							  \
-	randompack_rng *rng = create_seeded_rng((engine), 123);							  \
-	ok = randompack_##FUNC(buf, 0, (p1), (p2), rng); check_success(ok, rng);	  \
-	CHECK_VEC_EQUAL(TYPE, buf, orig, LEN(buf));											  \
-	ok = randompack_##FUNC(0, LEN(buf), (p1), (p2), rng); check_failure(ok, rng);	\
-	ok = randompack_##FUNC(buf, LEN(buf), (p1), (p2), 0); xCheck(!ok);			  \
-	randompack_free(rng);																		  \
+#define TEST_EDGE_CASES2(engine, TYPE, FUNC, p1, p2) do {                          \
+  TYPE buf[4] = {1, 2, 3};                                                         \
+  TYPE orig[4] = {1, 2, 3};                                                        \
+  bool ok;                                                                         \
+  randompack_rng *rng = create_seeded_rng((engine), 123);                          \
+  ok = randompack_##FUNC(buf, 0, (p1), (p2), rng); check_success(ok, rng);         \
+  CHECK_EQUALV(buf, orig, LEN(buf));                                               \
+  ok = randompack_##FUNC(0, LEN(buf), (p1), (p2), rng); check_failure(ok, rng);    \
+  ok = randompack_##FUNC(buf, LEN(buf), (p1), (p2), 0); xCheck(!ok);               \
+  randompack_free(rng);                                                            \
  } while (0)
 
 #define TEST_ILLEGAL_PARAMS1(TYPE, engine, FUNC, bad1) do {	\
@@ -151,6 +195,7 @@ static engine_table_entry engine_table[] = {
   {"philox",        6},
   {"pcg64",         4},
   {"cwg128",        5},
+  {"ranlux",        9},
 };
 char **get_engines(int *n);
 void free_engines(char **engines, int n);
@@ -175,13 +220,6 @@ static const double TEST_P_VALUE = 1e-12;
 // Vector equality / difference helpers
 //------------------------------------------------------------------------------
 
-bool equal_vec(int *a, int *b, int n);                      // a = b?
-bool equal_vecd(double *a, double *b, int n);               // a = b?
-bool equal_vecf(float *a, float *b, int n);                 // a = b?
-bool equal_vec8(uint8_t *a, uint8_t *b, int n);             // a = b?
-bool equal_vec16(uint16_t *a, uint16_t *b, int n);          // a = b?
-bool equal_vec32(uint32_t *a, uint32_t *b, int n);          // a = b?
-bool equal_vec64(uint64_t *a, uint64_t *b, int n);          // a = b?
 bool everywhere_different(uint64_t *a, uint64_t *b, int n); // ai ≠ bi for all i
 
 //------------------------------------------------------------------------------

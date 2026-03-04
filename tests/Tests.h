@@ -35,6 +35,8 @@ void TestAvx2(void);
 void TestSeed(void);
 void TestSetState(void);
 void TestReference(void);
+void TestX256ppsimd(void);
+void TestRanluxpp(void);
 void TestBuffer(void);
 void TestBufferx(char *engine);
 void TestReferencex(char *engine);

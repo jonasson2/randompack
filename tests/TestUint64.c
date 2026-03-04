@@ -34,7 +34,7 @@ static void test_edge_cases(char *engine) {
   bool ok;
   randompack_rng *rng = create_seeded_rng(engine, 333);
   ok = randompack_uint64(buf, 0, 0, rng); check_success(ok, rng); // len = 0
-  xCheck(equal_vec64(buf, original, 4));                          // –doesn't touch buffer
+  CHECK_EQUALV(buf, original, 4);                    // –doesn't touch buffer
   ok = randompack_uint64(0, 4, 0, rng);   check_failure(ok, rng); // NULL buffer w/len > 0
   ok = randompack_uint64(buf, 4, 0, 0);   xCheck(!ok);            // NULL rng
   ok = randompack_uint64(buf, 4, 0, rng); check_success(ok, rng); // normal call

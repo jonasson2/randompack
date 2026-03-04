@@ -174,9 +174,9 @@ static void test_continuous_edge_cases(const char *engine) {
     memcpy(buf_f, orig_f, sizeof(buf_f));
     if (spec->arity == 0) {
       ok = spec->draw.d0(buf, 0, rng); check_success(ok, rng);
-      CHECK_VEC_EQUAL(double, buf, orig, LEN(buf));
+      CHECK_EQUALV(buf, orig, LEN(buf));
       ok = spec->drawf.d0(buf_f, 0, rng); check_success(ok, rng);
-      CHECK_VEC_EQUAL(float, buf_f, orig_f, LEN(buf_f));
+      CHECK_EQUALV(buf_f, orig_f, LEN(buf_f));
       ok = spec->draw.d0(0, LEN(buf), rng); check_failure(ok, rng);
       ok = spec->drawf.d0(0, LEN(buf_f), rng); check_failure(ok, rng);
       ok = spec->draw.d0(buf, LEN(buf), 0); xCheck(!ok);
@@ -184,9 +184,9 @@ static void test_continuous_edge_cases(const char *engine) {
     }
     else if (spec->arity == 1) {
       ok = spec->draw.d1(buf, 0, p0, rng); check_success(ok, rng);
-      CHECK_VEC_EQUAL(double, buf, orig, LEN(buf));
+      CHECK_EQUALV(buf, orig, LEN(buf));
       ok = spec->drawf.d1(buf_f, 0, p0f, rng); check_success(ok, rng);
-      CHECK_VEC_EQUAL(float, buf_f, orig_f, LEN(buf_f));
+      CHECK_EQUALV(buf_f, orig_f, LEN(buf_f));
       ok = spec->draw.d1(0, LEN(buf), p0, rng); check_failure(ok, rng);
       ok = spec->drawf.d1(0, LEN(buf_f), p0f, rng); check_failure(ok, rng);
       ok = spec->draw.d1(buf, LEN(buf), p0, 0); xCheck(!ok);
@@ -194,9 +194,9 @@ static void test_continuous_edge_cases(const char *engine) {
     }
     else if (spec->arity == 2) {
       ok = spec->draw.d2(buf, 0, p0, p1, rng); check_success(ok, rng);
-      CHECK_VEC_EQUAL(double, buf, orig, LEN(buf));
+      CHECK_EQUALV(buf, orig, LEN(buf));
       ok = spec->drawf.d2(buf_f, 0, p0f, p1f, rng); check_success(ok, rng);
-      CHECK_VEC_EQUAL(float, buf_f, orig_f, LEN(buf_f));
+      CHECK_EQUALV(buf_f, orig_f, LEN(buf_f));
       ok = spec->draw.d2(0, LEN(buf), p0, p1, rng); check_failure(ok, rng);
       ok = spec->drawf.d2(0, LEN(buf_f), p0f, p1f, rng); check_failure(ok, rng);
       ok = spec->draw.d2(buf, LEN(buf), p0, p1, 0); xCheck(!ok);
@@ -204,9 +204,9 @@ static void test_continuous_edge_cases(const char *engine) {
     }
     else if (spec->arity == 3) {
       ok = spec->draw.d3(buf, 0, p0, p1, p2, rng); check_success(ok, rng);
-      CHECK_VEC_EQUAL(double, buf, orig, LEN(buf));
+      CHECK_EQUALV(buf, orig, LEN(buf));
       ok = spec->drawf.d3(buf_f, 0, p0f, p1f, p2f, rng); check_success(ok, rng);
-      CHECK_VEC_EQUAL(float, buf_f, orig_f, LEN(buf_f));
+      CHECK_EQUALV(buf_f, orig_f, LEN(buf_f));
       ok = spec->draw.d3(0, LEN(buf), p0, p1, p2, rng); check_failure(ok, rng);
       ok = spec->drawf.d3(0, LEN(buf_f), p0f, p1f, p2f, rng);
       check_failure(ok, rng);
@@ -320,13 +320,13 @@ static void test_determinism_and_PIT(const char *engine) {
       DRAW(engine, 42, spec->draw.d0(xd, len, rng));
       DRAW(engine, 42, spec->draw.d0(yd, len, rng));
       DRAW(engine, 43, spec->draw.d0(zd, len, rng));
-      CHECK_VEC_EQUAL(double, xd, yd, len);
-      CHECK_VEC_DIFFERENT(double, xd, zd, len);
+      CHECK_EQUALV(xd, yd, len);
+      CHECK_DIFFV(xd, zd, len);
       DRAW(engine, 42, spec->drawf.d0(xf, len, rng));
       DRAW(engine, 42, spec->drawf.d0(yf, len, rng));
       DRAW(engine, 43, spec->drawf.d0(zf, len, rng));
-      CHECK_VEC_EQUAL(float, xf, yf, len);
-      CHECK_VEC_DIFFERENT(float, xf, zf, len);
+      CHECK_EQUALV(xf, yf, len);
+      CHECK_DIFFV(xf, zf, len);
     }
     else if (spec->arity == 1) {
       double p0 = spec->p0[0];
@@ -334,13 +334,13 @@ static void test_determinism_and_PIT(const char *engine) {
       DRAW(engine, 42, spec->draw.d1(xd, len, p0, rng));
       DRAW(engine, 42, spec->draw.d1(yd, len, p0, rng));
       DRAW(engine, 43, spec->draw.d1(zd, len, p0, rng));
-      CHECK_VEC_EQUAL(double, xd, yd, len);
-      CHECK_VEC_DIFFERENT(double, xd, zd, len);
+      CHECK_EQUALV(xd, yd, len);
+      CHECK_DIFFV(xd, zd, len);
       DRAW(engine, 42, spec->drawf.d1(xf, len, p0f, rng));
       DRAW(engine, 42, spec->drawf.d1(yf, len, p0f, rng));
       DRAW(engine, 43, spec->drawf.d1(zf, len, p0f, rng));
-      CHECK_VEC_EQUAL(float, xf, yf, len);
-      CHECK_VEC_DIFFERENT(float, xf, zf, len);
+      CHECK_EQUALV(xf, yf, len);
+      CHECK_DIFFV(xf, zf, len);
     }
     else if (spec->arity == 2) {
       double p0 = spec->p0[0];
@@ -350,13 +350,13 @@ static void test_determinism_and_PIT(const char *engine) {
       DRAW(engine, 42, spec->draw.d2(xd, len, p0, p1, rng));
       DRAW(engine, 42, spec->draw.d2(yd, len, p0, p1, rng));
       DRAW(engine, 43, spec->draw.d2(zd, len, p0, p1, rng));
-      CHECK_VEC_EQUAL(double, xd, yd, len);
-      CHECK_VEC_DIFFERENT(double, xd, zd, len);
+      CHECK_EQUALV(xd, yd, len);
+      CHECK_DIFFV(xd, zd, len);
       DRAW(engine, 42, spec->drawf.d2(xf, len, p0f, p1f, rng));
       DRAW(engine, 42, spec->drawf.d2(yf, len, p0f, p1f, rng));
       DRAW(engine, 43, spec->drawf.d2(zf, len, p0f, p1f, rng));
-      CHECK_VEC_EQUAL(float, xf, yf, len);
-      CHECK_VEC_DIFFERENT(float, xf, zf, len);
+      CHECK_EQUALV(xf, yf, len);
+      CHECK_DIFFV(xf, zf, len);
     }
     else if (spec->arity == 3) {
       double p0 = spec->p0[0];
@@ -368,13 +368,13 @@ static void test_determinism_and_PIT(const char *engine) {
       DRAW(engine, 42, spec->draw.d3(xd, len, p0, p1, p2, rng));
       DRAW(engine, 42, spec->draw.d3(yd, len, p0, p1, p2, rng));
       DRAW(engine, 43, spec->draw.d3(zd, len, p0, p1, p2, rng));
-      CHECK_VEC_EQUAL(double, xd, yd, len);
-      CHECK_VEC_DIFFERENT(double, xd, zd, len);
+      CHECK_EQUALV(xd, yd, len);
+      CHECK_DIFFV(xd, zd, len);
       DRAW(engine, 42, spec->drawf.d3(xf, len, p0f, p1f, p2f, rng));
       DRAW(engine, 42, spec->drawf.d3(yf, len, p0f, p1f, p2f, rng));
       DRAW(engine, 43, spec->drawf.d3(zf, len, p0f, p1f, p2f, rng));
-      CHECK_VEC_EQUAL(float, xf, yf, len);
-      CHECK_VEC_DIFFERENT(float, xf, zf, len);
+      CHECK_EQUALV(xf, yf, len);
+      CHECK_DIFFV(xf, zf, len);
     }
     else {
       xCheck(false);

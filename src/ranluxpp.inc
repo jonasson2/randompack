@@ -54,7 +54,7 @@ ALWAYS_INLINE uint64_t subb64(uint64_t a, uint64_t b, uint64_t bin, uint64_t *bo
 }
 #endif
 
-ALWAYS_INLINE void mul9x9(uint64_t *z, const uint64_t *restrict x) {
+ALWAYS_INLINE void mul9x9(uint64_t *z, const uint64_t *restrict x) { // z := x*a
   static const uint64_t a[9] = {
     0xed7faa90747aaad9ULL,
     0x4cec2c78af55c101ULL,
@@ -68,9 +68,7 @@ ALWAYS_INLINE void mul9x9(uint64_t *z, const uint64_t *restrict x) {
   };
   uint64_t lo, hi, c, cy;
   for (int i=0; i<18; i++) z[i] = 0;
-#ifdef __clang__
-#pragma clang loop unroll(full)
-#elif !defined(_MSC_VER)
+#if defined(__GNUC__) // works also for clang
 #pragma GCC unroll 9
 #endif
   for (int i=0; i<9; i++) {
@@ -97,7 +95,7 @@ ALWAYS_INLINE void mul9x9(uint64_t *z, const uint64_t *restrict x) {
 // x = r - c*m
 // [it is easy to see that 0 <= x < m]
 
-ALWAYS_INLINE int addbits(uint64_t *x, uint64_t c, int n) {
+ALWAYS_INLINE int add1_cy(uint64_t *x, uint64_t c, int n) {
   uint64_t carry = 0;
   x[0] = addc64(x[0], c, 0, &carry);
 #ifdef __clang__
@@ -109,7 +107,7 @@ ALWAYS_INLINE int addbits(uint64_t *x, uint64_t c, int n) {
   return carry;
 }
 
-ALWAYS_INLINE int subbits(uint64_t *x, uint64_t c, int n) {
+ALWAYS_INLINE int sub1_bw(uint64_t *x, uint64_t c, int n) {
   uint64_t borrow = 0;
   x[0] = subb64(x[0], c, 0, &borrow);
 #ifdef __clang__
@@ -121,7 +119,7 @@ ALWAYS_INLINE int subbits(uint64_t *x, uint64_t c, int n) {
   return borrow;
 }
 
-ALWAYS_INLINE int addc(uint64_t *r, const uint64_t *restrict y, int n) {
+ALWAYS_INLINE int add_cy(uint64_t *r, const uint64_t *restrict y, int n) {
   uint64_t carry = 0;
 #ifdef __clang__
   #pragma clang loop unroll(full)
@@ -132,7 +130,7 @@ ALWAYS_INLINE int addc(uint64_t *r, const uint64_t *restrict y, int n) {
   return (int)carry;
 }
 
-ALWAYS_INLINE int subc(uint64_t *r, const uint64_t *restrict y, int n) {
+ALWAYS_INLINE int sub_bw(uint64_t *r, const uint64_t *restrict y, int n) {
   uint64_t borrow = 0;
 #ifdef __clang__
   #pragma clang loop unroll(full)
@@ -169,12 +167,12 @@ ALWAYS_INLINE void corr_r_minus_cm(uint64_t r[9], int c) {
     c0 = (uint64_t)abs(c),
     c3 = ((uint64_t)abs(c)) << 48;
   if (c > 0) {
-    subbits(r, c0, 9);
-    addbits(r + 3, c3, 6);
+    sub1_bw(r, c0, 9);
+    add1_cy(r + 3, c3, 6);
   }
   else if (c < 0) {
-    addbits(r, c0, 9);
-    subbits(r + 3, c3, 6);
+    add1_cy(r, c0, 9);
+    sub1_bw(r + 3, c3, 6);
   }
 }
 
@@ -186,11 +184,11 @@ ALWAYS_INLINE void mod9x9(uint64_t x[9], uint64_t z[18]) {
   copy64(t3, z + 9, 6); t3[5] &= 0xFFFF;
   copy64(x, z, 9);
   c = 0;
-  c -= subc(x, t1, 9);
-  c -= subc(x, t2, 4);
-  addc(t3, t2, 4);
+  c -= sub_bw(x, t1, 9);
+  c -= sub_bw(x, t2, 4);
+  add_cy(t3, t2, 4);
   c += shly240(t3);
-  c += addc(x, t3, 9);
+  c += add_cy(x, t3, 9);
   corr_r_minus_cm(x, c);
 }
 

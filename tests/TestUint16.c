@@ -33,7 +33,7 @@ static void test_edge_cases(char *engine) {
   bool ok;
   randompack_rng *rng = create_seeded_rng(engine, 333);
   ok = randompack_uint16(buf, 0, 0, rng); check_success(ok, rng); // n = 0
-  xCheck(equal_vec16(buf, original, 4));                          // –doesn't touch buffer
+  CHECK_EQUALV(buf, original, 4);                    // –doesn't touch buffer
   ok = randompack_uint16(0, 4, 0, rng);   check_failure(ok, rng); // NULL buffer w/n > 0
   ok = randompack_uint16(buf, 4, 0, 0);   xCheck(!ok);            // NULL rng
   ok = randompack_uint16(buf, 4, 0, rng); check_success(ok, rng); // normal call
@@ -53,7 +53,7 @@ static void test_mixed_draw(char *engine) {
   rng = create_seeded_rng(engine, 42);
   ASSERT(rng);
   ASSERT(randompack_uint16(b, 5, 0, rng));
-  xCheck(equal_vec16(a, b + 3, 2));
+  CHECK_EQUALV(a, b + 3, 2);
   randompack_free(rng);
 }
 
@@ -64,9 +64,9 @@ static void test_unbounded_determinism(char *engine) {
   draw_randoms(engine, b, LEN(b), 0, 42);
   draw_randoms(engine, c, LEN(c), 0, 43);
   two_part_draw(engine, d, 3, 2, 42);
-  xCheckMsg(equal_vec16(a, b, LEN(a)), engine);
-  xCheckMsg(equal_vec16(a, d, LEN(a)), engine);  
-  xCheckMsg(!equal_vec16(a, c, 3), engine);
+  CHECK_EQUALV_MSG(a, b, LEN(a), engine);
+  CHECK_EQUALV_MSG(a, d, LEN(a), engine);
+  CHECK_DIFFV_MSG(a, c, 3, engine);
 }
 
 // Bounded large-sample sanity check: counts across buckets are balanced.

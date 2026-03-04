@@ -69,9 +69,9 @@ static void test_edge_cases(char *engine) {
   memcpy(buf, orig, sizeof(buf));
   memcpy(buf_f, orig_f, sizeof(buf_f));
   ok = randompack_norm(buf, 0, rng); check_success(ok, rng);
-  CHECK_VEC_EQUAL(double, buf, orig, LEN(buf));
+  CHECK_EQUALV(buf, orig, LEN(buf));
   ok = randompack_normf(buf_f, 0, rng); check_success(ok, rng);
-  CHECK_VEC_EQUAL(float, buf_f, orig_f, LEN(buf_f));
+  CHECK_EQUALV(buf_f, orig_f, LEN(buf_f));
   ok = randompack_norm(0, LEN(buf), rng); check_failure(ok, rng);
   ok = randompack_normf(0, LEN(buf_f), rng); check_failure(ok, rng);
   ok = randompack_norm(buf, LEN(buf), 0); xCheck(!ok);
@@ -86,13 +86,13 @@ static void test_determinism(char *engine) {
   DRAW(engine, 42, randompack_norm(xd, len, rng));
   DRAW(engine, 42, randompack_norm(yd, len, rng));
   DRAW(engine, 43, randompack_norm(zd, len, rng));
-  CHECK_VEC_EQUAL(double, xd, yd, len);
-  CHECK_VEC_DIFFERENT(double, xd, zd, len);
+  CHECK_EQUALV(xd, yd, len);
+  CHECK_DIFFV(xd, zd, len);
   DRAW(engine, 42, randompack_normf(xf, len, rng));
   DRAW(engine, 42, randompack_normf(yf, len, rng));
   DRAW(engine, 43, randompack_normf(zf, len, rng));
-  CHECK_VEC_EQUAL(float, xf, yf, len);
-  CHECK_VEC_DIFFERENT(float, xf, zf, len);
+  CHECK_EQUALV(xf, yf, len);
+  CHECK_DIFFV(xf, zf, len);
 }
 
 void TestNorm(void) {

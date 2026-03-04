@@ -51,7 +51,7 @@ static bool equal_vecd_bits(double *a, double *b, int n) {
   xCheck(n <= LEN(ua));
   memcpy(ua, a, n*sizeof(double));
   memcpy(ub, b, n*sizeof(double));
-  return equal_vec64(ua, ub, n);
+  return memcmp(ua, ub, n*sizeof(uint64_t)) == 0;
 }
 
 static void draw_mix(randompack_rng *rng,
@@ -148,9 +148,9 @@ static void test_serialize_roundtrip_and_truncation(void) {
     ok = randompack_deserialize(buf, need, r2);
     check_success(ok, r2);
     draw_mix(r2, u32b, 23, zb, 11, u64b, 17);
-    xCheck(equal_vec32(u32a, u32b, 23));
+    CHECK_EQUALV(u32a, u32b, 23);
     xCheck(equal_vecd_bits(za, zb, 11));
-    xCheck(equal_vec64(u64a, u64b, 17));
+    CHECK_EQUALV(u64a, u64b, 17);
     FREE(buf);
     randompack_free(r1);
     randompack_free(r2);
@@ -174,7 +174,7 @@ static void test_buffer_serialized(void) {
   check_success(ok, r2);
   ok = randompack_uint32(b, 4, 0, r3);
   check_success(ok, r3);
-  xCheck(equal_vec32(a, b, 4));
+  CHECK_EQUALV(a, b, 4);
   FREE(buf);
   randompack_free(r1);
   randompack_free(r2);

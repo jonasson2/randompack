@@ -66,41 +66,6 @@ void free_engines(char **engines, int n) {
 
 // Vector equality / difference helpers
 // ––––––––––––––––––––––––––––––––––––
-bool equal_vec(int *a, int *b, int n) {
-  for (int i = 0; i < n; i++) if (a[i] != b[i]) return false;
-  return true;
-}
-
-bool equal_vecd(double *a, double *b, int n) {
-  for (int i = 0; i < n; i++) if (a[i] != b[i]) return false;
-  return true;
-}
-
-bool equal_vecf(float *a, float *b, int n) {
-  for (int i = 0; i < n; i++) if (a[i] != b[i]) return false;
-  return true;
-}
-
-bool equal_vec8(uint8_t *a, uint8_t *b, int n) {
-  for (int i = 0; i < n; i++) if (a[i] != b[i]) return false;
-  return true;
-}
-
-bool equal_vec16(uint16_t *a, uint16_t *b, int n) {
-  for (int i = 0; i < n; i++) if (a[i] != b[i]) return false;
-  return true;
-}
-
-bool equal_vec32(uint32_t *a, uint32_t *b, int n) {
-  for (int i = 0; i < n; i++) if (a[i] != b[i]) return false;
-  return true;
-}
-
-bool equal_vec64(uint64_t *a, uint64_t *b, int n) {
-  for (int i = 0; i < n; i++) if (a[i] != b[i]) return false;
-  return true;
-}
-
 #include <math.h>
 
 static int cmp_double(const void *a, const void *b) {
