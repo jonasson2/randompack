@@ -39,7 +39,7 @@ static rng_entry rng_table[] = {  // x256++simd is default
   {"philox",   "Philox-4x64, Salmon & Moraes, 2011 (6x64)",    PHILOX,  6,fill_philox   },
   {"sfc64",    "sfc64, Chris Doty-Humphrey, 2013 (4x64)",      SFC64,   4,fill_sfc64    },
   {"cwg128",   "cwg128-64, Działa, 2022 (5x64)",               CWG128,  5,fill_cwg128   },
-  {"ranlux",   "ranlux++, Sibidanov, 2017 (9x64)",             RANLUXPP,9,fill_ranluxpp },
+  {"ranlux++", "ranlux++, Sibidanov, 2017 (9x64)",             RANLUXPP,9,fill_ranluxpp },
   {"chacha20", "ChaCha20, Bernstein, 2008 (6x64)",             CHACHA20,6,fill_chacha   },
   {"system",   "Operating system entropy source",              SYS,     0,fill_csprng   },
 };

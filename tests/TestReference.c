@@ -302,7 +302,7 @@ static void TestRanluxppAgainstJirka(void) {
   uint64_t xorsum = 0xfe4bac4d5cedb127ULL, lastval = 0xee4ef07d92e6614dULL;
   uint64_t init[9] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
   uint64_t x[900];
-  randompack_rng *rng = randompack_create("ranlux");
+  randompack_rng *rng = randompack_create("ranlux++");
   check_rng_clean(rng);
   bool ok = randompack_set_state(init, 9, rng);
   check_success(ok, rng);
@@ -345,7 +345,7 @@ void TestReferencex(char *engine) {
   else if (!strcmp(e, "x256**")) {
     TestXoshiro256ssAgainstRust();
   }
-  else if (!strcmp(e, "ranlux")) {
+  else if (!strcmp(e, "ranlux++")) {
     TestRanluxppAgainstJirka();
   }
 }

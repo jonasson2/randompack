@@ -85,7 +85,7 @@ engine the names are case-insensitive.
 - philox      Philox-4×64 (Salmon and Moraes, 2011)
 - sfc64       sfc64 (Chris Doty-Humphrey, 2013)
 - cwg128      cwg128-64 (Działa, 2022)
-- ranlux      ranlux++ (Sibidanov, 2017)
+- ranlux++    ranlux++ (Sibidanov, 2017)
 - chacha20    ChaCha20 (Bernstein, 2008)
 - system      Operating-system–provided entropy source
 

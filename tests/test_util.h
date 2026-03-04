@@ -195,7 +195,7 @@ static engine_table_entry engine_table[] = {
   {"philox",        6},
   {"pcg64",         4},
   {"cwg128",        5},
-  {"ranlux",        9},
+  {"ranlux++",      9},
 };
 char **get_engines(int *n);
 void free_engines(char **engines, int n);

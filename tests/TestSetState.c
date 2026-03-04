@@ -47,7 +47,7 @@ static void test_invalid_args(void) {
 
 static void test_xorfamily_nonzero(void) {
   char *engines[] = {"x256++", "x256**", "x256++simd", "xoro++", "x128+",
-    "ranlux"};
+    "ranlux++"};
   for (int i = 0; i < LEN(engines); i++) {
     uint64_t zero[9] = {0};
     int nstate = engine_nstate(engines[i]);
