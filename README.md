@@ -14,13 +14,15 @@ directly from their original or standard published descriptions, with care taken
 to avoid undocumented shortcuts or ad-hoc modifications.
 
 The library includes several modern random number generators, including multiple
-members of Vigna and Blackman’s xor family, O’Neill’s PCG64, the Philox generator
-by Salmon and Moraes, and Bernstein’s ChaCha20. These generators are implemented
-to match their published reference definitions. Where possible, outputs are
-compared directly against upstream implementations and known reference streams
-to verify correctness. A central design goal of Randompack is confidence in
-correctness, supported by extensive testing at multiple levels, including unit
-tests, distributional checks, and direct comparisons with authoritative upstream
+members of Vigna and Blackman’s xor family, O’Neill’s PCG64, the Philox
+generator by Salmon and Moraes, and Bernstein’s ChaCha20. These generators are
+implemented to match their published reference definitions. In addition it
+contains a new implementation of the ranlux++ generator of Sibidanov, but his
+and other versions of it are GNU-licensed. Where possible, outputs are compared
+directly against upstream implementations and known reference streams to verify
+correctness. A central design goal of Randompack is confidence in correctness,
+supported by extensive testing at multiple levels, including unit tests,
+distributional checks, and direct comparisons with authoritative upstream
 engines and reference implementations.
 
 Randompack is designed for high-performance bulk generation. It uses buffering
