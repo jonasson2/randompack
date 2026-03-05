@@ -19,6 +19,7 @@ URL=https://raw.githubusercontent.com/jonasson2/randompack-src/main/$FILENAME
 mkdir -p archives
 git archive --format=tar.gz --prefix="randompack-$VER/" -o "$OUT" \
     HEAD meson.build meson_options.txt src LICENSE
+printf "%s\n" "Created $OUT"
 SHA=$(shasum -a 256 "$OUT" | awk '{print $1}')
 printf "%s\n%s\n" "SHA (update in build/build_tarballs.jl):" "$SHA"
 cd archives
