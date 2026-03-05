@@ -32,6 +32,7 @@ contains
   procedure :: duplicate => rp_duplicate
   procedure :: randomize => rp_randomize
   procedure :: full_mantissa => rp_full_mantissa
+  procedure :: jump => rp_jump
   procedure, private :: seed32 => rp_seed32
   procedure, private :: seed64 => rp_seed64
   generic :: seed => seed32, seed64

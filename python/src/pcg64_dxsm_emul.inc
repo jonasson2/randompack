@@ -2,16 +2,6 @@
 
 // Emulated 128-bit implementation of PCG64-DXSM
 
-// 128-bit addition with carry
-static inline void add128(uint64_t a_lo, uint64_t a_hi, uint64_t b_lo, uint64_t b_hi,
-  uint64_t *out_lo, uint64_t *out_hi) {
-  uint64_t lo = a_lo + b_lo;
-  uint64_t carry = (lo < a_lo);
-  uint64_t hi = a_hi + b_hi + carry;
-  *out_lo = lo;
-  *out_hi = hi;
-}
-
 // 128x64 -> 128 via two 64x64 multiplies
 static inline void mul128_64(uint64_t a_lo, uint64_t a_hi, uint64_t b,
   uint64_t *out_lo, uint64_t *out_hi) {

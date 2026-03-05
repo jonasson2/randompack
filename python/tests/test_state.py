@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 import randompack as rp
 
@@ -84,3 +85,18 @@ def test_philox_set_state():
     x = rng1.unif(100)
     y = rng2.unif(100)
     assert np.array_equal(x, y)
+
+
+def test_jump():
+    rng1 = rp.Rng()
+    rng2 = rp.Rng()
+    rng1.seed(123)
+    rng2.seed(123)
+    a = rng1.unif(5)
+    rng2.jump(128)
+    b = rng2.unif(5)
+    assert not np.array_equal(a, b)
+    with pytest.raises(Exception):
+        rng1.jump(129)
+    with pytest.raises(Exception):
+        rng1.jump(254)

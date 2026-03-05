@@ -149,6 +149,20 @@ function full_mantissa!(rng::RNG, enable::Bool=true)
   return nothing
 end
 
+"""
+    Randompack.jump!(rng::RNG, p::Integer)
+
+Jump an xor-family engine ahead by 2^p steps. The `x128+` and `xoro128++`
+engines support `p = 32, 64, 96`, while `x256++`, `x256**`, and `x256++simd`
+also support `p = 128` and `p = 192`.
+"""
+function jump!(rng::RNG, p::Integer)
+  rng.ptr == C_NULL && throw(ErrorException("RNG pointer is NULL"))
+  ok = ccall(_sym(:randompack_jump), Bool, (Cint, RNGPtr), p, rng.ptr)
+  _check_ok(ok, rng.ptr, "randompack_jump failed")
+  return nothing
+end
+
 # -----------------------------------------------------------------------------
 # State setting
 # -----------------------------------------------------------------------------

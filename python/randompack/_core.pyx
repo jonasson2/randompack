@@ -294,6 +294,30 @@ cdef class Rng:
         if not ok:
             _raise_last_error(self.ptr)
 
+    def jump(self, p):
+        """
+        Jump an xor-family engine ahead by \\eqn{2^p} steps. The `x128+` and
+        `xoro128++` engines support `p = 32, 64, 96`, while `x256++`, `x256**`,
+        and `x256++simd` also support `p = 128` and `p = 192`.
+
+        Parameters
+        ----------
+        p : int
+            Jump exponent.
+
+        Returns
+        -------
+        None
+        """
+
+        cdef bint ok
+        if self.ptr == NULL:
+            raise RuntimeError("RNG pointer is NULL")
+        p = int(p)
+        ok = randompack_jump(p, self.ptr)
+        if not ok:
+            _raise_last_error(self.ptr)
+
     def duplicate(self):
         """
         Duplicate the random number generator, preserving its state.

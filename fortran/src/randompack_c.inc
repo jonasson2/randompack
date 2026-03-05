@@ -29,6 +29,12 @@ interface
     logical(c_bool), value :: enable
   end function
 
+  logical(c_bool) function crp_jump(p, rngp) bind(C, name="randompack_jump")
+    import :: c_int, c_ptr, c_bool
+    integer(c_int), value :: p
+    type(c_ptr), value :: rngp
+  end function
+
   logical(c_bool) function crp_seed(seed, spawn_key, n_key, rngp) bind(C, name="randompack_seed")
     import :: c_int32_t, c_ptr, c_bool, c_int
     integer(c_int32_t), value :: seed

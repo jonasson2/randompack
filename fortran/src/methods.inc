@@ -69,6 +69,15 @@ subroutine rp_full_mantissa(self, enable)
   if (.not. c_ok) error stop rp_error_message(self, "full_mantissa")
 end subroutine
 
+subroutine rp_jump(self, p)
+  class(randompack_rng), intent(inout) :: self
+  integer(c_int), intent(in) :: p
+  logical(c_bool) :: c_ok
+  if (.not. c_associated(self%p)) error stop rp_error_message(self, "jump")
+  c_ok = crp_jump(p, self%p)
+  if (.not. c_ok) error stop rp_error_message(self, "jump")
+end subroutine
+
 
 subroutine rp_seed32(self, seed, spawn_key)
   class(randompack_rng), intent(inout) :: self

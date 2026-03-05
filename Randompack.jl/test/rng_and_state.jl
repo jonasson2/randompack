@@ -89,6 +89,19 @@ end
   @test isfinite(y)
 end
 
+@testset "jump!" begin
+  rng1 = rng_create()
+  rng_seed!(rng1, 123)
+  rng2 = rng_create()
+  rng_seed!(rng2, 123)
+  Randompack.jump!(rng2, 128)
+  x1 = random_unif(rng1)
+  x2 = random_unif(rng2)
+  @test x1 != x2
+  @test_throws ErrorException Randompack.jump!(rng1, 129)
+  @test_throws ErrorException Randompack.jump!(rng1, 254)
+end
+
 @testset "engines" begin
   out = Randompack.engines()
   @test haskey(out, :engine)

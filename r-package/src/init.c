@@ -10,6 +10,7 @@ SEXP randompack_seed_R(SEXP ptr, SEXP seed, SEXP spawn_key);
 SEXP randompack_randomize_R(SEXP ptr);
 SEXP randompack_duplicate_R(SEXP ptr);
 SEXP randompack_full_mantissa_R(SEXP ptr, SEXP enable);
+SEXP randompack_jump_R(SEXP ptr, SEXP p);
 SEXP randompack_set_state_R(SEXP ptr, SEXP state);
 SEXP randompack_philox_set_state_R(SEXP ptr, SEXP counter, SEXP key);
 SEXP randompack_squares_set_state_R(SEXP ptr, SEXP counter, SEXP key);
@@ -42,6 +43,7 @@ static const R_CallMethodDef CallEntries[] = {
   {"randompack_randomize_R",   (DL_FUNC)&randompack_randomize_R,   1},
   {"randompack_duplicate_R",  (DL_FUNC)&randompack_duplicate_R,  1},
   {"randompack_full_mantissa_R",(DL_FUNC)&randompack_full_mantissa_R, 2},
+  {"randompack_jump_R",       (DL_FUNC)&randompack_jump_R,       2},
   {"randompack_set_state_R",   (DL_FUNC)&randompack_set_state_R,   2},
   {"randompack_philox_set_state_R",
     (DL_FUNC)&randompack_philox_set_state_R, 3},

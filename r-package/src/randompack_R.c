@@ -44,7 +44,7 @@ static uint32_t read_u32_num(SEXP x, R_xlen_t i, char *name){
 
 SEXP randompack_create_R(SEXP engine, SEXP bitexact_) {
   if (!Rf_isString(engine) || LENGTH(engine) != 1)
-    Rf_error("engine must be a length-1 character string");
+    Rf_error("engine must be a single character string");
   const char *name = CHAR(STRING_ELT(engine, 0));
   int bitexact = Rf_asLogical(bitexact_);
   if (bitexact == NA_LOGICAL)
@@ -146,6 +146,21 @@ SEXP randompack_full_mantissa_R(SEXP ext, SEXP enable_){
   if (!ok){
     char *msg = randompack_last_error(rng);
     if (!msg) msg = "randompack_full_mantissa failed";
+    Rf_error("%s", msg);
+  }
+  return R_NilValue;
+}
+
+SEXP randompack_jump_R(SEXP ext, SEXP p_){
+  randompack_rng *rng = (randompack_rng *)R_ExternalPtrAddr(ext);
+  if (!rng) Rf_error("RNG pointer is NULL");
+  int p = Rf_asInteger(p_);
+  if (p == NA_INTEGER)
+    Rf_error("p must be a single integer");
+  bool ok = randompack_jump(p, rng);
+  if (!ok){
+    char *msg = randompack_last_error(rng);
+    if (!msg) msg = "randompack_jump failed";
     Rf_error("%s", msg);
   }
   return R_NilValue;

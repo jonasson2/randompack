@@ -3,12 +3,13 @@
 This package provides Python bindings to the C library Randompack, a random number
 generation toolkit that also includes interfaces for Python, R, and Julia. Randompack
 exposes a collection of modern RNG engines, including xoshiro256++/**, PCG64 DXSM, sfc64,
-Philox, and ChaCha20, together with a range of probability distributions, both integer and
-continuous. The library allows matching random draws across platforms and supported
-language interfaces. It provides unbounded and bounded integer draws, permutations,
-sampling without replacement, and 14 continuous distributions, ranging from basic ones
-(uniform, normal, exponential), through commonly used distributions (beta, gamma), to more
-specialized ones (such as skew-normal). Multivariate normal sampling is also supported.
+ranlux++, Philox, and ChaCha20, together with a range of probability distributions, both
+integer and continuous. The library allows matching random draws across platforms and
+supported language interfaces. It provides unbounded and bounded integer draws,
+permutations, sampling without replacement, and 14 continuous distributions, ranging from
+basic ones (uniform, normal, exponential), through commonly used distributions (beta,
+gamma), to more specialized ones (such as skew-normal). Multivariate normal sampling is
+also supported.
 
 Through SIMD instructions on modern CPUs, the inherently fast default engine xoshiro256++
 delivers high throughput for bulk generation, typically providing 3–6× faster performance
@@ -99,7 +100,7 @@ non-optimized version omit `--buildtype=release`.
     integer :: iv(10)
     integer(int64) :: lv(10)
 
-    type(randompack_rng) :: rng
+  type(randompack_rng) :: rng
     call rng%create()                ! default engine (x256++simd)
     call rng%create('pcg64')         ! specified engine
     call rng%create('pcg64', .true.) ! make samples bit-identical across platforms (x==y true)
@@ -155,6 +156,7 @@ management:
 - `set_state(state)`
 - `philox_set_state(ctr, key)`
 - `squares_set_state(ctr, key)`
+- `jump(p)` (for xor-family)
 - `last_error()`
 
 ### Seeding

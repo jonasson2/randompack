@@ -23,7 +23,7 @@ methods_configure <- list(
   seed = function(seed, spawn_key = integer(0)) {
     if (is.null(self$ptr)) stop("RNG is not initialized")
     seed <- as.integer(seed)
-    if (length(seed) != 1L || is.na(seed)) stop("seed must be a length-1 integer")
+    if (length(seed) != 1L || is.na(seed)) stop("seed must be a single integer")
     if (is.null(spawn_key)) spawn_key <- integer(0)
     if (!is.integer(spawn_key)) spawn_key <- as.integer(spawn_key)
     if (anyNA(spawn_key)) stop("spawn_key must not contain NA")
@@ -43,6 +43,15 @@ methods_configure <- list(
       stop("enable must be TRUE or FALSE")
     enable <- as.logical(enable)
     .Call("randompack_full_mantissa_R", self$ptr, enable, PACKAGE = "randompack")
+    invisible(self)
+  },
+
+  jump = function(p) {
+    if (is.null(self$ptr)) stop("RNG is not initialized")
+    p <- as.integer(p)
+    if (length(p) != 1L || is.na(p))
+      stop("p must be a single integer")
+    .Call("randompack_jump_R", self$ptr, p, PACKAGE = "randompack")
     invisible(self)
   },
 

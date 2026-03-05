@@ -30,6 +30,7 @@ NULL
 #'   \code{sfc64} \tab\tab sfc64 (Chris Doty-Humphrey, 2013) \cr
 #'   \code{philox} \tab\tab Philox-4×64 (Salmon and Moraes, 2011) \cr
 #'   \code{squares} \tab\tab squares64 (Widynski, 2021) \cr
+#'   \code{ranlux++} \tab\tab ranlux++ (Sibidanov, 2017) \cr
 #'   \code{chacha20} \tab\tab ChaCha20 (Bernstein, 2008) \cr
 #'   \code{system} \tab\tab Operating-system-provided entropy source \cr
 #' }
@@ -102,6 +103,11 @@ NULL
 #'   \item{`rng$randomize()`}{Randomize the RNG state from system entropy.}
 #'   \item{`rng$full_mantissa(enable = TRUE)`}{
 #'     Enable or disable 53-bit mantissas for double-precision draws.
+#'   }
+#'   \item{`rng$jump(p)`}{
+#'     Jump an xor-family engine ahead by \eqn{2^p} steps. The `x128+` and
+#'     `xoro128++` engines support `p = 32, 64, 96`, while `x256++`, `x256**`,
+#'     and `x256++simd` also support `p = 128` and `p = 192`.
 #'   }
 #'   \item{`rng$duplicate()`}{Duplicate the RNG, preserving its state.}
 #'   \item{`rng$serialize()`}{Serialize the current RNG state as a raw vector.}
@@ -191,7 +197,7 @@ RandompackRNG <- R6::R6Class(
       initialize = function(engine = "", bitexact = FALSE) {
         if (is.null(engine)) engine <- ""
         if (!is.character(engine) || length(engine) != 1L)
-          stop("engine must be a length-1 character string")
+          stop("engine must be a single character string")
         if (length(bitexact) != 1L || is.na(bitexact))
           stop("bitexact must be TRUE or FALSE")
         bitexact <- as.logical(bitexact)

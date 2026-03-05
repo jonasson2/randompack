@@ -3,13 +3,13 @@
 This package provides Julia bindings to the C library Randompack, a random number
 generation toolkit that also includes interfaces for R, Fortran, and Python. Randompack
 exposes a collection of modern RNG engines, including xoshiro256++/**, PCG64 DXSM, sfc64,
-Philox, and ChaCha20, together with a range of probability distributions, both integer and
-continuous. The library allows matching random draws across platforms and supported
-language interfaces. It provides unbounded and bounded integer draws, permutations,
-sampling without replacement, and 14 continuous distributions, ranging from basic ones
-(uniform, normal, exponential), through commonly used distributions (beta, gamma), to some
-not available in Julia’s standard distribution library (skew-normal). Multivariate normal
-sampling is also supported.
+ranlux++, Philox, and ChaCha20, together with a range of probability distributions, both
+integer and continuous. The library allows matching random draws across platforms and
+supported language interfaces. It provides unbounded and bounded integer draws,
+permutations, sampling without replacement, and 14 continuous distributions, ranging from
+basic ones (uniform, normal, exponential), through commonly used distributions (beta,
+gamma), to some not available in Julia’s standard distribution library (skew-normal).
+Multivariate normal sampling is also supported.
 
 Through SIMD instructions on modern CPUs, the inherently fast default engine,
 xoshiro256++, delivers performance that matches or exceeds native Julia’s random number
@@ -47,7 +47,7 @@ rng2 = Randompack.duplicate(rng)      # identical independent copy
 
 ### Continuous distributions
 ```julia
-x = random_unif(rng, 100)                # 100 draws from U(0,1)
+x = random_unif(rng, 100)                 # 100 draws from U(0,1)
 y = random_unif(rng, 100; a=2, b=5)       # 100 draws from U(2,5)
 s = random_unif(rng, 1)                   # scalar draw (length-1 array)
 z = random_normal(rng, 5)                 # 5 standard normal draws
@@ -67,7 +67,7 @@ s = random_sample(rng, 20, 5)      # 5-element sample from 1:20 (without replace
 ### Multivariate normal
 ```julia
 Sigma = [1.0 0.2; 0.2 2.0]
-X = random_mvn(rng, 100, Sigma)                 # zero mean
+X = random_mvn(rng, 100, Sigma)                  # zero mean
 Y = random_mvn(rng, 50, Sigma; mu=[1.0, 2.0])    # specified mean
 Z = zeros(100, 2)                                # 2 columns
 random_mvn!(rng, Z, Sigma)                       # Sigma must be 2×2
@@ -77,10 +77,11 @@ random_mvn!(rng, Z, Sigma)                       # Sigma must be 2×2
 ```julia
 rngx = rng_create("x256**")
 rngp = rng_create("philox")
-set_state(rngx; state=[1,2,3,4])                 # general state setter
-philox_set_state(rngp; ctr=[1,2,3,4], key=[4,6])  # engine-specific state setter
+Randompack.set_state!(rngx; state=[1,2,3,4])                  # general state setter
+Randompack.jump!(rngp, 128)                                   # jump the state by 2^128 steps
+Randompack.philox_set_state!(rngp; ctr=[1,2,3,4], key=[4,6])  # engine-specific state setter
 
-rngy = rng_create("x256**")  # engines must match
+rngy = rng_create("x256**")                      # engines must match
 state = Randompack.serialize(rngx)               # copy engine state of rngx
 Randompack.deserialize!(rngy, state)             # and put in rngy
 

@@ -9,6 +9,10 @@
 // - Fallback: /dev/urandom for other Unix-like systems
 // - Final fallback: An empty function that returns false (should not happen).
 
+#if defined(__APPLE__) && !defined(_DARWIN_C_SOURCE)
+#define _DARWIN_C_SOURCE
+#endif
+
 #include <stdbool.h>
 #include <stddef.h>
 

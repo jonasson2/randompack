@@ -44,3 +44,16 @@ test_that("squares_set_state makes draws repeatable", {
   rng2$squares_set_state(counter, key)
   expect_identical(rng1$unif(5), rng2$unif(5))
 })
+
+test_that("jump advances the default engine", {
+  rng1 <- randompack_rng()
+  rng2 <- randompack_rng()
+  rng1$seed(123)
+  rng2$seed(123)
+  a <- rng1$unif(5)
+  rng2$jump(128)
+  b <- rng2$unif(5)
+  expect_false(identical(a, b))
+  expect_error(rng1$jump(129))
+  expect_error(rng1$jump(254))
+})

@@ -2,7 +2,7 @@
 
 as_int1 <- function(x, name) {
   if (!is.numeric(x) || length(x) != 1L || is.na(x))
-    stop(sprintf("%s must be a length-1 numeric", name))
+    stop(sprintf("%s must be a single numeric", name))
   x <- as.numeric(x)
   if (!is.finite(x)) stop(sprintf("%s must be finite", name))
   if (x != floor(x)) stop(sprintf("%s must be integer-ish", name))

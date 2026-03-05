@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #if defined(_MSC_VER)
   #include <intrin.h>
 #endif
@@ -56,7 +57,7 @@ static inline void copy32(void *dst, void *src, int n) { memcpy(dst, src, n*4); 
 static inline void copy64(void *dst, void *src, int n) { memcpy(dst, src, n*8); }
 
 #ifndef BUFSIZE
-#define BUFSIZE 128
+#define BUFSIZE 144
 #endif
 
 _Static_assert(BUFSIZE % 8 == 0, "BUFSIZE must be a multiple of 8 (for chacha20)");
@@ -122,10 +123,33 @@ static inline uint32_t mix32(uint32_t x) {
 } while (0)
 #endif
 
+static inline void add128(uint64_t a_lo, uint64_t a_hi, uint64_t b_lo,
+  uint64_t b_hi, uint64_t *out_lo, uint64_t *out_hi) {
+  uint64_t lo = a_lo + b_lo;
+  uint64_t carry = (lo < a_lo);
+  uint64_t hi = a_hi + b_hi + carry;
+  *out_lo = lo;
+  *out_hi = hi;
+}
+
+ALWAYS_INLINE uint64_t clock_nsec(void) {
+#ifdef _WIN32
+  LARGE_INTEGER freq, counter;
+  QueryPerformanceFrequency(&freq);
+  QueryPerformanceCounter(&counter);
+  return (uint64_t)((1000000000.0*(double)counter.QuadPart)/(double)freq.QuadPart);
+#elif defined(CLOCK_MONOTONIC)
+  struct timespec ts;
+  if (clock_gettime(CLOCK_MONOTONIC, &ts) == 0)
+    return (uint64_t)ts.tv_sec*1000000000ULL + (uint64_t)ts.tv_nsec;
+#endif
+  return (uint64_t)((1000000000.0*(double)clock())/(double)CLOCKS_PER_SEC);
+}
+
 
 #if defined(PRETEND_NOSIMD)
 #define HAVE_NEON 0
-#elif defined(__aarch65__) || defined(__ARM_NEON) || defined(__ARM_NEON__)
+#elif defined(__aarch64__) || defined(__ARM_NEON) || defined(__ARM_NEON__)
 #define HAVE_NEON 1
 #else
 #define HAVE_NEON 0

@@ -1,4 +1,12 @@
 // -*- mode: c; -*-
+#include <time.h>
+
+static int get_state_words(randompack_rng *rng) {
+  rng_entry *ent = find_entry(rng->engine);
+  int nwords = ent ? ent->state_words : 1;
+  return nwords > 0 ? nwords : 1;
+}
+
 static void fill_bytes(uint8_t *a, int len, uint64_t *x) {
   for (int k = 0; k < len; k += 8) {
     uint64_t mixed = rand_splitmix64(x);
@@ -6,28 +14,70 @@ static void fill_bytes(uint8_t *a, int len, uint64_t *x) {
   }
 }
 
-static void entropy_fill(randompack_rng *rng, void *buffer, size_t len) {
-  bool ok = crypto_random(buffer, len);
-  if (!ok) {
-    struct timespec ts;
-    uint64_t x;
-    timespec_get(&ts, TIME_UTC);
-    x = ts.tv_sec;
-    x ^= ((uint64_t)ts.tv_nsec << 32);
+static void entropy_fill(randompack_rng *rng, void *buffer, int len) {
+  bool ok = crypto_random(buffer, (size_t) len);
+  if (!ok) {  // fallback on esoteric systems
+    uint64_t x = clock_nsec();
     x ^= (uintptr_t)rng;
     fill_bytes(buffer, len, &x);
   }
 }
 
+static inline void get_stream(uint64_t stream_state[4], int i, randompack_rng *rng) {
+  xo256 *st = &rng->state.xo;
+  stream_state[0] = st->s0[i];
+  stream_state[1] = st->s1[i];
+  stream_state[2] = st->s2[i];
+  stream_state[3] = st->s3[i];
+}
+
+static inline void set_stream(int i, const uint64_t stream_state[4], randompack_rng *rng) {
+  xo256 *st = &rng->state.xo;
+  st->s0[i] = stream_state[0];
+  st->s1[i] = stream_state[1];
+  st->s2[i] = stream_state[2];
+  st->s3[i] = stream_state[3];
+}
+
+static inline void scatter_to_stream0(randompack_rng *rng) {
+  xo256 *st = &rng->state.xo;
+  uint64_t *u64 = rng->state.u64;
+  st->s0[0] = u64[0];
+  st->s1[0] = u64[1];
+  st->s2[0] = u64[2];
+  st->s3[0] = u64[3];
+}
+
+static inline void gather_from_stream0(randompack_rng *rng) {
+  xo256 *st = &rng->state.xo;
+  uint64_t *u64 = rng->state.u64;
+  u64[0] = st->s0[0];
+  u64[1] = st->s1[0];
+  u64[2] = st->s2[0];
+  u64[3] = st->s3[0];
+}
+
+static inline void x256ppsimd_jump(int p, randompack_rng *rng) {
+  for (int i=0; i<4; i++) {
+    uint64_t stream_state[4];
+    get_stream(stream_state, i, rng);
+    xoshiro256_jump(stream_state, p);
+    set_stream(i, stream_state, rng);
+  }
+}
+
 static inline void normalize_state(randompack_rng *rng) {
-  // Make state nonzero for xor-family, odd for cwg128 & pcg64.
+  // Make state nonzero for xor-family and ranlux, odd for cwg128 & pcg64.
+  int nwords = get_state_words(rng);
   switch (rng->engine) {
   case X256PP:
   case X256SS:
   case FAST:
   case XORO:
   case X128P:
-    if (rng->state.u64[0] == 0) rng->state.u64[0] = 1;
+  case RANLUXPP:
+    if (nwords > 0 && all_zero_state(rng->state.u64, nwords))
+      rng->state.u64[0] = 1;
     break;
   case CWG128:
     rng->state.u64[4] |= 1;
@@ -41,24 +91,11 @@ static inline void normalize_state(randompack_rng *rng) {
 }
 
 static inline void fill_stream_states_with_jump(randompack_rng *rng) {
-  if (rng->engine == FAST) {
-    xo256 *st = &rng->state.xo;
-    for (int i = 1; i < 4; i++) {
-      st->s0[i] = st->s0[i-1];
-      st->s1[i] = st->s1[i-1];
-      st->s2[i] = st->s2[i-1];
-      st->s3[i] = st->s3[i-1];
-      uint64_t tmp[4];
-      tmp[0] = st->s0[i];
-      tmp[1] = st->s1[i];
-      tmp[2] = st->s2[i];
-      tmp[3] = st->s3[i];
-      xoshiro256pp_jump(tmp);
-      st->s0[i] = tmp[0];
-      st->s1[i] = tmp[1];
-      st->s2[i] = tmp[2];
-      st->s3[i] = tmp[3];
-    }
+  for (int i=1; i<4; i++) {
+    uint64_t stream_state[4];
+    get_stream(stream_state, i-1, rng);
+    xoshiro256_jump(stream_state, 254);
+    set_stream(i, stream_state, rng);
   }
 }
 
@@ -67,11 +104,10 @@ static void rand_init(randompack_rng *rng) {
   rng->buf_byte = 0;
   rng->last_error = 0;
   rng->usefullmantissa = false;
-  normalize_state(rng);
-  fill_stream_states_with_jump(rng);
+  rng->bitexact = false;
 }
 
-static void rand_init_randomize(randompack_rng *rng) {
+static void rand_randomize(randompack_rng *rng) {
   if (rng->engine == CHACHA20) {
     uint8_t tmp[44];
     entropy_fill(rng, tmp, sizeof(tmp));
@@ -84,22 +120,18 @@ static void rand_init_randomize(randompack_rng *rng) {
     }
     rng->state.u32[11] = 0;
   }
-  else if (rng->engine == FAST) {
-    uint64_t tmp[4];
-    entropy_fill(rng, tmp, sizeof(tmp));
-    rng->state.xo.s0[0] = tmp[0];
-    rng->state.xo.s1[0] = tmp[1];
-    rng->state.xo.s2[0] = tmp[2];
-    rng->state.xo.s3[0] = tmp[3];
-  }
   else {
-    entropy_fill(rng, rng->state.u64, sizeof(rng->state.u64));
+    int nwords = get_state_words(rng);
+    entropy_fill(rng, rng->state.u64, nwords*sizeof(uint64_t));
+    normalize_state(rng);
+    if (rng->engine == FAST) {
+      scatter_to_stream0(rng);
+      fill_stream_states_with_jump(rng);
+    }
   }
-  rand_init(rng);
 }
 
 #include "seed_seq_fe128.inc"
-
 // Build an extended seed sequence: [TAG0, seed32, nkey+1, TAG1, spawn_key[0..nkey-1]]
 // then seed seed_seq_fe128 from it and generate nw output words into w. Returns true on
 // success, false on invalid args or allocation failure.
@@ -123,20 +155,11 @@ static bool seed_seq_seed(uint32_t *w, int nw, uint32_t seed32, uint32_t *spawn_
   return true;
 }
 
-// static void store_u64_le(uint8_t *dst, uint64_t v) {
-//   dst[0] = v;
-//   dst[1] = v >> 8;
-//   dst[2] = v >> 16;
-//   dst[3] = v >> 24;
-//   dst[4] = v >> 32;
-//   dst[5] = v >> 40;
-//   dst[6] = v >> 48;
-//   dst[7] = v >> 56;
-// }
-
 static void set_state(uint64_t *state, int nstate, randompack_rng *rng) {  
   rng->buf_word = BUFSIZE;
   rng->buf_byte = 0;
+  int nwords = get_state_words(rng);
+  assert(nstate == nwords);
   if (rng->engine == CHACHA20) {
     int k = 0;
     for (int i = 0; i < nstate; i++) {
@@ -145,13 +168,13 @@ static void set_state(uint64_t *state, int nstate, randompack_rng *rng) {
       rng->state.u32[k++] = (uint32_t)(v >> 32);
     }
   }
-  else if (rng->engine == FAST) {
-    rng->state.xo.s0[0] = state[0];
-    rng->state.xo.s1[0] = state[1];
-    rng->state.xo.s2[0] = state[2];
-    rng->state.xo.s3[0] = state[3];
+  else {
+    copy64(rng->state.u64, state, nstate);
+    if (rng->engine == FAST) {
+      scatter_to_stream0(rng);
+      fill_stream_states_with_jump(rng);
+    }
   }
-  else copy64(rng->state.u64, state, nstate);
 }
 
 static void philox_set_state(randompack_philox_ctr ctr, randompack_philox_key key,

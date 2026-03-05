@@ -214,6 +214,21 @@ use, intrinsic :: ieee_arithmetic, only: ieee_is_finite, ieee_set_flag, ieee_und
     "different seed differs")
 
   !------------------------------------------------------------
+  ! Jump: advance stream (xor-family only)
+  if (has_x) then
+    call r2%create("x256++simd")
+    call r3%create("x256++simd")
+    call r2%seed(123)
+    call r3%seed(123)
+    call r3%jump(128)
+    call r2%unif(xe)
+    call r3%unif(xn)
+    call assert(.not. approx_equal_d(xe(1), xn(1)), "jump advances stream")
+    call r2%free()
+    call r3%free()
+  end if
+
+  !------------------------------------------------------------
   ! Duplicate: identical then diverge
   call r1%seed(999)
   call r1%duplicate(r2)

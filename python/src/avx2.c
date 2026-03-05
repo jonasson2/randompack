@@ -34,6 +34,11 @@ void rand_float_avx2(float x[], size_t len, randompack_rng *rng) {
 #endif
 
 #include <immintrin.h>
+
+#ifndef __m256i_u
+typedef __m256i __m256i_u;
+#endif
+
 #include <string.h>
 #include "buffer_draw.inc"
 
@@ -79,7 +84,8 @@ HIDDEN bool cpu_has_avx2(void) {
   unsigned int xcr0_lo, xcr0_hi;
   __asm__ volatile ("xgetbv" : "=a"(xcr0_lo), "=d"(xcr0_hi) : "c"(0));
   if ((xcr0_lo & 0x6) != 0x6) return false;
-  if (!__get_cpuid_count(7, 0, &eax, &ebx, &ecx, &edx)) return false;
+  if (__get_cpuid_max(0, 0) < 7) return false;
+  __cpuid_count(7, 0, eax, ebx, ecx, edx);
   return (ebx & (1 << 5)) != 0;
 #else
   return false;

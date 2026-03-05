@@ -17,34 +17,19 @@ randompack_rng *randompack_create( // Create randomized RNG of given engine type
   const char *engine    // in      Type ("x256++simd" [default], "pcg64",... 0→default)
 );
 
-randompack_rng *randompack_duplicate( // Clone an RNG (identical engine+state), error → 0
-  randompack_rng *rng   // in      RNG to duplicate
+bool randompack_seed( // Create RNG with given type and seed, false on error
+  int seed,             // in      Any integer seed; expanded with a hash to fill state
+  uint32_t *spawn_key,  // in      Optional spawn key array (may be 0 if n_key==0)
+  int n_key,            // in      Number of spawn_key entries
+  randompack_rng *rng   // in/out  Random number generator
 );
 
 bool randompack_randomize( // Randomize RNG state from system entropy, false on error
   randompack_rng *rng   // in/out  Random number generator
 );
 
-bool randompack_full_mantissa( // Use full mantissa for doubles (default false)
-  randompack_rng *rng,  // in/out  Random number generator
-  bool enable           // in      true → 53-bit mantissa, false → 52-bit
-);
-
-bool randompack_bitexact( // Use bitexact log/exp (default false)
-  randompack_rng *rng,  // in/out  Random number generator
-  bool enable           // in      true → openlibm, false → system/vforce/sleef
-);
-
-bool randompack_jump( // Jump xor-family rng by 2^p steps, false on error
-  int p,               // in      jump exponent (32/64/96/128/192)
-  randompack_rng *rng  // in/out  Random number generator
-);
-
-bool randompack_seed( // Create RNG with given type and seed, false on error
-  int seed,             // in      Any integer seed; expanded with a hash to fill state
-  uint32_t *spawn_key,  // in      Optional spawn key array (may be 0 if n_key==0)
-  int n_key,            // in      Number of spawn_key entries
-  randompack_rng *rng   // in/out  Random number generator
+randompack_rng *randompack_duplicate( // Clone an RNG (identical engine+state), error → 0
+  randompack_rng *rng   // in      RNG to duplicate
 );
 
 void randompack_free( // Free an RNG created with randompack_create
@@ -230,8 +215,7 @@ char *randompack_last_error( // Get last error string, or 0 if none
 // Advanced API: Low-level utilities and engine-specific features
 //
 // These functions expose additional control over RNG behaviour, distribution kernels, and
-// bit-precise integer generation. They are intended for specialised use cases, testing,
-// and performance tuning, and are typically not needed in routine applications.
+// bit-precise integer generation.
 //========================================================================================
 
 bool randompack_raw( // Generate random bytes (raw bitstream), false on error
@@ -302,6 +286,21 @@ bool randompack_set_state( // Set state of general engine directly
   uint64_t state[],           // in      state words (must be nonzero for xor-family)
   int nstate,                 // in      number of state words provided, depends on engine
   randompack_rng *rng         // in/out  target RNG
+);
+
+bool randompack_full_mantissa( // Use full mantissa for doubles (default false)
+  randompack_rng *rng,  // in/out  Random number generator
+  bool enable           // in      true → 53-bit mantissa, false → 52-bit
+);
+
+bool randompack_bitexact( // Use bitexact log/exp (default false)
+  randompack_rng *rng,  // in/out  Random number generator
+  bool enable           // in      true → openlibm, false → system/vforce/sleef
+);
+
+bool randompack_jump( // Jump xor-family rng by 2^p steps, false on error
+  int p,               // in      Jump exponent (32/64/96/128/192)
+  randompack_rng *rng  // in/out  Random number generator
 );
 
 //========================================================================================
