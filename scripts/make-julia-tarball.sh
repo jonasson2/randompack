@@ -12,7 +12,7 @@ if [ -n "$(git status --porcelain)" ]; then
   exit 1
 fi
 
-VER=$(<VERSION)
+VER=$(cat VERSION)
 FILENAME=randompack-$VER.tar.gz
 echo $FILENAME
 OUT=archives/$FILENAME
