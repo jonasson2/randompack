@@ -6,11 +6,11 @@ version = v"0.1.1"
 sources = [
   # ArchiveSource(
   #   "https://raw.githubusercontent.com/jonasson2/randompack-src/v0.1.1/randompack-0.1.1.tar.gz",
-  #   "a33c3b283cbb485806a8592969ed8d68aa4649b4038432a0709aa8ca29b59b84",
+  #   "ec06c776d76317dafa2a94f3c09219d989fb7b1045ca4a99b0c620015bd97964",
   # ),
 ArchiveSource(
   "/Users/jonasson/dropbox/varma/randompack/archives/randompack-0.1.1.tar.gz",
-    "45b37d5d7a40239d8b4d30cd024b86f613768f4171a7197c588a2a39f4d46ef6",
+    "ec06c776d76317dafa2a94f3c09219d989fb7b1045ca4a99b0c620015bd97964",
 )
 ]
 
