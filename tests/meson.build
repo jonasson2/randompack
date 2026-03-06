@@ -26,6 +26,7 @@ test_sources = files(
   'TestReference.c',
   'TestX256ppsimd.c',
   'TestRanluxpp.c',
+  'TestDpstrf.c',
   'TestSeed.c',
   'TestSetState.c',
   'TestHelpers.c',

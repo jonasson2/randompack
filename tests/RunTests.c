@@ -140,6 +140,7 @@ int main(int argc, char **argv) {
   run_test("Normal",      TestNorm);
   run_test("Exp",         TestExp);
   run_test("Continuous",  TestContinuous);
+  run_test("Dpstrf",      TestDpstrf);
   run_test("Mvn",         TestMvn);
 #endif
   vprint(table_fmt, "TOTAL", NTOTAL - NFAIL, NFAIL);

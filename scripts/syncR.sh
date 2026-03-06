@@ -8,11 +8,13 @@ cd "$REPO_ROOT"
 
 # SYNC SOURCE FILES
 rsync -av --delete \
+  --include='rp_dpstrf.c' \
   --exclude='*_R.c' \
   --exclude='init.c' \
   --exclude='Makevars' \
   --exclude='.DS_Store' \
   --exclude='meson.build' \
+  --exclude='blas.f' \
   --exclude='printX.c' \
   --exclude='*_float.inc' \
   --exclude='*_float.h' \

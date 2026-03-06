@@ -185,13 +185,12 @@ Julia release
 =============
 Yggdrasil (Julia):
 scripts/make-julia-tarball.sh     # create .tar.gz file with C library in archives/
-shasum -a 256 <tarball-file>      # get its sha
 cd archives                       # clone of github.com/jonasson2/randompack-src
+– update build/build_tarballs.jl  # change version number (2x) and sha (from script)
 git commit -am "Release x.y.z"    #
 git push                          #
 git tag vx.y.z                    #
 git push origin vx.y.z            # push new tag
-– update build/build_tarballs.jl  # change version number (2x) and sha
 julia build_tarballs.jl --debug                  # 
   --verbose --deploy=local                       # Check all platforms
   x86_64-linux-gnu-libgfortran5-cxx11            # locally

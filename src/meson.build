@@ -67,7 +67,7 @@ extra_objs = avx2_objs + blas_objs
 extra_objs_buf8 = avx2_objs_buf8 + blas_objs
 
 if local_dpstrf
-  randompack_src += files('lapack_dpstrf.f')
+  randompack_src += files('rp_dpstrf.c')
 endif
 
 librandompack_static = static_library(
