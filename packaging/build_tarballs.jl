@@ -10,7 +10,7 @@ sources = [
   # ),
 ArchiveSource(
   "/Users/jonasson/dropbox/varma/randompack/archives/randompack-0.1.1.tar.gz",
-    "a33c3b283cbb485806a8592969ed8d68aa4649b4038432a0709aa8ca29b59b84",
+    "45b37d5d7a40239d8b4d30cd024b86f613768f4171a7197c588a2a39f4d46ef6",
 )
 ]
 
@@ -82,11 +82,17 @@ fi
 # platforms are passed in on the command line
 
 platforms = [
-  Platform("aarch64", "macos"),
-  Platform("x86_64",  "macos"),
-  Platform("aarch64", "linux"),
-  Platform("x86_64",  "linux"),
-  Platform("x86_64",  "windows"),
+  Platform("aarch64", "macos";   libgfortran_version="5.0.0"),
+  Platform("x86_64",  "macos";   libgfortran_version="5.0.0"),
+  Platform("aarch64", "linux";   libgfortran_version="5.0.0", cxxstring_abi="cxx11"),
+  Platform("x86_64",  "linux";   libgfortran_version="5.0.0", cxxstring_abi="cxx11"),
+  Platform("x86_64",  "windows"; libgfortran_version="5.0.0", cxxstring_abi="cxx11"),
+]
+
+dependencies = [
+  Dependency(PackageSpec(name="OpenBLAS32_jll",
+                         uuid="656ef2d0-ae68-5445-9ca0-591084a874a2");
+             platforms=platforms),
 ]
 
 # The products that we will ensure are always built
