@@ -1,15 +1,17 @@
-# Note that this script can accept some limited command-line arguments, run
-# `julia build_tarballs.jl --help` to see a usage message.
 using BinaryBuilder, Pkg
 
 name = "Randompack"
 version = v"0.1.1"
 
 sources = [
-  ArchiveSource(
-    "https://raw.githubusercontent.com/jonasson2/randompack-src/v0.1.1/randompack-0.1.1.tar.gz",
+  # ArchiveSource(
+  #   "https://raw.githubusercontent.com/jonasson2/randompack-src/v0.1.1/randompack-0.1.1.tar.gz",
+  #   "a33c3b283cbb485806a8592969ed8d68aa4649b4038432a0709aa8ca29b59b84",
+  # ),
+ArchiveSource(
+  "/Users/jonasson/dropbox/varma/randompack/archives/randompack-0.1.1.tar.gz",
     "a33c3b283cbb485806a8592969ed8d68aa4649b4038432a0709aa8ca29b59b84",
-  ),
+)
 ]
 
 script = raw"""
