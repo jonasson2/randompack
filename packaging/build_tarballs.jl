@@ -10,7 +10,7 @@ sources = [
   # ),
 ArchiveSource(
   "/Users/jonasson/dropbox/varma/randompack/archives/randompack-0.1.1.tar.gz",
-    "ec06c776d76317dafa2a94f3c09219d989fb7b1045ca4a99b0c620015bd97964",
+    "b7876dfeb593521e8d717802abff8747c01e66cd5433b65884e7afdd4c8894fc",
 )
 ]
 
@@ -82,12 +82,20 @@ fi
 # platforms are passed in on the command line
 
 platforms = [
-  Platform("aarch64", "macos";   libgfortran_version="5.0.0"),
-  Platform("x86_64",  "macos";   libgfortran_version="5.0.0"),
-  Platform("aarch64", "linux";   libgfortran_version="5.0.0", cxxstring_abi="cxx11"),
-  Platform("x86_64",  "linux";   libgfortran_version="5.0.0", cxxstring_abi="cxx11"),
-  Platform("x86_64",  "windows"; libgfortran_version="5.0.0", cxxstring_abi="cxx11"),
+  Platform("aarch64", "macos"),
+  Platform("x86_64",  "macos"),
+  Platform("aarch64", "linux"),
+  Platform("x86_64",  "linux"),
+  Platform("x86_64",  "windows"),
 ]
+
+# platforms = [
+#   Platform("aarch64", "macos";   libgfortran_version="5.0.0"),
+#   Platform("x86_64",  "macos";   libgfortran_version="5.0.0"),
+#   Platform("aarch64", "linux";   libgfortran_version="5.0.0", cxxstring_abi="cxx11"),
+#   Platform("x86_64",  "linux";   libgfortran_version="5.0.0", cxxstring_abi="cxx11"),
+#   Platform("x86_64",  "windows"; libgfortran_version="5.0.0", cxxstring_abi="cxx11"),
+# ]
 
 dependencies = [
   Dependency(PackageSpec(name="OpenBLAS32_jll",
