@@ -1,0 +1,17 @@
+# Detect AVX2 support (works on x86/x86_64, returns 0 on ARM/Mac)
+HAVE_AVX2 = $(shell echo | $(CC) -mavx2 -dM -E - 2>/dev/null | grep -c __AVX2__)
+
+AVX2_CFLAGS = -mavx2 -mfma -DBUILD_AVX2
+
+avx2.o: avx2.c
+	$(CC) $(ALL_CPPFLAGS) $(ALL_CFLAGS) $(AVX2_CFLAGS) -c $< -o $@
+
+inplace_logexp.o: inplace_logexp.c
+	$(CC) $(ALL_CPPFLAGS) $(ALL_CFLAGS) $(AVX2_CFLAGS) -c $< -o $@
+
+sleef.o: sleef.c
+	$(CC) $(ALL_CPPFLAGS) $(ALL_CFLAGS) $(AVX2_CFLAGS) -c $< -o $@
+
+PKG_CFLAGS = $(if $(filter 1,$(HAVE_AVX2)),-DBUILD_AVX2,)
+
+

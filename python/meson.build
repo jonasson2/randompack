@@ -134,10 +134,10 @@ endif
 local_dpstrf = using_accelerate or using_builtin_blas
 
 if local_dpstrf
-  add_languages('fortran', required: true, native: false)
-  extra_sources += files('src/lapack_dpstrf.f')
   core_c_args += ['-DLOCAL_DPSTRF']
+  extra_sources += files('src/rp_dpstrf.c')
   if using_builtin_blas
+    add_languages('fortran', required: true, native: false)
     extra_sources += files('src/blas.f')
   endif
 endif

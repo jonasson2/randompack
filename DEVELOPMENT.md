@@ -184,13 +184,13 @@ Rng_test -h                            # help
 Julia release
 =============
 Yggdrasil (Julia):
-scripts/make-julia-tarball.sh     # create .tar.gz file with C library in archives/
-cd archives                       # clone of github.com/jonasson2/randompack-src
-– update build/build_tarballs.jl  # change version number (2x) and sha (from script)
-git commit -am "Release x.y.z"    #
-git push                          #
-git tag vx.y.z                    #
-git push origin vx.y.z            # push new tag
+scripts/make-julia-tarball.sh          # create .tar.gz file with C library in archives/
+cd archives                            # clone of github.com/jonasson2/randompack-src
+– update packageing/build_tarballs.jl  # change version number (2x) and sha (from script)
+git commit -am "Release x.y.z"         #
+git push                               #
+git tag vx.y.z                         #
+git push origin vx.y.z                 # push new tag
 julia build_tarballs.jl --debug                  # 
   --verbose --deploy=local                       # Check all platforms
   x86_64-linux-gnu-libgfortran5-cxx11            # locally

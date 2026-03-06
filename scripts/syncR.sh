@@ -22,7 +22,7 @@ rsync -av --delete \
   r-package/src/
 
 # COPY LICENSE FILE
-cp -f LICENSE r-package/LICENSE.md
+cp -f LICENSE r-package/inst/THIRD-PARTY-NOTICES
 
 # COMMENT OUT ALL FLOAT INCLUDES
 # Find all source files and comment out any #include with *_float.*

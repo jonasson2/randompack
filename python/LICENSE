@@ -59,4 +59,4 @@ Files: tests/TestUtil.c
 
 LAPACK routines
 Netlib LAPACK — https://www.netlib.org/lapack/ — BSD-style
-Files: src/lapack_dpstf2.f, src/lapack_dpstrf.f
+Files: src/rp_dpstrf.c
