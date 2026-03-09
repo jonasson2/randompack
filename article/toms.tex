@@ -58,67 +58,187 @@
 
 \section{Introduction}
 
-The computer generation of pseudo-random numbers has a history dating back to the first
-computers, with von Neumann's middle-square idea (1946)
-\cite{vonneumann1951rejection,lecuyer2017history} and Lehmer's linear congruential
-generator (LCG, 1949) \cite{lehmer1951mathematical,lecuyer2017history}. The first
-generators were aimed at generating random integers (typically in $[0, 2^k)$) and
-uniformly distributed reals in $[0,1]$ (through division by $2^k$), but soon other
-distributions followed. In fact von Neumann's paper \cite{vonneumann1951rejection} had a
-clever algorithm for drawing exponentially distributed samples, also obtainable by taking
-the logarithm of uniform samples. An early and seminal method for random normals is given
-by Box and Muller \cite{box1958normal}. Other important 20th century milestones are the
-Tausworthe random number generator (RNG) \cite{tausworthe1965linear}, the Wichmann-Hill
-RNG (1982) \cite{wichmann1982efficient}, the Park-Miller LCG (1988) \cite{park1988random},
-RANLUX (1994) \cite{luscher1994portable} and the Mersenne Twister (1998)
-\cite{matsumoto1998mersenne} with its extremely long period, $2^{19937}-1$.
+The computer generation of pseudo-random numbers has a history dating
+back to the first computers, with von Neumann's middle-square idea
+(1946) \cite{vonneumann1951rejection,lecuyer2017history} and Lehmer's
+linear congruential generator (LCG, 1949)
+\cite{lehmer1951mathematical,lecuyer2017history}. The first generators
+were aimed at generating random integers (typically in $[0, 2^k)$) and
+uniformly distributed reals in $[0,1]$ (through division by $2^k$),
+but soon other distributions followed. In fact von Neumann's paper
+\cite{vonneumann1951rejection} had a clever algorithm for drawing
+exponentially distributed samples, also obtainable by taking the
+logarithm of uniform samples. An early and seminal method for random
+normals is given by Box and Muller \cite{box1958normal}. Other
+important 20th century milestones are the Tausworthe random number
+generators (RNGs, 1965) \cite{tausworthe1965linear}, the Wichmann-Hill
+RNG (1982) \cite{wichmann1982efficient}, the Park-Miller LCG (1988)
+\cite{park1988random}, RANLUX (1994) \cite{luscher1994portable}, and
+the Mersenne Twister (1998) \cite{matsumoto1998mersenne} with its
+extremely long period, $2^{19937}-1$.
 
-Parallel to the uniform generator development new methods for generating non-uniform
-variates were developed. The normal distribution plays an important role, and other
-important ones are the exponential and the gamma distributions. Random sampling from
-several other distributions can be done by combining samples from these three (see Section
-xxx). The already mentioned Box-Muller method (1958) requires the evaluation of a square
-root, logarithm, a sine, and a cosine for each pair of samples, but a few years later
-Marsaglia and Bray proposed the polar method where the two trigonometrict functions were
-replaced by rejection sampling with acceptance rate $\pi/4$. Rejection sampling had
-already been used by von Neuman in his exponential method \cite{vonneumann1951rejection}.
-It also plays a central role in the ratio of uniforms method (1977)
-\cite{kinderman1977ratio,leva1992fast} which has an acceptance rate of 73\% and needs two
-uniform samples but only 0.012 logarithms and no square roots per normal sample. The next
-advance, also using rejection, was the ziggurat method (1984,2000) proposed in two stages
-by Marsaglia and Tsang \cite{marsaglia1984fast,marsaglia2000ziggurat}, the revised method
-drawing from the tail using an earlier idea \cite{marsaglia1964tail}. The seminal article
-from 2000 gives algorithms for normal and for exponential variates, both of which are
-implemented in Randompack.
+Parallel to the uniform generator development new methods for
+generating non-uniform variates were developed. The normal
+distribution plays an important role, and other important ones are the
+exponential and the gamma distributions. Random sampling from several
+other distributions can be done by combining samples from these three
+(see Section xxx). The Box-Muller method (1958) requires the
+evaluation of a square root, a logarithm, a sine, and a cosine for each
+pair of samples, but a few years later Marsaglia and Bray proposed the
+polar method where the two trigonometrict functions were replaced by
+rejection sampling with acceptance rate $\pi/4$. Rejection sampling
+had already been used by von Neuman in his exponential method
+\cite{vonneumann1951rejection}. It also plays a central role in the
+ratio of uniforms method (1977) \cite{kinderman1977ratio,leva1992fast}
+which has an acceptance rate of 73\% and needs two uniform samples but
+only 0.012 logarithms and no square roots per normal sample. The next
+advance, also using rejection, was the ziggurat method (1984, 2000)
+proposed in two stages by Marsaglia and Tsang
+\cite{marsaglia1984fast,marsaglia2000ziggurat}, the revised method
+drawing from the tail using an earlier idea \cite{marsaglia1964tail}.
+The seminal article from 2000 gives ziggurat algorithms for both
+normal and exponential variates, as well as a notably elegant method
+for the gamma distribution, that has since been adopted by most RNG
+libraries. All three are implemented in Randompack. Before 2000
+various algorithms had been devised for the gamma distribution, all of
+them based on some sort of rejection and many quite complex.
 
-Before 2000 various algorithms had been devised for the gamma
-distribution, all of them based on some sort of rejection and many quite complex. But the
-previously mentioned 2000 article had a notably elegant method for the gamma distribution
-that has since been adopted by most RNG libraries, including Randompack.
+Around the turn of the century, random number research placed
+increasing emphasis on the statistical quality of RNGs, on devising
+methods for creating independent streams of random numbers, and on
+ensuring long periods, spurred by faster, often parallel computers.
+For example, on a modern computer, the output of Park–Miller and other
+32-bit-state RNGs repeats itself after only a few seconds on a single
+core of a modern computer. This development increased the importance
+of empirical testing. Knuth had already described rigorous statistical
+tests of RNGs in 1969 in \emph{The Art of Computer Programming}
+\cite{knuth1969art}, but the next major milestones were the Diehard
+suite in 1996 \cite{marsaglia1996diehard}, DieHarder in 2006
+\cite{Brown2006DieHarder}, TestU01 in 2007 \cite{lecuyer2007testu01}
+with its well-known SmallCrush, Crush, and BigCrush batteries, and
+PractRand \cite{dotyhumphrey2010practrand}. TestU01 exposed weaknesses
+in many widely used RNGs, which failed its crush-batteries. More
+recently, Foreman et al. \cite{foreman2024statistical} described an
+openly available RNG testing environment built on existing suites. In
+parallel with these developments, standards agenecies on both sides of
+the Atlantic developed methods for testing cryptographic RNGs
+\cite{schindler2002evaluation,rukhin2010nist,saarinen2022sp}.
 
-At the end of the 20th century and especially in the 21st century the focus in random
-number research shifted to studying the statistical quality of RNGs, ensuring long
-periods, and devising methods to create independent streams of random numbers, spurred on
-by faster, often parallel computers. On a modern computer the Park-Miller RNG will start
-to repeat itself after a few seconds on a single core.
+We proceed with the summary of RNG development where we left off with
+the widely used Mersenne Twister (MT; Table~\ref{tab:language-rngs}). One of the first RNG
+to offer independent streams, paving the road for the subsequent
+advances was MRG32k3a \cite{lecuyer1999good,lecuyer2002streams}, with
+a period of $2^{191}$. The WELL generators \cite{panneton2006well} were
+intended to (and did) improve on the MT statistical quality although
+they did not obtain widespread adoption in software. The oposite can
+be said of the RNGs sometimes called the xor-family, pinoeered by
+Marsaglia in 2003 with xorshift and XORWOW
+\cite{marsaglia2003xorshift}, and further developed, primarily by
+Vigna, in a series of articles
+\citep{panneton2005xorshift,vigna2016experimental,vigna2017further,
+  blackman2021scrambled}. The current flagships are the closely
+related xoshiro256++ and xoshiro256**, that have been adopted as
+default generators by Rust, Julia, C\#, and gfortran (Table~\ref{tab:language-rngs}). All
+generators in the xor family support so-called \emph{jumping}, whereby
+the state can be advanced efficiently by very large amounts, such as
+$2^{128}$ steps, to create independent streams. An important milestone
+came in 2011 with the Random123 library by Salmon and Moraes
+\cite{salmon2011parallel}. Its counter-based Threefry and Philox
+generators have become popular for simulation on GPUs and are the
+default in several systems (Table~\ref{tab:language-rngs}). They allow the generation of a
+vast number of independent streams. Another important development was
+O'Neill's PCG family (2014) \cite{oneill2014pcg}. It also supports
+many streams via a stream-selector termed \emph{increment}. A 64-bit
+version of it has been adopted as NumPy's default RNG engine. And one
+more way of getting many streams is via stream splitting, an
+object-oriented approach implemented in SplitMix (2014)
+\cite{steele2014splitmix} and refined in the LXM family (2021)
+\cite{steele2021lxm}. These RNGs provide both \emph{generate} and
+\emph{split} as primitive operations, the latter creating two
+independent generators. Java's default RNG is from the LXM family, while
+SplitMix has primarily found application in spreading an initial seed
+across the state of other generators.
 
-Rigorous tests of statistical random generators were described in Knuth's Art of Computer
-Programming \cite{knuth1969art} and other notable advances were the Diehard test suite
-(1996) \cite{marsaglia1996diehard}, TestU01 (2007) \cite{lecuyer2007testu01} and
+Seeding an RNG is an important subject that must not be neglected.
+Some RNGs can show poor statistical behaviour if seeded directly with
+a small seed. Instead the seed should be mixed and spread across
+all bits of the state, and moreover this seed-spreading should be
+carried out with a process radically different from the RNG being seeded
+\cite{matsumoto2007initialization,oneill2014pcg,blackman2021scrambled}.
+As already mentioned SplitMix \cite{steele2014splitmix} can be used
+for this purpose, and another possibility is O'Neill's
+\texttt{seed\_seq\_fe128} \cite{oneill2015seedseq}.
 
-Among the first studies of 
+Finally it is worth noting that in 2017 L'Ecuyer wrote a comprehensive
+history of uniform pseudo-random number generators
+\cite{lecuyer2017history}. The earlier article by James (1990)
+\cite{james1990review}, as well as the TestU01 article
+\cite{lecuyer2007testu01}, also provide useful historical overviews.
+More recent, though in both cases limited, reports on RNG testing are
+given by \cite{bhattacharjee2022search} and
+\cite{josey2023reassessing}.
 
-generation of
-normally distributed
+\begin{table}
+\caption{Default random number generators in selected languages and
+  libraries. The generators are discussed briefly in the main text.}
+\label{tab:language-rngs}
+\small
+\centering
+\begin{minipage}{0.52\columnwidth}
+\centering
+\begin{tabular}{@{}l@{\hspace{2.5em}}l@{}}
+\toprule
+Language/library          & Default engine \\
+\midrule
+Go                        & ChaCha8 \\
+Rust (rand default)       & ChaCha12 \\
+Java                      & LXM (L32X64MixRandom) \\
+Boost                     & Mersenne Twister\textsuperscript{a} \\
+C++ standard library      & Mersenne Twister\textsuperscript{a} \\
+Intel oneMKL              & Mersenne Twister\textsuperscript{a} \\
+Gnu Scientific Library    & Mersenne Twister \\
+Matlab (core)             & Mersenne Twister \\
+Python random module      & Mersenne Twister \\
+PyTorch (CPU)             & Mersenne Twister \\
+Ruby                      & Mersenne Twister \\
+R (base)                  & Mersenne Twister \\
+R (parallel)              & MRG32k3a \\
+R (dqrng)                 & xoroshiro (128++) \\
+NumPy                     & PCG64 (XSL-RR 128/64) \\
+PyTorch (GPU)             & Philox \\
+TensorFlow                & Philox \\
+Google JAX                & Threefry \\
+Matlab (parallel toolbox) & Threefry \\
+CUDA cuRAND               & XORWOW \\
+JavaScript (V8)           & xorshift (128+) \\
+C\#                       & xoshiro (256**) \\
+gfortran                  & xoshiro (256**) \\
+Julia                     & xoshiro (256++) \\
+Rust (rand SmallRng)      & xoshiro (256++) \\
+\bottomrule
+\end{tabular}
 
-Among important milestones in this
-history are the Park-Miller
+\par\medskip
+
+\footnotesize
+\raggedright
+\textsuperscript{a}No unique default RNG exists; the table reports the
+engine most commonly used in the official documentation and examples.
+\end{minipage}
+\end{table}
+
+	•	motivate the problem
+	•	place the work historically
+	•	state what Randompack provides
+	•	explain what is new or distinctive
+	•	outline the rest of the paper
+
+%% Importance of portability across platforms:
+\cite{lecuyer2015rng,lecuyer2017parallel}
 
 \section{Design and interface}
 
 \section{Algorithms and implementation}
-
-\section{Evaluation}
 
 \section{Discussion}
 

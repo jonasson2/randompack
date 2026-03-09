@@ -9,7 +9,7 @@ sources = [
   #   "ec06c776d76317dafa2a94f3c09219d989fb7b1045ca4a99b0c620015bd97964",
   # ),
 ArchiveSource(
-  "/Users/jonasson/dropbox/varma/randompack/archives/randompack-0.1.1.tar.gz",
+  "/home/jonasson/randompack/archives/randompack-0.1.1.tar.gz",
     "b7876dfeb593521e8d717802abff8747c01e66cd5433b65884e7afdd4c8894fc",
 )
 ]

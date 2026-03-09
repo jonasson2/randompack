@@ -70,26 +70,26 @@ single-precision (float) variants.
 
 ## Random number generators
 
-Randompack offers several underlying random number generators, referred to as
-*engines*. ChaCha20 is provided as a cryptographically secure generator. Philox
-and squares64 are counter-based generators, while the remaining engines are
-state-based. A system-provided generator is also available. When selecting an
-engine the names are case-insensitive.
+Randompack offers several underlying random number generators, referred to as *engines*.
+ChaCha20 is provided as a cryptographically secure generator. Philox and squares64 are
+counter-based generators, while the remaining engines are state-based. A system-provided
+generator is also available. When selecting an engine the names are case-insensitive. In
+the following table W denotes the number of 64-bit state words.
 
-- ENGINE      W  FULL NAME
+- ENGINE      W  DESCRIPTION
 - x256++simd  4  xorshift256++, SIMD accelerated (Vigna and Blackman, 2018)
 - x256++      4  xoshiro256++ (Vigna and Blackman, 2018)
 - x256**      4  xoshiro256** (Vigna and Blackman, 2018)
-- x128+       xorshift128+ (Vigna, 2014)
-- xoro++      xoroshiro128++ (Vigna and Blackman, 2016)
-- pcg64       PCG64 DXSM (O’Neill, 2014)
-- squares     squares64 (Widynski, 2021)
-- philox      Philox-4×64 (Salmon and Moraes, 2011)
-- sfc64       sfc64 (Chris Doty-Humphrey, 2013)
-- cwg128      cwg128-64 (Działa, 2022)
-- ranlux++    ranlux++ (Sibidanov, 2017)
-- chacha20    ChaCha20 (Bernstein, 2008)
-- system      Operating-system–provided entropy source
+- x128+       2  xorshift128+ (Vigna, 2014)
+- xoro++      2  xoroshiro128++ (Vigna and Blackman, 2016)
+- pcg64       4  PCG64 DXSM (O’Neill, 2014)
+- squares     2  squares64 (Widynski, 2021)
+- philox      6  Philox-4×64 (Salmon and Moraes, 2011)
+- sfc64       4  sfc64 (Chris Doty-Humphrey, 2013)
+- cwg128      5  cwg128-64 (Działa, 2022)
+- ranlux++    9  ranlux++ (Sibidanov, 2017)
+- chacha20    6  ChaCha20 (Bernstein, 2008)
+- system      0  Operating-system–provided entropy source
 
 ## Support functions
 
