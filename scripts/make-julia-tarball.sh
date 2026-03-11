@@ -14,7 +14,6 @@ fi
 
 VER=$(cat VERSION)
 FILENAME=randompack-$VER.tar.gz
-echo $FILENAME
 OUT=archives/$FILENAME
 URL=https://raw.githubusercontent.com/jonasson2/randompack-src/main/$FILENAME
 mkdir -p archives

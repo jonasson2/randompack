@@ -10,7 +10,7 @@ sources = [
   # ),
 ArchiveSource(
   "/home/jonasson/randompack/archives/randompack-0.1.1.tar.gz",
-    "76f58b1a71ab2b48212a4436d1d68e7ea148cc84fc8252c97c3fe85a07d7bd2b",
+    "91791fddc7c252eec2fd38e068976fd6431d25ed2effef7472442f05f9ce4a33",
 )
 ]
 
