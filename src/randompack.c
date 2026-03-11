@@ -41,7 +41,6 @@ static rng_entry rng_table[] = {  // x256++simd is default
   {"cwg128",   "cwg128-64, Działa, 2022 (5x64)",               CWG128,  5,fill_cwg128   },
   {"ranlux++", "ranlux++, Sibidanov, 2017 (9x64)",             RANLUXPP,9,fill_ranluxpp },
   {"chacha20", "ChaCha20, Bernstein, 2008 (6x64)",             CHACHA20,6,fill_chacha   },
-  {"system",   "Operating system entropy source",              SYS,     0,fill_system   },
 };
 // For x256++simd, the state.xo.s0 (4 words) is seeded or initialized with _setup
 // and then jumped to .xo.s1, .xo.s2 and .xo.s3.
@@ -287,10 +286,6 @@ bool randompack_serialize(uint8_t *buf, int *len, randompack_rng *rng) {
   // Returns the complete internal state of rng as an opaque byte buffer
   if (!rng) return false;
   rng->last_error = 0;
-  if (rng->engine == SYS) {
-    rng->last_error = "randompack serialize: system-system not supported";
-    return false;
-  }
   if (!len) {
     rng->last_error = "randompack serialize: len is null";
     return false;
@@ -312,10 +307,6 @@ bool randompack_deserialize(const uint8_t *buf, int len, randompack_rng *rng) {
   // Restores the rng state using a buffer obtained with randompack_serialize
   if (!rng) return false;
   rng->last_error = 0;
-  if (rng->engine == SYS) {
-    rng->last_error = "randompack deserialize: not supported for system rng";
-    return false;
-  }
   if (!buf || len <= 0) {
     rng->last_error = "randompack deserialize: invalid arguments";
     return false;
@@ -326,10 +317,6 @@ bool randompack_deserialize(const uint8_t *buf, int len, randompack_rng *rng) {
   int need = STATE_NEED;
   if (blob.version != 1 || !ent || len < need) {
     rng->last_error = "randompack deserialize: corrupt state buffer";
-    return false;
-  }
-  if (blob.engine == SYS) {
-    rng->last_error = "randompack deserialize: system-system not supported";
     return false;
   }
   if (rng->engine != INVALID && rng->engine != blob.engine) {
@@ -361,9 +348,7 @@ bool randompack_set_state(uint64_t state[], int nstate, randompack_rng *rng) {
     return false;
   }
   int nwords = get_state_words(rng);
-  if (rng->engine == SYS)
-    rng->last_error = "randompack set_state: not supported for system-system";
-  else if (nwords <= 0)
+  if (nwords <= 0)
     rng->last_error = "randompack set_state: unknown engine";
   else if (nstate != nwords)
     rng->last_error = "randompack set_state: wrong nstate for this engine";

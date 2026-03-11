@@ -29,7 +29,6 @@ typedef enum {
   PCG64,
   PHILOX,
   CHACHA20,
-  SYS,
   CWG128,
   FAST,
 } rng_engine;

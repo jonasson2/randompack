@@ -66,21 +66,6 @@ static void draw_mix(randompack_rng *rng,
   check_success(ok, rng);
 }
 // --- tests ---------------------------------------------------------------
-static void test_sys_rejected(void) {
-  int need = 0;
-  randompack_rng *rng = randompack_create("system");
-  ASSERT(rng);
-  bool ok = randompack_serialize(0, &need, rng);
-  check_failure(ok, rng);
-  uint8_t buf[STATE_MIN_NEED_TEST];
-  CLEAR(buf);
-  uint32_t hdr[2] = {1u, SYS};
-  memcpy(buf, hdr, sizeof hdr);
-  ok = randompack_deserialize(buf, STATE_MIN_NEED_TEST, rng);
-  check_failure(ok, rng);
-  randompack_free(rng);
-}
-
 static void test_engine_mismatch_rejected(void) {
   randompack_rng *r1 = randompack_create("chacha20");
   randompack_rng *r2 = randompack_create("x256++");
@@ -182,7 +167,6 @@ static void test_buffer_serialized(void) {
 }
 // --- entry point ---------------------------------------------------------
 void TestSerialize(void) {
-  test_sys_rejected();
   test_engine_mismatch_rejected();
   test_corrupt_header_rejected();
   test_serialize_roundtrip_and_truncation();

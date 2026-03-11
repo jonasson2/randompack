@@ -32,7 +32,6 @@ NULL
 #'   \code{squares} \tab\tab squares64 (Widynski, 2021) \cr
 #'   \code{ranlux++} \tab\tab ranlux++ (Sibidanov, 2017) \cr
 #'   \code{chacha20} \tab\tab ChaCha20 (Bernstein, 2008) \cr
-#'   \code{system} \tab\tab Operating-system-provided entropy source \cr
 #' }
 #' 
 #' @section Continuous distributions:

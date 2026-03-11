@@ -1774,7 +1774,6 @@ def engines():
     philox      Philox-4x64, Salmon & Moraes, 2011 (6x64)
     squares     squares64, Widynski, 2021 (2x64)
     chacha20    ChaCha20, Bernstein, 2008 (6x64)
-    system      Operating system entropy source
     """
     
     cdef int n = 0

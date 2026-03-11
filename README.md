@@ -72,9 +72,9 @@ single-precision (float) variants.
 
 Randompack offers several underlying random number generators, referred to as *engines*.
 ChaCha20 is provided as a cryptographically secure generator. Philox and squares64 are
-counter-based generators, while the remaining engines are state-based. A system-provided
-generator is also available. When selecting an engine the names are case-insensitive. In
-the following table W denotes the number of 64-bit state words.
+counter-based generators, while the remaining engines are state-based. When selecting an
+engine the names are case-insensitive. In the following table W denotes the number of
+64-bit state words.
 
 - ENGINE      W  DESCRIPTION
 - x256++simd  4  xorshift256++, SIMD accelerated (Vigna and Blackman, 2018)
@@ -89,7 +89,6 @@ the following table W denotes the number of 64-bit state words.
 - cwg128      5  cwg128-64 (Działa, 2022)
 - ranlux++    9  ranlux++ (Sibidanov, 2017)
 - chacha20    6  ChaCha20 (Bernstein, 2008)
-- system      0  Operating-system–provided entropy source
 
 ## Support functions
 

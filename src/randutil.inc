@@ -7,19 +7,26 @@ static int get_state_words(randompack_rng *rng) {
   return nwords > 0 ? nwords : 1;
 }
 
-static void fill_bytes(uint8_t *a, int len, uint64_t *x) {
+static inline uint64_t rand_splitmix64(uint64_t *x) {
+  uint64_t z = (*x += 0x9E3779B97F4A7C15ULL);
+  z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9ULL;
+  z = (z ^ (z >> 27)) * 0x94D049BB133111EBULL;
+  return z ^ (z >> 31);
+}
+
+static void fill_splitmix64(uint8_t *a, int len, uint64_t *x) {
   for (int k = 0; k < len; k += 8) {
     uint64_t mixed = rand_splitmix64(x);
     memcpy(a + k, &mixed, min(8, len - k));
   }
 }
 
-static void entropy_fill(void *buffer, int len) {
+static void fill_entropy(void *buffer, int len) {
   bool ok = crypto_random(buffer, (size_t) len);
   if (!ok) {  // fallback on esoteric systems
     uint64_t x = clock_nsec();
     x ^= (uintptr_t)buffer;
-    fill_bytes(buffer, len, &x);
+    fill_splitmix64(buffer, len, &x);
   }
 }
 
@@ -111,7 +118,7 @@ static void rand_init(randompack_rng *rng) {
 static void rand_randomize(randompack_rng *rng) {
   if (rng->engine == CHACHA20) {
     uint8_t tmp[44];
-    entropy_fill(tmp, sizeof(tmp));
+    fill_entropy(tmp, sizeof(tmp));
     for (int i = 0; i < 11; i++) {
       uint32_t v = (uint32_t)tmp[4*i] |
         ((uint32_t)tmp[4*i + 1] << 8) |
@@ -123,7 +130,7 @@ static void rand_randomize(randompack_rng *rng) {
   }
   else {
     int nwords = get_state_words(rng);
-    entropy_fill(rng->state.u64, nwords*sizeof(uint64_t));
+    fill_entropy(rng->state.u64, nwords*sizeof(uint64_t));
     normalize_state(rng);
     if (rng->engine == FAST) {
       scatter_to_stream0(rng);

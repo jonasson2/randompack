@@ -64,7 +64,6 @@ Available engines include:
 - ``philox``   (Philox-4×64)
 - ``squares``  (Squares64)
 - ``chacha20`` (ChaCha20)
-- ``system``   (OS entropy source)
 
 Engine names are case-insensitive.
 

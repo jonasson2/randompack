@@ -36,22 +36,16 @@ char **get_engines(int *n) {
   TEST_ALLOC(descriptions, n0*dmax);
   ok = randompack_engines(names, descriptions, &n0, &emax, &dmax);
   ASSERT(ok);
-  int m = 0;
-  for (int i = 0; i < n0; i++) {
-    char *name = names + i*emax;
-    if (strcmp(name, "system") != 0) m++;
-  }
+  int m = n0;
   ASSERT(m > 0);
   TEST_ALLOC(engines, m);
-  int k = 0;
   for (int i = 0; i < n0; i++) {
     char *name = names + i*emax;
-    if (strcmp(name, "system") == 0) continue;
     int len = (int)strlen(name);
     char *copy;
     TEST_ALLOC(copy, len + 1);
     memcpy(copy, name, len + 1);
-    engines[k++] = copy;
+    engines[i] = copy;
   }
   FREE(descriptions);
   FREE(names);

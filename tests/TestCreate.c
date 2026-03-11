@@ -1,6 +1,5 @@
 // -*- C -*-
-// Tests for create_seeded_rng and engine-name handling (defaults, system CSPRNG, and
-// error reporting).
+// Tests for create_seeded_rng and engine-name handling (defaults and error reporting).
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
@@ -93,18 +92,6 @@ static void test_default_engine_matches_x256ppsimd(void) {
 }
 
 
-// "system" should map to the system CSPRNG, produce non-trivial output, and set no error.
-static void test_system_engine(void) {
-  randompack_rng *rng = create_seeded_rng("system", 0);
-  check_rng_clean(rng);
-  uint64_t x[2] = {0, 0};
-  bool ok = randompack_uint64(x, 2, 0, rng);
-  check_success(ok, rng);
-  xCheck(x[0] || x[1]);     // must produce something nreon-trivial
-  printS("system engine", "system");
-  randompack_free(rng);
-}
-
 static void test_duplicate(void) {
   randompack_rng *rng1 = create_seeded_rng(0, 123);
   check_rng_clean(rng1);
@@ -150,6 +137,5 @@ void TestCreate(void) {
   test_bad_engine_name();
   test_null_engine_name();
   test_default_engine_matches_x256ppsimd();
-  test_system_engine();
   // cwg128 is supported on all platforms
 }
