@@ -8,15 +8,15 @@
 // SPDX-License-Identifier: 0BSD OR MIT-0
 
 static inline void
-fill_pcg64(randompack_rng *rng, size_t len) {
-  uint64_t *out = rng->buf.u64;
+fill_pcg64(uint64_t *buf, size_t len, randompack_state *state) {
+  uint64_t *out = buf;
 
   /* cheap (half-width) multiplier */
   const uint64_t mul = 15750249268501108917ULL;  // Identical to original
 
   /* linear congruential generator */
-  pcg_ulong_t next = rng->state.pcg.state;  // Functionally same as original
-  pcg_ulong_t inc = rng->state.pcg.inc;     //
+  pcg_ulong_t next = state->pcg.state;  // Functionally same as original
+  pcg_ulong_t inc = state->pcg.inc;     //
   
   for (size_t i = 0; i < len; i++) {  // Added fill-buffer-loop
     /* linear congruential generator */
@@ -31,6 +31,6 @@ fill_pcg64(randompack_rng *rng, size_t len) {
     hi *= lo;                               //
     out[i] = hi; // Original has return hi;
   }
-  rng->state.pcg.state = next;
-  rng->state.pcg.inc = inc;
+  state->pcg.state = next;
+  state->pcg.inc = inc;
 }

@@ -12,6 +12,9 @@
 #include "printX.h"
 #include "xCheck.h"
 
+extern int TESTVERBOSITY;
+extern int TESTFLOAT;
+
 typedef double (*cdf1_fun)(double x, double p0);
 typedef double (*cdf2_fun)(double x, double p0, double p1);
 typedef double (*cdf3_fun)(double x, double p0, double p1, double p2);
@@ -156,6 +159,10 @@ static const dist_spec *find_spec(const char *distname, int arity) {
 }
 
 static void test_continuous_edge_cases(const char *engine) {
+  if (TESTVERBOSITY >= 2) {
+    fprintf(stderr, "TestContinuous edge cases\n");
+    fflush(stderr);
+  }
   double buf[4] = { 1, 2, 3, 4 };
   double orig[4] = { 1, 2, 3, 4 };
   float buf_f[4] = { 1, 2, 3, 4 };
@@ -174,44 +181,54 @@ static void test_continuous_edge_cases(const char *engine) {
     memcpy(buf_f, orig_f, sizeof(buf_f));
     if (spec->arity == 0) {
       ok = spec->draw.d0(buf, 0, rng); check_success(ok, rng);
-      CHECK_EQUALV(buf, orig, LEN(buf));
-      ok = spec->drawf.d0(buf_f, 0, rng); check_success(ok, rng);
-      CHECK_EQUALV(buf_f, orig_f, LEN(buf_f));
+      CHECK_EQUALV_MSG(buf, orig, LEN(buf), spec->name);
       ok = spec->draw.d0(0, LEN(buf), rng); check_failure(ok, rng);
-      ok = spec->drawf.d0(0, LEN(buf_f), rng); check_failure(ok, rng);
       ok = spec->draw.d0(buf, LEN(buf), 0); xCheck(!ok);
-      ok = spec->drawf.d0(buf_f, LEN(buf_f), 0); xCheck(!ok);
+      if (TESTFLOAT) {
+        ok = spec->drawf.d0(buf_f, 0, rng); check_success(ok, rng);
+        CHECK_EQUALV_MSG(buf_f, orig_f, LEN(buf_f), spec->name);
+        ok = spec->drawf.d0(0, LEN(buf_f), rng); check_failure(ok, rng);
+        ok = spec->drawf.d0(buf_f, LEN(buf_f), 0); xCheck(!ok);
+      }
     }
     else if (spec->arity == 1) {
       ok = spec->draw.d1(buf, 0, p0, rng); check_success(ok, rng);
-      CHECK_EQUALV(buf, orig, LEN(buf));
-      ok = spec->drawf.d1(buf_f, 0, p0f, rng); check_success(ok, rng);
-      CHECK_EQUALV(buf_f, orig_f, LEN(buf_f));
+      CHECK_EQUALV_MSG(buf, orig, LEN(buf), spec->name);
       ok = spec->draw.d1(0, LEN(buf), p0, rng); check_failure(ok, rng);
-      ok = spec->drawf.d1(0, LEN(buf_f), p0f, rng); check_failure(ok, rng);
       ok = spec->draw.d1(buf, LEN(buf), p0, 0); xCheck(!ok);
-      ok = spec->drawf.d1(buf_f, LEN(buf_f), p0f, 0); xCheck(!ok);
+      if (TESTFLOAT) {
+        ok = spec->drawf.d1(buf_f, 0, p0f, rng); check_success(ok, rng);
+        CHECK_EQUALV_MSG(buf_f, orig_f, LEN(buf_f), spec->name);
+        ok = spec->drawf.d1(0, LEN(buf_f), p0f, rng); check_failure(ok, rng);
+        ok = spec->drawf.d1(buf_f, LEN(buf_f), p0f, 0); xCheck(!ok);
+      }
     }
     else if (spec->arity == 2) {
       ok = spec->draw.d2(buf, 0, p0, p1, rng); check_success(ok, rng);
-      CHECK_EQUALV(buf, orig, LEN(buf));
-      ok = spec->drawf.d2(buf_f, 0, p0f, p1f, rng); check_success(ok, rng);
-      CHECK_EQUALV(buf_f, orig_f, LEN(buf_f));
+      CHECK_EQUALV_MSG(buf, orig, LEN(buf), spec->name);
       ok = spec->draw.d2(0, LEN(buf), p0, p1, rng); check_failure(ok, rng);
-      ok = spec->drawf.d2(0, LEN(buf_f), p0f, p1f, rng); check_failure(ok, rng);
       ok = spec->draw.d2(buf, LEN(buf), p0, p1, 0); xCheck(!ok);
-      ok = spec->drawf.d2(buf_f, LEN(buf_f), p0f, p1f, 0); xCheck(!ok);
+      if (TESTFLOAT) {
+        ok = spec->drawf.d2(buf_f, 0, p0f, p1f, rng); check_success(ok, rng);
+        CHECK_EQUALV_MSG(buf_f, orig_f, LEN(buf_f), spec->name);
+        ok = spec->drawf.d2(0, LEN(buf_f), p0f, p1f, rng);
+        check_failure(ok, rng);
+        ok = spec->drawf.d2(buf_f, LEN(buf_f), p0f, p1f, 0); xCheck(!ok);
+      }
     }
     else if (spec->arity == 3) {
       ok = spec->draw.d3(buf, 0, p0, p1, p2, rng); check_success(ok, rng);
-      CHECK_EQUALV(buf, orig, LEN(buf));
-      ok = spec->drawf.d3(buf_f, 0, p0f, p1f, p2f, rng); check_success(ok, rng);
-      CHECK_EQUALV(buf_f, orig_f, LEN(buf_f));
+      CHECK_EQUALV_MSG(buf, orig, LEN(buf), spec->name);
       ok = spec->draw.d3(0, LEN(buf), p0, p1, p2, rng); check_failure(ok, rng);
-      ok = spec->drawf.d3(0, LEN(buf_f), p0f, p1f, p2f, rng);
-      check_failure(ok, rng);
       ok = spec->draw.d3(buf, LEN(buf), p0, p1, p2, 0); xCheck(!ok);
-      ok = spec->drawf.d3(buf_f, LEN(buf_f), p0f, p1f, p2f, 0); xCheck(!ok);
+      if (TESTFLOAT) {
+        ok = spec->drawf.d3(buf_f, 0, p0f, p1f, p2f, rng);
+        check_success(ok, rng);
+        CHECK_EQUALV_MSG(buf_f, orig_f, LEN(buf_f), spec->name);
+        ok = spec->drawf.d3(0, LEN(buf_f), p0f, p1f, p2f, rng);
+        check_failure(ok, rng);
+        ok = spec->drawf.d3(buf_f, LEN(buf_f), p0f, p1f, p2f, 0); xCheck(!ok);
+      }
     }
     else {
       xCheck(false);
@@ -224,21 +241,27 @@ static void test_continuous_edge_cases(const char *engine) {
     if (c->arity == 1) {
       ok = spec->draw.d1(buf, LEN(buf), c->p0, rng);
       check_failure(ok, rng);
-      ok = spec->drawf.d1(buf_f, LEN(buf_f), (float)c->p0, rng);
-      check_failure(ok, rng);
+      if (TESTFLOAT) {
+        ok = spec->drawf.d1(buf_f, LEN(buf_f), (float)c->p0, rng);
+        check_failure(ok, rng);
+      }
     }
     else if (c->arity == 2) {
       ok = spec->draw.d2(buf, LEN(buf), c->p0, c->p1, rng);
       check_failure(ok, rng);
-      ok = spec->drawf.d2(buf_f, LEN(buf_f), (float)c->p0, (float)c->p1, rng);
-      check_failure(ok, rng);
+      if (TESTFLOAT) {
+        ok = spec->drawf.d2(buf_f, LEN(buf_f), (float)c->p0, (float)c->p1, rng);
+        check_failure(ok, rng);
+      }
     }
     else if (c->arity == 3) {
       ok = spec->draw.d3(buf, LEN(buf), c->p0, c->p1, c->p2, rng);
       check_failure(ok, rng);
-      ok = spec->drawf.d3(buf_f, LEN(buf_f), (float)c->p0, (float)c->p1,
-        (float)c->p2, rng);
-      check_failure(ok, rng);
+      if (TESTFLOAT) {
+        ok = spec->drawf.d3(buf_f, LEN(buf_f), (float)c->p0, (float)c->p1,
+          (float)c->p2, rng);
+        check_failure(ok, rng);
+      }
     }
     else {
       xCheck(false);
@@ -249,45 +272,60 @@ static void test_continuous_edge_cases(const char *engine) {
 
 static void pit_one_case(const char *engine, const dist_spec *spec, double p0,
   double p1, double p2) {
+  if (TESTVERBOSITY >= 2) {
+    fprintf(stderr, "PIT %s\n", spec->name);
+    fflush(stderr);
+  }
   // Run PIT test for a specified engine / distribution / parameter-tuple
   int N = N_STAT_SLOW;
   double *x, *u;
-  float *y, *v;
+  float *y = 0;
+  float *v = 0;
   TEST_ALLOC(x, N);
   TEST_ALLOC(u, N);
-  TEST_ALLOC(y, N);
-  TEST_ALLOC(v, N);
+  if (TESTFLOAT) {
+    TEST_ALLOC(y, N);
+    TEST_ALLOC(v, N);
+  }
   if (spec->arity == 1) {
     float p0f = (float)p0;
     DRAW(engine, 42, spec->draw.d1(x, N, p0, rng));
-    DRAW(engine, 42, spec->drawf.d1(y, N, p0f, rng));
     for (int i = 0; i < N; i++) u[i] = spec->cdf.c1(x[i], p0);
-    for (int i = 0; i < N; i++) v[i] = (float)spec->cdf.c1((double)y[i], p0);
+    if (TESTFLOAT) {
+      DRAW(engine, 42, spec->drawf.d1(y, N, p0f, rng));
+      for (int i = 0; i < N; i++) v[i] = (float)spec->cdf.c1((double)y[i], p0);
+    }
   }
   else if (spec->arity == 2) {
     float p0f = (float)p0;
     float p1f = (float)p1;
     DRAW(engine, 42, spec->draw.d2(x, N, p0, p1, rng));
-    DRAW(engine, 42, spec->drawf.d2(y, N, p0f, p1f, rng));
     for (int i = 0; i < N; i++) u[i] = spec->cdf.c2(x[i], p0, p1);
-    for (int i = 0; i < N; i++)
-      v[i] = (float)spec->cdf.c2((double)y[i], p0, p1);
+    if (TESTFLOAT) {
+      DRAW(engine, 42, spec->drawf.d2(y, N, p0f, p1f, rng));
+      for (int i = 0; i < N; i++)
+        v[i] = (float)spec->cdf.c2((double)y[i], p0, p1);
+    }
   }
   else if (spec->arity == 3) {
     float p0f = (float)p0;
     float p1f = (float)p1;
     float p2f = (float)p2;
     DRAW(engine, 42, spec->draw.d3(x, N, p0, p1, p2, rng));
-    DRAW(engine, 42, spec->drawf.d3(y, N, p0f, p1f, p2f, rng));
     for (int i = 0; i < N; i++) u[i] = spec->cdf.c3(x[i], p0, p1, p2);
-    for (int i = 0; i < N; i++)
-      v[i] = (float)spec->cdf.c3((double)y[i], p0, p1, p2);
+    if (TESTFLOAT) {
+      DRAW(engine, 42, spec->drawf.d3(y, N, p0f, p1f, p2f, rng));
+      for (int i = 0; i < N; i++)
+        v[i] = (float)spec->cdf.c3((double)y[i], p0, p1, p2);
+    }
   }
   else if (spec->arity == 0) {
     DRAW(engine, 42, spec->draw.d0(x, N, rng));
-    DRAW(engine, 42, spec->drawf.d0(y, N, rng));
     for (int i = 0; i < N; i++) u[i] = spec->cdf.c0(x[i]);
-    for (int i = 0; i < N; i++) v[i] = (float)spec->cdf.c0((double)y[i]);
+    if (TESTFLOAT) {
+      DRAW(engine, 42, spec->drawf.d0(y, N, rng));
+      for (int i = 0; i < N; i++) v[i] = (float)spec->cdf.c0((double)y[i]);
+    }
   }
   else {
     xCheck(false);
@@ -298,19 +336,31 @@ static void pit_one_case(const char *engine, const dist_spec *spec, double p0,
     if (spec->support == SUPPORT_UNIT) smax = 1;
     else if (spec->support == SUPPORT_PARETO) smin = p0;
     TEST_SUPPORT(double, x, N, smin, smax);
-    TEST_SUPPORT(float, y, N, (float)smin, (float)smax);
+    if (TESTFLOAT) {
+      TEST_SUPPORT(float, y, N, (float)smin, (float)smax);
+    }
   }
   check_u01_distribution(u, N, (char *)spec->name, (char *)engine);
-  check_u01_distributionf(v, N, (char *)spec->name, (char *)engine);
-  FREE(v);
-  FREE(y);
+  if (TESTFLOAT) {
+    check_u01_distributionf(v, N, (char *)spec->name, (char *)engine);
+    FREE(v);
+    FREE(y);
+  }
   FREE(u);
   FREE(x);
 }
 
 static void test_determinism_and_PIT(const char *engine) {
+  if (TESTVERBOSITY >= 2) {
+    fprintf(stderr, "TestContinuous determinism and PIT\n");
+    fflush(stderr);
+  }
   for (int i = 0; i < LEN(dist_specs); i++) {
     const dist_spec *spec = &dist_specs[i];
+    if (TESTVERBOSITY >= 2) {
+      fprintf(stderr, "dist %s\n", spec->name);
+      fflush(stderr);
+    }
     double xd[3], yd[3], zd[3];
     float xf[3], yf[3], zf[3];
     int len = LEN(xd);
@@ -320,13 +370,15 @@ static void test_determinism_and_PIT(const char *engine) {
       DRAW(engine, 42, spec->draw.d0(xd, len, rng));
       DRAW(engine, 42, spec->draw.d0(yd, len, rng));
       DRAW(engine, 43, spec->draw.d0(zd, len, rng));
-      CHECK_EQUALV(xd, yd, len);
-      CHECK_DIFFV(xd, zd, len);
-      DRAW(engine, 42, spec->drawf.d0(xf, len, rng));
-      DRAW(engine, 42, spec->drawf.d0(yf, len, rng));
-      DRAW(engine, 43, spec->drawf.d0(zf, len, rng));
-      CHECK_EQUALV(xf, yf, len);
-      CHECK_DIFFV(xf, zf, len);
+      CHECK_EQUALV_MSG(xd, yd, len, spec->name);
+      CHECK_DIFFV_MSG(xd, zd, len, spec->name);
+      if (TESTFLOAT) {
+        DRAW(engine, 42, spec->drawf.d0(xf, len, rng));
+        DRAW(engine, 42, spec->drawf.d0(yf, len, rng));
+        DRAW(engine, 43, spec->drawf.d0(zf, len, rng));
+        CHECK_EQUALV_MSG(xf, yf, len, spec->name);
+        CHECK_DIFFV_MSG(xf, zf, len, spec->name);
+      }
     }
     else if (spec->arity == 1) {
       double p0 = spec->p0[0];
@@ -334,13 +386,15 @@ static void test_determinism_and_PIT(const char *engine) {
       DRAW(engine, 42, spec->draw.d1(xd, len, p0, rng));
       DRAW(engine, 42, spec->draw.d1(yd, len, p0, rng));
       DRAW(engine, 43, spec->draw.d1(zd, len, p0, rng));
-      CHECK_EQUALV(xd, yd, len);
-      CHECK_DIFFV(xd, zd, len);
-      DRAW(engine, 42, spec->drawf.d1(xf, len, p0f, rng));
-      DRAW(engine, 42, spec->drawf.d1(yf, len, p0f, rng));
-      DRAW(engine, 43, spec->drawf.d1(zf, len, p0f, rng));
-      CHECK_EQUALV(xf, yf, len);
-      CHECK_DIFFV(xf, zf, len);
+      CHECK_EQUALV_MSG(xd, yd, len, spec->name);
+      CHECK_DIFFV_MSG(xd, zd, len, spec->name);
+      if (TESTFLOAT) {
+        DRAW(engine, 42, spec->drawf.d1(xf, len, p0f, rng));
+        DRAW(engine, 42, spec->drawf.d1(yf, len, p0f, rng));
+        DRAW(engine, 43, spec->drawf.d1(zf, len, p0f, rng));
+        CHECK_EQUALV_MSG(xf, yf, len, spec->name);
+        CHECK_DIFFV_MSG(xf, zf, len, spec->name);
+      }
     }
     else if (spec->arity == 2) {
       double p0 = spec->p0[0];
@@ -350,13 +404,15 @@ static void test_determinism_and_PIT(const char *engine) {
       DRAW(engine, 42, spec->draw.d2(xd, len, p0, p1, rng));
       DRAW(engine, 42, spec->draw.d2(yd, len, p0, p1, rng));
       DRAW(engine, 43, spec->draw.d2(zd, len, p0, p1, rng));
-      CHECK_EQUALV(xd, yd, len);
-      CHECK_DIFFV(xd, zd, len);
-      DRAW(engine, 42, spec->drawf.d2(xf, len, p0f, p1f, rng));
-      DRAW(engine, 42, spec->drawf.d2(yf, len, p0f, p1f, rng));
-      DRAW(engine, 43, spec->drawf.d2(zf, len, p0f, p1f, rng));
-      CHECK_EQUALV(xf, yf, len);
-      CHECK_DIFFV(xf, zf, len);
+      CHECK_EQUALV_MSG(xd, yd, len, spec->name);
+      CHECK_DIFFV_MSG(xd, zd, len, spec->name);
+      if (TESTFLOAT) {
+        DRAW(engine, 42, spec->drawf.d2(xf, len, p0f, p1f, rng));
+        DRAW(engine, 42, spec->drawf.d2(yf, len, p0f, p1f, rng));
+        DRAW(engine, 43, spec->drawf.d2(zf, len, p0f, p1f, rng));
+        CHECK_EQUALV_MSG(xf, yf, len, spec->name);
+        CHECK_DIFFV_MSG(xf, zf, len, spec->name);
+      }
     }
     else if (spec->arity == 3) {
       double p0 = spec->p0[0];
@@ -368,13 +424,15 @@ static void test_determinism_and_PIT(const char *engine) {
       DRAW(engine, 42, spec->draw.d3(xd, len, p0, p1, p2, rng));
       DRAW(engine, 42, spec->draw.d3(yd, len, p0, p1, p2, rng));
       DRAW(engine, 43, spec->draw.d3(zd, len, p0, p1, p2, rng));
-      CHECK_EQUALV(xd, yd, len);
-      CHECK_DIFFV(xd, zd, len);
-      DRAW(engine, 42, spec->drawf.d3(xf, len, p0f, p1f, p2f, rng));
-      DRAW(engine, 42, spec->drawf.d3(yf, len, p0f, p1f, p2f, rng));
-      DRAW(engine, 43, spec->drawf.d3(zf, len, p0f, p1f, p2f, rng));
-      CHECK_EQUALV(xf, yf, len);
-      CHECK_DIFFV(xf, zf, len);
+      CHECK_EQUALV_MSG(xd, yd, len, spec->name);
+      CHECK_DIFFV_MSG(xd, zd, len, spec->name);
+      if (TESTFLOAT) {
+        DRAW(engine, 42, spec->drawf.d3(xf, len, p0f, p1f, p2f, rng));
+        DRAW(engine, 42, spec->drawf.d3(yf, len, p0f, p1f, p2f, rng));
+        DRAW(engine, 43, spec->drawf.d3(zf, len, p0f, p1f, p2f, rng));
+        CHECK_EQUALV_MSG(xf, yf, len, spec->name);
+        CHECK_DIFFV_MSG(xf, zf, len, spec->name);
+      }
     }
     else {
       xCheck(false);

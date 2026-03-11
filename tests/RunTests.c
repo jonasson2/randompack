@@ -15,6 +15,7 @@ static int NTOTAL = 0, NFAIL = 0;
 static char *headr_fmt = "%-20s %8s %8s\n";
 static char *table_fmt = "%-20s %8d %8d\n";
 int TESTVERBOSITY = 0; // External
+int TESTFLOAT = 1; // External
 
 static void print_help(void) {
   puts("Usage: RunTests [options]\n"
@@ -23,6 +24,7 @@ static void print_help(void) {
        "  -v       Verbose tests\n"
        "  -vv      More verbosity\n"
        "  -vvv     Even moren verbosity\n"
+       "  -d       Double-only tests in TestContinuous\n"
        "  -f N     Set N_STAT_FAST (u01, unif, norm, exp; default 100000)\n"
        "  -s N     Set N_STAT_SLOW (other distributions; default 20000)\n"
        "  -c N     Set N_BAL_CNTS (uintXX bucket counts; default 5000000)\n"
@@ -80,12 +82,13 @@ static void run_testx(char *name, void (*fn)(char *), char *engine) {
 }
 
 int main(int argc, char **argv) {
-  char *optstring = ":vhf:s:c:b:";
+  char *optstring = ":vhf:s:c:b:d";
   int c;
   while ((c = getopt(argc, argv, optstring)) != -1) {
     switch (c) {
       case 'h': print_help(); return 0;
       case 'v': TESTVERBOSITY++; break;
+      case 'd': TESTFLOAT = 0; break;
       case 'f': N_STAT_FAST = parse_posint(optarg); break;
       case 's': N_STAT_SLOW = parse_posint(optarg); break;
       case 'c': N_BAL_CNTS = parse_posint(optarg); break;

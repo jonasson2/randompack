@@ -192,11 +192,11 @@ ALWAYS_INLINE void mod9x9(uint64_t x[9], uint64_t z[18]) {
   corr_r_minus_cm(x, c);
 }
 
-void fill_ranluxpp(randompack_rng *rng, size_t len) {
-  uint64_t *out = rng->buf.u64;
+void fill_ranluxpp(uint64_t *buf, size_t len, randompack_state *state) {
+  uint64_t *out = buf;
   uint64_t s[9];
   uint64_t z[18];
-  copy64(s, rng->state.u64, 9);
+  copy64(s, state->u64, 9);
   size_t i = 0;
   while (i < len) {
     mul9x9(z, s);
@@ -204,5 +204,5 @@ void fill_ranluxpp(randompack_rng *rng, size_t len) {
     for (int j = 0; j < 9 && i < len; j++, i++)
       out[i] = s[j];
   }
-  copy64(rng->state.u64, s, 9);
+  copy64(state->u64, s, 9);
 }

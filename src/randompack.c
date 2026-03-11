@@ -663,7 +663,7 @@ bool randompack_gamma(double x[], size_t len, double shape, double scale,
     return false;
   }
   rng->last_error = 0;
-  fill_gamma(x, len, shape, scale, rng);
+  gen_gamma(x, len, shape, scale, rng);
   return true;
 }
 
@@ -675,7 +675,7 @@ bool randompack_beta(double x[], size_t len, double a, double b,
     return false;
   }
   rng->last_error = 0;
-  fill_beta(x, len, a, b, rng);
+  gen_beta(x, len, a, b, rng);
   return true;
 }
 
@@ -686,7 +686,7 @@ bool randompack_chi2(double x[], size_t len, double nu, randompack_rng *rng) {
     return false;
   }
   rng->last_error = 0;
-  fill_chi2(x, len, nu, rng);
+  gen_chi2(x, len, nu, rng);
   return true;
 }
 
@@ -697,7 +697,7 @@ bool randompack_t(double x[], size_t len, double nu, randompack_rng *rng) {
     return false;
   }
   rng->last_error = 0;
-  fill_t(x, len, nu, rng);
+  gen_t(x, len, nu, rng);
   return true;
 }
 
@@ -709,7 +709,7 @@ bool randompack_f(double x[], size_t len, double nu1, double nu2,
     return false;
   }
   rng->last_error = 0;
-  fill_f(x, len, nu1, nu2, rng);
+  gen_f(x, len, nu1, nu2, rng);
   return true;
 }
 
@@ -721,7 +721,7 @@ bool randompack_gumbel(double x[], size_t len, double mu, double beta,
     return false;
   }
   rng->last_error = 0;
-  fill_gumbel(x, len, mu, beta, rng);
+  gen_gumbel(x, len, mu, beta, rng);
   return true;
 }
 
@@ -733,7 +733,7 @@ bool randompack_pareto(double x[], size_t len, double xm, double alpha,
     return false;
   }
   rng->last_error = 0;
-  fill_pareto(x, len, xm, alpha, rng);
+  gen_pareto(x, len, xm, alpha, rng);
   return true;
 }
 
@@ -745,7 +745,7 @@ bool randompack_weibull(double x[], size_t len, double shape, double scale,
     return false;
   }
   rng->last_error = 0;
-  fill_weibull(x, len, shape, scale, rng);
+  gen_weibull(x, len, shape, scale, rng);
   return true;
 }
 
@@ -757,7 +757,7 @@ bool randompack_skew_normal(double x[], size_t len, double mu, double sigma,
     return false;
   }
   rng->last_error = 0;
-  fill_skew_normal(x, len, mu, sigma, alpha, rng);
+  gen_skew_normal(x, len, mu, sigma, alpha, rng);
   return true;
 }
 

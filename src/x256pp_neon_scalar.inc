@@ -31,9 +31,9 @@
 } while (0)
 #endif
 
-static inline void fill_fast(randompack_rng *rng, size_t len) {
-  uint64_t *out = rng->buf.u64;
-  xo256 *st = &rng->state.xo;
+static inline void fill_fast(uint64_t *buf, size_t len, randompack_state *state) {
+  uint64_t *out = buf;
+  xo256 *st = &state->xo;
 #if HAVE_NEON
   VEC_T a0 = VEC_LOAD(&st->s0[0]);
   VEC_T a1 = VEC_LOAD(&st->s1[0]);
