@@ -38,8 +38,9 @@ Julia
 =====
 FIRST TIME SETUP:
 cd Randompack.jl           # the Julia package folder
+rm Manifest.toml           # needed e.g. after changing Julia version
 export JULIA_PROJECT=.     # use environment defined by ./Project.toml
-julia                      # run julia
+julia                      # run Julia
 julia> ] instantiate       # install project dependencies (once per Julia version) (1)
 
 AFTER CHANGE TO C LIBRARY:

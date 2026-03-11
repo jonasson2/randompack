@@ -9,7 +9,7 @@ option('blas',
 # Creates <build-dir>/examples/Test01Driver
 option('TestU01',
   type: 'string',
-  value: '',
+  value: '/Users/jonasson/lib/testu01',
   description: 'Prefix for TestU01 install (enable when non-empty)'
 )
 
@@ -29,6 +29,12 @@ option('build_tests',
   type: 'boolean',
   value: true,
   description: 'Build tests'
+)
+
+option('test_bufsize',
+  type: 'integer',
+  value: 16,
+  description: 'BUFSIZE for small-buffer tests (multiple of 8, <= 512)'
 )
 
 # Current benchmarking does not show speed-up over -O3 with these options

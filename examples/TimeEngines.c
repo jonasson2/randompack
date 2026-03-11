@@ -1,5 +1,5 @@
 // -*- C -*-
-// TimeEngines.c: throughput (GB/s) of randompack engines using uint64 and uint32 bulk fill.
+// TimeEngines.c: throughput (GB/s) of randompack engines using uint64 bulk fill.
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -21,7 +21,7 @@ static void print_help(void) {
   printf("  -c chunk      Chunk size (values per fill, default 4096)\n");
   printf("  -s seed       RNG seed (default 7)\n\n");
   printf("Notes:\n");
-  printf("  Reports GB/s as bytes/ns: uint64 uses 8/ns, uint32 uses 4/ns.\n");
+  printf("  Reports GB/s as bytes/ns: uint64 uses 8/ns.\n");
 }
 
 static bool get_options(int argc, char **argv,
@@ -64,10 +64,6 @@ static void fill_u64(uint64_t out[], int n, randompack_rng *rng) {
   randompack_uint64(out, (size_t)n, 0, rng);
 }
 
-static void fill_u32(uint32_t out[], int n, randompack_rng *rng) {
-  randompack_uint32(out, (size_t)n, 0, rng);
-}
-
 int main(int argc, char **argv) {
   double bench_time;
   int chunk, seed;
@@ -106,7 +102,7 @@ int main(int argc, char **argv) {
     FREE(descriptions);
     return 1;
   }
-  printf("%-18s %8s %8s %8s %8s\n", "Engine", "ns64", "GB/s64", "ns32", "GB/s32");
+  printf("%-18s %10s %8s\n", "Engine", "ns/64bits", "GB/s");
   for (int i = 0; i < n; i++) {
     char *name = engines + i*emax;
     randompack_rng *rng = randompack_create(name);
@@ -125,13 +121,9 @@ int main(int argc, char **argv) {
     }
     double ns64 = time_u64(chunk, bench_time, fill_u64, rng);
     double gb64 = 8/ns64;
-    double ns32 = time_u32(chunk, bench_time, fill_u32, rng);
-    double gb32 = 4/ns32;
     printf("%-18s", name);
-    printf(" %8.2f", ns64);
+    printf(" %10.2f", ns64);
     printf(" %8.2f", gb64);
-    printf(" %8.2f", ns32);
-    printf(" %8.2f", gb32);
     printf("\n");
     randompack_free(rng);
   }

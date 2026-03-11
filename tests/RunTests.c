@@ -99,10 +99,10 @@ int main(int argc, char **argv) {
   if (TESTVERBOSITY <= 1) printOff();
   vprint("\n");
   vprint(headr_fmt, "TEST OF", "PASSED", "FAILED");
-#if BUFSIZE == 8
+#if BUFSIZE == 16
   (void) run_test;
   char *engine = "x256++simd";
-  run_testx("Buf8-U01",        TestU01x,        engine);
+  run_testx("Buf8-Unif",       TestUnifx,       engine);
   run_testx("Buf8-Exp",        TestExpx,       engine);
   run_testx("Buf8-Bitexact",   TestBitexactx,   engine);
   run_testx("Buf8-Buffer",     TestBufferx,     engine);
@@ -135,7 +135,6 @@ int main(int argc, char **argv) {
   run_test("LongLong",    TestLongLong);
   run_test("Perm",        TestPerm);
   run_test("Sample",      TestSample);
-  run_test("U01",         TestU01);
   run_test("Unif",        TestUnif);
   run_test("Normal",      TestNorm);
   run_test("Exp",         TestExp);

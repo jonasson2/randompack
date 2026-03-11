@@ -29,7 +29,8 @@ endif
 build_avx2_define = build_avx2 ? ['-DBUILD_AVX2'] : []
 test_hooks_define = get_option('build_tests') ? ['-DRANDOMPACK_TEST_HOOKS'] : []
 base_c_args = local_dpstrf_args + accel_vv_args + build_avx2_define
-buf8_c_args = base_c_args + ['-DBUFSIZE=8']
+test_buf_define = '-DBUFSIZE=' + test_bufsize.to_string()
+buf8_c_args = base_c_args + [test_buf_define]
 
 avx2_objs = []
 avx2_objs_buf8 = []
@@ -56,7 +57,7 @@ if build_avx2
       'sleef.c',
     ),
     include_directories: randompack_inc,
-    c_args: avx2_c_args + build_avx2_define + test_hooks_define + ['-DBUFSIZE=8'],
+    c_args: avx2_c_args + build_avx2_define + test_hooks_define + [test_buf_define],
     pic: true,
     install: false,
   )

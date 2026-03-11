@@ -22,10 +22,13 @@ _Static_assert(sizeof(long long) == 8, "randompack requires 64-bit long long");
 
 #if defined(_MSC_VER)
   #define ALWAYS_INLINE static __forceinline
+  #define NEVER_INLINE static __declspec(noinline)
 #elif defined(__clang__) || defined(__GNUC__)
   #define ALWAYS_INLINE static inline __attribute__((always_inline))
+  #define NEVER_INLINE static __attribute__((noinline))
 #else
   #define ALWAYS_INLINE static inline
+  #define NEVER_INLINE static
 #endif
 
 #define TOLOWER(c) (((c) >= 'A' && (c) <= 'Z') ? ((c)-'A'+'a') : (c))

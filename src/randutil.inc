@@ -14,11 +14,11 @@ static void fill_bytes(uint8_t *a, int len, uint64_t *x) {
   }
 }
 
-static void entropy_fill(randompack_rng *rng, void *buffer, int len) {
+static void entropy_fill(void *buffer, int len) {
   bool ok = crypto_random(buffer, (size_t) len);
   if (!ok) {  // fallback on esoteric systems
     uint64_t x = clock_nsec();
-    x ^= (uintptr_t)rng;
+    x ^= (uintptr_t)buffer;
     fill_bytes(buffer, len, &x);
   }
 }
@@ -40,6 +40,7 @@ static inline void set_stream(int i, const uint64_t stream_state[4], randompack_
 }
 
 static inline void scatter_to_stream0(randompack_rng *rng) {
+  // used for SIMD streams
   xo256 *st = &rng->state.xo;
   uint64_t *u64 = rng->state.u64;
   st->s0[0] = u64[0];
@@ -110,7 +111,7 @@ static void rand_init(randompack_rng *rng) {
 static void rand_randomize(randompack_rng *rng) {
   if (rng->engine == CHACHA20) {
     uint8_t tmp[44];
-    entropy_fill(rng, tmp, sizeof(tmp));
+    entropy_fill(tmp, sizeof(tmp));
     for (int i = 0; i < 11; i++) {
       uint32_t v = (uint32_t)tmp[4*i] |
         ((uint32_t)tmp[4*i + 1] << 8) |
@@ -122,7 +123,7 @@ static void rand_randomize(randompack_rng *rng) {
   }
   else {
     int nwords = get_state_words(rng);
-    entropy_fill(rng, rng->state.u64, nwords*sizeof(uint64_t));
+    entropy_fill(rng->state.u64, nwords*sizeof(uint64_t));
     normalize_state(rng);
     if (rng->engine == FAST) {
       scatter_to_stream0(rng);

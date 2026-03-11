@@ -270,7 +270,8 @@ ALWAYS_INLINE void fill_gamma_shape1(double *x, size_t len, double shape,
         if (logu < 0.5*z2 + d*(1 - v3 + logv3)) goto accept;
       }
       make_half_full(rng, &w);
-      x[i] = draw_norm(rng, &w);
+      rand_norm(x + i, 1, rng);
+      //x[i] = draw_norm(rng, &w);
       continue;
     accept:
       x[i] = dscale*v3;

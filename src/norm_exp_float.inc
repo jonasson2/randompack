@@ -21,6 +21,7 @@ static float norm_tail_draw_f(randompack_rng *rng, uint32_t rabs, float y, int *
     if (yy + yy > xx * xx)
       return ((rabs >> 8) & 0x1) ? -(ziggurat_nor_r_f + xx) : ziggurat_nor_r_f + xx;
 	 y = draw_u01f(rng, w);
+	 make_half_full32(rng, w);
   }
 }
 

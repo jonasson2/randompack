@@ -217,9 +217,7 @@ Julia                     & xoshiro (256++) \\
 Rust (rand SmallRng)      & xoshiro (256++) \\
 \bottomrule
 \end{tabular}
-
 \par\medskip
-
 \footnotesize
 \raggedright
 \textsuperscript{a}No unique default RNG exists; the table reports the
@@ -227,14 +225,74 @@ engine most commonly used in the official documentation and examples.
 \end{minipage}
 \end{table}
 
-	•	motivate the problem
-	•	place the work historically
-	•	state what Randompack provides
-	•	explain what is new or distinctive
-	•	outline the rest of the paper
+% Rest of introduction
 
-%% Importance of portability across platforms:
-\cite{lecuyer2015rng,lecuyer2017parallel}
+	% •	motivate the problem
+	% •	place the work historically
+	% •	state what Randompack provides
+	% •	explain what is new or distinctive
+	% •	outline the rest of the paper
+
+
+\section{Design and interface}
+\subsection{Design goals and scope}
+Randompack is intended to fill a gap in the random-number-generation
+support available in programming languages and libraries by providing
+a C library with a selection of modern, high quality, and efficient
+pseudo-random number generators, together with a range of continuous
+and discrete distributions. The C libraries that come closest are GSL,
+UNURAN \cite{hormann2000randomnumber}, the NAG library, and Intel
+oneMKL. However none of these libraries are permissively licensed and
+only the first two are open source. Moreover, those two are somewhat
+dated and rely largely on older underlying RNG engines.
+
+C is a particularly suitable implementation language because it can be
+interfaced easily from many other programming languages. As an added
+benefit, this makes it possible to obtain not only exact repeatability
+across computers, as for example in NumPy, but also exact
+repeatability across programming languages. The importance of
+repeatability as a basic requirement for high-quality random number
+generation has been stressed by L’Ecuyer
+\cite{lecuyer2015rng,lecuyer2017parallel}.
+
+Randompack is intended for scientific and statistical computing rather
+than cryptographic use. Its design emphasizes high-throughput
+generation of pseudo-random numbers for Monte Carlo simulation,
+bootstrap resampling, stochastic optimization, and related large-scale
+computational tasks in which both speed and statistical quality
+matter. A further design goal is modularity: It should be reasonably
+easy to add engines and distributions to allow using Randompack
+as a test bed for new ideas.
+
+Further design goals include a small, stable C interface, portable
+implementation, few external dependencies, clear separation between
+engine and distribution layers, and as indicated above, support for
+independent substreams, and bit-level reproducibility across
+platforms.
+
+% 1.	Introduction
+% 2.	Design and interface
+% 2.1 Design goals and scope
+% So “Design goals and scope” would be a subsection where you say things like:
+% 	•	what Randompack is intended to provide
+% 	•	which kinds of generators and distributions it includes
+% 	•	which use cases it targets
+% 	•	what kinds of reproducibility/portability/performance goals it has
+% 	•	what it deliberately does not try to do
+
+% In other words:
+% 	•	design goals = what you wanted to achieve
+% 	•	scope = the boundaries of the project
+
+%    2.2 User-level interface
+%    2.3 Engines, streams, and seeding
+% 3.	Algorithms and implementation
+%    3.1 Uniforms and bounded integers
+%    3.2 Exponential, normal, gamma, and related distributions
+%    3.3 Permutations and sampling without replacement
+%    3.4 SIMD and performance-oriented implementation
+% 4.	Discussion
+% 5.	Conclusion
 
 \section{Design and interface}
 

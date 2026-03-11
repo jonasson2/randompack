@@ -17,7 +17,6 @@ test_sources = files(
   'TestNorm.c',
   'TestUnif.c',
   'TestContinuous.c',
-  'TestU01.c',
   'TestMvn.c',
   'TestUint8.c',
   'TestUint16.c',
@@ -46,6 +45,7 @@ extra_util = files(
 )
 
 blas_test_args = using_builtin_blas ? ['-DRANDOMPACK_BUILTIN_BLAS'] : []
+test_buf_define = '-DBUFSIZE=' + test_bufsize.to_string()
 
 run_tests = executable(
   'RunTests',
@@ -63,7 +63,7 @@ run_tests_buf8 = executable(
   test_sources + extra_util,
   include_directories: [common_inc],
   dependencies : [randompack_buf8_dep],
-  c_args : ['-DRANDOMPACK_TEST_HOOKS', '-DBUFSIZE=8'] + blas_test_args,
+  c_args : ['-DRANDOMPACK_TEST_HOOKS', test_buf_define] + blas_test_args,
 )
 
 test('RunTestsBuf8', run_tests_buf8, args : ['-v'])

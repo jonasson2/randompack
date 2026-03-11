@@ -51,12 +51,14 @@ static double norm_tail_draw(randompack_rng *rng, uint64_t rabs, double y, int *
   double xx, yy, x;
   for (;;) {
     /* Switch to 1.0 - U to avoid log(0.0), see GH 13361 */
-    x = draw_u01(rng, w);
+    // uint64_t u = draw_u64_nocheck(rng, w);
+    x = draw_u01_nocheck(rng, w);
     xx = -ziggurat_nor_inv_r * openlibm_log1p(-x);
     yy = -openlibm_log1p(-y);
     if (LIKELY(yy + yy > xx * xx))
       return ((rabs >> 8) & 0x1) ? -(ziggurat_nor_r + xx) : ziggurat_nor_r + xx;
-    y = draw_u01(rng, w);
+    y = draw_u01_nocheck(rng, w);
+	 make_half_full(rng, w);
   }
 }
 #define DBL_SIGNBIT 0x8000000000000000ULL
@@ -69,56 +71,72 @@ ALWAYS_INLINE double flip_sign_if(double x, int sign) {
   return x;
 }
 
-ALWAYS_INLINE double draw_norm(randompack_rng *rng, int *w) {
-  uint64_t rabs, r;
-  int sign, idx;
-  double x, f0, f1;
-  for (;;) {
-    r = draw_u64_nocheck(rng, w);
-    idx = r & 0xff;
-    r >>= 8;
-    uint64_t ki = ki_double[idx];
-    sign = r & 0x1;
-    rabs = (r >> 1) & 0x000fffffffffffff;
-    x = rabs*wi_double[idx];
-    x = flip_sign_if(x, sign);
-    if (LIKELY(rabs < ki)) return x;
-    double y = draw_u01(rng, w);
-    uint64_t dr = (1ULL << 52) - rabs;
-    double tangent = dr*slope_norm[idx];
-    if (LIKELY(idx > 52)) { // idx == 52 straddles the inflection at x=1
-      if (y <= tangent) goto accept;    // below tangent
-      uint64_t dk = (1ULL << 52) - ki;
-      if (y*dk > dr) goto next_try;     // above secant
-    }
-    else if (UNLIKELY(idx == 0)) {      // in tail
-      x = norm_tail_draw(rng, rabs, y, w);
-      goto accept;
-    }
-    else if (LIKELY(idx < 52)) {
-      if (y > tangent) goto next_try;   // above tangent
-      uint64_t dk = (1ULL << 52) - ki;
-      if (y*dk <= dr) goto accept;      // below secant
-    }
+ALWAYS_INLINE double norm_likely(randompack_rng *rng, int *w, int *idx,
+                                     uint64_t *ki, uint64_t *rabs) {
+  uint64_t r;
+  int sign;
+  double x;
+  r = draw_u64_nocheck(rng, w);
+  *idx = r & 0xff;
+  r >>= 8;
+  *ki = ki_double[*idx];
+  sign = r & 0x1;
+  *rabs = (r >> 1) & 0x000fffffffffffff;
+  x = (*rabs)*wi_double[*idx];
+  x = flip_sign_if(x, sign);
+  return x;
+}
+
+ALWAYS_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x,
+											  int idx, uint64_t *rabs, uint64_t ki) {
+  double y, f0, f1, tangent;
+  uint64_t dr, dk;
+  for(;;) {
+	 y = draw_u01_nocheck(rng, w);
+	 dr = (1ULL << 52) - *rabs;
+	 tangent = dr*slope_norm[idx];
+	 if (LIKELY(idx > 52)) { // idx == 52 straddles the inflection at x=1
+		if (y <= tangent) return x;    // below tangent
+		dk = (1ULL << 52) - ki;
+		if (y*dk > dr) goto next_try;     // above secant
+	 }
+	 else if (UNLIKELY(idx == 0)) {      // in tail
+		x = norm_tail_draw(rng, *rabs, y, w);
+		return x;
+	 }
+	 else if (LIKELY(idx < 52)) {
+		if (y > tangent) goto next_try;   // above tangent
+		uint64_t dk = (1ULL << 52) - ki;
+		if (y*dk <= dr) return x;      // below secant
+	 }
 	 f0 = fi_double[idx-1];
 	 f1 = fi_double[idx];
-	 if (f1 + y*(f0 - f1) < openlibm_exp(-x*x/2)) goto accept; // below curve
+	 if (f1 + y*(f0 - f1) < openlibm_exp(-x*x/2)) return x; // below curve
   next_try:
+	 x = norm_likely(rng, w, &idx, &ki, rabs);
+	 if (*rabs < ki) return x;
 	 make_half_full(rng, w);
   }
- accept:
-  make_half_full(rng, w);
-  return x;  
 }
 
 ALWAYS_INLINE void rand_norm(double *buf, size_t len, randompack_rng *rng) {
   int w = enter_u64_mode(rng);
   size_t i = 0;
   while (i < len) {
+    size_t rem = len - i;
+    uint64_t rabs, ki;
+    double x;
+    int idx, take;
     make_half_full(rng, &w);
-    int take = min(len - i, BUFSIZE/2);
-    for (int j = 0; j < take; j++) {
-      buf[i + j] = draw_norm(rng, &w);
+    take = rem < BUFSIZE/2 ? rem : BUFSIZE/2;
+    for (int j=0; j<take; j++) {
+      x = norm_likely(rng, &w, &idx, &ki, &rabs);
+      if (LIKELY(rabs < ki)) {
+		  buf[i + j] = x;
+		  continue;
+		}
+		buf[i + j] = norm_unlikely(rng, &w, x, idx, &rabs, ki);
+		make_half_full(rng, &w);
     }
     i += take;
   }
@@ -137,24 +155,21 @@ ALWAYS_INLINE double draw_exp(randompack_rng *rng, int *w) {
     x = r*we_double[idx];;
     if (LIKELY(r < ki)) return x;         // in the left rectangle
     if (UNLIKELY(idx == 0)) {             // in the tail
-      x = ziggurat_exp_r - openlibm_log1p(-draw_u01(rng, w));
-      goto accept;
+      x = ziggurat_exp_r - openlibm_log1p(-draw_u01_nocheck(rng, w));
+      return x;
     }
-    double y = draw_u01(rng, w);
+    double y = draw_u01_nocheck(rng, w);
     uint64_t dr = (1ULL << 53) - r;
     double tangent = dr*slope_exp[idx];
-    if (y <= tangent) goto accept;        // below tangent
+    if (y <= tangent) return x;        // below tangent
     uint64_t dk = (1ULL << 53) - ki;
     if (y*dk > dr) goto next_try;         // above secant
     f0 = fe_double[idx-1];
     f1 = fe_double[idx];
-    if (f1 + y*(f0 - f1) < openlibm_exp(-x)) goto accept; // below curve
+    if (f1 + y*(f0 - f1) < openlibm_exp(-x)) return x; // below curve
   next_try:
 	 make_half_full(rng, w);
   }
-accept:
-  make_half_full(rng, w);
-  return x;
 }
 
 ALWAYS_INLINE void rand_exp(double *buf, size_t len, randompack_rng *rng) {

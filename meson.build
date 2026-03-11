@@ -37,6 +37,7 @@ cc = meson.get_compiler('c')
 perf_opt = get_option('perf')
 force_no128 = get_option('force_no128')
 force_nosimd = get_option('force_nosimd')
+test_bufsize = get_option('test_bufsize')
 if perf_opt
   add_project_arguments('-DRANDOMPACK_PERF', language: 'c')
   add_project_arguments(
