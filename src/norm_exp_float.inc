@@ -2,6 +2,7 @@
 #include <string.h>
 #include "ziggurat_const_float.h"
 #define FLT_SIGNBIT 0x80000000u
+
 ALWAYS_INLINE float flip_sign_if_f(float x, int sign) {
   uint32_t bits, mask = (uint32_t)0 - (uint32_t)(sign & 1);
   mask &= FLT_SIGNBIT;
@@ -24,16 +25,9 @@ static float norm_tail_draw_f(randompack_rng *rng, uint32_t rabs, float y, int *
   }
 }
 
-ALWAYS_INLINE float normf_likely(randompack_rng *rng, int *w, int *idx,
-  uint32_t *ki, uint32_t *rabs) {
-  uint32_t r;
+ALWAYS_INLINE float normf_likely(uint32_t r, int *idx, uint32_t *ki, uint32_t *rabs) {
   int sign;
   float x;
-  if (UNLIKELY(*w >= 2*BUFSIZE)) {
-    *w = rng->buf_word = 0;
-    rng->fill(rng->buf.u64, BUFSIZE, &rng->state);
-  }
-  r = rng->buf.u32[(*w)++];
   *idx = r & 0xff;
   r >>= 8;
   *ki = ki_float[*idx];
@@ -44,10 +38,10 @@ ALWAYS_INLINE float normf_likely(randompack_rng *rng, int *w, int *idx,
   return x;
 }
 
-ALWAYS_INLINE float normf_unlikely(randompack_rng *rng, int *w, float x,
-  int idx, uint32_t *rabs, uint32_t ki) {
+ALWAYS_INLINE float normf_unlikely(randompack_rng *rng, int *w, float x, int idx, uint32_t
+											  *rabs, uint32_t ki) {
   float y, f0, f1, tangent;
-  uint32_t dr, dk;
+  uint32_t r, dr, dk;
   while (true) {
     y = draw_u01f(rng, w);
     dr = (1U << 23) - *rabs;
@@ -70,7 +64,8 @@ ALWAYS_INLINE float normf_unlikely(randompack_rng *rng, int *w, float x,
     f1 = fi_float[idx];
     if (f1 + y*(f0 - f1) < openlibm_expf(-x*x/2)) return x; // below curve
   next_try:
-    x = normf_likely(rng, w, &idx, &ki, rabs);
+    r = draw_u32(rng, w);
+    x = normf_likely(r, &idx, &ki, rabs);
     if (*rabs < ki) return x;
   }
 }
@@ -85,54 +80,72 @@ ALWAYS_INLINE void rand_normf(float *buf, size_t len, randompack_rng *rng) {
     int idx, take;
     take = rem < 2*BUFSIZE ? (int)rem : 2*BUFSIZE;
     for (int j = 0; j < take; j++) {
-      x = normf_likely(rng, &w, &idx, &ki, &rabs);
+      uint32_t r = draw_u32(rng, &w);
+      x = normf_likely(r, &idx, &ki, &rabs);
       if (LIKELY(rabs < ki)) {
         buf[i + j] = x;
-        continue;
       }
-      buf[i + j] = normf_unlikely(rng, &w, x, idx, &rabs, ki);
+      else {
+        int w2 = w;
+        buf[i + j] = normf_unlikely(rng, &w2, x, idx, &rabs, ki);
+        w = w2;
+      }
     }
     i += take;
   }
   exit_u32_mode(rng, w);
 }
 
-ALWAYS_INLINE float draw_expf(randompack_rng *rng, int *w) {
-  float x;
-  for (;;) {
-    float f0, f1;
-    uint32_t r = draw_u32(rng, w);
-    r >>= 1;
-    uint8_t idx = r & 0xFF;
-    r >>= 8;
-    uint32_t ki = ke_float[idx];
-    x = r*we_float[idx];;
-    if (LIKELY(r < ki)) return x;     // in the left rectangle
+ALWAYS_INLINE float expf_likely(uint32_t r, int *idx, uint32_t *ki, uint32_t *rr) {
+  r >>= 1;
+  *idx = r & 0xFF;
+  r >>= 8;
+  *rr = r;
+  *ki = ke_float[*idx];
+  return r*we_float[*idx];
+}
+
+ALWAYS_INLINE float expf_unlikely(randompack_rng *rng, int *w, float x,
+  int idx, uint32_t r, uint32_t ki) {
+  float y, f0, f1, tangent;
+  uint32_t dr, dk;
+  while (true) {
     if (UNLIKELY(idx == 0)) {         // in the tail
       x = ziggurat_exp_r_f - openlibm_log1pf(-draw_u01f(rng, w));
-      goto accept;
+      return x;
     }
-    float y = draw_u01f(rng, w);
-    uint32_t dr = (1U << 24) - r;
-    float tangent = dr*slope_expf[idx];
-    if (y <= tangent) goto accept;    // below tangent
-    uint32_t dk = (1U << 24) - ki;
-    if (y*dk > dr) continue;     // above secant
+    y = draw_u01f(rng, w);
+    dr = (1U << 24) - r;
+    tangent = dr*slope_expf[idx];
+    if (y <= tangent) return x;    // below tangent
+    dk = (1U << 24) - ki;
+    if (y*dk > dr) goto next_try;     // above secant
     f0 = fe_float[idx-1];
     f1 = fe_float[idx];
-    if (f1 + y*(f0 - f1) < openlibm_expf(-x)) goto accept; // below curve
+    if (f1 + y*(f0 - f1) < openlibm_expf(-x)) return x; // below curve
+  next_try:
+    r = draw_u32(rng, w);
+    x = expf_likely(r, &idx, &ki, &r);
+    if (LIKELY(r < ki)) return x;
   }
-accept:
-  return x;
 }
 
 ALWAYS_INLINE void rand_expf(float *buf, size_t len, randompack_rng *rng) {
-  int w = enter_u32_mode(rng);
+  int idx, w = enter_u32_mode(rng), w2;
+  uint32_t r, ki;
   size_t i = 0;
   while (i < len) {
     int take = min(len - i, 2*BUFSIZE);
     for (size_t j = i; LIKELY(j < i + take); j++) {
-      buf[j] = draw_expf(rng, &w);
+      r = draw_u32(rng, &w);
+      float x = expf_likely(r, &idx, &ki, &r);
+      if (LIKELY(r < ki))
+        buf[j] = x;
+      else {
+        w2 = w;
+        buf[j] = expf_unlikely(rng, &w, x, idx, r, ki);
+        w = w2;
+      }
     }
     i += take;
   }
