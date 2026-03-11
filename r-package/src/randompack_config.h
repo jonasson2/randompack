@@ -22,10 +22,13 @@ _Static_assert(sizeof(long long) == 8, "randompack requires 64-bit long long");
 
 #if defined(_MSC_VER)
   #define ALWAYS_INLINE static __forceinline
+  #define NEVER_INLINE static __declspec(noinline)
 #elif defined(__clang__) || defined(__GNUC__)
   #define ALWAYS_INLINE static inline __attribute__((always_inline))
+  #define NEVER_INLINE static __attribute__((noinline))
 #else
   #define ALWAYS_INLINE static inline
+  #define NEVER_INLINE static
 #endif
 
 #define TOLOWER(c) (((c) >= 'A' && (c) <= 'Z') ? ((c)-'A'+'a') : (c))
@@ -63,12 +66,6 @@ static inline void copy64(void *dst, void *src, int n) { memcpy(dst, src, n*8); 
 _Static_assert(BUFSIZE % 8 == 0, "BUFSIZE must be a multiple of 8 (for chacha20)");
 _Static_assert(BUFSIZE <= 512,
 	       "BUFSIZE must be <= 512 to allow BUFSIZE arrays on the stack");
-static inline uint64_t rand_splitmix64(uint64_t *x) {
-  uint64_t z = (*x += 0x9E3779B97F4A7C15ULL);
-  z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9ULL;
-  z = (z ^ (z >> 27)) * 0x94D049BB133111EBULL;
-  return z ^ (z >> 31);
-}
 
 static inline uint32_t mix32(uint32_t x) {
   x ^= x >> 16;

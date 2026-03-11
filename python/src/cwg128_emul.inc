@@ -27,18 +27,18 @@ typedef struct {
   (out).hi = _hi0 + _lo1;                    \
 } while (0)
 
-static inline void fill_cwg128(randompack_rng *rng, size_t len) {
-  uint64_t *out = rng->buf.u64;
+static inline void fill_cwg128(uint64_t *buf, size_t len, randompack_state *state) {
+  uint64_t *out = buf;
   // State layout assumed:
-  //   rng->state.u64[0:1]: x low, x high
-  //   rng->state.u64[2]  : a
-  //   rng->state.u64[3]  : weyl
-  //   rng->state.u64[4]  : s (must be odd)
+  //   state->u64[0:1]: x low, x high
+  //   state->u64[2]  : a
+  //   state->u64[3]  : weyl
+  //   state->u64[4]  : s (must be odd)
   rp_u128 x;
-  U128_SET(x, rng->state.u64[0], rng->state.u64[1]);
-  uint64_t a = rng->state.u64[2];
-  uint64_t weyl = rng->state.u64[3];
-  uint64_t s = rng->state.u64[4];
+  U128_SET(x, state->u64[0], state->u64[1]);
+  uint64_t a = state->u64[2];
+  uint64_t weyl = state->u64[3];
+  uint64_t s = state->u64[4];
   for (size_t i = 0; i < len; i++) {
     a += U128_LO(x);
     weyl += s;
@@ -51,9 +51,9 @@ static inline void fill_cwg128(randompack_rng *rng, size_t len) {
     // return a >> 48 ^ x;  (take low 64 bits of x for a 64-bit output)
     out[i] = (a >> 48) ^ U128_LO(x);
   }
-  rng->state.u64[0] = x.lo;
-  rng->state.u64[1] = x.hi;
-  rng->state.u64[2] = a;
-  rng->state.u64[3] = weyl;
-  rng->state.u64[4] = s;
+  state->u64[0] = x.lo;
+  state->u64[1] = x.hi;
+  state->u64[2] = a;
+  state->u64[3] = weyl;
+  state->u64[4] = s;
 }

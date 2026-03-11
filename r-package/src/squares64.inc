@@ -24,10 +24,10 @@ static inline uint64_t squares64(uint64_t ctr, uint64_t key) {
    ctr++;                                       \
  } while(0)
 
-static inline void fill_squares(randompack_rng *rng, size_t len) {
-  uint64_t *out = rng->buf.u64;
-  uint64_t ctr = rng->state.u64[0];
-  uint64_t key = rng->state.u64[1];
+static inline void fill_squares(uint64_t *buf, size_t len, randompack_state *state) {
+  uint64_t *out = buf;
+  uint64_t ctr = state->u64[0];
+  uint64_t key = state->u64[1];
   uint64_t x, y, z, t;
   for (size_t i = 0; i < len; i += 4) {
     y = x = ctr*key; z = y + key;
@@ -59,19 +59,5 @@ static inline void fill_squares(randompack_rng *rng, size_t len) {
     out[i+3] = t ^ ((x*x + y) >> 32);
     ctr++;
   }
-  rng->state.u64[0] = ctr;
-}
-
-static inline void fill_squares_cb(uint64_t buf[], size_t len, uint64_t ctr, uint64_t key) {
-  uint64_t x, y, z, t;
-  for (size_t i = 0; i < len; i++) {
-	 y = x = ctr*key;
-	 z = y + key;
-	 x = x*x + y;  x = (x >> 32) | (x << 32);
-	 x = x*x + z;  x = (x >> 32) | (x << 32);
-	 x = x*x + y;  x = (x >> 32) | (x << 32);
-	 t = x = x*x + z;  x = (x >> 32) | (x << 32);
-	 buf[i] = t ^ ((x*x + y) >> 32);
-	 ctr++;
-  }
+  state->u64[0] = ctr;
 }

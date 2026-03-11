@@ -28,21 +28,21 @@ static inline uint64_t bswap64(uint64_t x) {
          ((x & 0xFF00000000000000ULL) >> 56);
 }
 
-static inline void fill_chacha(randompack_rng *rng, size_t len) {
-  uint8_t *dst = (uint8_t *)(rng->buf.u64);
+static inline void fill_chacha(uint64_t *buf, size_t len, randompack_state *state) {
+  uint8_t *dst = (uint8_t *)(buf);
   uint8_t zeros[BUFSIZE*8] = {0};
   size_t nbytes = len*8;
   // Big-endian compatibility: counter stored in little-endian bytes.
-  uint32_t counter = load_u32_le(rng->state.u8 + 44);
-  uint8_t *key     = &rng->state.u8[0];
-  uint8_t *nonce   = &rng->state.u8[32];
+  uint32_t counter = load_u32_le(state->u8 + 44);
+  uint8_t *key     = &state->u8[0];
+  uint8_t *nonce   = &state->u8[32];
   chacha20_xor_stream(dst, zeros, nbytes, key, nonce, counter);
   uint32_t blocks = len/8;
   counter += blocks; // count of 64 byte blocks
-  store_u32_le(rng->state.u8 + 44, counter);
+  store_u32_le(state->u8 + 44, counter);
   // Big-endian compatibility: swap output words for byte-wise draws.
   if (!is_little_endian()) {
     for (size_t i = 0; i < len; i++)
-      rng->buf.u64[i] = bswap64(rng->buf.u64[i]);
+      buf[i] = bswap64(buf[i]);
   }
 }

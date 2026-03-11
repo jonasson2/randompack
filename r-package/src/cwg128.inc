@@ -1,15 +1,15 @@
 // -*- C -*-
-static inline void fill_cwg128(randompack_rng *rng, size_t len) {
-  uint64_t *out = rng->buf.u64;
+static inline void fill_cwg128(uint64_t *buf, size_t len, randompack_state *state) {
+  uint64_t *out = buf;
   // State layout assumed:
-  //   rng->state.cwg.x    : __uint128_t
-  //   rng->state.cwg.a    : uint64_t
-  //   rng->state.cwg.weyl : uint64_t
-  //   rng->state.cwg.s    : uint64_t (must be odd)
-  __uint128_t x = rng->state.cwg.x;
-  uint64_t a = rng->state.cwg.a;
-  uint64_t weyl = rng->state.cwg.weyl;
-  uint64_t s = rng->state.cwg.s;
+  //   state->cwg.x    : __uint128_t
+  //   state->cwg.a    : uint64_t
+  //   state->cwg.weyl : uint64_t
+  //   state->cwg.s    : uint64_t (must be odd)
+  __uint128_t x = state->cwg.x;
+  uint64_t a = state->cwg.a;
+  uint64_t weyl = state->cwg.weyl;
+  uint64_t s = state->cwg.s;
   for (size_t i = 0; i < len; i++) {
     a += (uint64_t)x; // modulo 2^64
     weyl += s;
@@ -18,8 +18,8 @@ static inline void fill_cwg128(randompack_rng *rng, size_t len) {
     // return a >> 48 ^ x;  (take low 64 bits of x for a 64-bit output)
     out[i] = (a >> 48) ^ (uint64_t)x;
   }
-  rng->state.cwg.x = x;
-  rng->state.cwg.a = a;
-  rng->state.cwg.weyl = weyl;
-  rng->state.cwg.s = s;
+  state->cwg.x = x;
+  state->cwg.a = a;
+  state->cwg.weyl = weyl;
+  state->cwg.s = s;
 }

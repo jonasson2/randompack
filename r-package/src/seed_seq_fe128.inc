@@ -1,5 +1,5 @@
 // -*- C -*-
-// ChatGPT's ranslation of Melissa O'Neill's randutils::seed_seq_fe128 original
+// ChatGPT's translation of Melissa O'Neill's randutils::seed_seq_fe128 original
 // https://www.pcg-random.org/ & https://gist.github.com/imneme/540829265469e673d045
 // See also:
 //   Melissa E. O’Neill, "PCG: A Family of Better Random Number Generators"

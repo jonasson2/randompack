@@ -29,28 +29,29 @@ typedef enum {
   PCG64,
   PHILOX,
   CHACHA20,
-  SYS,
   CWG128,
   FAST,
 } rng_engine;
-
-typedef void (*engine_fill)(randompack_rng *rng, size_t len);
 
 typedef struct {
   uint64_t s0[4], s1[4], s2[4], s3[4];
 } xo256;
 
+typedef union {
+  uint8_t u8[48];   // 6 words, used by chacha20
+  uint32_t u32[18]; // 9 words, used when seeding and by chacha20
+  uint64_t u64[9];  // used by most engines
+  xo256 xo;         // 16 words, used by x256++simd
+  pcg64_t pcg;      // 4 words
+  #if HAVE128
+  cwg128_64_t cwg;  // 5 words
+  #endif
+} randompack_state;
+
+typedef void (*engine_fill)(uint64_t *buf, size_t len, randompack_state *state);
+
 struct randompack_rng {
-  union {
-    uint8_t u8[48];   // 6 words, used by chacha20
-    uint32_t u32[18]; // 9 words, used when seeding and by chacha20
-    uint64_t u64[9];  // used by most engines
-    xo256 xo;         // 16 words, used by x256++simd
-    pcg64_t pcg;      // 4 words
-    #if HAVE128
-    cwg128_64_t cwg;  // 5 words
-    #endif
-  } state;
+  randompack_state state;
   rng_engine engine;
   int buf_word;
   int buf_byte;
@@ -69,7 +70,7 @@ struct randompack_rng {
 
 #if defined(BUILD_AVX2)
 bool cpu_has_avx2(void);
-void fill_fast_avx2(randompack_rng *rng, size_t len);
+void fill_fast_avx2(uint64_t *buf, size_t len, randompack_state *state);
 void rand_dble_avx2(double x[], size_t len, randompack_rng *rng);
 void rand_float_avx2(float x[], size_t len, randompack_rng *rng);
 #if defined(RANDOMPACK_TEST_HOOKS)

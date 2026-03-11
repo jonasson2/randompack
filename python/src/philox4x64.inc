@@ -66,16 +66,16 @@ philox4x64(philox4x64_ctr_t ctr, philox4x64_key_t key) {
   return ctr;
 }
 
-static inline void fill_philox(randompack_rng *rng, size_t len) {
-  uint64_t *out = rng->buf.u64;
+static inline void fill_philox(uint64_t *buf, size_t len, randompack_state *state) {
+  uint64_t *out = buf;
   randompack_philox_ctr ctr;
   randompack_philox_key key;
-  copy64(ctr.v, rng->state.u64, 4);
-  copy64(key.v, rng->state.u64 + 4, 2);
+  copy64(ctr.v, state->u64, 4);
+  copy64(key.v, state->u64 + 4, 2);
   for (size_t i = 0; i < len; i += 4) {
     randompack_philox_ctr block = philox4x64(ctr, key);
     copy64(out + i, block.v, 4);
     ctr.v[0]++;
   }
-  copy64(rng->state.u64, ctr.v, 4);
+  copy64(state->u64, ctr.v, 4);
 }

@@ -8,9 +8,10 @@ bool cpu_has_avx2(void) {
   return false;
 }
 
-void fill_fast_avx2(randompack_rng *rng, size_t len) {
-  (void)rng;
+void fill_fast_avx2(uint64_t *buf, size_t len, randompack_state *state) {
+  (void)buf;
   (void)len;
+  (void)state;
 }
 
 void rand_dble_avx2(double x[], size_t len, randompack_rng *rng) {
@@ -117,9 +118,9 @@ HIDDEN bool cpu_has_avx2(void) {
   (outv) = r_; \
 } while (0)
 
-HIDDEN void fill_fast_avx2(randompack_rng *rng, size_t len) {
-  uint64_t *out = rng->buf.u64;
-  xo256 *st = &rng->state.xo;
+HIDDEN void fill_fast_avx2(uint64_t *buf, size_t len, randompack_state *state) {
+  uint64_t *out = buf;
+  xo256 *st = &state->xo;
   VEC_T s0 = VEC_LOAD(&st->s0[0]);
   VEC_T s1 = VEC_LOAD(&st->s1[0]);
   VEC_T s2 = VEC_LOAD(&st->s2[0]);

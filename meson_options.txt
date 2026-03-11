@@ -7,6 +7,7 @@ option('blas',
 )
 
 # Creates <build-dir>/examples/Test01Driver
+# TestU01 prefix is relative to the project root, e.g. install/lib/testu01.
 option('TestU01',
   type: 'string',
   value: '',

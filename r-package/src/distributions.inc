@@ -243,7 +243,7 @@ static void rand_sample(int p[], int n, int k, randompack_rng *rng) {
 #include "randompack.h"
 #include "randompack_config.h"
 
-ALWAYS_INLINE void fill_gamma_shape1(double *x, size_t len, double shape,
+ALWAYS_INLINE void gen_gamma_shape1(double *x, size_t len, double shape,
                                      double scale, randompack_rng *rng) {
   double d = shape - 1/3.0, dscale = d*scale;
   double c = 1/sqrt(9*d), v3, z, v;
@@ -256,7 +256,7 @@ ALWAYS_INLINE void fill_gamma_shape1(double *x, size_t len, double shape,
       if (v > 0) {
         double u, z2 = z*z, z4 = z2*z2, logu, logv3;
         v3 = v*v*v;
-        u = draw_u01(rng, &w);
+		  u = draw_u01(rng, &w);
         if (u < 1 - 0.0331*z4) goto accept;
         // compute logs:
         if (!rng->bitexact) {
@@ -269,7 +269,6 @@ ALWAYS_INLINE void fill_gamma_shape1(double *x, size_t len, double shape,
         }
         if (logu < 0.5*z2 + d*(1 - v3 + logv3)) goto accept;
       }
-      make_half_full(rng, &w);
       x[i] = draw_norm(rng, &w);
       continue;
     accept:
@@ -280,15 +279,15 @@ ALWAYS_INLINE void fill_gamma_shape1(double *x, size_t len, double shape,
   exit_u64_mode(rng, w);
 }
 
-ALWAYS_INLINE void fill_gamma(double *x, size_t len, double shape, double scale,
+ALWAYS_INLINE void gen_gamma(double *x, size_t len, double shape, double scale,
   randompack_rng *rng) {
   if (shape >= 1) {
-    fill_gamma_shape1(x, len, shape, scale, rng);
+    gen_gamma_shape1(x, len, shape, scale, rng);
   }
   else {  // shape < 1
 	 double inv_shape = 1.0/shape;
 	 double t[512];
-	 fill_gamma_shape1(x, len, shape + 1, scale, rng);
+	 gen_gamma_shape1(x, len, shape + 1, scale, rng);
 	 size_t i = 0;
 	 while (i < len) {
 		size_t n = len - i < 256 ? len - i : 256;
@@ -302,15 +301,15 @@ ALWAYS_INLINE void fill_gamma(double *x, size_t len, double shape, double scale,
   }
 }
 
-ALWAYS_INLINE void fill_beta(double *x, size_t len, double a, double b,
+ALWAYS_INLINE void gen_beta(double *x, size_t len, double a, double b,
                                     randompack_rng *rng) {
   // X = Ga/(Ga + Gb) ~ Beta(a,b) if Ga ~ Gamma(a,1) and Gb ~ Gamma(b,1)
-  fill_gamma(x, len, a, 1.0, rng);
+  gen_gamma(x, len, a, 1.0, rng);
   double gb[64];
   size_t i = 0;
   while (i < len) {
     int n = min(64, len - i);
-    fill_gamma(gb, n, b, 1.0, rng);
+    gen_gamma(gb, n, b, 1.0, rng);
     double hi = 1.0 - DBL_EPSILON;
     for (int j = 0; j < n; j++) { // force the beta-draws to (0, 1)
       double a = x[i + j];
@@ -324,42 +323,42 @@ ALWAYS_INLINE void fill_beta(double *x, size_t len, double a, double b,
   }
 }
 
-ALWAYS_INLINE void fill_t(double *x, size_t len, double nu, randompack_rng *rng) {
+ALWAYS_INLINE void gen_t(double *x, size_t len, double nu, randompack_rng *rng) {
   // Z ~ N(0,1), U ~ Gamma(nu/2, 2) independent => X = Z/sqrt(U/nu) ~ t_nu
   double u[64];
   rand_norm(x, len, rng);
   size_t i = 0;
   while (i < len) {
     int n = min(64, len - i);
-    fill_gamma(u, n, 0.5*nu, 2.0, rng);
+    gen_gamma(u, n, 0.5*nu, 2.0, rng);
     for (int j = 0; j < n; j++)
       x[i + j] /= sqrt(u[j]/nu);
     i += n;
   }
 }
 
-ALWAYS_INLINE void fill_f(double *x, size_t len, double nu1, double nu2,
+ALWAYS_INLINE void gen_f(double *x, size_t len, double nu1, double nu2,
                                  randompack_rng *rng) {
   // F(nu1,nu2) via gamma ratio:
   //   F = (X1*nu2)/(X2*nu1) where X1 ~ Gamma(nu1/2,1), X2 ~ Gamma(nu2/2,1)
   double x2[64];
-  fill_gamma(x, len, nu1/2.0, 1.0, rng);
+  gen_gamma(x, len, nu1/2.0, 1.0, rng);
   size_t i = 0;
   while (i < len) {
     int n = min(len - i, 64);
-    fill_gamma(x2, n, nu2/2.0, 1.0, rng);
+    gen_gamma(x2, n, nu2/2.0, 1.0, rng);
     for (int j = 0; j < n; j++)
       x[i + j] = (x[i + j]*nu2)/(x2[j]*nu1);
     i += n;
   }
 }
 
-ALWAYS_INLINE void fill_chi2(double *x, size_t len, double nu,
+ALWAYS_INLINE void gen_chi2(double *x, size_t len, double nu,
   randompack_rng *rng) {
-  fill_gamma(x, len, 0.5*nu, 2, rng);
+  gen_gamma(x, len, 0.5*nu, 2, rng);
 }
 
-ALWAYS_INLINE void fill_gumbel(double *x, size_t len, double mu, double beta,
+ALWAYS_INLINE void gen_gumbel(double *x, size_t len, double mu, double beta,
   randompack_rng *rng) {
   rand_dble(x, len, rng); // x in [0,1)
   log_inplace(x, len, rng);
@@ -368,7 +367,7 @@ ALWAYS_INLINE void fill_gumbel(double *x, size_t len, double mu, double beta,
   for (size_t i = 0; i < len; i++) x[i] = mu - beta*x[i];
 }
 
-ALWAYS_INLINE void fill_pareto(double *x, size_t len, double xm, double alpha,
+ALWAYS_INLINE void gen_pareto(double *x, size_t len, double xm, double alpha,
                                randompack_rng *rng) {
   rand_exp(x, len, rng);
   for (size_t i = 0; i < len; i++) x[i] = x[i]/alpha;
@@ -376,7 +375,7 @@ ALWAYS_INLINE void fill_pareto(double *x, size_t len, double xm, double alpha,
   for (size_t i = 0; i < len; i++) x[i] *= xm;
 }
 
-ALWAYS_INLINE void fill_weibull(double *x, size_t len, double shape,
+ALWAYS_INLINE void gen_weibull(double *x, size_t len, double shape,
   double scale, randompack_rng *rng) {
   rand_exp(x, len, rng); // x[i] = E ~ Exp(1) using ziggurat exponential
   double inv_shape = 1/shape;
@@ -386,7 +385,7 @@ ALWAYS_INLINE void fill_weibull(double *x, size_t len, double shape,
   if (scale != 1) for (size_t i = 0; i < len; i++) x[i] *= scale;
 }
 
-ALWAYS_INLINE void fill_skew_normal(double *x, size_t len, double mu,
+ALWAYS_INLINE void gen_skew_normal(double *x, size_t len, double mu,
   double sigma, double alpha, randompack_rng *rng) {
   double denom = sqrt(1 + alpha*alpha);
   double delta = alpha/denom;

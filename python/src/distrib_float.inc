@@ -27,26 +27,24 @@ static void rand_lognormalf(float x[], size_t len, float mu, float sigma,
   expf_inplace(x, len, rng);
 }
 
-ALWAYS_INLINE void fill_gamma_shape1f(float *x, size_t len, float shape,
+ALWAYS_INLINE void gen_gamma_shape1f(float *x, size_t len, float shape,
   float scale, randompack_rng *rng) {
   float d = shape - 1.0f/3.0f, dscale = d*scale;
-  float c = 1.0f/sqrtf(9.0f*d);
+  float c = 1.0f/sqrtf(9.0f*d), v3, z, v;
   rand_normf(x, len, rng);
   int w = enter_u32_mode(rng);
   for (size_t i = 0; i < len; i++) {
     for (;;) {
-      float z = x[i];
-      float v = 1.0f + c*z;
+      z = x[i];
+      v = 1.0f + c*z;
       if (v > 0.0f) {
-        float v3 = v*v*v;
-        float u  = draw_u01f(rng, &w);
-        float z2 = z*z;
-        float z4 = z2*z2;
+        float u, z2 = z*z, z4 = z2*z2, logu, logv3;
+        v3 = v*v*v;
+        u = draw_u01f(rng, &w);
         if (u < 1.0f - 0.0331f*z4) {
           x[i] = dscale*v3;
           break;
         }
-        float logu, logv3;
         if (!rng->bitexact) {
           logu = logf(u);
           logv3 = logf(v3);
@@ -60,22 +58,21 @@ ALWAYS_INLINE void fill_gamma_shape1f(float *x, size_t len, float shape,
           break;
         }
       }
-      make_half_full32(rng, &w);
       x[i] = draw_normf(rng, &w);
     }
   }
   exit_u32_mode(rng, w);
 }
 
-ALWAYS_INLINE void fill_gammaf(float *x, size_t len, float shape, float scale,
+ALWAYS_INLINE void gen_gammaf(float *x, size_t len, float shape, float scale,
   randompack_rng *rng) {
   if (shape >= 1.0f) {
-    fill_gamma_shape1f(x, len, shape, scale, rng);
+    gen_gamma_shape1f(x, len, shape, scale, rng);
   }
   else {
     float inv_shape = 1.0f/shape;
     float t[512];
-    fill_gamma_shape1f(x, len, shape + 1.0f, scale, rng);
+    gen_gamma_shape1f(x, len, shape + 1.0f, scale, rng);
     size_t i = 0;
     while (i < len) {
       size_t n = len - i < 256 ? len - i : 256;
@@ -89,14 +86,14 @@ ALWAYS_INLINE void fill_gammaf(float *x, size_t len, float shape, float scale,
   }
 }
 
-ALWAYS_INLINE void fill_betaf(float *x, size_t len, float a, float b,
+ALWAYS_INLINE void gen_betaf(float *x, size_t len, float a, float b,
   randompack_rng *rng) {
-  fill_gammaf(x, len, a, 1.0f, rng);
+  gen_gammaf(x, len, a, 1.0f, rng);
   float gb[64];
   size_t i = 0;
   while (i < len) {
     int n = min(64, len - i);
-    fill_gammaf(gb, n, b, 1.0f, rng);
+    gen_gammaf(gb, n, b, 1.0f, rng);
     float hi = 1.0f - FLT_EPSILON; // restrict draws to (0, 1):
     for (int j = 0; j < n; j++) {
       float a = x[i + j];
@@ -110,39 +107,39 @@ ALWAYS_INLINE void fill_betaf(float *x, size_t len, float a, float b,
   }
 }
 
-ALWAYS_INLINE void fill_tf(float *x, size_t len, float nu, randompack_rng *rng) {
+ALWAYS_INLINE void gen_tf(float *x, size_t len, float nu, randompack_rng *rng) {
   float u[64];
   rand_normf(x, len, rng);
   size_t i = 0;
   while (i < len) {
     int n = min(64, len - i);
-    fill_gammaf(u, n, 0.5f*nu, 2.0f, rng);
+    gen_gammaf(u, n, 0.5f*nu, 2.0f, rng);
     for (int j = 0; j < n; j++)
       x[i + j] /= sqrtf(u[j]/nu);
     i += n;
   }
 }
 
-ALWAYS_INLINE void fill_ff(float *x, size_t len, float nu1, float nu2,
+ALWAYS_INLINE void gen_ff(float *x, size_t len, float nu1, float nu2,
   randompack_rng *rng) {
   float x2[64];
-  fill_gammaf(x, len, nu1/2.0f, 1.0f, rng);
+  gen_gammaf(x, len, nu1/2.0f, 1.0f, rng);
   size_t i = 0;
   while (i < len) {
     int n = min(64, len - i);
-    fill_gammaf(x2, n, nu2/2.0f, 1.0f, rng);
+    gen_gammaf(x2, n, nu2/2.0f, 1.0f, rng);
     for (int j = 0; j < n; j++)
       x[i + j] = (x[i + j]*nu2)/(x2[j]*nu1);
     i += n;
   }
 }
 
-ALWAYS_INLINE void fill_chi2f(float *x, size_t len, float nu,
+ALWAYS_INLINE void gen_chi2f(float *x, size_t len, float nu,
   randompack_rng *rng) {
-  fill_gammaf(x, len, 0.5f*nu, 2, rng);
+  gen_gammaf(x, len, 0.5f*nu, 2, rng);
 }
 
-ALWAYS_INLINE void fill_gumbelf(float *x, size_t len, float mu, float beta,
+ALWAYS_INLINE void gen_gumbelf(float *x, size_t len, float mu, float beta,
   randompack_rng *rng) {
   rand_float(x, len, rng); // x in [0,1)
   logf_inplace(x, len, rng);
@@ -151,7 +148,7 @@ ALWAYS_INLINE void fill_gumbelf(float *x, size_t len, float mu, float beta,
   for (size_t i = 0; i < len; i++) x[i] = mu - beta*x[i];
 }
 
-ALWAYS_INLINE void fill_paretof(float *x, size_t len, float xm, float alpha,
+ALWAYS_INLINE void gen_paretof(float *x, size_t len, float xm, float alpha,
   randompack_rng *rng) {
   rand_expf(x, len, rng);
   for (size_t i = 0; i < len; i++) x[i] = x[i]/alpha;
@@ -159,7 +156,7 @@ ALWAYS_INLINE void fill_paretof(float *x, size_t len, float xm, float alpha,
   for (size_t i = 0; i < len; i++) x[i] *= xm;
 }
 
-ALWAYS_INLINE void fill_weibullf(float *x, size_t len, float shape,
+ALWAYS_INLINE void gen_weibullf(float *x, size_t len, float shape,
   float scale, randompack_rng *rng) {
   rand_expf(x, len, rng);
   float inv_shape = 1.0f/shape;
@@ -169,7 +166,7 @@ ALWAYS_INLINE void fill_weibullf(float *x, size_t len, float shape,
   if (scale != 1.0f) for (size_t i = 0; i < len; i++) x[i] *= scale;
 }
 
-ALWAYS_INLINE void fill_skew_normalf(float *x, size_t len, float mu,
+ALWAYS_INLINE void gen_skew_normalf(float *x, size_t len, float mu,
   float sigma, float alpha, randompack_rng *rng) {
   float denom = sqrtf(1.0f + alpha*alpha);
   float delta = alpha/denom;
