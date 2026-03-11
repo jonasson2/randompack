@@ -109,8 +109,8 @@ endif
 
 testu01_prefix = get_option('TestU01')
 if testu01_prefix != ''
-  testu01_inc = include_directories(join_paths('..', testu01_prefix, 'include'))
-  testu01_libdir = join_paths(meson.project_source_root(), testu01_prefix, 'lib')
+  testu01_inc = include_directories(join_paths(testu01_prefix, 'include'))
+  testu01_libdir = join_paths(testu01_prefix, 'lib')
   testu01_libs = [
     cc.find_library('testu01', dirs: testu01_libdir, required: true,
       static: true),
