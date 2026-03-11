@@ -9,7 +9,7 @@ option('blas',
 # Creates <build-dir>/examples/Test01Driver
 option('TestU01',
   type: 'string',
-  value: '/Users/jonasson/lib/testu01',
+  value: '',
   description: 'Prefix for TestU01 install (enable when non-empty)'
 )
 
