@@ -70,6 +70,19 @@ ALWAYS_INLINE float normf_unlikely(randompack_rng *rng, int *w, float x, int idx
   }
 }
 
+ALWAYS_INLINE float draw_normf(randompack_rng *rng, int *w) {
+  uint32_t rabs, ki;
+  float x;
+  int idx;
+  uint32_t r = draw_u32(rng, w);
+  x = normf_likely(r, &idx, &ki, &rabs);
+  if (LIKELY(rabs < ki)) return x;
+  int w2 = *w;
+  x = normf_unlikely(rng, &w2, x, idx, &rabs, ki);
+  *w = w2;
+  return x;
+}
+
 ALWAYS_INLINE void rand_normf(float *buf, size_t len, randompack_rng *rng) {
   int w = enter_u32_mode(rng);
   size_t i = 0;

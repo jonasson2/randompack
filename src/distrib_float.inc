@@ -32,6 +32,7 @@ ALWAYS_INLINE void gen_gamma_shape1f(float *x, size_t len, float shape,
   float d = shape - 1.0f/3.0f, dscale = d*scale;
   float c = 1.0f/sqrtf(9.0f*d), v3, z, v;
   rand_normf(x, len, rng);
+  int w = enter_u32_mode(rng);
   for (size_t i = 0; i < len; i++) {
     for (;;) {
       z = x[i];
@@ -39,7 +40,7 @@ ALWAYS_INLINE void gen_gamma_shape1f(float *x, size_t len, float shape,
       if (v > 0.0f) {
         float u, z2 = z*z, z4 = z2*z2, logu, logv3;
         v3 = v*v*v;
-        rand_float(&u, 1, rng);
+        u = draw_u01f(rng, &w);
         if (u < 1.0f - 0.0331f*z4) {
           x[i] = dscale*v3;
           break;
@@ -57,9 +58,10 @@ ALWAYS_INLINE void gen_gamma_shape1f(float *x, size_t len, float shape,
           break;
         }
       }
-      rand_normf(x + i, 1, rng);
+      x[i] = draw_normf(rng, &w);
     }
   }
+  exit_u32_mode(rng, w);
 }
 
 ALWAYS_INLINE void gen_gammaf(float *x, size_t len, float shape, float scale,
