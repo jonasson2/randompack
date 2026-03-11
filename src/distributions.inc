@@ -248,6 +248,7 @@ ALWAYS_INLINE void gen_gamma_shape1(double *x, size_t len, double shape,
   double d = shape - 1/3.0, dscale = d*scale;
   double c = 1/sqrt(9*d), v3, z, v;
   rand_norm(x, len, rng);
+  int w = enter_u64_mode(rng);
   for (size_t i = 0; i < len; i++) {
     for (;;) {
       z = x[i];
@@ -255,7 +256,7 @@ ALWAYS_INLINE void gen_gamma_shape1(double *x, size_t len, double shape,
       if (v > 0) {
         double u, z2 = z*z, z4 = z2*z2, logu, logv3;
         v3 = v*v*v;
-		  rand_dble(&u, 1, rng);
+		  u = draw_u01(rng, &w);
         if (u < 1 - 0.0331*z4) goto accept;
         // compute logs:
         if (!rng->bitexact) {
@@ -268,13 +269,14 @@ ALWAYS_INLINE void gen_gamma_shape1(double *x, size_t len, double shape,
         }
         if (logu < 0.5*z2 + d*(1 - v3 + logv3)) goto accept;
       }
-      rand_norm(x + i, 1, rng);
+      x[i] = draw_norm(rng, &w);
       continue;
     accept:
       x[i] = dscale*v3;
       break;
     }    
   }
+  exit_u64_mode(rng, w);
 }
 
 ALWAYS_INLINE void gen_gamma(double *x, size_t len, double shape, double scale,

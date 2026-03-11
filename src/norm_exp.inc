@@ -114,6 +114,17 @@ ALWAYS_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x, int id
   }
 }
 
+ALWAYS_INLINE double draw_norm(randompack_rng *rng, int *w) {
+  uint64_t rabs, ki, r;
+  double x;
+  int idx;
+  r = draw_u64(rng, w);
+  x = norm_likely(r, &idx, &ki, &rabs);
+  if (LIKELY(rabs < ki)) return x;
+  x = norm_unlikely(rng, w, x, idx, &rabs, ki);
+  return x;
+}
+
 ALWAYS_INLINE void rand_norm(double *buf, size_t len, randompack_rng *rng) {
   int w = enter_u64_mode(rng);
   size_t i = 0;
