@@ -93,8 +93,7 @@ cdef extern from "randompack.h":
     bint randompack_serialize(uint8_t *buf, int *len, randompack_rng *rng)
     bint randompack_deserialize(const uint8_t *buf, int len,
                                 randompack_rng *rng)
-    bint randompack_pcg64_set_state(uint64_t state, uint64_t inc,
-                                    randompack_rng *rng)
+    bint randompack_pcg64_set_inc(uint64_t inc[2], randompack_rng *rng)
     bint randompack_philox_set_state(randompack_philox_ctr ctr,
                                      randompack_philox_key key,
                                      randompack_rng *rng)

@@ -154,9 +154,10 @@ management:
 - `seed(seed[, spawn_key])`
 - `serialize(buf)` / `deserialize(buf)`
 - `set_state(state)`
+- `pcg64_set_inc(inc)`
 - `philox_set_state(ctr, key)`
 - `squares_set_state(ctr, key)`
-- `jump(p)` (for xor-family)
+- `jump(p)` (for xor-family and ranlux++)
 - `last_error()`
 
 ### Seeding
@@ -208,6 +209,7 @@ Each of the following is a generic that accepts `double precision` or default
 
 ```fortran
     integer(c_int8_t), allocatable :: buf(:)
+    type(randompack_rng) :: rngr
     call rng%serialize(buf)
     call rng%deserialize(buf)
     type(randompack_philox_ctr) :: ctr
@@ -218,6 +220,8 @@ Each of the following is a generic that accepts `double precision` or default
     call rng%philox_set_state(ctr, key)
     call rng%unif(x)
     call rng%squares_set_state(1, 2)
+    call rngr%create("ranlux++")
+    call rngr%jump(32)
 ```
 ## Errors
 

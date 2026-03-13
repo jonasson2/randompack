@@ -68,17 +68,6 @@ endif
 extra_objs = avx2_objs + blas_objs
 extra_objs_buf8 = avx2_objs_buf8 + blas_objs
 
-librandompack_static = static_library(
-  'randompack',
-  randompack_src,
-  objects: extra_objs,
-  include_directories: randompack_inc,
-  dependencies: c_deps,
-  c_args: base_c_args,
-  pic: true,
-  install: true,
-)
-
 randompack_lto = fortran_interface ? ['b_lto=false'] : ['b_lto=true']
 
 librandompack = shared_library(

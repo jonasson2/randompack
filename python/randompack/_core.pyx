@@ -38,7 +38,7 @@ from ._core cimport (
     randompack_paretof, randompack_weibullf,
     randompack_skew_normalf, randompack_serialize,
     randompack_deserialize, randompack_philox_set_state,
-    randompack_squares_set_state, randompack_pcg64_set_state,
+    randompack_squares_set_state, randompack_pcg64_set_inc,
     randompack_set_state, )
 
 np.import_array()
@@ -418,7 +418,7 @@ cdef class Rng:
         See Also
         --------
         philox_set_state
-        pcg64_set_state
+        pcg64_set_inc
         set_state
         """
         cdef uint64_t ctr_v
@@ -463,7 +463,7 @@ cdef class Rng:
         See Also
         --------
         squares_set_state
-        pcg64_set_state
+        pcg64_set_inc
         set_state
         """
         cdef randompack_philox_ctr c
@@ -491,17 +491,16 @@ cdef class Rng:
         if not randompack_philox_set_state(c, k, self.ptr):
             _raise_last_error(self.ptr)
 
-    def pcg64_set_state(self, state, inc):
+    def pcg64_set_inc(self, inc):
         """
-        Set the internal state of a random number generator created with
+        Set the 128-bit increment of a random number generator created with
         engine="pcg64".
 
         Parameters
         ----------
-        state : int
-            128-bit state value in [0, 2^128-1].
-        inc : int
-            128-bit increment value in [0, 2^128-1].
+        inc : sequence of int
+            Two 64-bit words `[low, high]` in [0, 2^64-1]. The low word must
+            be odd.
 
         Returns
         -------
@@ -513,26 +512,21 @@ cdef class Rng:
         philox_set_state
         set_state
         """
-        cdef uint64_t st[4]
-        cdef object st_i
-        cdef object ic_i
-        cdef object mask
-        cdef object max_u128
+        cdef uint64_t c_inc[2]
+        cdef object vals
+        cdef object val
+        cdef int i
         if self.ptr == NULL:
             raise RuntimeError("RNG pointer is NULL")
-        st_i = int(state)
-        ic_i = int(inc)
-        mask = U64_MAX
-        max_u128 = U128_MAX
-        if st_i < 0 or st_i > max_u128:
-            raise ValueError("state must be in [0, 2^128-1]")
-        if ic_i < 0 or ic_i > max_u128:
-            raise ValueError("inc must be in [0, 2^128-1]")
-        st[0] = <uint64_t>(st_i & mask)
-        st[1] = <uint64_t>((st_i >> 64) & mask)
-        st[2] = <uint64_t>(ic_i & mask)
-        st[3] = <uint64_t>((ic_i >> 64) & mask)
-        if not randompack_set_state(st, 4, self.ptr):
+        vals = list(inc)
+        if len(vals) != 2:
+            raise ValueError("inc must have length 2")
+        for i in range(2):
+            val = int(vals[i])
+            if val < 0 or val > U64_MAX:
+                raise ValueError("inc entries must be in [0, 2^64-1]")
+            c_inc[i] = <uint64_t>val
+        if not randompack_pcg64_set_inc(c_inc, self.ptr):
             _raise_last_error(self.ptr)
 
     def set_state(self, state):
@@ -554,7 +548,7 @@ cdef class Rng:
         randomize
         squares_set_state
         philox_set_state
-        pcg64_set_state
+        pcg64_set_inc
         """
         cdef list vals
         cdef np.ndarray arr

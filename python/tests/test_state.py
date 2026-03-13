@@ -87,6 +87,24 @@ def test_philox_set_state():
     assert np.array_equal(x, y)
 
 
+def test_pcg64_set_inc():
+    engs = rp.engines()
+    if "pcg64" not in engs:
+        return
+    rng1 = rp.Rng("pcg64")
+    rng2 = rp.Rng("pcg64")
+    state = [1, 0, 1, 0]
+    rng1.set_state(state)
+    rng2.set_state(state)
+    rng1.pcg64_set_inc([3, 5])
+    rng2.pcg64_set_inc([3, 5])
+    x = rng1.unif(100)
+    y = rng2.unif(100)
+    assert np.array_equal(x, y)
+    with pytest.raises(Exception):
+        rng1.pcg64_set_inc([2, 5])
+
+
 def test_jump():
     rng1 = rp.Rng()
     rng2 = rp.Rng()

@@ -179,11 +179,12 @@ bool randompack_jump(int p, randompack_rng *rng) {
   }
   rng->last_error = 0;
   if (rng->engine != X256PP && rng->engine != X256SS && rng->engine != FAST &&
-      rng->engine != XORO && rng->engine != X128P) {
-    rng->last_error = "randompack_jump: Only supported for xor-family engines";
+      rng->engine != XORO && rng->engine != X128P && rng->engine != RANLUXPP) {
+    rng->last_error = "randompack_jump: Only supported for xor-family engines and ranlux++";
     return false;
   }
-  if (rng->engine == X256PP || rng->engine == X256SS || rng->engine == FAST) {
+  if (rng->engine == X256PP || rng->engine == X256SS || rng->engine == FAST ||
+      rng->engine == RANLUXPP) {
     if (p != 32 && p != 64 && p != 96 && p != 128 && p != 192) {
       rng->last_error = "unsupported jump exponent (must be 32/64/96/128/192)";
       return false;
@@ -206,6 +207,9 @@ bool randompack_jump(int p, randompack_rng *rng) {
   }
   else if (rng->engine == X128P) {
     xorshift128p_jump(rng->state.u64, p);
+  }
+  else if (rng->engine == RANLUXPP) {
+    ranlux_jump(rng->state.u64, p);
   }
   rng->buf_word = BUFSIZE;
   rng->buf_byte = 0;
@@ -357,23 +361,27 @@ bool randompack_set_state(uint64_t state[], int nstate, randompack_rng *rng) {
     if (all_zero_state(state, nstate))
       rng->last_error = "randompack set_state: all-zero state is invalid";
   }
+  else if (rng->engine == CWG128 && (state[4] & 1) == 0)
+    rng->last_error = "randompack set_state: cwg128 state[4] must be odd";
+  else if (rng->engine == PCG64 && (state[2] & 1) == 0)
+    rng->last_error = "randompack set_state: pcg64 increment must be odd";
   if (rng->last_error) return false;
   set_state(state, nstate, rng);
-  normalize_state(rng);
-  rand_init(rng);
   return true;
 }
 
-bool randompack_pcg64_set_state(uint64_t state, uint64_t inc, randompack_rng *rng) {
+bool randompack_pcg64_set_inc(uint64_t inc[2], randompack_rng *rng) {
   if (!rng) return false;
   rng->last_error = 0;
   if (rng->engine != PCG64) {
-    rng->last_error = "randompack pcg64_set_state: engine is not pcg64";
+    rng->last_error = "randompack pcg64_set_inc: engine is not pcg64";
     return false;
   }
-  pcg64_set_state(state, inc, rng);
-  normalize_state(rng);
-  rand_init(rng);
+  if ((inc[0] & 1) == 0) {
+    rng->last_error = "randompack pcg64_set_inc: increment must be odd";
+    return false;
+  }
+  pcg64_set_inc(inc, rng);
   return true;
 }
 
@@ -386,8 +394,6 @@ bool randompack_philox_set_state(randompack_philox_ctr ctr, randompack_philox_ke
     return false;
   }
   philox_set_state(ctr, key, rng);
-  normalize_state(rng);
-  rand_init(rng);
   return true;
 }
 
@@ -400,7 +406,6 @@ bool randompack_squares_set_state(uint64_t ctr, uint64_t key,
     return false;
   }
   squares_set_state(ctr, key, rng);
-  rand_init(rng);
   return true;
 }
 

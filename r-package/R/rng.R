@@ -104,15 +104,20 @@ NULL
 #'     Enable or disable 53-bit mantissas for double-precision draws.
 #'   }
 #'   \item{`rng$jump(p)`}{
-#'     Jump an xor-family engine ahead by \eqn{2^p} steps. The `x128+` and
-#'     `xoro128++` engines support `p = 32, 64, 96`, while `x256++`, `x256**`,
-#'     and `x256++simd` also support `p = 128` and `p = 192`.
+#'     Jump an xor-family or `ranlux++` engine ahead by \eqn{2^p} steps. The
+#'     `x128+` and `xoro128++` engines support `p = 32, 64, 96`, while
+#'     `x256++`, `x256**`, `x256++simd`, and `ranlux++` also support
+#'     `p = 128` and `p = 192`.
 #'   }
 #'   \item{`rng$duplicate()`}{Duplicate the RNG, preserving its state.}
 #'   \item{`rng$serialize()`}{Serialize the current RNG state as a raw vector.}
 #'   \item{`rng$deserialize(raw_state)`}{Restore state from a raw vector created
 #'     by `serialize()`.}
 #'   \item{`rng$set_state(state)`}{Set the engine state directly (advanced use).}
+#'   \item{`rng$pcg64_set_inc(inc)`}{
+#'     Set the increment of the PCG64 engine. The increment may have length up
+#'     to 4 and shorter vectors are zero-padded.
+#'   }
 #'   \item{`rng$philox_set_state(counter, key)`}{
 #'     Set the state of the Philox engine. The counter may have length up to 8
 #'     and the key up to 4; shorter vectors are zero-padded.

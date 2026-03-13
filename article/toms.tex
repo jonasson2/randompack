@@ -205,7 +205,7 @@ given by \cite{bhattacharjee2022search} and
 \centering
 \begin{minipage}{0.52\columnwidth}
 \centering
-\begin{tabular}{@{}l@{\hspace{2.5em}}l@{}}
+\begin{tabular}{l@{\hspace{2.5em}}l}
 \toprule
 Language/library          & Default engine \\
 \midrule
@@ -335,44 +335,56 @@ for the engines are that they should
 
 \begin{table}
 \caption{Random number generators (engines) implemented in Randompack.
-  The default generator, a SIMD-accelerated version of the
-  xoshiro256++ with short name x256++simd, is not listed.}
+The default generator, a SIMD-accelerated version of the xoshiro256++
+with short name x256++simd, is not listed.}
 \label{tab:engines}
-\begin{tabular}{llclc}
-\hline
-engine & short name & state words & authors & year \\
-\hline
-xoshiro256++   & x256++   & 4 & Vigna and Blackman  & 2019 & \cite{blackman2021scrambled}\\
-xoshiro256**   & x256**   & 4 & Vigna and Blackman  & 2018 & \cite{blackman2021scrambled}\\
-xorshift128+   & x128+    & 2 & Vigna               & 2014 & \cite{vigna2016experimental}\\
-xoroshiro128++ & xoro++   & 2 & Vigna and Blackman  & 2019 & \cite{blackman2021scrambled}\\
-PCG64 DXSM     & pcg64    & 4 & O'Neill             & 2014 & \cite{oneill2014pcg}\\
-squares64      & squares  & 2 & Widynski            & 2021 & \cite{widynski2020squares}\\
-Philox-4x64    & philox   & 6 & Salmon and Moraes   & 2011 & \cite{salmon2011parallel}\\
-sfc64          & sfc64    & 4 & Chris Doty-Humphrey & 2010 & \cite{dotyhumphrey2010pract}\\
-cwg128-64      & cwg128   & 5 & Działa              & 2022 & \cite{dziala2023collatz}\\
-ranlux++       & ranlux++ & 9 & Sibidanov           & 2017 & \\
-ChaCha20       & chacha20 & 6 & Bernstein           & 2008 \\
-\hline
+\begin{tabular}{llcclcc}
+\toprule
+engine & short name & state words & period\textsuperscript{a} & authors & year & reference \\
+\midrule
+xoshiro256++   & x256++   & 4 & $2^{256}-1$        & Vigna and Blackman  & 2019 & \cite{blackman2021scrambled}\\
+xoshiro256**   & x256**   & 4 & $2^{256}-1$        & Vigna and Blackman  & 2018 & \cite{blackman2021scrambled}\\
+xorshift128+   & x128+    & 2 & $2^{128}-1$        & Vigna               & 2014 & \cite{vigna2016experimental}\\
+xoroshiro128++ & xoro++   & 2 & $2^{128}-1$        & Vigna and Blackman  & 2019 & \cite{blackman2021scrambled}\\
+PCG64 DXSM     & pcg64    & 4 & $2^{128}$          & O'Neill             & 2014 & \cite{oneill2014pcg}\\
+squares64      & squares  & 2 & $2^{64}$           & Widynski            & 2021 & \cite{widynski2020squares}\\
+Philox-4x64    & philox   & 6 & $2^{256}$          & Salmon and Moraes   & 2011 & \cite{salmon2011parallel}\\
+sfc64          & sfc64    & 4 & $\approx 2^{255}$  & Chris Doty-Humphrey & 2010 & \cite{dotyhumphrey2010pract}\\
+cwg128-64      & cwg128   & 5 & $2^{64}$           & Działa              & 2022 & \cite{dziala2023collatz}\\
+ranlux++       & ranlux++ & 9 & $\approx 2^{570}$  & Sibidanov           & 2017 & \cite{sibidanov2017ranluxpp}\\
+ChaCha20       & chacha20 & 6 & $2^{35}$           & Bernstein           & 2008 & \cite{bernstein2008chacha}\\
+\bottomrule
 \end{tabular}
+\par\medskip
+\centering
+\begin{minipage}{\dimexpr\linewidth-2cm\relax}
+\footnotesize
+\raggedright
+\textsuperscript{a}For PCG64 DXSM the listed period is for each increment (out
+of $2^{127}$), and for Philox and squares64 it is for each key (out of
+$2^{128}$ and $2^{64}$ possible, respectively).
+\end{minipage}
 \end{table}
 
 Table \ref{tab:engines} lists the selected engines. A few of them do
 not fulfill all the inclusion criteria: xorshift128+ does not reliably
 pass BigCrush, but it is very efficient, and important in the
-evolution of the xor-family, ChaCha20 is not particularly efficient
-but it is included to provide one cryptographically secure engine, and
-sfc64 does not naturally provide substreams, but it is both fast and
-simple.
+evolution of the xor-family. ChaCha20 is not particularly efficient
+and its period is relatively short, but it is included to provide one
+cryptographically secure engine, and sfc64 does not naturally provide
+substreams, but it is both fast and simple, moreover. Interestingly,
+sfc64 is planned to become the default random number generator in a
+forthcoming release of the Los Alamos MCNP radiation-transport code
+\cite{josey2023reassessing,gibson2025mcnpnewsletterq1}.
 
 Many of the engines from Table \ref{tab:language-rngs} appear here,
-but some are missing. Among those is the ``winner'', the Mersenne
-Twister. Its state is 312 64-bit words, 35 times more than the largest
-Randompack engine (ranlux++). Moreover it fails BigCrush. For the
-other generators not included, XORWOW does not pass BigCrush well, but
-three others, Threefry, Java's LXM generator, and MRG32k3a, are
-stronger candidates for later inclusion. They are high-quality but
-probably somewhat slower than most of those present.
+but some are missing. Among those is the most popular one, the
+Mersenne Twister. Its state is 312 64-bit words, 35 times more than
+the largest Randompack engine (ranlux++). Moreover it fails BigCrush.
+For the other generators not included, XORWOW does not pass BigCrush
+reliably, but three others, Threefry, Java's LXM generator, and
+MRG32k3a, are stronger candidates for later inclusion. They are
+high-quality but probably somewhat slower than most of those present.
 
 
 

@@ -5,7 +5,7 @@ project('randompack', 'c',
     'c_std=c11',
     'warning_level=3',
     'buildtype=debug',
-    'default_library=both',
+    'default_library=shared',
   ]
 )
 

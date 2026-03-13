@@ -51,6 +51,7 @@ use, intrinsic :: ieee_arithmetic, only: ieee_is_finite, ieee_set_flag, ieee_und
   real :: af(7,11)
   integer(c_int32_t) :: iv(50), im(6,9)
   integer(c_int64_t) :: iv64(50)
+  integer(c_int64_t) :: inc_pcg(2)
   integer(c_int8_t), allocatable :: bytes(:)
 
   call engines(names, desc)
@@ -283,6 +284,17 @@ use, intrinsic :: ieee_arithmetic, only: ieee_is_finite, ieee_set_flag, ieee_und
       "philox_set_state repeatability")
     call p1%free()
     call p2%free()
+  end if
+
+  if (has_pcg) then
+    call p1%create("pcg64")
+    call p1%set_state([1_c_int64_t, 0_c_int64_t, 1_c_int64_t, 0_c_int64_t])
+    inc_pcg = [3_c_int64_t, 5_c_int64_t]
+    call p1%pcg64_set_inc(inc_pcg)
+    call p1%unif(xe)
+    call assert(all(0 <= xe .and. xe < 1 .and. ieee_is_finite(xe)), &
+      "pcg64_set_inc")
+    call p1%free()
   end if
 
   call r1%free()

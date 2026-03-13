@@ -147,26 +147,31 @@ static void test_philox_set_state(void) {
   randompack_free(rng);
 }
 
-static void test_pcg_set_state(void) {
+static void test_pcg_set_increment(void) {
   uint64_t c1 = 1234567ULL;
-  uint64_t pcgstate = c1*c1*c1;
-  uint64_t inc = c1*c1;
+  uint64_t state[4] = {c1*c1*c1, 0, 1, 0};
+  uint64_t inc[2] = {c1*c1 | 1ULL, c1};
+  uint64_t inc_even[2] = {2, c1};
   randompack_rng *rng = make_rng("pcg64");
-  bool ok = randompack_pcg64_set_state(pcgstate, inc, rng);
+  bool ok = randompack_set_state(state, LEN(state), rng);
+  check_success(ok, rng);
+  ok = randompack_pcg64_set_inc(inc, rng);
   check_success(ok, rng);
   uint64_t a[4], b[4];
   ok = randompack_uint64(a, LEN(a), 0, rng);
   check_success(ok, rng);
-  ok = randompack_pcg64_set_state(pcgstate, inc, rng);
+  ok = randompack_set_state(state, LEN(state), rng);
+  check_success(ok, rng);
+  ok = randompack_pcg64_set_inc(inc, rng);
   check_success(ok, rng);
   ok = randompack_uint64(b, LEN(b), 0, rng);
   check_success(ok, rng);
   CHECK_EQUALV(a, b, LEN(a));
+  ok = randompack_pcg64_set_inc(inc_even, rng);
+  check_failure(ok, rng);
   randompack_free(rng);
   rng = make_rng("squares");
-  ok = randompack_pcg64_set_state(pcgstate, inc, rng);
-  check_failure(ok, rng);
-  ok = randompack_pcg64_set_state(pcgstate, 2, rng);
+  ok = randompack_pcg64_set_inc(inc, rng);
   check_failure(ok, rng);
   randompack_free(rng);
 }
@@ -199,5 +204,5 @@ void TestSetState(void) {
   test_buf_reset();
   test_philox_set_state();
   test_squares_set_state();
-  test_pcg_set_state();
+  test_pcg_set_increment();
 }

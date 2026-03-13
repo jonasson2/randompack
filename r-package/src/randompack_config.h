@@ -55,9 +55,9 @@ static inline bool is_little_endian(void) {
   return *(uint8_t *)&one == 1;
 }
 
-static inline void copy16(void *dst, void *src, int n) { memcpy(dst, src, n*2); }
-static inline void copy32(void *dst, void *src, int n) { memcpy(dst, src, n*4); }
-static inline void copy64(void *dst, void *src, int n) { memcpy(dst, src, n*8); }
+static inline void copy16(void *dst, const void *src, int n) { memcpy(dst, src, n*2); }
+static inline void copy32(void *dst, const void *src, int n) { memcpy(dst, src, n*4); }
+static inline void copy64(void *dst, const void *src, int n) { memcpy(dst, src, n*8); }
 
 #ifndef BUFSIZE
 #define BUFSIZE 144

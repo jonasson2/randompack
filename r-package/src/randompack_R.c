@@ -193,6 +193,34 @@ SEXP randompack_set_state_R(SEXP ext, SEXP state_){
   return R_NilValue;
 }
 
+SEXP randompack_pcg64_set_inc_R(SEXP ext, SEXP inc_){
+  randompack_rng *rng = (randompack_rng *)R_ExternalPtrAddr(ext);
+  if (!rng) Rf_error("RNG pointer is NULL");
+  if (!Rf_isNumeric(inc_))
+    Rf_error("inc must be a numeric vector");
+  R_xlen_t n = XLENGTH(inc_);
+  if (n <= 0 || n > 4)
+    Rf_error("inc must have length between 1 and 4");
+  uint64_t inc[2] = {0, 0};
+  for (R_xlen_t i = 0; i < n; i++) {
+    uint32_t w = read_u32_num(inc_, i, "inc");
+    if (i < 2) {
+      if (i & 1) inc[0] |= ((uint64_t)w << 32);
+      else inc[0] |= w;
+    }
+    else {
+      if (i & 1) inc[1] |= ((uint64_t)w << 32);
+      else inc[1] |= w;
+    }
+  }
+  bool ok = randompack_pcg64_set_inc(inc, rng);
+  if (!ok) {
+    char *err = randompack_last_error(rng);
+    Rf_error("%s", err ? err : "randompack_pcg64_set_inc failed");
+  }
+  return R_NilValue;
+}
+
 SEXP randompack_philox_set_state_R(SEXP ext, SEXP counter_, SEXP key_){
   randompack_rng *rng = (randompack_rng *)R_ExternalPtrAddr(ext);
   if (!rng) Rf_error("RNG pointer is NULL");

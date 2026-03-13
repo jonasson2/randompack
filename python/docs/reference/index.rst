@@ -39,7 +39,7 @@ Rng Methods
    Rng.deserialize
    Rng.squares_set_state
    Rng.philox_set_state
-   Rng.pcg64_set_state
+   Rng.pcg64_set_inc
    Rng.set_state
 
    Rng.unif
@@ -81,7 +81,7 @@ Rng Methods
    generated/randompack.Rng.mvn.rst
    generated/randompack.Rng.normal.rst
    generated/randompack.Rng.pareto.rst
-   generated/randompack.Rng.pcg64_set_state.rst
+   generated/randompack.Rng.pcg64_set_inc.rst
    generated/randompack.Rng.perm.rst
    generated/randompack.Rng.philox_set_state.rst
    generated/randompack.Rng.randomize.rst

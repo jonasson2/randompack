@@ -37,7 +37,6 @@ if echo "$target" | grep -q 'apple-darwin'; then
   fi
 
   AR=${target}-ar
-  RANLIB=${target}-ranlib
 
   $CC -std=c11 $COPTS $CDEFS -I$SRC/src -c $SRC/src/printX.c -o $BUILD/printX.c.o
   $CC -std=c11 $COPTS $CDEFS -I$SRC/src -c $SRC/src/rp_dpstrf.c -o $BUILD/rp_dpstrf.c.o
@@ -47,10 +46,6 @@ if echo "$target" | grep -q 'apple-darwin'; then
     $BUILD/randompack.c.o $BUILD/printX.c.o $BUILD/rp_dpstrf.c.o \
     -framework Accelerate -lm \
     -Wl,-install_name,@rpath/librandompack.dylib
-
-  $AR rcs $prefix/lib/librandompack.a \
-    $BUILD/randompack.c.o $BUILD/printX.c.o $BUILD/rp_dpstrf.c.o
-  $RANLIB $prefix/lib/librandompack.a || true
 
   cp $SRC/src/randompack.h $prefix/include/
   cp $SRC/src/randompack_config.h $prefix/include/
@@ -68,6 +63,7 @@ else
     --cross-file=${MESON_TARGET_TOOLCHAIN} \
     --buildtype=release \
     --prefix=${prefix} \
+    -Ddefault_library=shared \
     -Dblas=openblas \
     -Dbuild_examples=false \
     -Dbuild_tests=false \

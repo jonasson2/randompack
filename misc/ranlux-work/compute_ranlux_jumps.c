@@ -55,7 +55,16 @@ static bool same9(uint64_t x[9], uint64_t y[9]) {
 static void print9(char *name, uint64_t x[9]) {
   printf("static const uint64_t %s[9] = {\n", name);
   for (int i = 0; i < 9; i++) {
-    printf("  0x%016llxULL%s\n", (unsigned long long)x[i], i < 8 ? "," : "");
+    if (i % 3 == 0) {
+      printf("  ");
+    }
+    printf("0x%016llxULL%s", (unsigned long long)x[i], i < 8 ? "," : "");
+    if (i % 3 == 2 || i == 8) {
+      printf("\n");
+    }
+    else {
+      printf(" ");
+    }
   }
   printf("};\n\n");
 }

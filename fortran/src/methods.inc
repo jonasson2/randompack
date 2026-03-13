@@ -1047,6 +1047,15 @@ subroutine rp_philox_set_state(self, ctr, key)
   if (.not. c_ok) error stop rp_error_message(self, "philox_set_state")
 end subroutine
 
+subroutine rp_pcg64_set_inc(self, inc)
+  class(randompack_rng), intent(inout) :: self
+  integer(c_int64_t), intent(in) :: inc(2)
+  logical(c_bool) :: c_ok
+  if (.not. c_associated(self%p)) error stop rp_error_message(self, "pcg64_set_inc")
+  c_ok = crp_pcg64_set_inc(inc, self%p)
+  if (.not. c_ok) error stop rp_error_message(self, "pcg64_set_inc")
+end subroutine
+
 subroutine rp_squares_set_state32(self, ctr, key)
   class(randompack_rng), intent(inout) :: self
   integer(c_int32_t), intent(in) :: ctr

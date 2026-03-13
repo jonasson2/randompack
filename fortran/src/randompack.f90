@@ -120,6 +120,7 @@ contains
   procedure, private :: set_state64
   generic :: set_state => set_state32, set_state64
   procedure :: philox_set_state => rp_philox_set_state
+  procedure :: pcg64_set_inc => rp_pcg64_set_inc
   procedure, private :: squares_set_state32 => rp_squares_set_state32
   procedure, private :: squares_set_state64 => rp_squares_set_state64
   generic :: squares_set_state => squares_set_state32, squares_set_state64

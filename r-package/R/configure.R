@@ -63,6 +63,13 @@ methods_configure <- list(
     invisible(self)
   },
 
+  pcg64_set_inc = function(inc) {
+    if (is.null(self$ptr)) stop("RNG is not initialized")
+    inc <- as_u32_vec(inc, "inc", max_len = 4L)
+    .Call("randompack_pcg64_set_inc_R", self$ptr, inc, PACKAGE = "randompack")
+    invisible(self)
+  },
+
   philox_set_state = function(counter, key) {
     if (is.null(self$ptr)) stop("RNG is not initialized")
     counter <- as_u32_vec(counter, "counter", max_len = 8L)

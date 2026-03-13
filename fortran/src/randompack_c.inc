@@ -382,6 +382,12 @@ interface
     type(c_ptr), value :: rngp
   end function
 
+  logical(c_bool) function crp_pcg64_set_inc(inc, rngp) bind(C, name="randompack_pcg64_set_inc")
+    import :: c_ptr, c_bool, c_int64_t
+    integer(c_int64_t), intent(in) :: inc(2)
+    type(c_ptr), value :: rngp
+  end function
+
   logical(c_bool) function crp_set_state(state, nstate, rngp) bind(C, name="randompack_set_state")
     import :: c_ptr, c_bool, c_int64_t, c_int
     integer(c_int64_t) :: state(*)

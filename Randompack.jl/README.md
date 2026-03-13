@@ -77,15 +77,19 @@ random_mvn!(rng, Z, Sigma)                       # Sigma must be 2×2
 ```julia
 rngx = rng_create("x256**")
 rngp = rng_create("philox")
+rngq = rng_create("pcg64")
+rngr = rng_create("ranlux")
 Randompack.set_state!(rngx; state=[1,2,3,4])                  # general state setter
-Randompack.jump!(rngp, 128)                                   # jump the state by 2^128 steps
-Randompack.philox_set_state!(rngp; ctr=[1,2,3,4], key=[4,6])  # engine-specific state setter
+Randompack.philox_set_state!(rngp; ctr=[1,2,3,4], key=[4,6])  # set Philox counter & key
+Randompack.jump!(rngp, 128)                                   # jump state by 2^128 steps
+Randompack.pcg64_set_inc!(rngq; inc=[3, 5])                   # change PCG increment
+Randompack.jump!(rngr, 32)                                    # jump state by 2^32 steps
 
 rngy = rng_create("x256**")                      # engines must match
 state = Randompack.serialize(rngx)               # copy engine state of rngx
 Randompack.deserialize!(rngy, state)             # and put in rngy
 
-Randompack.full_mantissa!(rng, true)      # enable full 53-bit mantissa (52-bit is default)
+Randompack.full_mantissa!(rng, true)      # enable 53-bit mantissa (52-bit is default)
 rng = rng_create(bitexact=true)           # make agreement across platforms exact
 rng = rng_create("philox"; bitexact=true) # exact agreement with specified engine
 ``` 

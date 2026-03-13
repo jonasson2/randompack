@@ -262,27 +262,27 @@ function squares_set_state!(rng::RNG; ctr::Integer, key::Integer)
 end
 
 """
-    Randompack.pcg64_set_state!(rng::RNG; state::Integer, inc::Integer)
+    Randompack.pcg64_set_inc!(rng::RNG; inc)
 
-Set PCG64 state and increment (low 64 bits only).
+Set the 128-bit PCG64 increment.
 
 Values are range-checked and converted to `UInt64` before calling the C
-library. The high 64 bits are set to zero. Throws if the RNG is not a
-pcg64 engine.
+library. `inc` must be a length-2 vector `[low, high]` and the low word must
+be odd. Throws if the RNG is not a pcg64 engine.
 
 # Examples
 ```julia
-Randompack.pcg64_set_state!(rng; state=1, inc=2)
+Randompack.pcg64_set_inc!(rng; inc=[3, 5])
 ```
 
 """
-function pcg64_set_state!(rng::RNG; state::Integer, inc::Integer)
+function pcg64_set_inc!(rng::RNG; inc)
   rng.ptr == C_NULL && throw(ErrorException("RNG pointer is NULL"))
-  st = _u64_scalar_checked(state)
-  ic = _u64_scalar_checked(inc)
-  ok = ccall(_sym(:randompack_pcg64_set_state), Bool,
-             (UInt64, UInt64, RNGPtr), st, ic, rng.ptr)
-  _check_ok(ok, rng.ptr, "randompack_pcg64_set_state failed")
+  length(inc) == 2 || throw(ArgumentError("inc must have length 2"))
+  c_inc = _u64_vec_from_ints(inc)
+  ok = ccall(_sym(:randompack_pcg64_set_inc), Bool,
+             (Ptr{UInt64}, RNGPtr), c_inc, rng.ptr)
+  _check_ok(ok, rng.ptr, "randompack_pcg64_set_inc failed")
   return nothing
 end
 

@@ -264,9 +264,8 @@ bool randompack_deserialize( // Restore an RNG from an opaque byte buffer
   randompack_rng *rng     // out     target RNG (must be allocated)
 );
 
-bool randompack_pcg64_set_state( // Set PCG state and increment (low 64 bits)
-  uint64_t state,          // in      PCG state low 64 bits
-  uint64_t inc,            // in      PCG increment low 64 bits
+bool randompack_pcg64_set_inc( // Set PCG increment (state unchanged)
+  uint64_t inc[2],         // in      128-bit increment {low, high}; low must be odd
   randompack_rng *rng      // in/out  target RNG
 );
 
@@ -298,7 +297,7 @@ bool randompack_bitexact( // Use bitexact log/exp (default false)
   bool enable           // in      true → openlibm, false → system/vforce/sleef
 );
 
-bool randompack_jump( // Jump xor-family rng by 2^p steps, false on error
+bool randompack_jump( // Jump xor-family or ranlux rng by 2^p steps, false on error
   int p,               // in      Jump exponent (32/64/96/128/192)
   randompack_rng *rng  // in/out  Random number generator
 );

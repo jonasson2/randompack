@@ -151,7 +151,7 @@ end
   end
 end
 
-@testset "pcg64_set_state!" begin
+@testset "pcg64_set_inc!" begin
   has_pcg = true
   try
     rng_create("pcg64")
@@ -161,11 +161,14 @@ end
   if has_pcg
     rng1 = rng_create("pcg64")
     rng2 = rng_create("pcg64")
-    Randompack.pcg64_set_state!(rng1; state=1, inc=2)
-    Randompack.pcg64_set_state!(rng2; state=1, inc=2)
+    Randompack.set_state!(rng1; state=[1, 0, 1, 0])
+    Randompack.set_state!(rng2; state=[1, 0, 1, 0])
+    Randompack.pcg64_set_inc!(rng1; inc=[3, 5])
+    Randompack.pcg64_set_inc!(rng2; inc=[3, 5])
     x1 = random_unif(rng1)
     x2 = random_unif(rng2)
     @test x1 == x2
+    @test_throws ErrorException Randompack.pcg64_set_inc!(rng1; inc=[2, 5])
   else
     @test true
   end

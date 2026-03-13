@@ -183,6 +183,7 @@ static void set_state(uint64_t *state, int nstate, randompack_rng *rng) {
       fill_stream_states_with_jump(rng);
     }
   }
+  rand_init(rng);
 }
 
 static void philox_set_state(randompack_philox_ctr ctr, randompack_philox_key key,
@@ -199,7 +200,8 @@ static void squares_set_state(uint64_t ctr, uint64_t key, randompack_rng *rng) {
   set_state(state, LEN(state), rng);
 }
 
-static void pcg64_set_state(uint64_t pcgstate, uint64_t inc, randompack_rng *rng) {
-  uint64_t state[4] = {pcgstate, 0, inc, 0};
-  set_state(state, LEN(state), rng);
+static void pcg64_set_inc(uint64_t inc[2], randompack_rng *rng) {
+  rng->state.u64[2] = inc[0];
+  rng->state.u64[3] = inc[1];
+  rand_init(rng);
 }

@@ -117,11 +117,21 @@ numeric vector \code{spawn_key}.
 \item{\code{rng$full_mantissa(enable = TRUE)}}{
 Enable or disable 53-bit mantissas for double-precision draws.
 }
+\item{\code{rng$jump(p)}}{
+Jump an xor-family or \code{ranlux++} engine ahead by \eqn{2^p} steps. The
+\code{x128+} and \code{xoro128++} engines support \code{p = 32, 64, 96}, while
+\code{x256++}, \code{x256**}, \code{x256++simd}, and \code{ranlux++} also
+support \code{p = 128} and \code{p = 192}.
+}
 \item{\code{rng$duplicate()}}{Duplicate the RNG, preserving its state.}
 \item{\code{rng$serialize()}}{Serialize the current RNG state as a raw vector.}
 \item{\code{rng$deserialize(raw_state)}}{Restore state from a raw vector created
 by \code{serialize()}.}
 \item{\code{rng$set_state(state)}}{Set the engine state directly (advanced use).}
+\item{\code{rng$pcg64_set_inc(inc)}}{
+Set the increment of the PCG64 engine. The increment may have length up to 4
+and shorter vectors are zero-padded.
+}
 \item{\code{rng$philox_set_state(counter, key)}}{
 Set the state of the Philox engine. The counter may have length up to 8
 and the key up to 4; shorter vectors are zero-padded.
