@@ -23,5 +23,6 @@ esac
 
 meson setup release \
   --prefix "$PWD/install" \
+  -Dlibdir=lib \
   -Dbuildtype="$buildtype" \
   "$@"

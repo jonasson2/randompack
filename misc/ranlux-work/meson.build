@@ -16,13 +16,15 @@ if host_machine.system() != 'windows'
 endif
 
 randompack_prefix = join_paths(meson.project_source_root(), '../../install')
+randompack_libdir = join_paths(randompack_prefix, 'lib')
+randompack_lib = cc.find_library('randompack', dirs: [randompack_libdir],
+  required: true, static: true)
+blas_dep = dependency('openblas', required: false)
 randompack_dep = declare_dependency(
   compile_args : ['-I' + join_paths(randompack_prefix, 'include/randompack')],
-  link_args : [
-    join_paths(randompack_prefix, 'lib/librandompack.dylib'),
-    '-Wl,-rpath,' + join_paths(randompack_prefix, 'lib'),
-  ],
+  dependencies : [randompack_lib, blas_dep],
 )
+
 
 executable(
   'compute_ranlux_jumps',

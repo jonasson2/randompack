@@ -100,7 +100,7 @@ blas_explicit = (blas_option != 'builtin' and blas_option != 'auto')
 if blas_option == 'builtin'
   using_builtin_blas = true
 elif blas_option == 'auto' or blas_option == 'system'
-  blas_backends = ['accelerate', 'mkl', 'openblas']
+  blas_backends = ['accelerate', 'openblas', 'mkl']
 else
   blas_backends = [blas_option]
 endif
