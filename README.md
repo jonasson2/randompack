@@ -85,7 +85,7 @@ engine the names are case-insensitive. In the following table W denotes the numb
 - pcg64       4  PCG64 DXSM (O’Neill, 2014)
 - squares     2  squares64 (Widynski, 2021)
 - philox      6  Philox-4×64 (Salmon and Moraes, 2011)
-- sfc64       4  sfc64 (Chris Doty-Humphrey, 2013)
+- sfc64       4  sfc64 (Chris Doty-Humphrey, 2010)
 - cwg128      5  cwg128-64 (Działa, 2022)
 - ranlux++    9  ranlux++ (Sibidanov, 2017)
 - chacha20    6  ChaCha20 (Bernstein, 2008)

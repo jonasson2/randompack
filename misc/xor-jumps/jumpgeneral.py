@@ -3,6 +3,8 @@
 Compute jump polynomial for xoshiro256++ for arbitrary N steps.
 Uses square-and-multiply in GF(2)[x] / char_poly(x).
 
+Also computes xorshift128+ and xoroshiro128++ jumps.
+
 We don't need char_poly explicitly — we work directly with the
 transition matrix T and compute T^N via matrix square-and-multiply,
 then extract the jump polynomial from the resulting matrix.

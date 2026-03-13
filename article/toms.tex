@@ -25,12 +25,12 @@
   columns=fixed,
   basewidth=0.55em,   % horizontal spacing between characters
   lineskip=-2pt,      % vertical spacing between lines
-  aboveskip=1+em,
+  aboveskip=1em,
   frame=single,
   framerule=0.5pt,
   framesep=3pt,
-  xleftmargin=1cm,
-  xrightmargin=1cm
+  xleftmargin=4em,
+  xrightmargin=4em
 }
 
 %% BibTeX command
@@ -135,7 +135,7 @@ tests of RNGs in 1969 in \emph{The Art of Computer Programming}
 suite in 1996 \cite{marsaglia1996diehard}, DieHarder in 2006
 \cite{Brown2006DieHarder}, TestU01 in 2007 \cite{lecuyer2007testu01}
 with its well-known SmallCrush, Crush, and BigCrush batteries, and
-PractRand \cite{dotyhumphrey2010practrand}. TestU01 exposed weaknesses
+PractRand \cite{dotyhumphrey2010pract}. TestU01 exposed weaknesses
 in many widely used RNGs, which failed its crush-batteries. More
 recently, Foreman et al. \cite{foreman2024statistical} described an
 openly available RNG testing environment built on existing suites. In
@@ -144,28 +144,29 @@ the Atlantic developed methods for testing cryptographic RNGs
 \cite{schindler2002evaluation,rukhin2010nist,saarinen2022sp}.
 
 We proceed with the summary of RNG development where we left off with
-the widely used Mersenne Twister (MT; Table~\ref{tab:language-rngs}). One of the first RNG
-to offer independent streams, paving the road for the subsequent
-advances was MRG32k3a \cite{lecuyer1999good,lecuyer2002streams}, with
-a period of $2^{191}$. The WELL generators \cite{panneton2006well} were
-intended to (and did) improve on the MT statistical quality although
-they did not obtain widespread adoption in software. The oposite can
-be said of the RNGs sometimes called the xor-family, pinoeered by
-Marsaglia in 2003 with xorshift and XORWOW
-\cite{marsaglia2003xorshift}, and further developed, primarily by
-Vigna, in a series of articles
+the widely used Mersenne Twister (MT; Table~\ref{tab:language-rngs}).
+One of the first RNG to offer independent streams, paving the road for
+the subsequent advances was MRG32k3a
+\cite{lecuyer1999good,lecuyer2002streams}, with a period of $2^{191}$.
+The WELL generators \cite{panneton2006well} were intended to (and did)
+improve on the MT statistical quality although they did not obtain
+widespread adoption in software. The oposite can be said of the RNGs
+sometimes called the xor-family, pinoeered by Marsaglia in 2003 with
+xorshift and XORWOW \cite{marsaglia2003xorshift}, and further
+developed, primarily by Vigna, in a series of articles
 \citep{panneton2005xorshift,vigna2016experimental,vigna2017further,
   blackman2021scrambled}. The current flagships are the closely
 related xoshiro256++ and xoshiro256**, that have been adopted as
-default generators by Rust, Julia, C\#, and gfortran (Table~\ref{tab:language-rngs}). All
-generators in the xor family support so-called \emph{jumping}, whereby
-the state can be advanced efficiently by very large amounts, such as
-$2^{128}$ steps, to create independent streams. An important milestone
-came in 2011 with the Random123 library by Salmon and Moraes
-\cite{salmon2011parallel}. Its counter-based Threefry and Philox
-generators have become popular for simulation on GPUs and are the
-default in several systems (Table~\ref{tab:language-rngs}). They allow the generation of a
-vast number of independent streams. Another important development was
+default generators by Rust, Julia, C\#, and gfortran
+(Table~\ref{tab:language-rngs}). All generators in the xor family
+support so-called \emph{jumping}, whereby the state can be advanced
+efficiently by very large amounts, such as $2^{128}$ steps, to create
+independent streams. An important milestone came in 2011 with the
+Random123 library by Salmon and Moraes \cite{salmon2011parallel}. Its
+counter-based Threefry and Philox generators have become popular for
+simulation on GPUs and are the default in several systems
+(Table~\ref{tab:language-rngs}). They allow the generation of a vast
+number of independent streams. Another important development was
 O'Neill's PCG family (2014) \cite{oneill2014pcg}. It also supports
 many streams via a stream-selector termed \emph{increment}. A 64-bit
 version of it has been adopted as NumPy's default RNG engine. And one
@@ -174,9 +175,9 @@ object-oriented approach implemented in SplitMix (2014)
 \cite{steele2014splitmix} and refined in the LXM family (2021)
 \cite{steele2021lxm}. These RNGs provide both \emph{generate} and
 \emph{split} as primitive operations, the latter creating two
-independent generators. Java's default RNG is from the LXM family, while
-SplitMix has primarily found application in spreading an initial seed
-across the state of other generators.
+independent generators. Java's default RNG is from the LXM family,
+while SplitMix has primarily found application in spreading an initial
+seed across the state of other generators.
 
 Seeding an RNG is an important subject that must not be neglected.
 Some RNGs can show poor statistical behaviour if seeded directly with
@@ -201,7 +202,6 @@ given by \cite{bhattacharjee2022search} and
 \caption{Default random number generators in selected languages and
   libraries. The generators are discussed briefly in the main text.}
 \label{tab:language-rngs}
-\small
 \centering
 \begin{minipage}{0.52\columnwidth}
 \centering
@@ -299,7 +299,7 @@ underlying engine, its state, and other internal information needed by
 the library.
 
 The following minimal example creates an RNG with the default engine,
-obtained by passing \code{0} to \code{randompack_create}. Then five
+obtained by passing \texttt{0} to \texttt{randompack\_create}. Then five
 samples from the standard normal distribution are drawn and printed out.
 
 \begin{lstlisting}[style=tightcode]
@@ -316,9 +316,65 @@ int main(void) {
 \end{lstlisting}
 
 A specific engine can be selected by name, e.g. 
-\code{randompack_create(\"ranlbux++\")}. To seed the RNG after
-creation use for example \code{randompack_seed(42, 0, rng)}. The
+\texttt{randompack\_create(\"ranlbux++\")}. To seed the RNG after
+creation use for example \texttt{randompack\_seed(42, 0, rng)}. The
 second argument is a spawn key (0 means none is specified).
+
+\subsection{Implemented engines}
+Randompack implements 11 different PRNG random generators or engines.
+All these date from the last 20 years. The primary inclusion criteria
+for the engines are that they should
+
+\begin{enumerate}
+\item have period at least $2^{64}$,
+\item have a compact state size,
+\item pass rigorous statistical tests, including BigCrush,
+\item be computationally efficient, and
+\item support the construction of independent substreams.
+\end{enumerate}
+
+\begin{table}
+\caption{Random number generators (engines) implemented in Randompack.
+  The default generator, a SIMD-accelerated version of the
+  xoshiro256++ with short name x256++simd, is not listed.}
+\label{tab:engines}
+\begin{tabular}{llclc}
+\hline
+engine & short name & state words & authors & year \\
+\hline
+xoshiro256++   & x256++   & 4 & Vigna and Blackman  & 2019 & \cite{blackman2021scrambled}\\
+xoshiro256**   & x256**   & 4 & Vigna and Blackman  & 2018 & \cite{blackman2021scrambled}\\
+xorshift128+   & x128+    & 2 & Vigna               & 2014 & \cite{vigna2016experimental}\\
+xoroshiro128++ & xoro++   & 2 & Vigna and Blackman  & 2019 & \cite{blackman2021scrambled}\\
+PCG64 DXSM     & pcg64    & 4 & O'Neill             & 2014 & \cite{oneill2014pcg}\\
+squares64      & squares  & 2 & Widynski            & 2021 & \cite{widynski2020squares}\\
+Philox-4x64    & philox   & 6 & Salmon and Moraes   & 2011 & \cite{salmon2011parallel}\\
+sfc64          & sfc64    & 4 & Chris Doty-Humphrey & 2010 & \cite{dotyhumphrey2010pract}\\
+cwg128-64      & cwg128   & 5 & Działa              & 2022 & \cite{dziala2023collatz}\\
+ranlux++       & ranlux++ & 9 & Sibidanov           & 2017 & \\
+ChaCha20       & chacha20 & 6 & Bernstein           & 2008 \\
+\hline
+\end{tabular}
+\end{table}
+
+Table \ref{tab:engines} lists the selected engines. A few of them do
+not fulfill all the inclusion criteria: xorshift128+ does not reliably
+pass BigCrush, but it is very efficient, and important in the
+evolution of the xor-family, ChaCha20 is not particularly efficient
+but it is included to provide one cryptographically secure engine, and
+sfc64 does not naturally provide substreams, but it is both fast and
+simple.
+
+Many of the engines from Table \ref{tab:language-rngs} appear here,
+but some are missing. Among those is the ``winner'', the Mersenne
+Twister. Its state is 312 64-bit words, 35 times more than the largest
+Randompack engine (ranlux++). Moreover it fails BigCrush. For the
+other generators not included, XORWOW does not pass BigCrush well, but
+three others, Threefry, Java's LXM generator, and MRG32k3a, are
+stronger candidates for later inclusion. They are high-quality but
+probably somewhat slower than most of those present.
+
+
 
 
 %    2.3 Engines, streams, and seeding
