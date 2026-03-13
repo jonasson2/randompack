@@ -74,16 +74,21 @@ static void report_mismatch(char *label, int p, uint64_t got[9], uint64_t want[9
 static bool verify_jump_on_state(int p, uint64_t jump[9], uint64_t start[9], char *label) {
   uint64_t direct[9], jumped[9];
   uint64_t steps;
+  uint64_t step_log;
   uint64_t t0, t1;
   if (p < 0 || p > 32) {
     fprintf(stderr, "direct check only implemented for p <= 32\n");
     return false;
   }
   steps = 1ULL << p;
+  step_log = 1ULL << 28;
   copy64(direct, start, 9);
   copy64(jumped, start, 9);
   t0 = clock_nsec();
   for (uint64_t i = 0; i < steps; i++) {
+    if (p == 32 && i > 0 && i % step_log == 0) {
+      fprintf(stderr, "p=32 %s %.1f%%\n", label, 100.0*(double)i/(double)steps);
+    }
     step_state(direct);
   }
   t1 = clock_nsec();
@@ -97,18 +102,18 @@ static bool verify_jump_on_state(int p, uint64_t jump[9], uint64_t start[9], cha
   return true;
 }
 
-static bool parse_check_arg(char *arg, bool *check16, bool *check20) {
+static bool parse_check_arg(char *arg, bool *check16, bool *check32) {
   if (strcmp(arg, "16") == 0) {
     *check16 = true;
     return true;
   }
-  if (strcmp(arg, "20") == 0) {
-    *check20 = true;
+  if (strcmp(arg, "32") == 0) {
+    *check32 = true;
     return true;
   }
   if (strcmp(arg, "all") == 0) {
     *check16 = true;
-    *check20 = true;
+    *check32 = true;
     return true;
   }
   return false;
@@ -118,18 +123,18 @@ int main(int argc, char **argv) {
   // Precompute ranlux jump constants. 
   uint64_t jumps[LEN(jump_p)][9];
   uint64_t cur[9], x0[9], x1[9];
-  bool check16 = false, check20 = false;
+  bool check16 = false, check32 = false;
   int pcur = 0;
   for (int i = 1; i < argc; i++) {
     if (strcmp(argv[i], "-c") == 0 || strcmp(argv[i], "--check") == 0) {
-      if (i + 1 >= argc || !parse_check_arg(argv[i + 1], &check16, &check20)) {
-        fprintf(stderr, "usage: %s [-c 16|20|all]\n", argv[0]);
+      if (i + 1 >= argc || !parse_check_arg(argv[i + 1], &check16, &check32)) {
+        fprintf(stderr, "usage: %s [-c 16|32|all]\n", argv[0]);
         return 1;
       }
       i++;
     }
     else {
-      fprintf(stderr, "usage: %s [-c 16|20|all]\n", argv[0]);
+      fprintf(stderr, "usage: %s [-c 16|32|all]\n", argv[0]);
       return 1;
     }
   }
@@ -141,11 +146,11 @@ int main(int argc, char **argv) {
     }
     copy64(jumps[i], cur, 9);
   }
-  if (check16 || check20) {
+  if (check16 || check32) {
     set_identity(x0);
     set_sample_state(x1);
     for (int i = 0; i < LEN(jump_p); i++) {
-      if ((jump_p[i] == 16 && check16) || (jump_p[i] == 20 && check20)) {
+      if ((jump_p[i] == 16 && check16) || (jump_p[i] == 32 && check32)) {
         if (!verify_jump_on_state(jump_p[i], jumps[i], x0, "identity")) return 1;
         if (!verify_jump_on_state(jump_p[i], jumps[i], x1, "sample")) return 1;
       }

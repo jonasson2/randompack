@@ -296,9 +296,9 @@ static void TestXoshiro256ssAgainstRust(void) {
 }
 
 static void TestRanluxppAgainstJirka(void) {
-  // Reference values obtained from an external ranlux++ implementation.
-  // The reference program seeds state with 1..9, advances 100 states,
-  // and xors all outputs to get xorsum and lastval.
+  // Reference values can be reproduced with misc/ranlux-work/ref_ranlux_portable.c.
+  // That program sets x = {1..9}, advances 100 states in ranluxpp-portable,
+  // xors the 900 output words, and records the last word.
   uint64_t xorsum = 0xfe4bac4d5cedb127ULL, lastval = 0xee4ef07d92e6614dULL;
   uint64_t init[9] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
   uint64_t x[900];
