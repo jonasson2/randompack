@@ -100,9 +100,6 @@ ALWAYS_INLINE void mul9x9(uint64_t *z, const uint64_t *restrict x,
 ALWAYS_INLINE int add1_cy(uint64_t *x, uint64_t c, int n) {
   uint64_t carry = 0;
   x[0] = addc64(x[0], c, 0, &carry);
-#ifdef __clang__
-  #pragma clang loop unroll(full)
-#endif
   for (int i = 1; i < n; i++) {
     x[i] = addc64(x[i], 0, carry, &carry);
   }
@@ -112,70 +109,35 @@ ALWAYS_INLINE int add1_cy(uint64_t *x, uint64_t c, int n) {
 ALWAYS_INLINE int sub1_bw(uint64_t *x, uint64_t c, int n) {
   uint64_t borrow = 0;
   x[0] = subb64(x[0], c, 0, &borrow);
-#ifdef __clang__
-  #pragma clang loop unroll(full)
-#endif
-  for (int i = 1; i < n; i++) {
-    x[i] = subb64(x[i], 0, borrow, &borrow);
-  }
+  for (int i = 1; i < n; i++) x[i] = subb64(x[i], 0, borrow, &borrow);
   return borrow;
 }
 
-ALWAYS_INLINE int add_cy(uint64_t *r, const uint64_t *restrict y, int n) {
+ALWAYS_INLINE int add_cy9(uint64_t *r, const uint64_t *restrict y) {
   uint64_t carry = 0;
-#ifdef __clang__
-  #pragma clang loop unroll(full)
-#endif
-  for (int i = 0; i < n; i++) {
-    r[i] = addc64(r[i], y[i], carry, &carry);
-  }
+  for (int i = 0; i < 9; i++) r[i] = addc64(r[i], y[i], carry, &carry);
   return (int)carry;
 }
 
 ALWAYS_INLINE int add_cy4(uint64_t *r, const uint64_t y[9]) {
   uint64_t carry = 0;
-#ifdef __clang__
-  #pragma clang loop unroll(full)
-#endif
-  for (int i = 0; i < 5; i++) {
-    r[i] = addc64(r[i], y[i], carry, &carry);
-  }
+  for (int i = 0; i < 5; i++) r[i] = addc64(r[i], y[i], carry, &carry);
   if (!carry) return 0;
-#ifdef __clang__
-  #pragma clang loop unroll(full)
-#endif
-  for (int i = 5; i < 9; i++) {
-    r[i] = addc64(r[i], 0, carry, &carry);
-  }
+  for (int i = 5; i < 9; i++) r[i] = addc64(r[i], 0, carry, &carry);
   return (int)carry;
 }
 
-ALWAYS_INLINE int sub_bw(uint64_t *r, const uint64_t *restrict y, int n) {
+ALWAYS_INLINE int sub_bw9(uint64_t *r, const uint64_t *restrict y) {
   uint64_t borrow = 0;
-#ifdef __clang__
-  #pragma clang loop unroll(full)
-#endif
-  for (int i = 0; i < n; i++) {
-    r[i] = subb64(r[i], y[i], borrow, &borrow);
-  }
+  for (int i = 0; i < 9; i++) r[i] = subb64(r[i], y[i], borrow, &borrow);
   return (int)borrow;
 }
 
 ALWAYS_INLINE int sub_bw4(uint64_t *r, const uint64_t y[9]) {
   uint64_t borrow = 0;
-#ifdef __clang__
-  #pragma clang loop unroll(full)
-#endif
-  for (int i = 0; i < 5; i++) {
-    r[i] = subb64(r[i], y[i], borrow, &borrow);
-  }
+  for (int i = 0; i < 5; i++) r[i] = subb64(r[i], y[i], borrow, &borrow);
   if (!borrow) return 0;
-#ifdef __clang__
-  #pragma clang loop unroll(full)
-#endif
-  for (int i = 5; i < 9; i++) {
-    r[i] = subb64(r[i], 0, borrow, &borrow);
-  }
+  for (int i = 5; i < 9; i++) r[i] = subb64(r[i], 0, borrow, &borrow);
   return (int)borrow;
 }
 
@@ -233,14 +195,11 @@ ALWAYS_INLINE void mod9x9(uint64_t x[9], uint64_t z[18]) {
   copy64(t3, z + 9, 6); t3[5] &= 0xFFFF;
   copy64(x, z, 9);
   c = 0;
-  c -= sub_bw(x, t1, 9);
+  c -= sub_bw9(x, t1);
   c -= sub_bw4(x, t2);
   add_cy4(t3, t2);
-  //add_cy(t3, t2, 6);
   shly240(t3);
-  c += add_cy(x, t3, 9);
-  //shly48(t3);
-  //c += add_cy(x + 3, t3, 6);
+  c += add_cy9(x, t3);
   corr_r_minus_cm(x, c);
 }
 
