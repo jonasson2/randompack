@@ -11,7 +11,7 @@
 //
 // and run, for example for Small Crush:
 //
-//    release/examples/TestU01Driver -c
+//    release/examples/TestU01Driver -S
 
 #include <stdio.h>
 #include <stdint.h>
@@ -22,52 +22,74 @@
 #include "randompack.h"
 #include "TestU01.h"
 
+#define WORD_BUFSIZE 1024
+
 static randompack_rng *rng;
 static uint64_t word;
+static uint64_t words[WORD_BUFSIZE];
 static int half = 0;
+static int w = WORD_BUFSIZE;
 static bool reverse_bits = false;
 static bool low_only = false;
 static bool low_bytes = false;
 
-static uint64_t reverse_bits64(uint64_t x) {
-  x = ((x >> 1) & 0x5555555555555555ULL) | ((x & 0x5555555555555555ULL) << 1);
-  x = ((x >> 2) & 0x3333333333333333ULL) | ((x & 0x3333333333333333ULL) << 2);
-  x = ((x >> 4) & 0x0f0f0f0f0f0f0f0fULL) | ((x & 0x0f0f0f0f0f0f0f0fULL) << 4);
-  x = ((x >> 8) & 0x00ff00ff00ff00ffULL) | ((x & 0x00ff00ff00ff00ffULL) << 8);
-  x = ((x >> 16) & 0x0000ffff0000ffffULL) | ((x & 0x0000ffff0000ffffULL) << 16);
-  x = (x >> 32) | (x << 32);
+static uint32_t reverse_bits32(uint32_t x) {
+  x = ((x >> 1) & 0x55555555U) | ((x & 0x55555555U) << 1);
+  x = ((x >> 2) & 0x33333333U) | ((x & 0x33333333U) << 2);
+  x = ((x >> 4) & 0x0f0f0f0fU) | ((x & 0x0f0f0f0fU) << 4);
+  x = ((x >> 8) & 0x00ff00ffU) | ((x & 0x00ff00ffU) << 8);
+  x = (x >> 16) | (x << 16);
   return x;
+}
+
+static inline void refill_words(void) {
+  if (!randompack_uint64(words, WORD_BUFSIZE, 0, rng)) {
+    char *err = randompack_last_error(rng);
+    fprintf(stderr, "%s\n", err ? err : "randompack_uint64 failed");
+    randompack_free(rng);
+    exit(1);
+  }
+  w = 0;
+}
+
+static inline uint64_t draw_word(void) {
+  if (w >= WORD_BUFSIZE)
+    refill_words();
+  return words[w++];
 }
 
 static unsigned int GetBits(void) {
   if (low_bytes) {
     unsigned int out = 0;
     for (int i = 0; i < 4; i++) {
-      randompack_uint64(&word, 1, 0, rng);
-      if (reverse_bits)
-        word = reverse_bits64(word);
+      word = draw_word();
       out |= ((unsigned int)(word & 0xffULL)) << (8*i);
     }
+    if (reverse_bits)
+      out = reverse_bits32(out);
     return out;
   }
   if (low_only) {
-    randompack_uint64(&word, 1, 0, rng);
+    word = draw_word();
+    unsigned int out = word;
     if (reverse_bits)
-      word = reverse_bits64(word);
-    return word;
+      out = reverse_bits32(out);
+    return out;
   }
   if (!half) {
-    randompack_uint64(&word, 1, 0, rng);
-    if (reverse_bits)
-      word = reverse_bits64(word);
+    word = draw_word();
     half = 1;
-    unsigned int low = word;
-    return low;
+    unsigned int out = word;
+    if (reverse_bits)
+      out = reverse_bits32(out);
+    return out;
   }
   else {
     half = 0;
-    unsigned int high = word >> 32;
-    return high;
+    unsigned int out = word >> 32;
+    if (reverse_bits)
+      out = reverse_bits32(out);
+    return out;
   }
 }
 
@@ -79,7 +101,7 @@ static void usage(const char *prog) {
     "  -h          Show this help\n"
     "  -e engine   RNG engine to use (default engine if omitted)\n"
     "  -s seed     Integer seed passed to randompack_seed\n"
-    "  -r          Reverse bits in each generated uint64\n"
+    "  -r          Reverse the 32 bits delivered to TestU01\n"
     "  -l          Feed only the low 32 bits of each uint64 to TestU01\n"
     "  -8          Pack the low 8 bits from 4 uint64 values into one uint32\n"
     "  -S          SmallCrush  (seconds)\n"
@@ -129,6 +151,8 @@ int main(int argc, char **argv) {
     fprintf(stderr, "-l and -8 cannot be used together\n");
     return 1;
   }
+  half = 0;
+  w = WORD_BUFSIZE;
 
   rng = randompack_create(engine);
   if (!rng) {
