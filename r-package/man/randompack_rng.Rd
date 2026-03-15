@@ -132,17 +132,25 @@ by \code{serialize()}.}
 Set the increment of the PCG64 engine. The increment may have length up to 4
 and shorter vectors are zero-padded.
 }
-\item{\code{rng$sfc64_set_state(sfcstate, counter)}}{
-Set the state of the sfc64 engine. \code{sfcstate} may have length up to 6
-and \code{counter} up to 2; shorter vectors are zero-padded.
+\item{\code{rng$sfc64_set_abc(abc)}}{
+Set the \code{a}, \code{b}, \code{c} state words of the sfc64 engine.
+\code{abc} may have length up to 6 and shorter vectors are zero-padded.
 }
-\item{\code{rng$philox_set_state(counter, key)}}{
-Set the state of the Philox engine. The counter may have length up to 8
-and the key up to 4; shorter vectors are zero-padded.
+\item{\code{rng$philox_set_ctr(counter)}}{
+Set the counter of the Philox engine. The counter may have length up to 8
+and shorter vectors are zero-padded.
 }
-\item{\code{rng$squares_set_state(counter, key)}}{
-Set the state of the Squares engine. The counter and key may each have
-length up to 2; shorter vectors are zero-padded.
+\item{\code{rng$philox_set_key(key)}}{
+Set the key of the Philox engine. The key may have length up to 4 and
+shorter vectors are zero-padded.
+}
+\item{\code{rng$squares_set_ctr(counter)}}{
+Set the counter of the Squares engine. The counter may have length up to 2
+and shorter vectors are zero-padded.
+}
+\item{\code{rng$squares_set_key(key)}}{
+Set the key of the Squares engine. The key may have length up to 2 and
+shorter vectors are zero-padded.
 }
 }
 }
@@ -180,7 +188,8 @@ rng3 <- randompack_rng()                 # another default RNG
 rng3$deserialize(raw_state)              # restore state
 identical(rng$unif(3), rng3$unif(3))     # TRUE
 rng_sq <- randompack_rng("squares")      # engine-specific state setting
-rng_sq$squares_set_state(2, key=c(3,4))  # counter = (2,0)
+rng_sq$squares_set_ctr(2)                # counter = (2,0)
+rng_sq$squares_set_key(c(3,4))
 
 }
 \seealso{

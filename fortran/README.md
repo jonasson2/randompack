@@ -155,9 +155,11 @@ management:
 - `serialize(buf)` / `deserialize(buf)`
 - `set_state(state)`
 - `pcg64_set_inc(inc)`
-- `sfc64_set_state(sfcstate, counter)`
-- `philox_set_state(ctr, key)`
-- `squares_set_state(ctr, key)`
+- `sfc64_set_abc(abc)`
+- `philox_set_ctr(ctr)`
+- `philox_set_key(key)`
+- `squares_set_ctr(ctr)`
+- `squares_set_key(key)`
 - `jump(p)` (for xor-family and ranlux++)
 - `last_error()`
 
@@ -214,10 +216,13 @@ Each of the following is a generic that accepts `double precision` or default
     call rng%serialize(buf)
     call rng%deserialize(buf)
     double precision :: x(4)
-    call rng%philox_set_state([1_int64, 2_int64, 3_int64, 4_int64], [5_int64, 6_int64])
+    call rng%philox_set_ctr([1_int64, 2_int64, 3_int64, 4_int64])
+    call rng%philox_set_key([5_int64, 6_int64])
     call rng%unif(x)
-    call rng%sfc64_set_state([7_int64, 11_int64, 13_int64], 17_int64)
-    call rng%squares_set_state(1, 2)
+    call rng%set_state([1_int64, 2_int64, 3_int64, 17_int64])
+    call rng%sfc64_set_abc([7_int64, 11_int64, 13_int64])
+    call rng%squares_set_ctr(1)
+    call rng%squares_set_key(2)
     call rngr%create("ranlux++")
     call rngr%jump(32)
 ```

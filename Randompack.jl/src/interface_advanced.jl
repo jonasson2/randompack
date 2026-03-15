@@ -207,55 +207,69 @@ function _set_state_u64!(rng::RNG, state::AbstractVector{UInt64})
 end
 
 """
-    Randompack.philox_set_state!(rng::RNG;
-                                 ctr::AbstractVector{<:Integer},
-                                 key::AbstractVector{<:Integer})
+    Randompack.philox_set_ctr!(rng::RNG; ctr::AbstractVector{<:Integer})
 
-Set Philox counter/key state. `counter` must have length 4 and `key` length 2.
-Values are range-checked and converted to UInt64 before calling the underlying C
-library.
-
-# Examples
-```julia
-Randompack.philox_set_state!(rng; ctr=[1, 2, 3, 4], key=[5, 6])
-```
-
+Set the Philox counter directly.
 """
-function philox_set_state!(rng::RNG;
-                           ctr::AbstractVector{<:Integer},
-                           key::AbstractVector{<:Integer})
+function philox_set_ctr!(rng::RNG; ctr::AbstractVector{<:Integer})
   rng.ptr == C_NULL && throw(ErrorException("RNG pointer is NULL"))
   length(ctr) == 4 || throw(ArgumentError("philox counter must have length 4"))
-  length(key) == 2 || throw(ArgumentError("philox key must have length 2"))
   ctrv = _u64_vec_from_ints(ctr)
-  keyv = _u64_vec_from_ints(key)
-  ok = ccall(_sym(:randompack_philox_set_state), Bool,
-             (Ptr{UInt64}, Ptr{UInt64}, RNGPtr), ctrv, keyv, rng.ptr)
-  _check_ok(ok, rng.ptr, "randompack_philox_set_state failed")
+  ok = ccall(_sym(:randompack_philox_set_ctr), Bool,
+             (Ptr{UInt64}, RNGPtr), ctrv, rng.ptr)
+  _check_ok(ok, rng.ptr, "randompack_philox_set_ctr failed")
   return nothing
 end
 
 """
-    Randompack.squares_set_state!(rng::RNG; ctr::Integer, key::Integer)
+    Randompack.philox_set_key!(rng::RNG; key::AbstractVector{<:Integer})
 
-Set squares64 counter and key state.
+Set the Philox key directly.
+"""
+function philox_set_key!(rng::RNG; key::AbstractVector{<:Integer})
+  rng.ptr == C_NULL && throw(ErrorException("RNG pointer is NULL"))
+  length(key) == 2 || throw(ArgumentError("philox key must have length 2"))
+  keyv = _u64_vec_from_ints(key)
+  ok = ccall(_sym(:randompack_philox_set_key), Bool,
+             (Ptr{UInt64}, RNGPtr), keyv, rng.ptr)
+  _check_ok(ok, rng.ptr, "randompack_philox_set_key failed")
+  return nothing
+end
+
+"""
+    Randompack.squares_set_ctr!(rng::RNG; ctr::Integer)
+
+Set the Squares64 counter directly.
+"""
+function squares_set_ctr!(rng::RNG; ctr::Integer)
+  rng.ptr == C_NULL && throw(ErrorException("RNG pointer is NULL"))
+  c64 = _u64_scalar_checked(ctr)
+  ok = ccall(_sym(:randompack_squares_set_ctr), Bool,
+             (UInt64, RNGPtr), c64, rng.ptr)
+  _check_ok(ok, rng.ptr, "randompack_squares_set_ctr failed")
+  return nothing
+end
+
+"""
+    Randompack.squares_set_key!(rng::RNG; key::Integer)
+
+Set the Squares64 key directly.
 
 Values are range-checked and converted to `UInt64` before calling the C
 library. Throws if the RNG is not a squares engine.
 
 # Examples
 ```julia
-Randompack.squares_set_state!(rng; ctr=3, key=4)
+Randompack.squares_set_key!(rng; key=4)
 ```
 
 """
-function squares_set_state!(rng::RNG; ctr::Integer, key::Integer)
+function squares_set_key!(rng::RNG; key::Integer)
   rng.ptr == C_NULL && throw(ErrorException("RNG pointer is NULL"))
-  c64 = _u64_scalar_checked(ctr)
   k64 = _u64_scalar_checked(key)
-  ok = ccall(_sym(:randompack_squares_set_state), Bool,
-             (UInt64, UInt64, RNGPtr), c64, k64, rng.ptr)
-  _check_ok(ok, rng.ptr, "randompack_squares_set_state failed")
+  ok = ccall(_sym(:randompack_squares_set_key), Bool,
+             (UInt64, RNGPtr), k64, rng.ptr)
+  _check_ok(ok, rng.ptr, "randompack_squares_set_key failed")
   return nothing
 end
 
@@ -285,27 +299,27 @@ function pcg64_set_inc!(rng::RNG; inc)
 end
 
 """
-    Randompack.sfc64_set_state!(rng::RNG; sfcstate, counter::Integer)
+    Randompack.sfc64_set_abc!(rng::RNG; abc)
 
-Set the `sfc64` state directly.
+Set the `sfc64` `a`, `b`, `c` state words directly, leaving the counter
+unchanged.
 
 Values are range-checked and converted to `UInt64` before calling the C
-library. `sfcstate` must be a length-3 vector `[a, b, c]`.
+library. `abc` must be a length-3 vector `[a, b, c]`.
 
 # Examples
 ```julia
-Randompack.sfc64_set_state!(rng; sfcstate=[7, 11, 13], counter=17)
+Randompack.sfc64_set_abc!(rng; abc=[7, 11, 13])
 ```
 
 """
-function sfc64_set_state!(rng::RNG; sfcstate, counter::Integer)
+function sfc64_set_abc!(rng::RNG; abc)
   rng.ptr == C_NULL && throw(ErrorException("RNG pointer is NULL"))
-  length(sfcstate) == 3 || throw(ArgumentError("sfcstate must have length 3"))
-  c_state = _u64_vec_from_ints(sfcstate)
-  c_counter = _u64_scalar_checked(counter)
-  ok = ccall(_sym(:randompack_sfc64_set_state), Bool,
-             (Ptr{UInt64}, UInt64, RNGPtr), c_state, c_counter, rng.ptr)
-  _check_ok(ok, rng.ptr, "randompack_sfc64_set_state failed")
+  length(abc) == 3 || throw(ArgumentError("abc must have length 3"))
+  c_abc = _u64_vec_from_ints(abc)
+  ok = ccall(_sym(:randompack_sfc64_set_abc), Bool,
+             (Ptr{UInt64}, RNGPtr), c_abc, rng.ptr)
+  _check_ok(ok, rng.ptr, "randompack_sfc64_set_abc failed")
   return nothing
 end
 

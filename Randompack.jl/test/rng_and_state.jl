@@ -120,18 +120,21 @@ end
   @test x1 == x2
 end
 
-@testset "squares_set_state!" begin
+@testset "squares_setters!" begin
   rng1 = rng_create("squares")
   rng2 = rng_create("squares")
-  Randompack.squares_set_state!(rng1; ctr=3, key=4)
-  Randompack.squares_set_state!(rng2; ctr=3, key=4)
+  Randompack.squares_set_ctr!(rng1; ctr=3)
+  Randompack.squares_set_key!(rng1; key=4)
+  Randompack.squares_set_ctr!(rng2; ctr=3)
+  Randompack.squares_set_key!(rng2; key=4)
   x1 = random_unif(rng1)
   x2 = random_unif(rng2)
   @test x1 == x2
-  @test_throws ArgumentError Randompack.squares_set_state!(rng1; ctr=big(1) << 65, key=0)
+  @test_throws ArgumentError Randompack.squares_set_ctr!(rng1; ctr=big(1) << 65)
+  @test_throws ArgumentError Randompack.squares_set_key!(rng1; key=big(1) << 65)
 end
 
-@testset "philox_set_state!" begin
+@testset "philox_setters!" begin
   has_philox = true
   try
     rng_create("philox")
@@ -141,8 +144,10 @@ end
   if has_philox
     rng1 = rng_create("philox")
     rng2 = rng_create("philox")
-    Randompack.philox_set_state!(rng1; ctr=[1, 2, 3, 4], key=[5, 6])
-    Randompack.philox_set_state!(rng2; ctr=[1, 2, 3, 4], key=[5, 6])
+    Randompack.philox_set_ctr!(rng1; ctr=[1, 2, 3, 4])
+    Randompack.philox_set_key!(rng1; key=[5, 6])
+    Randompack.philox_set_ctr!(rng2; ctr=[1, 2, 3, 4])
+    Randompack.philox_set_key!(rng2; key=[5, 6])
     x1 = random_unif(rng1)
     x2 = random_unif(rng2)
     @test x1 == x2
@@ -174,11 +179,13 @@ end
   end
 end
 
-@testset "sfc64_set_state!" begin
+@testset "sfc64_set_abc!" begin
   rng1 = rng_create("sfc64")
   rng2 = rng_create("sfc64")
-  Randompack.sfc64_set_state!(rng1; sfcstate=[7, 11, 13], counter=17)
-  Randompack.sfc64_set_state!(rng2; sfcstate=[7, 11, 13], counter=17)
+  Randompack.set_state!(rng1; state=[1, 2, 3, 17])
+  Randompack.set_state!(rng2; state=[1, 2, 3, 17])
+  Randompack.sfc64_set_abc!(rng1; abc=[7, 11, 13])
+  Randompack.sfc64_set_abc!(rng2; abc=[7, 11, 13])
   x1 = random_unif(rng1)
   x2 = random_unif(rng2)
   @test x1 == x2

@@ -102,13 +102,16 @@ A small set of support functions is provided to
 - set generator state explicitly
 - serialize and deserialize generator state
 
-Seeding uses a high-quality seed expansion mechanism based on Melissa O'Neill's
-seed_seq_fe128, also adopted by NumPy to initialize its random number
-generators. The mechanism supports reproducible construction of independent
-substreams via optional spawn keys. For the counter based generators, the
-explicit state setting allows explicit setting of both counter and key. State
-serialization supports checkpointing and allows simulations to be stopped and
-restarted exactly.
+Seeding uses a high-quality seed expansion mechanism with Melissa O'Neill's
+seed_seq_fe128, also adopted by NumPy to initialize its random number generators. The
+mechanism supports reproducible construction of independent substreams via optional spawn
+keys.
+
+For all engines except cwg128 and chacha20 an alternative way of creating
+independent streams exists: with jumps for the xor-family and ranlux++, setting the key of the
+counter based generators squares and philox, setting the $(a,b,c)$ state of sfc64, and
+setting the increment of pcg64. State serialization supports checkpointing and allows
+simulations to be stopped and restarted exactly.
 
 ## Cross platform consistency
 
@@ -337,7 +340,7 @@ In this example each thread uses the same base seed but a different spawn key
 (the thread id), producing reproducible independent substreams. Note that the
 example relies on assert() for simplicity – if compiled with -DNDEBUG these
 checks become inactive. The example relies on pthreads, usually not available on
-Windows.
+Windows. See MpiThreadExample.c for another spawn key example.
 ```c
     // Simple pthread example.
     // Launch M threads. Each thread derives an independent RNG stream from a

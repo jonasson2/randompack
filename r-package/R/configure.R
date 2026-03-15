@@ -70,29 +70,38 @@ methods_configure <- list(
     invisible(self)
   },
 
-  sfc64_set_state = function(sfcstate, counter) {
+  sfc64_set_abc = function(abc) {
     if (is.null(self$ptr)) stop("RNG is not initialized")
-    sfcstate <- as_u32_vec(sfcstate, "sfcstate", max_len = 6L)
-    counter <- as_u32_vec(counter, "counter", max_len = 2L)
-    .Call("randompack_sfc64_set_state_R", self$ptr, sfcstate, counter,
-          PACKAGE = "randompack")
+    abc <- as_u32_vec(abc, "abc", max_len = 6L)
+    .Call("randompack_sfc64_set_abc_R", self$ptr, abc, PACKAGE = "randompack")
     invisible(self)
   },
 
-  philox_set_state = function(counter, key) {
+  philox_set_ctr = function(counter) {
     if (is.null(self$ptr)) stop("RNG is not initialized")
     counter <- as_u32_vec(counter, "counter", max_len = 8L)
-    key <- as_u32_vec(key, "key", max_len = 4L)
-    .Call("randompack_philox_set_state_R", self$ptr, counter, key, PACKAGE = "randompack")
+    .Call("randompack_philox_set_ctr_R", self$ptr, counter, PACKAGE = "randompack")
     invisible(self)
   },
 
-  squares_set_state = function(counter, key) {
+  philox_set_key = function(key) {
+    if (is.null(self$ptr)) stop("RNG is not initialized")
+    key <- as_u32_vec(key, "key", max_len = 4L)
+    .Call("randompack_philox_set_key_R", self$ptr, key, PACKAGE = "randompack")
+    invisible(self)
+  },
+
+  squares_set_ctr = function(counter) {
     if (is.null(self$ptr)) stop("RNG is not initialized")
     counter <- as_u32_vec(counter, "counter", max_len = 2L)
+    .Call("randompack_squares_set_ctr_R", self$ptr, counter, PACKAGE = "randompack")
+    invisible(self)
+  },
+
+  squares_set_key = function(key) {
+    if (is.null(self$ptr)) stop("RNG is not initialized")
     key <- as_u32_vec(key, "key", max_len = 2L)
-    .Call("randompack_squares_set_state_R", self$ptr, counter, key,
-          PACKAGE = "randompack")
+    .Call("randompack_squares_set_key_R", self$ptr, key, PACKAGE = "randompack")
     invisible(self)
   },
 

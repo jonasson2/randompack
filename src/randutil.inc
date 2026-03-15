@@ -186,21 +186,32 @@ static void set_state(uint64_t *state, int nstate, randompack_rng *rng) {
   rand_init(rng);
 }
 
-static void philox_set_state(uint64_t ctr[4], uint64_t key[2], randompack_rng *rng) {
-  uint64_t state[6] = {
-    ctr[0], ctr[1], ctr[2], ctr[3], key[0], key[1]
-  };
-  set_state(state, LEN(state), rng);
+static void philox_set_ctr(uint64_t ctr[4], randompack_rng *rng) {
+  copy64(rng->state.u64, ctr, 4);
+  rand_init(rng);
 }
 
-static void squares_set_state(uint64_t ctr, uint64_t key, randompack_rng *rng) {
-  uint64_t state[2] = {ctr, key};
-  set_state(state, LEN(state), rng);
+static void philox_set_key(uint64_t key[2], randompack_rng *rng) {
+  rng->state.u64[4] = key[0];
+  rng->state.u64[5] = key[1];
+  rand_init(rng);
 }
 
-static void sfc64_set_state(uint64_t sfcstate[3], uint64_t counter, randompack_rng *rng) {
-  uint64_t state[4] = {sfcstate[0], sfcstate[1], sfcstate[2], counter};
-  set_state(state, LEN(state), rng);
+static void squares_set_ctr(uint64_t ctr, randompack_rng *rng) {
+  rng->state.u64[0] = ctr;
+  rand_init(rng);
+}
+
+static void squares_set_key(uint64_t key, randompack_rng *rng) {
+  rng->state.u64[1] = key;
+  rand_init(rng);
+}
+
+static void sfc64_set_abc(uint64_t abc[3], randompack_rng *rng) {
+  rng->state.u64[0] = abc[0];
+  rng->state.u64[1] = abc[1];
+  rng->state.u64[2] = abc[2];
+  rand_init(rng);
 }
 
 static void pcg64_set_inc(uint64_t inc[2], randompack_rng *rng) {

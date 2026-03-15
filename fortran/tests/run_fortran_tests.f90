@@ -254,32 +254,34 @@ use, intrinsic :: ieee_arithmetic, only: ieee_is_finite, ieee_set_flag, ieee_und
     "deserialize restores state")
 
   !------------------------------------------------------------
-  ! Optional: squares_set_state repeatability
+  ! Optional: squares_set_{ctr,key} repeatability
   if (has_squares) then
     call s1%create("squares")
     call s2%create("squares")
-    call s1%squares_set_state(3, 4)
-    call s2%squares_set_state(3, 4)
+    call s1%squares_set_ctr(3)
+    call s1%squares_set_key(4)
+    call s2%squares_set_ctr(3)
+    call s2%squares_set_key(4)
     call s1%unif(x)
     call s2%unif(y)
     call assert(size(x) == size(y) .and. all(approx_equal_d(x, y)), &
-      "squares_set_state repeatability")
+      "squares_set_{ctr,key} repeatability")
     call s1%free()
     call s2%free()
   end if
 
-  ! Optional: philox_set_state repeatability
+  ! Optional: philox_set_{ctr,key} repeatability
   if (has_philox) then
     call p1%create("philox")
     call p2%create("philox")
-    call p1%philox_set_state([1_c_int64_t, 2_c_int64_t, 3_c_int64_t, 4_c_int64_t], &
-      [5_c_int64_t, 6_c_int64_t])
-    call p2%philox_set_state([1_c_int64_t, 2_c_int64_t, 3_c_int64_t, 4_c_int64_t], &
-      [5_c_int64_t, 6_c_int64_t])
+    call p1%philox_set_ctr([1_c_int64_t, 2_c_int64_t, 3_c_int64_t, 4_c_int64_t])
+    call p1%philox_set_key([5_c_int64_t, 6_c_int64_t])
+    call p2%philox_set_ctr([1_c_int64_t, 2_c_int64_t, 3_c_int64_t, 4_c_int64_t])
+    call p2%philox_set_key([5_c_int64_t, 6_c_int64_t])
     call p1%unif(x)
     call p2%unif(y)
     call assert(size(x) == size(y) .and. all(approx_equal_d(x, y)), &
-      "philox_set_state repeatability")
+      "philox_set_{ctr,key} repeatability")
     call p1%free()
     call p2%free()
   end if
@@ -297,12 +299,14 @@ use, intrinsic :: ieee_arithmetic, only: ieee_is_finite, ieee_set_flag, ieee_und
 
   call p1%create("sfc64")
   call p2%create("sfc64")
-  call p1%sfc64_set_state([7_c_int64_t, 11_c_int64_t, 13_c_int64_t], 17_c_int64_t)
-  call p2%sfc64_set_state([7_c_int64_t, 11_c_int64_t, 13_c_int64_t], 17_c_int64_t)
+  call p1%set_state([1_c_int64_t, 2_c_int64_t, 3_c_int64_t, 17_c_int64_t])
+  call p2%set_state([1_c_int64_t, 2_c_int64_t, 3_c_int64_t, 17_c_int64_t])
+  call p1%sfc64_set_abc([7_c_int64_t, 11_c_int64_t, 13_c_int64_t])
+  call p2%sfc64_set_abc([7_c_int64_t, 11_c_int64_t, 13_c_int64_t])
   call p1%unif(x)
   call p2%unif(y)
   call assert(size(x) == size(y) .and. all(approx_equal_d(x, y)), &
-    "sfc64_set_state repeatability")
+    "sfc64_set_abc repeatability")
   call p1%free()
   call p2%free()
 

@@ -221,104 +221,115 @@ SEXP randompack_pcg64_set_inc_R(SEXP ext, SEXP inc_){
   return R_NilValue;
 }
 
-SEXP randompack_sfc64_set_state_R(SEXP ext, SEXP sfcstate_, SEXP counter_){
+SEXP randompack_sfc64_set_abc_R(SEXP ext, SEXP abc_){
   randompack_rng *rng = (randompack_rng *)R_ExternalPtrAddr(ext);
   if (!rng) Rf_error("RNG pointer is NULL");
-  if (!Rf_isNumeric(sfcstate_))
-    Rf_error("sfcstate must be a numeric vector");
-  if (!Rf_isNumeric(counter_))
-    Rf_error("counter must be a numeric vector");
-  R_xlen_t state_n = XLENGTH(sfcstate_);
-  R_xlen_t counter_n = XLENGTH(counter_);
-  if (state_n <= 0 || state_n > 6)
-    Rf_error("sfcstate must have length between 1 and 6");
-  if (counter_n <= 0 || counter_n > 2)
-    Rf_error("counter must have length between 1 and 2");
-  uint64_t sfcstate[3] = {0, 0, 0};
-  uint64_t counter = 0;
-  for (R_xlen_t i = 0; i < state_n; i++) {
-    uint32_t w = read_u32_num(sfcstate_, i, "sfcstate");
+  if (!Rf_isNumeric(abc_))
+    Rf_error("abc must be a numeric vector");
+  R_xlen_t n = XLENGTH(abc_);
+  if (n <= 0 || n > 6)
+    Rf_error("abc must have length between 1 and 6");
+  uint64_t abc[3] = {0, 0, 0};
+  for (R_xlen_t i = 0; i < n; i++) {
+    uint32_t w = read_u32_num(abc_, i, "abc");
     int j = (int)(i/2);
-    if (i & 1) sfcstate[j] |= ((uint64_t)w << 32);
-    else sfcstate[j] |= w;
+    if (i & 1) abc[j] |= ((uint64_t)w << 32);
+    else abc[j] |= w;
   }
-  for (R_xlen_t i = 0; i < counter_n; i++) {
-    uint32_t w = read_u32_num(counter_, i, "counter");
-    if (i & 1) counter |= ((uint64_t)w << 32);
-    else counter |= w;
-  }
-  bool ok = randompack_sfc64_set_state(sfcstate, counter, rng);
+  bool ok = randompack_sfc64_set_abc(abc, rng);
   if (!ok) {
     char *err = randompack_last_error(rng);
-    Rf_error("%s", err ? err : "randompack_sfc64_set_state failed");
+    Rf_error("%s", err ? err : "randompack_sfc64_set_abc failed");
   }
   return R_NilValue;
 }
 
-SEXP randompack_philox_set_state_R(SEXP ext, SEXP counter_, SEXP key_){
+SEXP randompack_philox_set_ctr_R(SEXP ext, SEXP counter_){
   randompack_rng *rng = (randompack_rng *)R_ExternalPtrAddr(ext);
   if (!rng) Rf_error("RNG pointer is NULL");
   if (!Rf_isNumeric(counter_))
     Rf_error("counter must be a numeric vector");
-  if (!Rf_isNumeric(key_))
-    Rf_error("key must be a numeric vector");
   R_xlen_t counter_n = XLENGTH(counter_);
-  R_xlen_t key_n = XLENGTH(key_);
   if (counter_n <= 0 || counter_n > 8)
     Rf_error("counter must have length between 1 and 8");
-  if (key_n <= 0 || key_n > 4)
-    Rf_error("key must have length between 1 and 4");
   uint64_t counter[4] = {0, 0, 0, 0};
-  uint64_t key[2] = {0, 0};
   for (R_xlen_t i = 0; i < counter_n; i++) {
     uint32_t w = read_u32_num(counter_, i, "counter");
     int j = (int)(i/2);
     if (i & 1) counter[j] |= ((uint64_t)w << 32);
     else counter[j] |= w;
   }
+  bool ok = randompack_philox_set_ctr(counter, rng);
+  if (!ok) {
+    char *err = randompack_last_error(rng);
+    Rf_error("%s", err ? err : "randompack_philox_set_ctr failed");
+  }
+  return R_NilValue;
+}
+
+SEXP randompack_philox_set_key_R(SEXP ext, SEXP key_){
+  randompack_rng *rng = (randompack_rng *)R_ExternalPtrAddr(ext);
+  if (!rng) Rf_error("RNG pointer is NULL");
+  if (!Rf_isNumeric(key_))
+    Rf_error("key must be a numeric vector");
+  R_xlen_t key_n = XLENGTH(key_);
+  if (key_n <= 0 || key_n > 4)
+    Rf_error("key must have length between 1 and 4");
+  uint64_t key[2] = {0, 0};
   for (R_xlen_t i = 0; i < key_n; i++) {
     uint32_t w = read_u32_num(key_, i, "key");
     int j = (int)(i/2);
     if (i & 1) key[j] |= ((uint64_t)w << 32);
     else key[j] |= w;
   }
-  bool ok = randompack_philox_set_state(counter, key, rng);
+  bool ok = randompack_philox_set_key(key, rng);
   if (!ok) {
     char *err = randompack_last_error(rng);
-    Rf_error("%s", err ? err : "randompack_philox_set_state failed");
+    Rf_error("%s", err ? err : "randompack_philox_set_key failed");
   }
   return R_NilValue;
 }
 
-SEXP randompack_squares_set_state_R(SEXP ext, SEXP counter_, SEXP key_){
+SEXP randompack_squares_set_ctr_R(SEXP ext, SEXP counter_){
   randompack_rng *rng = (randompack_rng *)R_ExternalPtrAddr(ext);
   if (!rng) Rf_error("RNG pointer is NULL");
   if (!Rf_isNumeric(counter_))
     Rf_error("counter must be a numeric vector");
-  if (!Rf_isNumeric(key_))
-    Rf_error("key must be a numeric vector");
   R_xlen_t counter_n = XLENGTH(counter_);
-  R_xlen_t key_n = XLENGTH(key_);
   if (counter_n <= 0 || counter_n > 2)
     Rf_error("counter must have length between 1 and 2");
-  if (key_n <= 0 || key_n > 2)
-    Rf_error("key must have length between 1 and 2");
   uint64_t counter = 0;
-  uint64_t key = 0;
   for (R_xlen_t i = 0; i < counter_n; i++) {
     uint32_t w = read_u32_num(counter_, i, "counter");
     if (i & 1) counter |= ((uint64_t)w << 32);
     else counter |= w;
   }
+  bool ok = randompack_squares_set_ctr(counter, rng);
+  if (!ok) {
+    char *err = randompack_last_error(rng);
+    Rf_error("%s", err ? err : "randompack_squares_set_ctr failed");
+  }
+  return R_NilValue;
+}
+
+SEXP randompack_squares_set_key_R(SEXP ext, SEXP key_){
+  randompack_rng *rng = (randompack_rng *)R_ExternalPtrAddr(ext);
+  if (!rng) Rf_error("RNG pointer is NULL");
+  if (!Rf_isNumeric(key_))
+    Rf_error("key must be a numeric vector");
+  R_xlen_t key_n = XLENGTH(key_);
+  if (key_n <= 0 || key_n > 2)
+    Rf_error("key must have length between 1 and 2");
+  uint64_t key = 0;
   for (R_xlen_t i = 0; i < key_n; i++) {
     uint32_t w = read_u32_num(key_, i, "key");
     if (i & 1) key |= ((uint64_t)w << 32);
     else key |= w;
   }
-  bool ok = randompack_squares_set_state(counter, key, rng);
+  bool ok = randompack_squares_set_key(key, rng);
   if (!ok) {
     char *err = randompack_last_error(rng);
-    Rf_error("%s", err ? err : "randompack_squares_set_state failed");
+    Rf_error("%s", err ? err : "randompack_squares_set_key failed");
   }
   return R_NilValue;
 }

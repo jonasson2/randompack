@@ -1,13 +1,10 @@
-randompack
-================
-
 # randompack
 
 This package provides R bindings to the C library Randompack, a random
 number generation toolkit that also includes interfaces for Julia,
 Fortran, and Python. Randompack exposes a collection of modern RNG
-engines, including xoshiro256++/\*\*, PCG64 DXSM, sfc64, Philox, and
-ChaCha20, together with a range of probability distributions, both
+engines, including xoshiro256++/\*\*, PCG64 DXSM, sfc64, ranlux++, Philox,
+and ChaCha20, together with a range of probability distributions, both
 integer and continuous. The library allows matching random draws across
 platforms and supported language interfaces. It provides unbounded and
 bounded integer draws, permutations, sampling without replacement, and
@@ -85,21 +82,26 @@ Y <- rng$mvn(50, Sigma, mu=c(1.0, 2.0))        # specified mean
 
 ``` r
 rngx <- randompack_rng("x256**")
-rngg <- randompack_rng("pcg64")
+rngq <- randompack_rng("pcg64")
 rngs <- randompack_rng("sfc64")
 rngp <- randompack_rng("philox")
+rngz <- randompack_rng("squares")
 rngr <- randompack_rng("ranlux++")
 rngx$set_state(c(1, 2, 3, 4))                  # general state setter
-rngg$pcg64_set_inc(c(3, 0, 5, 0))             # PCG increment setter
-rngs$sfc64_set_state(c(7, 0, 11, 0, 13, 0), c(17, 0))  # set sfc64 state
+rngq$pcg64_set_inc(c(3, 0, 5, 0))              # change PCG stream increment
+rngs$set_state(c(1, 0, 2, 0, 3, 0, 17, 0))     # set full sfc64 state
+rngs$sfc64_set_abc(c(7, 0, 11, 0, 13, 0))      # update only a, b, c
 rngx$jump(128)                                 # jump the state by 2^128 steps
-rngp$philox_set_state(c(1, 2, 3, 4), c(4, 6))  # engine-specific state setter
+rngp$philox_set_ctr(c(1, 2, 3, 4))             # set Philox counter
+rngp$philox_set_key(c(4, 6))                   # set Philox key
+rngz$squares_set_ctr(c(3, 0))                  # set Squares counter
+rngz$squares_set_key(c(4, 0))                  # set Squares key
 rngr$jump(32)                                  # jump the state by 2^32 steps
 
 rngy <- randompack_rng("x256**")               # engines must match
 state <- rngx$serialize()                      # copy engine state of rngx
 rngy$deserialize(state)                        # and put in rngy
 
-full_mantissa(rng, TRUE)              # enable full 53-bit mantissa (52 bit is default)
-rng <- randompack_rng(bitexact=TRUE)  # make agreement across platforms exact
+full_mantissa(rng, TRUE)                       # enable full 53-bit mantissa (52 bit is default)
+rng <- randompack_rng(bitexact=TRUE)           # make agreement across platforms exact
 ```

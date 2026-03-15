@@ -103,12 +103,16 @@ contains
   procedure, private :: set_state32
   procedure, private :: set_state64
   generic :: set_state => set_state32, set_state64
-  procedure :: philox_set_state => rp_philox_set_state
+  procedure :: philox_set_ctr => rp_philox_set_ctr
+  procedure :: philox_set_key => rp_philox_set_key
   procedure :: pcg64_set_inc => rp_pcg64_set_inc
-  procedure :: sfc64_set_state => rp_sfc64_set_state
-  procedure, private :: squares_set_state32 => rp_squares_set_state32
-  procedure, private :: squares_set_state64 => rp_squares_set_state64
-  generic :: squares_set_state => squares_set_state32, squares_set_state64
+  procedure :: sfc64_set_abc => rp_sfc64_set_abc
+  procedure, private :: squares_set_ctr32 => rp_squares_set_ctr32
+  procedure, private :: squares_set_ctr64 => rp_squares_set_ctr64
+  generic :: squares_set_ctr => squares_set_ctr32, squares_set_ctr64
+  procedure, private :: squares_set_key32 => rp_squares_set_key32
+  procedure, private :: squares_set_key64 => rp_squares_set_key64
+  generic :: squares_set_key => squares_set_key32, squares_set_key64
   procedure :: last_error => rp_last_error
   final :: rp_finalize
 end type randompack_rng

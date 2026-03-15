@@ -1033,14 +1033,22 @@ subroutine set_state64(self, state)
   c_ok = crp_set_state(state, int(size(state), c_int), self%p)
   if (.not. c_ok) error stop rp_error_message(self, "set_state")
 end subroutine
-subroutine rp_philox_set_state(self, ctr, key)
+subroutine rp_philox_set_ctr(self, ctr)
   class(randompack_rng), intent(inout) :: self
   integer(c_int64_t), intent(in) :: ctr(4)
+  logical(c_bool) :: c_ok
+  if (.not. c_associated(self%p)) error stop rp_error_message(self, "philox_set_ctr")
+  c_ok = crp_philox_set_ctr(ctr, self%p)
+  if (.not. c_ok) error stop rp_error_message(self, "philox_set_ctr")
+end subroutine
+
+subroutine rp_philox_set_key(self, key)
+  class(randompack_rng), intent(inout) :: self
   integer(c_int64_t), intent(in) :: key(2)
   logical(c_bool) :: c_ok
-  if (.not. c_associated(self%p)) error stop rp_error_message(self, "philox_set_state")
-  c_ok = crp_philox_set_state(ctr, key, self%p)
-  if (.not. c_ok) error stop rp_error_message(self, "philox_set_state")
+  if (.not. c_associated(self%p)) error stop rp_error_message(self, "philox_set_key")
+  c_ok = crp_philox_set_key(key, self%p)
+  if (.not. c_ok) error stop rp_error_message(self, "philox_set_key")
 end subroutine
 
 subroutine rp_pcg64_set_inc(self, inc)
@@ -1052,37 +1060,53 @@ subroutine rp_pcg64_set_inc(self, inc)
   if (.not. c_ok) error stop rp_error_message(self, "pcg64_set_inc")
 end subroutine
 
-subroutine rp_sfc64_set_state(self, sfcstate, counter)
+subroutine rp_sfc64_set_abc(self, abc)
   class(randompack_rng), intent(inout) :: self
-  integer(c_int64_t), intent(in) :: sfcstate(3)
-  integer(c_int64_t), intent(in) :: counter
+  integer(c_int64_t), intent(in) :: abc(3)
   logical(c_bool) :: c_ok
-  if (.not. c_associated(self%p)) error stop rp_error_message(self, "sfc64_set_state")
-  c_ok = crp_sfc64_set_state(sfcstate, counter, self%p)
-  if (.not. c_ok) error stop rp_error_message(self, "sfc64_set_state")
+  if (.not. c_associated(self%p)) error stop rp_error_message(self, "sfc64_set_abc")
+  c_ok = crp_sfc64_set_abc(abc, self%p)
+  if (.not. c_ok) error stop rp_error_message(self, "sfc64_set_abc")
 end subroutine
 
-subroutine rp_squares_set_state32(self, ctr, key)
+subroutine rp_squares_set_ctr32(self, ctr)
   class(randompack_rng), intent(inout) :: self
   integer(c_int32_t), intent(in) :: ctr
-  integer(c_int32_t), intent(in) :: key
-  integer(c_int64_t) :: cctr, ckey
+  integer(c_int64_t) :: cctr
   logical(c_bool) :: c_ok
-  if (.not. c_associated(self%p)) error stop rp_error_message(self, "squares_set_state")
+  if (.not. c_associated(self%p)) error stop rp_error_message(self, "squares_set_ctr")
   cctr = int(ctr, c_int64_t)
-  ckey = int(key, c_int64_t)
-  c_ok = crp_squares_set_state(cctr, ckey, self%p)
-  if (.not. c_ok) error stop rp_error_message(self, "squares_set_state")
+  c_ok = crp_squares_set_ctr(cctr, self%p)
+  if (.not. c_ok) error stop rp_error_message(self, "squares_set_ctr")
 end subroutine
 
-subroutine rp_squares_set_state64(self, ctr, key)
+subroutine rp_squares_set_ctr64(self, ctr)
   class(randompack_rng), intent(inout) :: self
   integer(c_int64_t), intent(in) :: ctr
+  logical(c_bool) :: c_ok
+  if (.not. c_associated(self%p)) error stop rp_error_message(self, "squares_set_ctr")
+  c_ok = crp_squares_set_ctr(ctr, self%p)
+  if (.not. c_ok) error stop rp_error_message(self, "squares_set_ctr")
+end subroutine
+
+subroutine rp_squares_set_key32(self, key)
+  class(randompack_rng), intent(inout) :: self
+  integer(c_int32_t), intent(in) :: key
+  integer(c_int64_t) :: ckey
+  logical(c_bool) :: c_ok
+  if (.not. c_associated(self%p)) error stop rp_error_message(self, "squares_set_key")
+  ckey = int(key, c_int64_t)
+  c_ok = crp_squares_set_key(ckey, self%p)
+  if (.not. c_ok) error stop rp_error_message(self, "squares_set_key")
+end subroutine
+
+subroutine rp_squares_set_key64(self, key)
+  class(randompack_rng), intent(inout) :: self
   integer(c_int64_t), intent(in) :: key
   logical(c_bool) :: c_ok
-  if (.not. c_associated(self%p)) error stop rp_error_message(self, "squares_set_state")
-  c_ok = crp_squares_set_state(ctr, key, self%p)
-  if (.not. c_ok) error stop rp_error_message(self, "squares_set_state")
+  if (.not. c_associated(self%p)) error stop rp_error_message(self, "squares_set_key")
+  c_ok = crp_squares_set_key(key, self%p)
+  if (.not. c_ok) error stop rp_error_message(self, "squares_set_key")
 end subroutine
 
 function rp_last_error(self) result(msg)

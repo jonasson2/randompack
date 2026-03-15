@@ -44,7 +44,8 @@ typedef union {
   xo256 xo;         // 16 words, used by x256++simd
   pcg64_t pcg;      // 4 words
   #if HAVE128
-  cwg128_64_t cwg;  // 5 words
+  //cwg128_64_t cwg;  // 5 words
+  cwg128_t cwg128;
   #endif
 } randompack_state;
 

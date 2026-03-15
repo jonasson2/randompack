@@ -83,18 +83,19 @@ back to the first computers, with von Neumann's middle-square idea
 linear congruential generator (LCG, 1949)
 \cite{lehmer1951mathematical,lecuyer2017history}. The first generators
 were aimed at generating random integers (typically in $[0, 2^k)$) and
-uniformly distributed reals in $[0,1]$ (through division by $2^k$),
-but soon other distributions followed. In fact von Neumann's paper
+uniformly distributed reals in $[0,1]$ (through division by $2^k$), but
+soon other distributions followed. In fact von Neumann's paper
 \cite{vonneumann1951rejection} had a clever algorithm for drawing
 exponentially distributed samples, also obtainable by taking the
 logarithm of uniform samples. An early and seminal method for random
-normals is given by Box and Muller \cite{box1958normal}. Other
-important 20th century milestones are the Tausworthe random number
-generators (RNGs, 1965) \cite{tausworthe1965linear}, the Wichmann-Hill
-RNG (1982) \cite{wichmann1982efficient}, the Park-Miller LCG (1988)
-\cite{park1988random}, RANLUX (1994) \cite{luscher1994portable}, and
-the Mersenne Twister (1998) \cite{matsumoto1998mersenne} with its
-extremely long period, $2^{19937}-1$.
+normals is given by Box and Muller \cite{box1958normal}. Other important
+20th century milestones are the Tausworthe random number generators
+(RNGs, 1965) \cite{tausworthe1965linear}, the Wichmann-Hill RNG (1982)
+\cite{wichmann1982efficient}, the Park-Miller LCG (1988)
+\cite{park1988random}, RANLUX (1994) \cite{luscher1994portable}, adopted
+in the CERN ROOT framework, and the Mersenne Twister (1998)
+\cite{matsumoto1998mersenne} with its extremely long period,
+$2^{19937}-1$.
 
 Parallel to the uniform generator development new methods for
 generating non-uniform variates were developed. The normal
@@ -151,22 +152,31 @@ the subsequent advances was MRG32k3a
 The WELL generators \cite{panneton2006well} were intended to (and did)
 improve on the MT statistical quality although they did not obtain
 widespread adoption in software. The oposite can be said of the RNGs
-sometimes called the xor-family, pinoeered by Marsaglia in 2003 with
-xorshift and XORWOW \cite{marsaglia2003xorshift}, and further
-developed, primarily by Vigna, in a series of articles
+sometimes called the xor family, pinoeered by Marsaglia in 2003 with
+xorshift and XORWOW \cite{marsaglia2003xorshift}, and further developed,
+primarily by Vigna, in a series of articles
 \citep{panneton2005xorshift,vigna2016experimental,vigna2017further,
-  blackman2021scrambled}. The current flagships are the closely
-related xoshiro256++ and xoshiro256**, that have been adopted as
-default generators by Rust, Julia, C\#, and gfortran
+  blackman2021scrambled}. The current flagships are the closely related
+xoshiro256++ and xoshiro256**, that have been adopted as default
+generators by Rust, Julia, C\#, and gfortran
 (Table~\ref{tab:language-rngs}). All generators in the xor family
 support so-called \emph{jumping}, whereby the state can be advanced
 efficiently by very large amounts, such as $2^{128}$ steps, to create
-independent streams. An important milestone came in 2011 with the
-Random123 library by Salmon and Moraes \cite{salmon2011parallel}. Its
-counter-based Threefry and Philox generators have become popular for
-simulation on GPUs and are the default in several systems
-(Table~\ref{tab:language-rngs}). They allow the generation of a vast
-number of independent streams.
+independent streams. The aforementioned Practrand suite included an RNG,
+sfc64, that also allows independent streams. Interestingly, sfc64 is
+planned to become the default random number generator in a forthcoming
+release of the Los Alamos MCNP radiation-transport code.
+\cite{josey2023reassessing,gibson2025mcnpnewsletterq1}. 
+
+Some important pseudorandom number generators (PRNGs) emerged from the
+search for fast software stream ciphers. Such ciphers can also serve as
+cryptographically secure PRNGs (CSPRNGs), notably ChaCha20 (2008)
+\cite{bernstein2008chacha}. Another important milestone came in 2011
+with the Random123 library by Salmon and Moraes
+\cite{salmon2011parallel}. Its counter-based Threefry and Philox
+generators have become popular for simulation on GPUs and are the
+default in several systems (Table~\ref{tab:language-rngs}). They allow
+the generation of a vast number of independent streams.
 
 Another important development was O'Neill's PCG family (2014)
 \cite{oneill2014pcg}. It also supports many streams via a
@@ -182,16 +192,6 @@ object-oriented approach implemented in SplitMix (2014)
 independent generators. Java's default RNG is from the LXM family,
 while SplitMix has primarily found application in spreading an initial
 seed across the state of other generators.
-
-Seeding an RNG is an important subject that must not be neglected.
-Some RNGs can show poor statistical behaviour if seeded directly with
-a small seed. Instead the seed should be mixed and spread across
-all bits of the state, and moreover this seed-spreading should be
-carried out with a process radically different from the RNG being seeded
-\cite{matsumoto2007initialization,oneill2014pcg,blackman2021scrambled}.
-As already mentioned SplitMix \cite{steele2014splitmix} can be used
-for this purpose, and another possibility is O'Neill's
-\texttt{seed\_seq\_fe128} \cite{oneill2015seedseq}.
 
 Finally it is worth noting that in 2017 L'Ecuyer wrote a comprehensive
 history of uniform pseudo-random number generators
@@ -260,10 +260,10 @@ engine most commonly used in the official documentation and examples.
 \section{Design and interface}
 \subsection{Design goals}
 Randompack is intended to fill a gap in the random-number-generation
-support available in programming languages and libraries by providing
-a C library with a selection of modern, high quality, and efficient
-pseudo-random number generators, together with a range of continuous
-and discrete distributions. The C libraries that come closest are GSL,
+support available in programming languages and libraries by providing a
+C library with a selection of modern, high quality, and efficient
+pseudo-random number generators, together with a range of continuous and
+discrete distributions. The C libraries that come closest are GSL,
 UNURAN \cite{hormann2000randomnumber}, the NAG library, and Intel
 oneMKL. However none of these libraries are permissively licensed and
 only the first two are open source. Moreover, those two are somewhat
@@ -272,11 +272,10 @@ dated and rely largely on older underlying RNG engines.
 C is a particularly suitable implementation language because it can be
 interfaced easily from many other programming languages. As an added
 benefit, this makes it possible to obtain not only exact repeatability
-across computers, as for example in NumPy, but also exact
-repeatability across programming languages. The importance of
-repeatability as a basic requirement for high-quality random number
-generation has been stressed by L’Ecuyer
-\cite{lecuyer2015rng,lecuyer2017parallel}.
+across computers, as for example in NumPy, but also exact repeatability
+across programming languages. The importance of repeatability as a basic
+requirement for high-quality random number generation has been stressed
+by L’Ecuyer \cite{lecuyer2015rng,lecuyer2017parallel}.
 
 Randompack is intended for scientific and statistical computing rather
 than cryptographic use. Its design emphasizes high-throughput
@@ -373,29 +372,77 @@ $2^{128}$ and $2^{64}$ possible, respectively).
 \end{minipage}
 \end{table}
 
-Table \ref{tab:engines} lists the selected engines. A few of them do
-not fulfill all the inclusion criteria: xorshift128+ does not reliably
-pass BigCrush, but it is very efficient, and important in the
-evolution of the xor-family. ChaCha20 is not particularly efficient
-and its period is relatively short, but it is included to provide one
-cryptographically secure engine. 
+Table \ref{tab:engines} lists the selected engines. Most of them have
+already been mentioned in the Introduction, the exceptions being the
+recent squares64, a fast counter-based RNG and, cwg128-64, also recent, simple
+and stream-friendly. A few of the generators in the table do not fulfill
+all the inclusion criteria: xorshift128+ and xoroshiro128++ do not
+reliably pass BigCrush, but they are very efficient, do appear in Table
+\ref{tab:language-rngs}, and are important in the evolution of the
+xor family. ChaCha20 is not particularly efficient and its period is
+relatively short, but it is included to provide one cryptographically
+secure engine.
 
-Interestingly, sfc64 is planned to
-become the default random number generator in a forthcoming release of
-the Los Alamos MCNP radiation-transport code.
-\cite{josey2023reassessing,gibson2025mcnpnewsletterq1}.
+While many of the engines from Table \ref{tab:language-rngs} are
+implemented in Randompack, there are some that are absent. Among those
+is the most popular one, the Mersenne Twister. Its state is 312 64-bit
+words, 35 times more than the largest Randompack engine (ranlux++).
+Moreover it fails BigCrush. Of the remaining generators, XORWOW does not
+pass BigCrush reliably, but three others, Threefry, Java's LXM
+generator, and MRG32k3a, are stronger candidates for later inclusion.
+They are high-quality but probably somewhat slower than most of those
+present.
 
-Many of the engines from Table \ref{tab:language-rngs} appear here,
-but some are missing. Among those is the most popular one, the
-Mersenne Twister. Its state is 312 64-bit words, 35 times more than
-the largest Randompack engine (ranlux++). Moreover it fails BigCrush.
-For the other generators not included, XORWOW does not pass BigCrush
-reliably, but three others, Threefry, Java's LXM generator, and
-MRG32k3a, are stronger candidates for later inclusion. They are
-high-quality but probably somewhat slower than most of those present.
+With one exception, the C code for the engines is copied directly from
+their original or standard public description, with minor adaptation to
+the Randompack setting. The exception is ranlux++, a modernized version
+of ranlux due to Sibidanov (2017) which was rewritten from his
+mathematical description because all available implementations,
+including Sibidanov's, are Gnu-licensed
+\cite{sibidanov2017ranluxpp,hahnfeld2021ranluxpp,jirka2021portable}.
 
+\subsection{State initialization and stream control}
+Randompack provides four classes of of RNG engine initialization:
+deterministic seeding, explicit stream selection (for most engines),
+randomization from system entropy, and exact assignment of the full
+internal state.
 
+Seeding deserves careful treatment as some RNGs may show poor
+statistical behaviour if seeded directly with a small seed. A better
+approach is to mix the seed and spread it across the full state, using a
+process that is radically different from the RNG being seeded
+\cite{matsumoto2007initialization,oneill2014pcg,blackman2021scrambled}.
+As noted in the Introduction, SplitMix \cite{steele2014splitmix} could
+be used for this purpose, but O'Neill's \texttt{seed\_seq\_fe128}
+\cite{oneill2015seedseq} provides an alternative adopted in Randompack.
+It hashes and mixes a vector of seeds into a 128-bit \emph{entropy pool}
+and then applying different hash functions to the pool to generate the
+output state. O'Neill aims for strict avalanche, meaning that flipping a
+bit in the seed material flips each output bit with probability $1/2$,
+and reports empirical results consistent with such behaviour. NumPy's
+seeding is likewise based on O'Neill's \texttt{seed_seq} work.
 
+In Randompack the user seed together with a spawn key of arbitrary
+length constitutes the input to the seeding mixer. This creates one way
+of creating an arbitrary number of deterministically seeded substreams.
+The spawn key could, for instance, consist of MPI rank, thread id, task
+number, etc. For Randompack's engines the probability that two such
+substreams overlap will be vanishingly small, but, if the user prefers,
+Randompack also supports the built-in features of the different engines
+for creating mathematically proven independent streams: jumps for ranlux
+and the xor family, keys for the counter-based engines, $(a,b,c)$ state
+for sfc64 and increments for pcg64. These stream-selection operations
+would typically be used together with the duplicate function when
+setting up parallel simulations.
+
+Randompack’s randomize function obtains cryptographically secure system
+entropy from the operating system: it uses \texttt{RtlGenRandom} on
+Windows, \texttt{arc4random\_buf} on macOS and OpenBSD, and
+\texttt{getrandom} on Linux and other Unixes which support it, with
+\texttt{/dev/urandom} as a fallback. If that too is unavailable, an
+emergency fallback mixes in the system clock. 
+
+\cite{matsumoto2007initialization}
 
 %    2.3 Engines, streams, and seeding
 % 3.	Algorithms and implementation
@@ -404,8 +451,7 @@ high-quality but probably somewhat slower than most of those present.
 %    3.3 Permutations and sampling without replacement
 %    3.4 SIMD and performance-oriented implementation
 % 4.	Discussion
-% 5.	Conclusion
-
+% 5.	Conclusioge
 \section{Design and interface}
 
 \section{Algorithms and implementation}

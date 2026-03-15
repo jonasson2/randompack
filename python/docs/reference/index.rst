@@ -37,8 +37,10 @@ Rng Methods
    Rng.duplicate
    Rng.serialize
    Rng.deserialize
-   Rng.squares_set_state
-   Rng.philox_set_state
+   Rng.squares_set_ctr
+   Rng.squares_set_key
+   Rng.philox_set_ctr
+   Rng.philox_set_key
    Rng.pcg64_set_inc
    Rng.set_state
 
@@ -83,7 +85,8 @@ Rng Methods
    generated/randompack.Rng.pareto.rst
    generated/randompack.Rng.pcg64_set_inc.rst
    generated/randompack.Rng.perm.rst
-   generated/randompack.Rng.philox_set_state.rst
+   generated/randompack.Rng.philox_set_ctr.rst
+   generated/randompack.Rng.philox_set_key.rst
    generated/randompack.Rng.randomize.rst
    generated/randompack.Rng.raw.rst
    generated/randompack.Rng.rst
@@ -92,7 +95,8 @@ Rng Methods
    generated/randompack.Rng.serialize.rst
    generated/randompack.Rng.set_state.rst
    generated/randompack.Rng.skew_normal.rst
-   generated/randompack.Rng.squares_set_state.rst
+   generated/randompack.Rng.squares_set_ctr.rst
+   generated/randompack.Rng.squares_set_key.rst
    generated/randompack.Rng.t.rst
    generated/randompack.Rng.unif.rst
    generated/randompack.Rng.weibull.rst

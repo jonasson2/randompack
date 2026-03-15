@@ -267,21 +267,28 @@ bool randompack_pcg64_set_inc( // Set PCG increment (state unchanged)
   randompack_rng *rng      // in/out  target RNG
 );
 
-bool randompack_philox_set_state( // Set philox counter/key state directly
+bool randompack_philox_set_ctr( // Set philox counter state directly
   uint64_t ctr[4],            // in      counter state
+  randompack_rng *rng         // in/out  target RNG
+);
+
+bool randompack_philox_set_key( // Set philox key state directly
   uint64_t key[2],            // in      key state
   randompack_rng *rng         // in/out  target RNG
 );
 
-bool randompack_squares_set_state( // Set squares64 counter/key state directly
-  uint64_t ctr,               // in      counter state (4 x uint64s)
+bool randompack_squares_set_ctr( // Set squares64 counter state directly
+  uint64_t ctr,               // in      counter state
+  randompack_rng *rng         // in/out  target RNG
+);
+
+bool randompack_squares_set_key( // Set squares64 key state directly
   uint64_t key,               // in      key state
   randompack_rng *rng         // in/out  target RNG
 );
 
-bool randompack_sfc64_set_state( // Set sfc64 state directly
-  uint64_t sfcstate[3],       // in      state words a, b, c
-  uint64_t counter,           // in      counter word
+bool randompack_sfc64_set_abc( // Set the sfc64 a,b,c state words directly
+  uint64_t abc[3],            // in      state words a, b, c
   randompack_rng *rng         // in/out  target RNG
 );
 
