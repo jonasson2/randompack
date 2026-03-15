@@ -229,10 +229,8 @@ function philox_set_state!(rng::RNG;
   length(key) == 2 || throw(ArgumentError("philox key must have length 2"))
   ctrv = _u64_vec_from_ints(ctr)
   keyv = _u64_vec_from_ints(key)
-  ctr = _PhiloxCtr((ctrv[1], ctrv[2], ctrv[3], ctrv[4]))
-  k = _PhiloxKey((keyv[1], keyv[2]))
   ok = ccall(_sym(:randompack_philox_set_state), Bool,
-             (_PhiloxCtr, _PhiloxKey, RNGPtr), ctr, k, rng.ptr)
+             (Ptr{UInt64}, Ptr{UInt64}, RNGPtr), ctrv, keyv, rng.ptr)
   _check_ok(ok, rng.ptr, "randompack_philox_set_state failed")
   return nothing
 end
@@ -283,6 +281,31 @@ function pcg64_set_inc!(rng::RNG; inc)
   ok = ccall(_sym(:randompack_pcg64_set_inc), Bool,
              (Ptr{UInt64}, RNGPtr), c_inc, rng.ptr)
   _check_ok(ok, rng.ptr, "randompack_pcg64_set_inc failed")
+  return nothing
+end
+
+"""
+    Randompack.sfc64_set_state!(rng::RNG; sfcstate, counter::Integer)
+
+Set the `sfc64` state directly.
+
+Values are range-checked and converted to `UInt64` before calling the C
+library. `sfcstate` must be a length-3 vector `[a, b, c]`.
+
+# Examples
+```julia
+Randompack.sfc64_set_state!(rng; sfcstate=[7, 11, 13], counter=17)
+```
+
+"""
+function sfc64_set_state!(rng::RNG; sfcstate, counter::Integer)
+  rng.ptr == C_NULL && throw(ErrorException("RNG pointer is NULL"))
+  length(sfcstate) == 3 || throw(ArgumentError("sfcstate must have length 3"))
+  c_state = _u64_vec_from_ints(sfcstate)
+  c_counter = _u64_scalar_checked(counter)
+  ok = ccall(_sym(:randompack_sfc64_set_state), Bool,
+             (Ptr{UInt64}, UInt64, RNGPtr), c_state, c_counter, rng.ptr)
+  _check_ok(ok, rng.ptr, "randompack_sfc64_set_state failed")
   return nothing
 end
 

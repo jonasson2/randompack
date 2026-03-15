@@ -1035,15 +1035,11 @@ subroutine set_state64(self, state)
 end subroutine
 subroutine rp_philox_set_state(self, ctr, key)
   class(randompack_rng), intent(inout) :: self
-  type(randompack_philox_ctr), intent(in) :: ctr
-  type(randompack_philox_key), intent(in) :: key
-  type(c_philox_ctr) :: cctr
-  type(c_philox_key) :: ckey
+  integer(c_int64_t), intent(in) :: ctr(4)
+  integer(c_int64_t), intent(in) :: key(2)
   logical(c_bool) :: c_ok
   if (.not. c_associated(self%p)) error stop rp_error_message(self, "philox_set_state")
-  cctr%v = int(ctr%v, c_int64_t)
-  ckey%v = int(key%v, c_int64_t)
-  c_ok = crp_philox_set_state(cctr, ckey, self%p)
+  c_ok = crp_philox_set_state(ctr, key, self%p)
   if (.not. c_ok) error stop rp_error_message(self, "philox_set_state")
 end subroutine
 
@@ -1054,6 +1050,16 @@ subroutine rp_pcg64_set_inc(self, inc)
   if (.not. c_associated(self%p)) error stop rp_error_message(self, "pcg64_set_inc")
   c_ok = crp_pcg64_set_inc(inc, self%p)
   if (.not. c_ok) error stop rp_error_message(self, "pcg64_set_inc")
+end subroutine
+
+subroutine rp_sfc64_set_state(self, sfcstate, counter)
+  class(randompack_rng), intent(inout) :: self
+  integer(c_int64_t), intent(in) :: sfcstate(3)
+  integer(c_int64_t), intent(in) :: counter
+  logical(c_bool) :: c_ok
+  if (.not. c_associated(self%p)) error stop rp_error_message(self, "sfc64_set_state")
+  c_ok = crp_sfc64_set_state(sfcstate, counter, self%p)
+  if (.not. c_ok) error stop rp_error_message(self, "sfc64_set_state")
 end subroutine
 
 subroutine rp_squares_set_state32(self, ctr, key)

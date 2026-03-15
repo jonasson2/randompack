@@ -369,9 +369,9 @@ interface
   end function
 
   logical(c_bool) function crp_philox_set_state(ctr, key, rngp) bind(C, name="randompack_philox_set_state")
-    import :: c_ptr, c_bool, c_philox_ctr, c_philox_key
-    type(c_philox_ctr), value :: ctr
-    type(c_philox_key), value :: key
+    import :: c_ptr, c_bool, c_int64_t
+    integer(c_int64_t), intent(in) :: ctr(4)
+    integer(c_int64_t), intent(in) :: key(2)
     type(c_ptr), value :: rngp
   end function
 
@@ -385,6 +385,13 @@ interface
   logical(c_bool) function crp_pcg64_set_inc(inc, rngp) bind(C, name="randompack_pcg64_set_inc")
     import :: c_ptr, c_bool, c_int64_t
     integer(c_int64_t), intent(in) :: inc(2)
+    type(c_ptr), value :: rngp
+  end function
+
+  logical(c_bool) function crp_sfc64_set_state(sfcstate, counter, rngp) bind(C, name="randompack_sfc64_set_state")
+    import :: c_ptr, c_bool, c_int64_t
+    integer(c_int64_t), intent(in) :: sfcstate(3)
+    integer(c_int64_t), value :: counter
     type(c_ptr), value :: rngp
   end function
 

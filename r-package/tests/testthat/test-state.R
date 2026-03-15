@@ -38,6 +38,16 @@ test_that("pcg64_set_inc makes draws repeatable", {
   expect_error(rng1$pcg64_set_inc(c(2, 0, 5, 0)))
 })
 
+test_that("sfc64_set_state makes draws repeatable", {
+  rng1 <- randompack_rng("sfc64")
+  rng2 <- randompack_rng("sfc64")
+  sfcstate <- c(7, 0, 11, 0, 13, 0)
+  counter <- c(17, 0)
+  rng1$sfc64_set_state(sfcstate, counter)
+  rng2$sfc64_set_state(sfcstate, counter)
+  expect_identical(rng1$unif(5), rng2$unif(5))
+})
+
 test_that("philox_set_state makes draws repeatable", {
   rng1 <- randompack_rng("philox")
   rng2 <- randompack_rng("philox")

@@ -385,8 +385,7 @@ bool randompack_pcg64_set_inc(uint64_t inc[2], randompack_rng *rng) {
   return true;
 }
 
-bool randompack_philox_set_state(randompack_philox_ctr ctr, randompack_philox_key key,
-  randompack_rng *rng) {
+bool randompack_philox_set_state(uint64_t ctr[4], uint64_t key[2], randompack_rng *rng) {
   if (!rng) return false;
   rng->last_error = 0;
   if (rng->engine != PHILOX) {
@@ -406,6 +405,18 @@ bool randompack_squares_set_state(uint64_t ctr, uint64_t key,
     return false;
   }
   squares_set_state(ctr, key, rng);
+  return true;
+}
+
+bool randompack_sfc64_set_state(uint64_t sfcstate[3], uint64_t counter,
+  randompack_rng *rng) {
+  if (!rng) return false;
+  rng->last_error = 0;
+  if (rng->engine != SFC64) {
+    rng->last_error = "randompack sfc64_set_state: engine is not sfc64";
+    return false;
+  }
+  sfc64_set_state(sfcstate, counter, rng);
   return true;
 }
 

@@ -37,6 +37,7 @@ Advanced / state-control
 - Randompack.philox_set_state!
 - Randompack.squares_set_state!
 - Randompack.pcg64_set_inc!
+- Randompack.sfc64_set_state!
 - Randompack.serialize
 - Randompack.deserialize!
 """
@@ -72,6 +73,7 @@ include("interface_advanced.jl")
   Base.eval(@__MODULE__, Expr(:public,
     :engines, :duplicate, :randomize!, :full_mantissa!, :set_state!,
     :jump!, :philox_set_state!, :squares_set_state!, :pcg64_set_inc!,
+    :sfc64_set_state!,
     :serialize, :deserialize!
   ))
 end

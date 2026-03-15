@@ -166,10 +166,14 @@ Random123 library by Salmon and Moraes \cite{salmon2011parallel}. Its
 counter-based Threefry and Philox generators have become popular for
 simulation on GPUs and are the default in several systems
 (Table~\ref{tab:language-rngs}). They allow the generation of a vast
-number of independent streams. Another important development was
-O'Neill's PCG family (2014) \cite{oneill2014pcg}. It also supports
-many streams via a stream-selector termed \emph{increment}. A 64-bit
-version of it has been adopted as NumPy's default RNG engine. And one
+number of independent streams.
+
+Another important development was O'Neill's PCG family (2014)
+\cite{oneill2014pcg}. It also supports many streams via a
+stream-selector termed \emph{increment}. A 64-bit version of it has
+been adopted as NumPy's default RNG engine. In 2019 O'Neill suggested
+an improved version, PCG64-DXSM, which is planned to become default
+for NumPy \cite{oneill2019pcg64dxsm-post,numpy_pcg64dxsm_upgrade}. One
 more way of getting many streams is via stream splitting, an
 object-oriented approach implemented in SplitMix (2014)
 \cite{steele2014splitmix} and refined in the LXM family (2021)
@@ -333,6 +337,9 @@ for the engines are that they should
 \item support the construction of independent substreams.
 \end{enumerate}
 
+\newcommand{\scrambledandweb}{\cite{blackman2021scrambled,vigna2026shootout}}
+\newcommand{\oneillpcgandpost}{\cite{oneill2014pcg,oneill2019pcg64dxsm-post}}
+
 \begin{table}
 \caption{Random number generators (engines) implemented in Randompack.
 The default generator, a SIMD-accelerated version of the xoshiro256++
@@ -340,13 +347,13 @@ with short name x256++simd, is not listed.}
 \label{tab:engines}
 \begin{tabular}{llcclcc}
 \toprule
-engine & short name & state words & period\textsuperscript{a} & authors & year & reference \\
+engine & short name & state words & period\textsuperscript{a} & authors & year & references \\
 \midrule
-xoshiro256++   & x256++   & 4 & $2^{256}-1$        & Vigna and Blackman  & 2019 & \cite{blackman2021scrambled}\\
-xoshiro256**   & x256**   & 4 & $2^{256}-1$        & Vigna and Blackman  & 2018 & \cite{blackman2021scrambled}\\
+xoshiro256++   & x256++   & 4 & $2^{256}-1$        & Vigna and Blackman  & 2019 & \scrambledandweb\\
+xoshiro256**   & x256**   & 4 & $2^{256}-1$        & Vigna and Blackman  & 2018 & \scrambledandweb\\
 xorshift128+   & x128+    & 2 & $2^{128}-1$        & Vigna               & 2014 & \cite{vigna2016experimental}\\
-xoroshiro128++ & xoro++   & 2 & $2^{128}-1$        & Vigna and Blackman  & 2019 & \cite{blackman2021scrambled}\\
-PCG64 DXSM     & pcg64    & 4 & $2^{128}$     & O'Neill & 2019 & \cite{oneill2014pcg,oneill2019pcg64dxsm-post}\\
+xoroshiro128++ & xoro++   & 2 & $2^{128}-1$        & Vigna and Blackman  & 2019 & \scrambledandweb\\
+PCG64 DXSM     & pcg64    & 4 & $2^{128}$          & O'Neil              & 2019 & \oneillpcgandpost\\
 squares64      & squares  & 2 & $2^{64}$           & Widynski            & 2021 & \cite{widynski2020squares}\\
 Philox-4x64    & philox   & 6 & $2^{256}$          & Salmon and Moraes   & 2011 & \cite{salmon2011parallel}\\
 sfc64          & sfc64    & 4 & $\approx 2^{255}$  & Chris Doty-Humphrey & 2010 & \cite{dotyhumphrey2010pract}\\
@@ -371,10 +378,11 @@ not fulfill all the inclusion criteria: xorshift128+ does not reliably
 pass BigCrush, but it is very efficient, and important in the
 evolution of the xor-family. ChaCha20 is not particularly efficient
 and its period is relatively short, but it is included to provide one
-cryptographically secure engine, and sfc64 does not naturally provide
-substreams, but it is both fast and simple, moreover. Interestingly,
-sfc64 is planned to become the default random number generator in a
-forthcoming release of the Los Alamos MCNP radiation-transport code
+cryptographically secure engine. 
+
+Interestingly, sfc64 is planned to
+become the default random number generator in a forthcoming release of
+the Los Alamos MCNP radiation-transport code.
 \cite{josey2023reassessing,gibson2025mcnpnewsletterq1}.
 
 Many of the engines from Table \ref{tab:language-rngs} appear here,

@@ -105,6 +105,19 @@ def test_pcg64_set_inc():
         rng1.pcg64_set_inc([2, 5])
 
 
+def test_sfc64_set_state():
+    engs = rp.engines()
+    if "sfc64" not in engs:
+        return
+    rng1 = rp.Rng("sfc64")
+    rng2 = rp.Rng("sfc64")
+    rng1.sfc64_set_state([7, 11, 13], 17)
+    rng2.sfc64_set_state([7, 11, 13], 17)
+    x = rng1.unif(100)
+    y = rng2.unif(100)
+    assert np.array_equal(x, y)
+
+
 def test_jump():
     rng1 = rp.Rng()
     rng2 = rp.Rng()

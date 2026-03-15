@@ -133,13 +133,6 @@ end
   return UInt128(v)
 end
 
-struct _PhiloxCtr
-  v::NTuple{4, UInt64}
-end
-
-struct _PhiloxKey
-  v::NTuple{2, UInt64}
-end
 const _PermTypes = Union{Int8, Int16, Int32, Int64, UInt8, UInt16, UInt32, UInt64}
 function _fill_array!(A::AbstractArray{T}, fill_strided!, fill_tmp!) where {T}
   if A isa StridedArray{T}

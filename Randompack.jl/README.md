@@ -78,11 +78,13 @@ random_mvn!(rng, Z, Sigma)                       # Sigma must be 2×2
 rngx = rng_create("x256**")
 rngp = rng_create("philox")
 rngq = rng_create("pcg64")
+rngs = rng_create("sfc64")
 rngr = rng_create("ranlux")
 Randompack.set_state!(rngx; state=[1,2,3,4])                  # general state setter
 Randompack.philox_set_state!(rngp; ctr=[1,2,3,4], key=[4,6])  # set Philox counter & key
 Randompack.jump!(rngp, 128)                                   # jump state by 2^128 steps
 Randompack.pcg64_set_inc!(rngq; inc=[3, 5])                   # change PCG increment
+Randompack.sfc64_set_state!(rngs; sfcstate=[7, 11, 13], counter=17)  # set sfc64 state
 Randompack.jump!(rngr, 32)                                    # jump state by 2^32 steps
 
 rngy = rng_create("x256**")                      # engines must match

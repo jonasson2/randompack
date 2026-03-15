@@ -13,8 +13,7 @@ U64_MAX = (1 << 64) - 1
 U128_MAX = (1 << 128) - 1
 
 from ._core cimport (
-    randompack_rng, randompack_philox_ctr,
-    randompack_philox_key, randompack_create,
+    randompack_rng, randompack_create,
     randompack_duplicate, randompack_free,
     randompack_last_error, randompack_seed,
     randompack_randomize, randompack_engines,
@@ -38,7 +37,7 @@ from ._core cimport (
     randompack_paretof, randompack_weibullf,
     randompack_skew_normalf, randompack_serialize,
     randompack_deserialize, randompack_philox_set_state,
-    randompack_squares_set_state, randompack_pcg64_set_inc,
+    randompack_sfc64_set_state, randompack_squares_set_state, randompack_pcg64_set_inc,
     randompack_set_state, )
 
 np.import_array()
@@ -466,8 +465,8 @@ cdef class Rng:
         pcg64_set_inc
         set_state
         """
-        cdef randompack_philox_ctr c
-        cdef randompack_philox_key k
+        cdef uint64_t c[4]
+        cdef uint64_t k[2]
         cdef int i
         cdef object val
         if self.ptr == NULL:
@@ -482,12 +481,12 @@ cdef class Rng:
             val = vals_ctr[i]
             if val < 0 or val > U64_MAX:
                 raise ValueError("ctr entries must be in [0, 2^64-1]")
-            c.v[i] = <uint64_t>val
+            c[i] = <uint64_t>val
         for i in range(2):
             val = vals_key[i]
             if val < 0 or val > U64_MAX:
                 raise ValueError("key entries must be in [0, 2^64-1]")
-            k.v[i] = <uint64_t>val
+            k[i] = <uint64_t>val
         if not randompack_philox_set_state(c, k, self.ptr):
             _raise_last_error(self.ptr)
 
@@ -527,6 +526,48 @@ cdef class Rng:
                 raise ValueError("inc entries must be in [0, 2^64-1]")
             c_inc[i] = <uint64_t>val
         if not randompack_pcg64_set_inc(c_inc, self.ptr):
+            _raise_last_error(self.ptr)
+
+    def sfc64_set_state(self, sfcstate, counter):
+        """
+        Set the sfc64 state directly.
+
+        Parameters
+        ----------
+        sfcstate : sequence of int
+            Three 64-bit state words `[a, b, c]` in [0, 2^64-1].
+        counter : int
+            64-bit counter word in [0, 2^64-1].
+
+        Returns
+        -------
+        None
+
+        See Also
+        --------
+        set_state
+        pcg64_set_inc
+        """
+        cdef uint64_t c_state[3]
+        cdef uint64_t c_counter
+        cdef object vals
+        cdef object val
+        cdef int i
+        if self.ptr == NULL:
+            raise RuntimeError("RNG pointer is NULL")
+        vals = list(sfcstate)
+        if len(vals) != 3:
+            raise ValueError("sfcstate must have length 3")
+        for i in range(3):
+            val = int(vals[i])
+            if val < 0 or val > U64_MAX:
+                raise ValueError("sfcstate entries must be in [0, 2^64-1]")
+            c_state[i] = <uint64_t>val
+        val = int(counter)
+        if val < 0 or val > U64_MAX:
+            raise ValueError("counter must be in [0, 2^64-1]")
+        c_counter = <uint64_t>val
+        if not randompack_sfc64_set_state(c_state, c_counter, self.ptr):
             _raise_last_error(self.ptr)
 
     def set_state(self, state):

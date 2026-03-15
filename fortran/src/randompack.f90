@@ -8,22 +8,6 @@ public :: randompack_rng, engines
 
 integer, parameter :: MAXSTRLEN = 1000
 
-type, bind(C) :: c_philox_ctr
-  integer(c_int64_t) :: v(4)
-end type
-
-type, bind(C) :: c_philox_key
-  integer(c_int64_t) :: v(2)
-end type
-
-type, public :: randompack_philox_ctr
-  integer(c_int64_t) :: v(4)
-end type
-
-type, public :: randompack_philox_key
-  integer(c_int64_t) :: v(2)
-end type
-
 type :: randompack_rng
   type(c_ptr) :: p = c_null_ptr
 contains
@@ -121,6 +105,7 @@ contains
   generic :: set_state => set_state32, set_state64
   procedure :: philox_set_state => rp_philox_set_state
   procedure :: pcg64_set_inc => rp_pcg64_set_inc
+  procedure :: sfc64_set_state => rp_sfc64_set_state
   procedure, private :: squares_set_state32 => rp_squares_set_state32
   procedure, private :: squares_set_state64 => rp_squares_set_state64
   generic :: squares_set_state => squares_set_state32, squares_set_state64

@@ -77,10 +77,12 @@ Y <- rng$mvn(50, Sigma, mu=c(1.0, 2.0))        # specified mean
 ```r
 rngx <- randompack_rng("x256**")
 rngg <- randompack_rng("pcg64")
+rngs <- randompack_rng("sfc64")
 rngp <- randompack_rng("philox")
 rngr <- randompack_rng("ranlux++")
 rngx$set_state(c(1, 2, 3, 4))                  # general state setter
 rngg$pcg64_set_inc(c(3, 0, 5, 0))              # PCG increment setter
+rngs$sfc64_set_state(c(7, 0, 11, 0, 13, 0), c(17, 0))  # set sfc64 state
 rngx$jump(128)                                 # jump the state by 2^128 steps
 rngp$philox_set_state(c(1, 2, 3, 4), c(4, 6))  # engine-specific state setter
 rngr$jump(32)                                  # jump the state by 2^32 steps

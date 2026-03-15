@@ -186,17 +186,20 @@ static void set_state(uint64_t *state, int nstate, randompack_rng *rng) {
   rand_init(rng);
 }
 
-static void philox_set_state(randompack_philox_ctr ctr, randompack_philox_key key,
-  randompack_rng *rng) {
+static void philox_set_state(uint64_t ctr[4], uint64_t key[2], randompack_rng *rng) {
   uint64_t state[6] = {
-    ctr.v[0], ctr.v[1], ctr.v[2], ctr.v[3],
-    key.v[0], key.v[1]
+    ctr[0], ctr[1], ctr[2], ctr[3], key[0], key[1]
   };
   set_state(state, LEN(state), rng);
 }
 
 static void squares_set_state(uint64_t ctr, uint64_t key, randompack_rng *rng) {
   uint64_t state[2] = {ctr, key};
+  set_state(state, LEN(state), rng);
+}
+
+static void sfc64_set_state(uint64_t sfcstate[3], uint64_t counter, randompack_rng *rng) {
+  uint64_t state[4] = {sfcstate[0], sfcstate[1], sfcstate[2], counter};
   set_state(state, LEN(state), rng);
 }
 

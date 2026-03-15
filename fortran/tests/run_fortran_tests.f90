@@ -38,8 +38,6 @@ use, intrinsic :: ieee_arithmetic, only: ieee_is_finite, ieee_set_flag, ieee_und
   type(randompack_rng) :: r1, r2, r3
   type(randompack_rng) :: s1, s2
   type(randompack_rng) :: p1, p2
-  type(randompack_philox_ctr) :: ctr
-  type(randompack_philox_key) :: key
   character(len=:), allocatable :: names(:), desc(:)
   character(len=:), allocatable :: engine
   logical :: has_pcg, has_x, has_philox, has_squares
@@ -272,12 +270,12 @@ use, intrinsic :: ieee_arithmetic, only: ieee_is_finite, ieee_set_flag, ieee_und
 
   ! Optional: philox_set_state repeatability
   if (has_philox) then
-    ctr%v = [1, 2, 3, 4]
-    key%v = [5, 6]
     call p1%create("philox")
     call p2%create("philox")
-    call p1%philox_set_state(ctr, key)
-    call p2%philox_set_state(ctr, key)
+    call p1%philox_set_state([1_c_int64_t, 2_c_int64_t, 3_c_int64_t, 4_c_int64_t], &
+      [5_c_int64_t, 6_c_int64_t])
+    call p2%philox_set_state([1_c_int64_t, 2_c_int64_t, 3_c_int64_t, 4_c_int64_t], &
+      [5_c_int64_t, 6_c_int64_t])
     call p1%unif(x)
     call p2%unif(y)
     call assert(size(x) == size(y) .and. all(approx_equal_d(x, y)), &
@@ -296,6 +294,17 @@ use, intrinsic :: ieee_arithmetic, only: ieee_is_finite, ieee_set_flag, ieee_und
       "pcg64_set_inc")
     call p1%free()
   end if
+
+  call p1%create("sfc64")
+  call p2%create("sfc64")
+  call p1%sfc64_set_state([7_c_int64_t, 11_c_int64_t, 13_c_int64_t], 17_c_int64_t)
+  call p2%sfc64_set_state([7_c_int64_t, 11_c_int64_t, 13_c_int64_t], 17_c_int64_t)
+  call p1%unif(x)
+  call p2%unif(y)
+  call assert(size(x) == size(y) .and. all(approx_equal_d(x, y)), &
+    "sfc64_set_state repeatability")
+  call p1%free()
+  call p2%free()
 
   call r1%free()
   call r2%free()

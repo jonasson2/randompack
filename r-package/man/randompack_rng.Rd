@@ -132,6 +132,10 @@ by \code{serialize()}.}
 Set the increment of the PCG64 engine. The increment may have length up to 4
 and shorter vectors are zero-padded.
 }
+\item{\code{rng$sfc64_set_state(sfcstate, counter)}}{
+Set the state of the sfc64 engine. \code{sfcstate} may have length up to 6
+and \code{counter} up to 2; shorter vectors are zero-padded.
+}
 \item{\code{rng$philox_set_state(counter, key)}}{
 Set the state of the Philox engine. The counter may have length up to 8
 and the key up to 4; shorter vectors are zero-padded.

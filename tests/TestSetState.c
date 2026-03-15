@@ -127,8 +127,8 @@ static void test_buf_reset(void) {
 }
 
 static void test_philox_set_state(void) {
-  randompack_philox_ctr ctr = {{1, 2, 3, 4}};
-  randompack_philox_key key = {{5, 6}};
+  uint64_t ctr[4] = {1, 2, 3, 4};
+  uint64_t key[2] = {5, 6};
   randompack_rng *rng = make_rng("philox");
   bool ok = randompack_philox_set_state(ctr, key, rng);
   check_success(ok, rng);
@@ -197,6 +197,27 @@ static void test_squares_set_state(void) {
   randompack_free(rng);
 }
 
+static void test_sfc64_set_state(void) {
+  uint64_t sfcstate[3] = {7, 11, 13};
+  uint64_t counter = 17;
+  randompack_rng *rng = make_rng("sfc64");
+  bool ok = randompack_sfc64_set_state(sfcstate, counter, rng);
+  check_success(ok, rng);
+  uint64_t a[4], b[4];
+  ok = randompack_uint64(a, LEN(a), 0, rng);
+  check_success(ok, rng);
+  ok = randompack_sfc64_set_state(sfcstate, counter, rng);
+  check_success(ok, rng);
+  ok = randompack_uint64(b, LEN(b), 0, rng);
+  check_success(ok, rng);
+  CHECK_EQUALV(a, b, LEN(a));
+  randompack_free(rng);
+  rng = make_rng("philox");
+  ok = randompack_sfc64_set_state(sfcstate, counter, rng);
+  check_failure(ok, rng);
+  randompack_free(rng);
+}
+
 void TestSetState(void) {
   test_invalid_args();
   test_xorfamily_nonzero();
@@ -204,5 +225,6 @@ void TestSetState(void) {
   test_buf_reset();
   test_philox_set_state();
   test_squares_set_state();
+  test_sfc64_set_state();
   test_pcg_set_increment();
 }

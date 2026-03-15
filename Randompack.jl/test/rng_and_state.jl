@@ -174,6 +174,16 @@ end
   end
 end
 
+@testset "sfc64_set_state!" begin
+  rng1 = rng_create("sfc64")
+  rng2 = rng_create("sfc64")
+  Randompack.sfc64_set_state!(rng1; sfcstate=[7, 11, 13], counter=17)
+  Randompack.sfc64_set_state!(rng2; sfcstate=[7, 11, 13], counter=17)
+  x1 = random_unif(rng1)
+  x2 = random_unif(rng2)
+  @test x1 == x2
+end
+
 @testset "serialize" begin
   rng = rng_create()
   rng_seed!(rng, 42)

@@ -12,6 +12,7 @@ rsync -av --delete \
   --exclude='*_R.c' \
   --exclude='init.c' \
   --exclude='Makevars' \
+  --exclude='Makevars.in' \
   --exclude='.DS_Store' \
   --exclude='meson.build' \
   --exclude='blas.f' \

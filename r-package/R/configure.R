@@ -70,6 +70,15 @@ methods_configure <- list(
     invisible(self)
   },
 
+  sfc64_set_state = function(sfcstate, counter) {
+    if (is.null(self$ptr)) stop("RNG is not initialized")
+    sfcstate <- as_u32_vec(sfcstate, "sfcstate", max_len = 6L)
+    counter <- as_u32_vec(counter, "counter", max_len = 2L)
+    .Call("randompack_sfc64_set_state_R", self$ptr, sfcstate, counter,
+          PACKAGE = "randompack")
+    invisible(self)
+  },
+
   philox_set_state = function(counter, key) {
     if (is.null(self$ptr)) stop("RNG is not initialized")
     counter <- as_u32_vec(counter, "counter", max_len = 8L)

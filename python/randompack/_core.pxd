@@ -3,10 +3,6 @@ from libc.stdint cimport uint8_t, uint32_t, uint64_t
 
 cdef extern from "randompack.h":
     ctypedef struct randompack_rng
-    ctypedef struct randompack_philox_ctr:
-        uint64_t v[4]
-    ctypedef struct randompack_philox_key:
-        uint64_t v[2]
 
     randompack_rng *randompack_create(const char *engine)
     randompack_rng *randompack_duplicate(randompack_rng *rng)
@@ -94,9 +90,10 @@ cdef extern from "randompack.h":
     bint randompack_deserialize(const uint8_t *buf, int len,
                                 randompack_rng *rng)
     bint randompack_pcg64_set_inc(uint64_t inc[2], randompack_rng *rng)
-    bint randompack_philox_set_state(randompack_philox_ctr ctr,
-                                     randompack_philox_key key,
+    bint randompack_philox_set_state(uint64_t ctr[4], uint64_t key[2],
                                      randompack_rng *rng)
+    bint randompack_sfc64_set_state(uint64_t sfcstate[3], uint64_t counter,
+                                    randompack_rng *rng)
     bint randompack_squares_set_state(uint64_t ctr, uint64_t key,
                                       randompack_rng *rng)
     bint randompack_set_state(uint64_t *state, int nstate,

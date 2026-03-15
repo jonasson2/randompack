@@ -10,8 +10,6 @@
 #define RANDOMPACK_VERSION "0.1.1"
 
 typedef struct randompack_rng randompack_rng;
-typedef struct { uint64_t v[4]; } randompack_philox_ctr;
-typedef struct { uint64_t v[2]; } randompack_philox_key;
 
 randompack_rng *randompack_create( // Create randomized RNG of given engine type, error→0
   const char *engine    // in      Type ("x256++simd" [default], "pcg64",... 0→default)
@@ -270,14 +268,20 @@ bool randompack_pcg64_set_inc( // Set PCG increment (state unchanged)
 );
 
 bool randompack_philox_set_state( // Set philox counter/key state directly
-  randompack_philox_ctr ctr,  // in      counter state (4 x uint64s)
-  randompack_philox_key key,  // in      key state (2 x uint64s)
+  uint64_t ctr[4],            // in      counter state
+  uint64_t key[2],            // in      key state
   randompack_rng *rng         // in/out  target RNG
 );
 
 bool randompack_squares_set_state( // Set squares64 counter/key state directly
   uint64_t ctr,               // in      counter state (4 x uint64s)
   uint64_t key,               // in      key state
+  randompack_rng *rng         // in/out  target RNG
+);
+
+bool randompack_sfc64_set_state( // Set sfc64 state directly
+  uint64_t sfcstate[3],       // in      state words a, b, c
+  uint64_t counter,           // in      counter word
   randompack_rng *rng         // in/out  target RNG
 );
 

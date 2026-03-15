@@ -81,11 +81,13 @@ rng.mvn(Sigma, out=Z)                            # Sigma must be 2×2
 rngx = randompack.Rng("x256**")
 rngp = randompack.Rng("philox")
 rngq = randompack.Rng("pcg64")
+rngs = randompack.Rng("sfc64")
 rngr = randompack.Rng("ranlux++")
 rngx.set_state(state=[1,2,3,4])                  # general state setter
 rngx.jump(128)                                   # jump the state by 2^128 steps
 rngp.philox_set_state(ctr=[1,2,3,4], key=[4,6])  # engine-specific state setter
 rngq.pcg64_set_inc([3, 5])                       # change PCG stream increment
+rngs.sfc64_set_state([7, 11, 13], 17)            # set sfc64 state and counter
 rngr.jump(32)                                    # jump the state by 2^32 steps
 
 rngy = randompack.Rng("x256**")  # engines must match

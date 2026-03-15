@@ -6,8 +6,7 @@
 //      clang -E -P -DR123_NO_STDINC philox.h | clang-format > philox.inc
 // 3. Edit philox.inc by hand to retain only philox4x64_R and what it depends on.
 //    Rename the function to philox4x64 and hardwire R = 10 as in the original.
-// 4. Replace struct definitions of the counter and key types with typedefs based
-//    on randompack_{counter,philox_key}.
+// 4. Add local struct definitions for the counter and key types.
 // 5. Change __inline__ to inline and remove __atribute__((always_inline)
 // 6. Add _umul128 to allow compilation on windows
 //
@@ -19,8 +18,8 @@
 #include <intrin.h>
 #endif
 
-typedef randompack_philox_key r123array2x64;
-typedef randompack_philox_ctr r123array4x64;
+typedef struct { uint64_t v[2]; } r123array2x64;
+typedef struct { uint64_t v[4]; } r123array4x64;
 
 static inline uint64_t mulhilo64(uint64_t a, uint64_t b, uint64_t *hip) {
   uint64_t hi;
@@ -48,8 +47,8 @@ _philox4x64round(r123array4x64 ctr, r123array2x64 key) {
   return out;
 }
 
-typedef randompack_philox_ctr philox4x64_ctr_t;
-typedef randompack_philox_key philox4x64_key_t;
+typedef r123array4x64 philox4x64_ctr_t;
+typedef r123array2x64 philox4x64_key_t;
 
 static inline philox4x64_ctr_t
 philox4x64(philox4x64_ctr_t ctr, philox4x64_key_t key) {
@@ -68,12 +67,12 @@ philox4x64(philox4x64_ctr_t ctr, philox4x64_key_t key) {
 
 static inline void fill_philox(uint64_t *buf, size_t len, randompack_state *state) {
   uint64_t *out = buf;
-  randompack_philox_ctr ctr;
-  randompack_philox_key key;
+  philox4x64_ctr_t ctr;
+  philox4x64_key_t key;
   copy64(ctr.v, state->u64, 4);
   copy64(key.v, state->u64 + 4, 2);
   for (size_t i = 0; i < len; i += 4) {
-    randompack_philox_ctr block = philox4x64(ctr, key);
+    philox4x64_ctr_t block = philox4x64(ctr, key);
     copy64(out + i, block.v, 4);
     ctr.v[0]++;
   }

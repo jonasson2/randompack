@@ -31,6 +31,7 @@ static int half = 0;
 static int w = WORD_BUFSIZE;
 static bool reverse_bits = false;
 static bool low_only = false;
+static bool high_only = false;
 static bool low_bytes = false;
 
 static uint32_t reverse_bits32(uint32_t x) {
@@ -76,6 +77,13 @@ static unsigned int GetBits(void) {
       out = reverse_bits32(out);
     return out;
   }
+  if (high_only) {
+    word = draw_word();
+    unsigned int out = word >> 32;
+    if (reverse_bits)
+      out = reverse_bits32(out);
+    return out;
+  }
   if (!half) {
     word = draw_word();
     half = 1;
@@ -95,7 +103,7 @@ static unsigned int GetBits(void) {
 
 static void usage(const char *prog) {
   fprintf(stderr,
-    "Usage: %s [-h] [-e engine] [-s seed] [-r] [-l] [-8] (-S|-C|-B)\n\n"
+    "Usage: %s [-h] [-e engine] [-s seed] [-r] [-l] [-H] [-8] (-S|-C|-B)\n\n"
     "Run TestU01 on a randompack RNG.\n\n"
     "Options:\n"
     "  -h          Show this help\n"
@@ -103,6 +111,7 @@ static void usage(const char *prog) {
     "  -s seed     Integer seed passed to randompack_seed\n"
     "  -r          Reverse the 32 bits delivered to TestU01\n"
     "  -l          Feed only the low 32 bits of each uint64 to TestU01\n"
+    "  -H          Feed only the high 32 bits of each uint64 to TestU01\n"
     "  -8          Pack the low 8 bits from 4 uint64 values into one uint32\n"
     "  -S          SmallCrush  (seconds)\n"
     "  -C          Crush       (minutes to tens of minutes)\n"
@@ -117,7 +126,7 @@ int main(int argc, char **argv) {
   long seed = 1;
   bool have_seed = false;
   const char *engine = 0;
-  while ((opt = getopt(argc, argv, "e:s:rl8SCBh")) != -1) {
+  while ((opt = getopt(argc, argv, "e:s:rlH8SCBh")) != -1) {
     switch (opt) {
       case 'e': engine = optarg; break;
       case 's': {
@@ -132,6 +141,7 @@ int main(int argc, char **argv) {
       }
       case 'r': reverse_bits = true; break;
       case 'l': low_only = true; break;
+      case 'H': high_only = true; break;
       case '8': low_bytes = true; break;
       case 'S': battery = SMALL; break;
       case 'C': battery = CRUSH; break;
@@ -147,8 +157,8 @@ int main(int argc, char **argv) {
     usage(argv[0]);
     return 1;
   }
-  if (low_only && low_bytes) {
-    fprintf(stderr, "-l and -8 cannot be used together\n");
+  if ((low_only && high_only) || (low_only && low_bytes) || (high_only && low_bytes)) {
+    fprintf(stderr, "-l, -H and -8 are mutually exclusive\n");
     return 1;
   }
   half = 0;
