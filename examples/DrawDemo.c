@@ -28,9 +28,9 @@ static void draw_philox(int ctr0, int key0) {
     printf("philox unavailable\n");
     return;
   }
-  uint64_t ctr[4] = {ctr0, 0, 0, 0};
+  uint64_t state[6] = {ctr0, 0, 0, 0, 0, 0};
   uint64_t key[2] = {key0, 0};
-  randompack_philox_set_ctr(ctr, rng);
+  randompack_set_state(state, 6, rng);
   randompack_philox_set_key(key, rng);
   double x[2];
   randompack_u01(x, 2, rng);
@@ -40,7 +40,8 @@ static void draw_philox(int ctr0, int key0) {
 
 static void draw_squares(uint64_t ctr, int key) {
   randompack_rng *rng = randompack_create("squares");
-  randompack_squares_set_ctr(ctr, rng);
+  uint64_t state[2] = {ctr, 0};
+  randompack_set_state(state, 2, rng);
   randompack_squares_set_key(key, rng);
   double x[2];
   randompack_u01(x, 2, rng);

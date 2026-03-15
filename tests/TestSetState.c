@@ -70,7 +70,7 @@ static void test_determinism(void) {
   uint64_t x256pp[] = {1,2,3,4};
   uint64_t x256ss[] = {5,6,7,8};
   uint64_t pcg[] = {9,10,11,13};
-  uint64_t cwg[] = {1,2,3,4,5};
+  uint64_t cwg[] = {1,0,2,0,3,0,4,0};
   uint64_t philox[] = {1,2,3,4,5,6};
   uint64_t chacha[] = {
     0x0123456789abcdefULL,
@@ -126,18 +126,18 @@ static void test_buf_reset(void) {
   randompack_free(rng);
 }
 
-static void test_philox_setters(void) {
-  uint64_t ctr[4] = {1, 2, 3, 4};
+static void test_philox_set_key(void) {
   uint64_t key[2] = {5, 6};
+  uint64_t state[6] = {1, 2, 3, 4, 0, 0};
   randompack_rng *rng = make_rng("philox");
-  bool ok = randompack_philox_set_ctr(ctr, rng);
+  bool ok = randompack_set_state(state, LEN(state), rng);
   check_success(ok, rng);
   ok = randompack_philox_set_key(key, rng);
   check_success(ok, rng);
   uint64_t a[4], b[4];
   ok = randompack_uint64(a, LEN(a), 0, rng);
   check_success(ok, rng);
-  ok = randompack_philox_set_ctr(ctr, rng);
+  ok = randompack_set_state(state, LEN(state), rng);
   check_success(ok, rng);
   ok = randompack_philox_set_key(key, rng);
   check_success(ok, rng);
@@ -146,8 +146,6 @@ static void test_philox_setters(void) {
   CHECK_EQUALV(a, b, LEN(a));
   randompack_free(rng);
   rng = make_rng("squares");
-  ok = randompack_philox_set_ctr(ctr, rng);
-  check_failure(ok, rng);
   ok = randompack_philox_set_key(key, rng);
   check_failure(ok, rng);
   randompack_free(rng);
@@ -182,18 +180,72 @@ static void test_pcg_set_increment(void) {
   randompack_free(rng);
 }
 
-static void test_squares_setters(void) {
-  uint64_t ctr = 7;
+static void test_cwg_set_increment(void) {
+  uint64_t state[8] = {1, 0, 7, 0, 11, 0, 13, 0};
+  uint64_t inc[2] = {3, 5};
+  uint64_t inc_even[2] = {2, 5};
+  randompack_rng *rng = make_rng("cwg128");
+  bool ok = randompack_set_state(state, LEN(state), rng);
+  check_success(ok, rng);
+  ok = randompack_cwg128_set_inc(inc, rng);
+  check_success(ok, rng);
+  uint64_t a[4], b[4];
+  ok = randompack_uint64(a, LEN(a), 0, rng);
+  check_success(ok, rng);
+  ok = randompack_set_state(state, LEN(state), rng);
+  check_success(ok, rng);
+  ok = randompack_cwg128_set_inc(inc, rng);
+  check_success(ok, rng);
+  ok = randompack_uint64(b, LEN(b), 0, rng);
+  check_success(ok, rng);
+  CHECK_EQUALV(a, b, LEN(a));
+  ok = randompack_cwg128_set_inc(inc_even, rng);
+  check_failure(ok, rng);
+  randompack_free(rng);
+  rng = make_rng("pcg64");
+  ok = randompack_cwg128_set_inc(inc, rng);
+  check_failure(ok, rng);
+  randompack_free(rng);
+}
+
+static void test_chacha_set_nonce(void) {
+  uint32_t nonce[3] = {7, 11, 13};
+  uint64_t state0[6] = {1, 2, 3, 4, 0, 17ULL << 32};
+  uint64_t state1[6] = {1, 2, 3, 4, 7ULL | (11ULL << 32), 13ULL | (17ULL << 32)};
+  randompack_rng *rng = make_rng("chacha20");
+  bool ok = randompack_set_state(state0, LEN(state0), rng);
+  check_success(ok, rng);
+  ok = randompack_set_chacha_nonce(nonce, rng);
+  check_success(ok, rng);
+  uint64_t a[4], b[4];
+  ok = randompack_uint64(a, LEN(a), 0, rng);
+  check_success(ok, rng);
+  randompack_free(rng);
+  rng = make_rng("chacha20");
+  ok = randompack_set_state(state1, LEN(state1), rng);
+  check_success(ok, rng);
+  ok = randompack_uint64(b, LEN(b), 0, rng);
+  check_success(ok, rng);
+  CHECK_EQUALV(a, b, LEN(a));
+  randompack_free(rng);
+  rng = make_rng("pcg64");
+  ok = randompack_set_chacha_nonce(nonce, rng);
+  check_failure(ok, rng);
+  randompack_free(rng);
+}
+
+static void test_squares_set_key(void) {
   uint64_t key = 11;
+  uint64_t state[2] = {7, 0};
   randompack_rng *rng = make_rng("squares");
-  bool ok = randompack_squares_set_ctr(ctr, rng);
+  bool ok = randompack_set_state(state, LEN(state), rng);
   check_success(ok, rng);
   ok = randompack_squares_set_key(key, rng);
   check_success(ok, rng);
   uint64_t a[4], b[4];
   ok = randompack_uint64(a, LEN(a), 0, rng);
   check_success(ok, rng);
-  ok = randompack_squares_set_ctr(ctr, rng);
+  ok = randompack_set_state(state, LEN(state), rng);
   check_success(ok, rng);
   ok = randompack_squares_set_key(key, rng);
   check_success(ok, rng);
@@ -202,8 +254,6 @@ static void test_squares_setters(void) {
   CHECK_EQUALV(a, b, LEN(a));
   randompack_free(rng);
   rng = make_rng("philox");
-  ok = randompack_squares_set_ctr(ctr, rng);
-  check_failure(ok, rng);
   ok = randompack_squares_set_key(key, rng);
   check_failure(ok, rng);
   randompack_free(rng);
@@ -242,8 +292,10 @@ void TestSetState(void) {
   test_xorfamily_nonzero();
   test_determinism();
   test_buf_reset();
-  test_philox_setters();
-  test_squares_setters();
+  test_philox_set_key();
+  test_squares_set_key();
   test_sfc64_set_abc();
   test_pcg_set_increment();
+  test_cwg_set_increment();
+  test_chacha_set_nonce();
 }

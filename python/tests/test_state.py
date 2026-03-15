@@ -61,30 +61,30 @@ def test_serialize_deserialize():
     assert np.array_equal(y, z)
 
 
-def test_squares_setters():
+def test_squares_set_key():
     engs = rp.engines()
     if "squares" not in engs:
         return
     rng1 = rp.Rng("squares")
     rng2 = rp.Rng("squares")
-    rng1.squares_set_ctr(3)
+    rng1.set_state([3, 0])
     rng1.squares_set_key(4)
-    rng2.squares_set_ctr(3)
+    rng2.set_state([3, 0])
     rng2.squares_set_key(4)
     x = rng1.unif(100)
     y = rng2.unif(100)
     assert np.array_equal(x, y)
 
 
-def test_philox_setters():
+def test_philox_set_key():
     engs = rp.engines()
     if "philox" not in engs:
         return
     rng1 = rp.Rng("philox")
     rng2 = rp.Rng("philox")
-    rng1.philox_set_ctr([1, 2, 3, 4])
+    rng1.set_state([1, 2, 3, 4, 0, 0])
     rng1.philox_set_key([5, 6])
-    rng2.philox_set_ctr([1, 2, 3, 4])
+    rng2.set_state([1, 2, 3, 4, 0, 0])
     rng2.philox_set_key([5, 6])
     x = rng1.unif(100)
     y = rng2.unif(100)
@@ -119,6 +119,21 @@ def test_sfc64_set_abc():
     rng2.set_state([1, 2, 3, 17])
     rng1.sfc64_set_abc([7, 11, 13])
     rng2.sfc64_set_abc([7, 11, 13])
+    x = rng1.unif(100)
+    y = rng2.unif(100)
+    assert np.array_equal(x, y)
+
+
+def test_chacha_set_nonce():
+    engs = rp.engines()
+    if "chacha20" not in engs:
+        return
+    rng1 = rp.Rng("chacha20")
+    rng2 = rp.Rng("chacha20")
+    rng1.seed(123)
+    rng2.seed(123)
+    rng1.chacha_set_nonce([7, 11, 13])
+    rng2.chacha_set_nonce([7, 11, 13])
     x = rng1.unif(100)
     y = rng2.unif(100)
     assert np.array_equal(x, y)

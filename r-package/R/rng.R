@@ -26,7 +26,7 @@ NULL
 #'   \code{xoro++} \tab\tab xoroshiro128++ (Vigna and Blackman, 2016) \cr
 #'   \code{x128+} \tab\tab xorshift128+ (Vigna, 2014) \cr
 #'   \code{pcg64} \tab\tab PCG64 DXSM (O'Neill, 2014) \cr
-#'   \code{cwg128} \tab\tab cwg128-64 (Działa, 2022) \cr
+#'   \code{cwg128} \tab\tab cwg128 (Działa, 2022) \cr
 #'   \code{sfc64} \tab\tab sfc64 (Chris Doty-Humphrey, 2013) \cr
 #'   \code{philox} \tab\tab Philox-4×64 (Salmon and Moraes, 2011) \cr
 #'   \code{squares} \tab\tab squares64 (Widynski, 2021) \cr
@@ -122,17 +122,13 @@ NULL
 #'     Set the `a`, `b`, `c` state words of the sfc64 engine. `abc` may have
 #'     length up to 6 and shorter vectors are zero-padded.
 #'   }
-#'   \item{`rng$philox_set_ctr(counter)`}{
-#'     Set the counter of the Philox engine. The counter may have length up to
-#'     8 and shorter vectors are zero-padded.
+#'   \item{`rng$chacha_set_nonce(nonce)`}{
+#'     Set the nonce of the ChaCha20 engine. The nonce may have length up to 3
+#'     and shorter vectors are zero-padded.
 #'   }
 #'   \item{`rng$philox_set_key(key)`}{
 #'     Set the key of the Philox engine. The key may have length up to 4 and
 #'     shorter vectors are zero-padded.
-#'   }
-#'   \item{`rng$squares_set_ctr(counter)`}{
-#'     Set the counter of the Squares engine. The counter may have length up to
-#'     2 and shorter vectors are zero-padded.
 #'   }
 #'   \item{`rng$squares_set_key(key)`}{
 #'     Set the key of the Squares engine. The key may have length up to 2 and
@@ -173,7 +169,7 @@ NULL
 #' rng3$deserialize(raw_state)              # restore state
 #' identical(rng$unif(3), rng3$unif(3))     # TRUE
 #' rng_sq <- randompack_rng("squares")      # engine-specific state setting
-#' rng_sq$squares_set_ctr(2)                # counter = (2,0)
+#' rng_sq$set_state(c(2, 0))                # counter = (2,0)
 #' rng_sq$squares_set_key(c(3,4))
 #'
 #' @seealso \code{\link{randompack_engines}} to list all available engines

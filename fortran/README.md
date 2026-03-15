@@ -156,9 +156,8 @@ management:
 - `set_state(state)`
 - `pcg64_set_inc(inc)`
 - `sfc64_set_abc(abc)`
-- `philox_set_ctr(ctr)`
+- `chacha_set_nonce(nonce)`
 - `philox_set_key(key)`
-- `squares_set_ctr(ctr)`
 - `squares_set_key(key)`
 - `jump(p)` (for xor-family and ranlux++)
 - `last_error()`
@@ -212,17 +211,19 @@ Each of the following is a generic that accepts `double precision` or default
 
 ```fortran
     integer(c_int8_t), allocatable :: buf(:)
-    type(randompack_rng) :: rngr
+    type(randompack_rng) :: rngc, rngr
     call rng%serialize(buf)
     call rng%deserialize(buf)
     double precision :: x(4)
-    call rng%philox_set_ctr([1_int64, 2_int64, 3_int64, 4_int64])
+    call rng%set_state([1_int64, 2_int64, 3_int64, 4_int64, 0_int64, 0_int64])
     call rng%philox_set_key([5_int64, 6_int64])
     call rng%unif(x)
     call rng%set_state([1_int64, 2_int64, 3_int64, 17_int64])
     call rng%sfc64_set_abc([7_int64, 11_int64, 13_int64])
-    call rng%squares_set_ctr(1)
+    call rng%set_state([1_int64, 0_int64])
     call rng%squares_set_key(2)
+    call rngc%create("chacha20")
+    call rngc%chacha_set_nonce([7_c_int32_t, 11_c_int32_t, 13_c_int32_t])
     call rngr%create("ranlux++")
     call rngr%jump(32)
 ```

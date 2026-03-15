@@ -70,11 +70,11 @@ single-precision (float) variants.
 
 ## Random number generators
 
-Randompack offers several underlying random number generators, referred to as *engines*.
-ChaCha20 is provided as a cryptographically secure generator. Philox and squares64 are
-counter-based generators, while the remaining engines are state-based. When selecting an
-engine the names are case-insensitive. In the following table W denotes the number of
-64-bit state words.
+Randompack offers several underlying random number generators, referred to as
+*engines*. ChaCha20 is provided as a cryptographically secure generator. Philox
+and squares64 are counter-based generators, while the remaining engines are
+state-based. When selecting an engine the names are case-insensitive. In the
+following table W denotes the number of 64-bit state words.
 
 - ENGINE      W  DESCRIPTION
 - x256++simd  4  xorshift256++, SIMD accelerated (Vigna and Blackman, 2018)
@@ -86,7 +86,7 @@ engine the names are case-insensitive. In the following table W denotes the numb
 - squares     2  squares64 (Widynski, 2021)
 - philox      6  Philox-4×64 (Salmon and Moraes, 2011)
 - sfc64       4  sfc64 (Chris Doty-Humphrey, 2010)
-- cwg128      5  cwg128-64 (Działa, 2022)
+- cwg128      5  cwg128 (Działa, 2022)
 - ranlux++    9  ranlux++ (Sibidanov, 2017)
 - chacha20    6  ChaCha20 (Bernstein, 2008)
 
@@ -103,15 +103,21 @@ A small set of support functions is provided to
 - serialize and deserialize generator state
 
 Seeding uses a high-quality seed expansion mechanism with Melissa O'Neill's
-seed_seq_fe128, also adopted by NumPy to initialize its random number generators. The
-mechanism supports reproducible construction of independent substreams via optional spawn
-keys.
+seed_seq_fe128, also adopted by NumPy to initialize its random number
+generators. The mechanism supports reproducible construction of independent
+substreams via optional spawn keys.
 
 For all engines except cwg128 and chacha20 an alternative way of creating
-independent streams exists: with jumps for the xor-family and ranlux++, setting the key of the
-counter based generators squares and philox, setting the $(a,b,c)$ state of sfc64, and
-setting the increment of pcg64. State serialization supports checkpointing and allows
-simulations to be stopped and restarted exactly.
+independent streams exists: with jumps for the xor-family and ranlux++, setting
+the key of the counter based generators squares and philox, setting the
+$(a,b,c)$ state of sfc64, and setting the increment of pcg64. State
+serialization supports checkpointing and allows simulations to be stopped and
+restarted exactly.
+
+Note that for Philox and squares, users should not change the counter while the
+generator is in use (via randompack_set_state), contrary to the case when they
+are used as pure counter-based generators. Randompack advances their counters
+internally as it fills its buffers.
 
 ## Cross platform consistency
 

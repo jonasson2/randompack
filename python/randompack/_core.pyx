@@ -36,10 +36,9 @@ from ._core cimport (
     randompack_ff, randompack_gumbelf,
     randompack_paretof, randompack_weibullf,
     randompack_skew_normalf, randompack_serialize,
-    randompack_deserialize, randompack_philox_set_ctr,
-    randompack_philox_set_key, randompack_sfc64_set_abc,
-    randompack_squares_set_ctr, randompack_squares_set_key,
-    randompack_pcg64_set_inc,
+    randompack_deserialize, randompack_philox_set_key,
+    randompack_sfc64_set_abc, randompack_squares_set_key,
+    randompack_pcg64_set_inc, randompack_set_chacha_nonce,
     randompack_set_state, )
 
 np.import_array()
@@ -400,30 +399,6 @@ cdef class Rng:
         if not randompack_deserialize(ptr, <int>n, self.ptr):
             _raise_last_error(self.ptr)
 
-    def squares_set_ctr(self, ctr):
-        """
-        Set the counter of a random number generator created with
-        engine="squares".
-
-        Parameters
-        ----------
-        ctr : int
-            64-bit counter value in [0, 2^64-1].
-        Returns
-        -------
-        None
-        """
-        cdef uint64_t ctr_v
-        cdef object ctr_i
-        if self.ptr == NULL:
-            raise RuntimeError("RNG pointer is NULL")
-        ctr_i = int(ctr)
-        if ctr_i < 0 or ctr_i > U64_MAX:
-            raise ValueError("ctr must be in [0, 2^64-1]")
-        ctr_v = <uint64_t>ctr_i
-        if not randompack_squares_set_ctr(ctr_v, self.ptr):
-            _raise_last_error(self.ptr)
-
     def squares_set_key(self, key):
         """
         Set the key of a random number generator created with engine="squares".
@@ -450,26 +425,6 @@ cdef class Rng:
             raise ValueError("key must be in [0, 2^64-1]")
         key_v = <uint64_t>key_i
         if not randompack_squares_set_key(key_v, self.ptr):
-            _raise_last_error(self.ptr)
-
-    def philox_set_ctr(self, ctr):
-        """
-        Set the counter of an RNG instance using the "philox" engine.
-        """
-        cdef uint64_t c[4]
-        cdef int i
-        cdef object val
-        if self.ptr == NULL:
-            raise RuntimeError("RNG pointer is NULL")
-        vals_ctr = [int(v) for v in ctr]
-        if len(vals_ctr) != 4:
-            raise ValueError("ctr must have length 4")
-        for i in range(4):
-            val = vals_ctr[i]
-            if val < 0 or val > U64_MAX:
-                raise ValueError("ctr entries must be in [0, 2^64-1]")
-            c[i] = <uint64_t>val
-        if not randompack_philox_set_ctr(c, self.ptr):
             _raise_last_error(self.ptr)
 
     def philox_set_key(self, key):
@@ -509,8 +464,8 @@ cdef class Rng:
 
         See Also
         --------
-        squares_set_ctr
-        philox_set_ctr
+        squares_set_key
+        philox_set_key
         set_state
         """
         cdef uint64_t c_inc[2]
@@ -565,6 +520,40 @@ cdef class Rng:
         if not randompack_sfc64_set_abc(c_abc, self.ptr):
             _raise_last_error(self.ptr)
 
+    def chacha_set_nonce(self, nonce):
+        """
+        Set the 96-bit ChaCha20 nonce.
+
+        Parameters
+        ----------
+        nonce : sequence of int
+            Three 32-bit words `[n0, n1, n2]` in [0, 2^32-1].
+
+        Returns
+        -------
+        None
+
+        See Also
+        --------
+        set_state
+        """
+        cdef uint32_t c_nonce[3]
+        cdef object vals
+        cdef object val
+        cdef int i
+        if self.ptr == NULL:
+            raise RuntimeError("RNG pointer is NULL")
+        vals = list(nonce)
+        if len(vals) != 3:
+            raise ValueError("nonce must have length 3")
+        for i in range(3):
+            val = int(vals[i])
+            if val < 0 or val > U32_MAX:
+                raise ValueError("nonce entries must be in [0, 2^32-1]")
+            c_nonce[i] = <uint32_t>val
+        if not randompack_set_chacha_nonce(c_nonce, self.ptr):
+            _raise_last_error(self.ptr)
+
     def set_state(self, state):
         """
         Set the internal engine state directly.
@@ -582,11 +571,10 @@ cdef class Rng:
         --------
         seed
         randomize
-        squares_set_ctr
         squares_set_key
-        philox_set_ctr
         philox_set_key
         pcg64_set_inc
+        chacha_set_nonce
         """
         cdef list vals
         cdef np.ndarray arr
@@ -1802,7 +1790,7 @@ def engines():
     x128+       xorshift128+, Vigna, 2014 (2x64)
     pcg64       PCG64-DXSM, O'Neill, 2014 (4x64)
     sfc64       sfc64, Chris Doty-Humphrey, 2013 (4x64)
-    cwg128      cwg128-64, Działa, 2022 (5x64)
+    cwg128      cwg128, Działa, 2022 (8x64)
     philox      Philox-4x64, Salmon & Moraes, 2011 (6x64)
     squares     squares64, Widynski, 2021 (2x64)
     chacha20    ChaCha20, Bernstein, 2008 (6x64)

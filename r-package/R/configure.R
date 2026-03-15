@@ -77,10 +77,10 @@ methods_configure <- list(
     invisible(self)
   },
 
-  philox_set_ctr = function(counter) {
+  chacha_set_nonce = function(nonce) {
     if (is.null(self$ptr)) stop("RNG is not initialized")
-    counter <- as_u32_vec(counter, "counter", max_len = 8L)
-    .Call("randompack_philox_set_ctr_R", self$ptr, counter, PACKAGE = "randompack")
+    nonce <- as_u32_vec(nonce, "nonce", max_len = 3L)
+    .Call("randompack_set_chacha_nonce_R", self$ptr, nonce, PACKAGE = "randompack")
     invisible(self)
   },
 
@@ -88,13 +88,6 @@ methods_configure <- list(
     if (is.null(self$ptr)) stop("RNG is not initialized")
     key <- as_u32_vec(key, "key", max_len = 4L)
     .Call("randompack_philox_set_key_R", self$ptr, key, PACKAGE = "randompack")
-    invisible(self)
-  },
-
-  squares_set_ctr = function(counter) {
-    if (is.null(self$ptr)) stop("RNG is not initialized")
-    counter <- as_u32_vec(counter, "counter", max_len = 2L)
-    .Call("randompack_squares_set_ctr_R", self$ptr, counter, PACKAGE = "randompack")
     invisible(self)
   },
 

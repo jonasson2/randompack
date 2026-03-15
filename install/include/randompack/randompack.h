@@ -267,18 +267,18 @@ bool randompack_pcg64_set_inc( // Set PCG increment (state unchanged)
   randompack_rng *rng      // in/out  target RNG
 );
 
-bool randompack_philox_set_ctr( // Set philox counter state directly
-  uint64_t ctr[4],            // in      counter state
-  randompack_rng *rng         // in/out  target RNG
+bool randompack_cwg128_set_inc( // Set CWG128 increment (state unchanged)
+  uint64_t inc[2],         // in      128-bit increment {low, high}; low must be odd
+  randompack_rng *rng      // in/out  target RNG
+);
+
+bool randompack_set_chacha_nonce( // Set ChaCha20 nonce (state otherwise unchanged)
+  uint32_t nonce[3],       // in      96-bit nonce {w0, w1, w2}
+  randompack_rng *rng      // in/out  target RNG
 );
 
 bool randompack_philox_set_key( // Set philox key state directly
   uint64_t key[2],            // in      key state
-  randompack_rng *rng         // in/out  target RNG
-);
-
-bool randompack_squares_set_ctr( // Set squares64 counter state directly
-  uint64_t ctr,               // in      counter state
   randompack_rng *rng         // in/out  target RNG
 );
 

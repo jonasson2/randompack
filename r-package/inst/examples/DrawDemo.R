@@ -30,9 +30,9 @@ draw_u01 <- function(engine, seed, key) {
 draw_philox <- function(counter0, key0) {
   rng <- randompack_rng("philox")
   if (is.null(rng)) stop("engine creation failed")
-  counter <- c(u64_halves(counter0), 0, 0, 0, 0, 0, 0)
+  state <- c(u64_halves(counter0), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
   key <- c(u64_halves(key0), 0, 0)
-  rng$philox_set_ctr(counter)
+  rng$set_state(state)
   rng$philox_set_key(key)
   x <- rng$unif(2)
   cat(sprintf(fmt2, "philox", counter0, key0, x[1], x[2]))
@@ -41,9 +41,9 @@ draw_philox <- function(counter0, key0) {
 
 draw_squares <- function(counter, key) {
   rng <- randompack_rng("squares")
-  counter_vec <- u64_halves(counter)
+  state <- c(u64_halves(counter), 0, 0)
   key_vec <- u64_halves(key)
-  rng$squares_set_ctr(counter_vec)
+  rng$set_state(state)
   rng$squares_set_key(key_vec)
   x <- rng$unif(2)
   cat(sprintf(fmt2, "squares", counter, key, x[1], x[2]))

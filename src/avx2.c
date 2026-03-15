@@ -99,15 +99,35 @@ HIDDEN bool cpu_has_avx2(void) {
 #define VEC_ADD(a,b) _mm256_add_epi64((a),(b))
 #define VEC_XOR(a,b) _mm256_xor_si256((a),(b))
 #define VEC_SHL17(a) _mm256_slli_epi64((a),17)
-#define VEC_ROTL23(x) _mm256_or_si256( \
-  _mm256_slli_epi64((x),23), _mm256_srli_epi64((x),64-23))
 #define VEC_ROTL45(x) _mm256_or_si256( \
   _mm256_slli_epi64((x),45), _mm256_srli_epi64((x),64-45))
+
+#define VEC_ROTL23(x) _mm256_or_si256(								\
+  _mm256_slli_epi64((x),23), _mm256_srli_epi64((x),64-23))
 
 #define FAST_STEP_VEC(s0,s1,s2,s3,outv) do { \
   VEC_T r_; \
   VEC_T t_; \
   r_ = VEC_ADD(VEC_ROTL23(VEC_ADD((s0),(s3))),(s0)); \
+  t_ = VEC_SHL17((s1)); \
+  (s2) = VEC_XOR((s2),(s0)); \
+  (s3) = VEC_XOR((s3),(s1)); \
+  (s1) = VEC_XOR((s1),(s2)); \
+  (s0) = VEC_XOR((s0),(s3)); \
+  (s2) = VEC_XOR((s2),t_); \
+  (s3) = VEC_ROTL45((s3)); \
+  (outv) = r_; \
+} while (0)
+
+#define VEC_ROTL7(x) _mm256_or_si256( \
+  _mm256_slli_epi64((x),7), _mm256_srli_epi64((x),64-7))
+#define VEC_MUL5(x) _mm256_add_epi64((x),_mm256_slli_epi64((x),2))
+#define VEC_MUL9(x) _mm256_add_epi64((x),_mm256_slli_epi64((x),3))
+
+#define FAST_STEP_VEC_SS(s0,s1,s2,s3,outv) do { \
+  VEC_T r_; \
+  VEC_T t_; \
+  r_ = VEC_MUL9(VEC_ROTL7(VEC_MUL5(s1))); \
   t_ = VEC_SHL17((s1)); \
   (s2) = VEC_XOR((s2),(s0)); \
   (s3) = VEC_XOR((s3),(s1)); \
@@ -130,7 +150,7 @@ HIDDEN void fill_fast_avx2(uint64_t *buf, size_t len, randompack_state *state) {
 #endif
   for (size_t i = 0; i < len; i += 4) {
     VEC_T r;
-    FAST_STEP_VEC(s0, s1, s2, s3, r);
+    FAST_STEP_VEC_SS(s0, s1, s2, s3, r);
     VEC_STORE(out + i, r);
   }
   VEC_STORE(&st->s0[0], s0);

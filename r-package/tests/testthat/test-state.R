@@ -49,26 +49,35 @@ test_that("sfc64_set_abc makes draws repeatable", {
   expect_identical(rng1$unif(5), rng2$unif(5))
 })
 
-test_that("philox setters make draws repeatable", {
+test_that("chacha_set_nonce makes draws repeatable", {
+  rng1 <- randompack_rng("chacha20")
+  rng2 <- randompack_rng("chacha20")
+  nonce <- c(7, 11, 13)
+  rng1$seed(123)
+  rng2$seed(123)
+  rng1$chacha_set_nonce(nonce)
+  rng2$chacha_set_nonce(nonce)
+  expect_identical(rng1$unif(5), rng2$unif(5))
+})
+
+test_that("philox_set_key makes draws repeatable", {
   rng1 <- randompack_rng("philox")
   rng2 <- randompack_rng("philox")
-  counter <- c(1, 0, 2, 0, 3, 0, 4, 0)
   key <- c(5, 0, 6, 0)
-  rng1$philox_set_ctr(counter)
+  rng1$set_state(c(1, 0, 2, 0, 3, 0, 4, 0, 0, 0, 0, 0))
   rng1$philox_set_key(key)
-  rng2$philox_set_ctr(counter)
+  rng2$set_state(c(1, 0, 2, 0, 3, 0, 4, 0, 0, 0, 0, 0))
   rng2$philox_set_key(key)
   expect_identical(rng1$unif(5), rng2$unif(5))
 })
 
-test_that("squares setters make draws repeatable", {
+test_that("squares_set_key makes draws repeatable", {
   rng1 <- randompack_rng("squares")
   rng2 <- randompack_rng("squares")
-  counter <- c(1, 0)
   key <- c(2, 0)
-  rng1$squares_set_ctr(counter)
+  rng1$set_state(c(1, 0, 0, 0))
   rng1$squares_set_key(key)
-  rng2$squares_set_ctr(counter)
+  rng2$set_state(c(1, 0, 0, 0))
   rng2$squares_set_key(key)
   expect_identical(rng1$unif(5), rng2$unif(5))
 })

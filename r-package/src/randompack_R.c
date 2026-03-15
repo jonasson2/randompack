@@ -244,25 +244,21 @@ SEXP randompack_sfc64_set_abc_R(SEXP ext, SEXP abc_){
   return R_NilValue;
 }
 
-SEXP randompack_philox_set_ctr_R(SEXP ext, SEXP counter_){
+SEXP randompack_set_chacha_nonce_R(SEXP ext, SEXP nonce_){
   randompack_rng *rng = (randompack_rng *)R_ExternalPtrAddr(ext);
   if (!rng) Rf_error("RNG pointer is NULL");
-  if (!Rf_isNumeric(counter_))
-    Rf_error("counter must be a numeric vector");
-  R_xlen_t counter_n = XLENGTH(counter_);
-  if (counter_n <= 0 || counter_n > 8)
-    Rf_error("counter must have length between 1 and 8");
-  uint64_t counter[4] = {0, 0, 0, 0};
-  for (R_xlen_t i = 0; i < counter_n; i++) {
-    uint32_t w = read_u32_num(counter_, i, "counter");
-    int j = (int)(i/2);
-    if (i & 1) counter[j] |= ((uint64_t)w << 32);
-    else counter[j] |= w;
-  }
-  bool ok = randompack_philox_set_ctr(counter, rng);
+  if (!Rf_isNumeric(nonce_))
+    Rf_error("nonce must be a numeric vector");
+  R_xlen_t n = XLENGTH(nonce_);
+  if (n <= 0 || n > 3)
+    Rf_error("nonce must have length between 1 and 3");
+  uint32_t nonce[3] = {0, 0, 0};
+  for (R_xlen_t i = 0; i < n; i++)
+    nonce[i] = read_u32_num(nonce_, i, "nonce");
+  bool ok = randompack_set_chacha_nonce(nonce, rng);
   if (!ok) {
     char *err = randompack_last_error(rng);
-    Rf_error("%s", err ? err : "randompack_philox_set_ctr failed");
+    Rf_error("%s", err ? err : "randompack_set_chacha_nonce failed");
   }
   return R_NilValue;
 }
@@ -286,28 +282,6 @@ SEXP randompack_philox_set_key_R(SEXP ext, SEXP key_){
   if (!ok) {
     char *err = randompack_last_error(rng);
     Rf_error("%s", err ? err : "randompack_philox_set_key failed");
-  }
-  return R_NilValue;
-}
-
-SEXP randompack_squares_set_ctr_R(SEXP ext, SEXP counter_){
-  randompack_rng *rng = (randompack_rng *)R_ExternalPtrAddr(ext);
-  if (!rng) Rf_error("RNG pointer is NULL");
-  if (!Rf_isNumeric(counter_))
-    Rf_error("counter must be a numeric vector");
-  R_xlen_t counter_n = XLENGTH(counter_);
-  if (counter_n <= 0 || counter_n > 2)
-    Rf_error("counter must have length between 1 and 2");
-  uint64_t counter = 0;
-  for (R_xlen_t i = 0; i < counter_n; i++) {
-    uint32_t w = read_u32_num(counter_, i, "counter");
-    if (i & 1) counter |= ((uint64_t)w << 32);
-    else counter |= w;
-  }
-  bool ok = randompack_squares_set_ctr(counter, rng);
-  if (!ok) {
-    char *err = randompack_last_error(rng);
-    Rf_error("%s", err ? err : "randompack_squares_set_ctr failed");
   }
   return R_NilValue;
 }

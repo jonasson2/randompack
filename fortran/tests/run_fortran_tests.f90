@@ -40,7 +40,7 @@ use, intrinsic :: ieee_arithmetic, only: ieee_is_finite, ieee_set_flag, ieee_und
   type(randompack_rng) :: p1, p2
   character(len=:), allocatable :: names(:), desc(:)
   character(len=:), allocatable :: engine
-  logical :: has_pcg, has_x, has_philox, has_squares
+  logical :: has_pcg, has_x, has_philox, has_squares, has_chacha
   double precision :: x(100), y(100), z(100)
   double precision :: a(7,11)
   double precision :: xe(1), xn(1), xl(1)
@@ -50,6 +50,7 @@ use, intrinsic :: ieee_arithmetic, only: ieee_is_finite, ieee_set_flag, ieee_und
   integer(c_int32_t) :: iv(50), im(6,9)
   integer(c_int64_t) :: iv64(50)
   integer(c_int64_t) :: inc_pcg(2)
+  integer(c_int32_t) :: nonce_chacha(3)
   integer(c_int8_t), allocatable :: bytes(:)
 
   call engines(names, desc)
@@ -60,6 +61,7 @@ use, intrinsic :: ieee_arithmetic, only: ieee_is_finite, ieee_set_flag, ieee_und
   has_x = has_name(names, "x256++simd")
   has_philox = has_name(names, "philox")
   has_squares = has_name(names, "squares")
+  has_chacha = has_name(names, "chacha20")
 
   if (has_pcg) then
     engine = "pcg64"
@@ -68,6 +70,7 @@ use, intrinsic :: ieee_arithmetic, only: ieee_is_finite, ieee_set_flag, ieee_und
   else
     engine = names(1)
   end if
+  nonce_chacha = [7_c_int32_t, 11_c_int32_t, 13_c_int32_t]
 
   write(*,'(A)') "Using engine: "//engine
 
@@ -254,34 +257,53 @@ use, intrinsic :: ieee_arithmetic, only: ieee_is_finite, ieee_set_flag, ieee_und
     "deserialize restores state")
 
   !------------------------------------------------------------
-  ! Optional: squares_set_{ctr,key} repeatability
+  ! Optional: squares_set_key repeatability
   if (has_squares) then
     call s1%create("squares")
     call s2%create("squares")
-    call s1%squares_set_ctr(3)
+    call s1%set_state([3_c_int64_t, 0_c_int64_t])
     call s1%squares_set_key(4)
-    call s2%squares_set_ctr(3)
+    call s2%set_state([3_c_int64_t, 0_c_int64_t])
     call s2%squares_set_key(4)
     call s1%unif(x)
     call s2%unif(y)
     call assert(size(x) == size(y) .and. all(approx_equal_d(x, y)), &
-      "squares_set_{ctr,key} repeatability")
+      "squares_set_key repeatability")
     call s1%free()
     call s2%free()
   end if
 
-  ! Optional: philox_set_{ctr,key} repeatability
+  !------------------------------------------------------------
+  ! Optional: chacha_set_nonce repeatability
+  if (has_chacha) then
+    call s1%create("chacha20")
+    call s2%create("chacha20")
+    call s1%seed(123)
+    call s2%seed(123)
+    call s1%chacha_set_nonce(nonce_chacha)
+    call s2%chacha_set_nonce(nonce_chacha)
+    call s1%unif(x)
+    call s2%unif(y)
+    call assert(size(x) == size(y) .and. all(approx_equal_d(x, y)), &
+      "chacha_set_nonce repeatability")
+    call s1%free()
+    call s2%free()
+  end if
+
+  ! Optional: philox_set_key repeatability
   if (has_philox) then
     call p1%create("philox")
     call p2%create("philox")
-    call p1%philox_set_ctr([1_c_int64_t, 2_c_int64_t, 3_c_int64_t, 4_c_int64_t])
+    call p1%set_state([1_c_int64_t, 2_c_int64_t, 3_c_int64_t, 4_c_int64_t, &
+      0_c_int64_t, 0_c_int64_t])
     call p1%philox_set_key([5_c_int64_t, 6_c_int64_t])
-    call p2%philox_set_ctr([1_c_int64_t, 2_c_int64_t, 3_c_int64_t, 4_c_int64_t])
+    call p2%set_state([1_c_int64_t, 2_c_int64_t, 3_c_int64_t, 4_c_int64_t, &
+      0_c_int64_t, 0_c_int64_t])
     call p2%philox_set_key([5_c_int64_t, 6_c_int64_t])
     call p1%unif(x)
     call p2%unif(y)
     call assert(size(x) == size(y) .and. all(approx_equal_d(x, y)), &
-      "philox_set_{ctr,key} repeatability")
+      "philox_set_key repeatability")
     call p1%free()
     call p2%free()
   end if

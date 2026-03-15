@@ -368,21 +368,9 @@ interface
     type(c_ptr), value :: rngp
   end function
 
-  logical(c_bool) function crp_philox_set_ctr(ctr, rngp) bind(C, name="randompack_philox_set_ctr")
-    import :: c_ptr, c_bool, c_int64_t
-    integer(c_int64_t), intent(in) :: ctr(4)
-    type(c_ptr), value :: rngp
-  end function
-
   logical(c_bool) function crp_philox_set_key(key, rngp) bind(C, name="randompack_philox_set_key")
     import :: c_ptr, c_bool, c_int64_t
     integer(c_int64_t), intent(in) :: key(2)
-    type(c_ptr), value :: rngp
-  end function
-
-  logical(c_bool) function crp_squares_set_ctr(ctr, rngp) bind(C, name="randompack_squares_set_ctr")
-    import :: c_ptr, c_bool, c_int64_t
-    integer(c_int64_t), value :: ctr
     type(c_ptr), value :: rngp
   end function
 
@@ -401,6 +389,12 @@ interface
   logical(c_bool) function crp_sfc64_set_abc(abc, rngp) bind(C, name="randompack_sfc64_set_abc")
     import :: c_ptr, c_bool, c_int64_t
     integer(c_int64_t), intent(in) :: abc(3)
+    type(c_ptr), value :: rngp
+  end function
+
+  logical(c_bool) function crp_set_chacha_nonce(nonce, rngp) bind(C, name="randompack_set_chacha_nonce")
+    import :: c_ptr, c_bool, c_int32_t
+    integer(c_int32_t), intent(in) :: nonce(3)
     type(c_ptr), value :: rngp
   end function
 

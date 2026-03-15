@@ -1033,15 +1033,6 @@ subroutine set_state64(self, state)
   c_ok = crp_set_state(state, int(size(state), c_int), self%p)
   if (.not. c_ok) error stop rp_error_message(self, "set_state")
 end subroutine
-subroutine rp_philox_set_ctr(self, ctr)
-  class(randompack_rng), intent(inout) :: self
-  integer(c_int64_t), intent(in) :: ctr(4)
-  logical(c_bool) :: c_ok
-  if (.not. c_associated(self%p)) error stop rp_error_message(self, "philox_set_ctr")
-  c_ok = crp_philox_set_ctr(ctr, self%p)
-  if (.not. c_ok) error stop rp_error_message(self, "philox_set_ctr")
-end subroutine
-
 subroutine rp_philox_set_key(self, key)
   class(randompack_rng), intent(inout) :: self
   integer(c_int64_t), intent(in) :: key(2)
@@ -1069,24 +1060,13 @@ subroutine rp_sfc64_set_abc(self, abc)
   if (.not. c_ok) error stop rp_error_message(self, "sfc64_set_abc")
 end subroutine
 
-subroutine rp_squares_set_ctr32(self, ctr)
+subroutine rp_chacha_set_nonce(self, nonce)
   class(randompack_rng), intent(inout) :: self
-  integer(c_int32_t), intent(in) :: ctr
-  integer(c_int64_t) :: cctr
+  integer(c_int32_t), intent(in) :: nonce(3)
   logical(c_bool) :: c_ok
-  if (.not. c_associated(self%p)) error stop rp_error_message(self, "squares_set_ctr")
-  cctr = int(ctr, c_int64_t)
-  c_ok = crp_squares_set_ctr(cctr, self%p)
-  if (.not. c_ok) error stop rp_error_message(self, "squares_set_ctr")
-end subroutine
-
-subroutine rp_squares_set_ctr64(self, ctr)
-  class(randompack_rng), intent(inout) :: self
-  integer(c_int64_t), intent(in) :: ctr
-  logical(c_bool) :: c_ok
-  if (.not. c_associated(self%p)) error stop rp_error_message(self, "squares_set_ctr")
-  c_ok = crp_squares_set_ctr(ctr, self%p)
-  if (.not. c_ok) error stop rp_error_message(self, "squares_set_ctr")
+  if (.not. c_associated(self%p)) error stop rp_error_message(self, "chacha_set_nonce")
+  c_ok = crp_set_chacha_nonce(nonce, self%p)
+  if (.not. c_ok) error stop rp_error_message(self, "chacha_set_nonce")
 end subroutine
 
 subroutine rp_squares_set_key32(self, key)

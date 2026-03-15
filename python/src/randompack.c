@@ -38,7 +38,7 @@ static rng_entry rng_table[] = {  // x256++simd is default
   {"squares",  "squares64, Widynski, 2021 (2x64)",             SQUARES, 2,fill_squares  },
   {"philox",   "Philox-4x64, Salmon & Moraes, 2011 (6x64)",    PHILOX,  6,fill_philox   },
   {"sfc64",    "sfc64, Chris Doty-Humphrey, 2013 (4x64)",      SFC64,   4,fill_sfc64    },
-  {"cwg128",   "cwg128-64, Działa, 2022 (5x64)",               CWG128,  5,fill_cwg128   },
+  {"cwg128",   "cwg128, Działa, 2022 (8x64)",                  CWG128,  8,fill_cwg128   },
   {"ranlux++", "ranlux++, Sibidanov, 2017 (9x64)",             RANLUXPP,9,fill_ranluxpp },
   {"chacha20", "ChaCha20, Bernstein, 2008 (6x64)",             CHACHA20,6,fill_chacha   },
 };
@@ -361,8 +361,8 @@ bool randompack_set_state(uint64_t state[], int nstate, randompack_rng *rng) {
     if (all_zero_state(state, nstate))
       rng->last_error = "randompack set_state: all-zero state is invalid";
   }
-  else if (rng->engine == CWG128 && (state[4] & 1) == 0)
-    rng->last_error = "randompack set_state: cwg128 state[4] must be odd";
+  else if (rng->engine == CWG128 && (state[0] & 1) == 0)
+    rng->last_error = "randompack set_state: cwg128 increment must be odd";
   else if (rng->engine == PCG64 && (state[2] & 1) == 0)
     rng->last_error = "randompack set_state: pcg64 increment must be odd";
   if (rng->last_error) return false;
@@ -385,14 +385,29 @@ bool randompack_pcg64_set_inc(uint64_t inc[2], randompack_rng *rng) {
   return true;
 }
 
-bool randompack_philox_set_ctr(uint64_t ctr[4], randompack_rng *rng) {
+bool randompack_cwg128_set_inc(uint64_t inc[2], randompack_rng *rng) {
   if (!rng) return false;
   rng->last_error = 0;
-  if (rng->engine != PHILOX) {
-    rng->last_error = "randompack philox_set_ctr: engine is not philox";
+  if (rng->engine != CWG128) {
+    rng->last_error = "randompack cwg128_set_inc: engine is not cwg128";
     return false;
   }
-  philox_set_ctr(ctr, rng);
+  if ((inc[0] & 1) == 0) {
+    rng->last_error = "randompack cwg128_set_inc: increment must be odd";
+    return false;
+  }
+  cwg128_set_inc(inc, rng);
+  return true;
+}
+
+bool randompack_set_chacha_nonce(uint32_t nonce[3], randompack_rng *rng) {
+  if (!rng) return false;
+  rng->last_error = 0;
+  if (rng->engine != CHACHA20) {
+    rng->last_error = "randompack set_chacha_nonce: engine is not chacha20";
+    return false;
+  }
+  chacha_set_nonce(nonce, rng);
   return true;
 }
 
@@ -404,17 +419,6 @@ bool randompack_philox_set_key(uint64_t key[2], randompack_rng *rng) {
     return false;
   }
   philox_set_key(key, rng);
-  return true;
-}
-
-bool randompack_squares_set_ctr(uint64_t ctr, randompack_rng *rng) {
-  if (!rng) return false;
-  rng->last_error = 0;
-  if (rng->engine != SQUARES) {
-    rng->last_error = "randompack squares_set_ctr: engine is not squares64";
-    return false;
-  }
-  squares_set_ctr(ctr, rng);
   return true;
 }
 

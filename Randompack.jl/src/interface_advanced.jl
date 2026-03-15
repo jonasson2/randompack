@@ -207,21 +207,6 @@ function _set_state_u64!(rng::RNG, state::AbstractVector{UInt64})
 end
 
 """
-    Randompack.philox_set_ctr!(rng::RNG; ctr::AbstractVector{<:Integer})
-
-Set the Philox counter directly.
-"""
-function philox_set_ctr!(rng::RNG; ctr::AbstractVector{<:Integer})
-  rng.ptr == C_NULL && throw(ErrorException("RNG pointer is NULL"))
-  length(ctr) == 4 || throw(ArgumentError("philox counter must have length 4"))
-  ctrv = _u64_vec_from_ints(ctr)
-  ok = ccall(_sym(:randompack_philox_set_ctr), Bool,
-             (Ptr{UInt64}, RNGPtr), ctrv, rng.ptr)
-  _check_ok(ok, rng.ptr, "randompack_philox_set_ctr failed")
-  return nothing
-end
-
-"""
     Randompack.philox_set_key!(rng::RNG; key::AbstractVector{<:Integer})
 
 Set the Philox key directly.
@@ -233,20 +218,6 @@ function philox_set_key!(rng::RNG; key::AbstractVector{<:Integer})
   ok = ccall(_sym(:randompack_philox_set_key), Bool,
              (Ptr{UInt64}, RNGPtr), keyv, rng.ptr)
   _check_ok(ok, rng.ptr, "randompack_philox_set_key failed")
-  return nothing
-end
-
-"""
-    Randompack.squares_set_ctr!(rng::RNG; ctr::Integer)
-
-Set the Squares64 counter directly.
-"""
-function squares_set_ctr!(rng::RNG; ctr::Integer)
-  rng.ptr == C_NULL && throw(ErrorException("RNG pointer is NULL"))
-  c64 = _u64_scalar_checked(ctr)
-  ok = ccall(_sym(:randompack_squares_set_ctr), Bool,
-             (UInt64, RNGPtr), c64, rng.ptr)
-  _check_ok(ok, rng.ptr, "randompack_squares_set_ctr failed")
   return nothing
 end
 
@@ -320,6 +291,30 @@ function sfc64_set_abc!(rng::RNG; abc)
   ok = ccall(_sym(:randompack_sfc64_set_abc), Bool,
              (Ptr{UInt64}, RNGPtr), c_abc, rng.ptr)
   _check_ok(ok, rng.ptr, "randompack_sfc64_set_abc failed")
+  return nothing
+end
+
+"""
+    Randompack.chacha_set_nonce!(rng::RNG; nonce)
+
+Set the 96-bit ChaCha20 nonce.
+
+Values are range-checked and converted to `UInt32` before calling the C
+library. `nonce` must be a length-3 vector `[n0, n1, n2]`.
+
+# Examples
+```julia
+Randompack.chacha_set_nonce!(rng; nonce=[7, 11, 13])
+```
+
+"""
+function chacha_set_nonce!(rng::RNG; nonce)
+  rng.ptr == C_NULL && throw(ErrorException("RNG pointer is NULL"))
+  length(nonce) == 3 || throw(ArgumentError("nonce must have length 3"))
+  c_nonce = _u32_vec_from_ints(nonce)
+  ok = ccall(_sym(:randompack_set_chacha_nonce), Bool,
+             (Ptr{UInt32}, RNGPtr), c_nonce, rng.ptr)
+  _check_ok(ok, rng.ptr, "randompack_set_chacha_nonce failed")
   return nothing
 end
 

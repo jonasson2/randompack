@@ -88,10 +88,18 @@ static inline void normalize_state(randompack_rng *rng) {
       rng->state.u64[0] = 1;
     break;
   case CWG128:
-    rng->state.u64[4] |= 1;
-    break;
-  case PCG64:
-    rng->state.u64[2] |= 1;
+#if HAVE128
+      rng->state.u128[0] |= (uint128_t)1;
+#else
+      rng->state.u64[0] |= 1;
+#endif
+      break;
+    case PCG64:
+#if HAVE128
+      rng->state.pcg.inc |= (pcg_ulong_t)1;
+#else
+      rng->state.u64[2] |= 1;
+#endif
     break;
   default:
     break;
@@ -186,19 +194,9 @@ static void set_state(uint64_t *state, int nstate, randompack_rng *rng) {
   rand_init(rng);
 }
 
-static void philox_set_ctr(uint64_t ctr[4], randompack_rng *rng) {
-  copy64(rng->state.u64, ctr, 4);
-  rand_init(rng);
-}
-
 static void philox_set_key(uint64_t key[2], randompack_rng *rng) {
   rng->state.u64[4] = key[0];
   rng->state.u64[5] = key[1];
-  rand_init(rng);
-}
-
-static void squares_set_ctr(uint64_t ctr, randompack_rng *rng) {
-  rng->state.u64[0] = ctr;
   rand_init(rng);
 }
 
@@ -217,5 +215,18 @@ static void sfc64_set_abc(uint64_t abc[3], randompack_rng *rng) {
 static void pcg64_set_inc(uint64_t inc[2], randompack_rng *rng) {
   rng->state.u64[2] = inc[0];
   rng->state.u64[3] = inc[1];
+  rand_init(rng);
+}
+
+static void cwg128_set_inc(uint64_t inc[2], randompack_rng *rng) {
+  rng->state.u64[0] = inc[0];
+  rng->state.u64[1] = inc[1];
+  rand_init(rng);
+}
+
+static void chacha_set_nonce(uint32_t nonce[3], randompack_rng *rng) {
+  store_u32_le(rng->state.u8 + 32, nonce[0]);
+  store_u32_le(rng->state.u8 + 36, nonce[1]);
+  store_u32_le(rng->state.u8 + 40, nonce[2]);
   rand_init(rng);
 }

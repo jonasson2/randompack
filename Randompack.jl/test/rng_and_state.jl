@@ -120,21 +120,20 @@ end
   @test x1 == x2
 end
 
-@testset "squares_setters!" begin
+@testset "squares_set_key!" begin
   rng1 = rng_create("squares")
   rng2 = rng_create("squares")
-  Randompack.squares_set_ctr!(rng1; ctr=3)
+  Randompack.set_state!(rng1; state=[3, 0])
   Randompack.squares_set_key!(rng1; key=4)
-  Randompack.squares_set_ctr!(rng2; ctr=3)
+  Randompack.set_state!(rng2; state=[3, 0])
   Randompack.squares_set_key!(rng2; key=4)
   x1 = random_unif(rng1)
   x2 = random_unif(rng2)
   @test x1 == x2
-  @test_throws ArgumentError Randompack.squares_set_ctr!(rng1; ctr=big(1) << 65)
   @test_throws ArgumentError Randompack.squares_set_key!(rng1; key=big(1) << 65)
 end
 
-@testset "philox_setters!" begin
+@testset "philox_set_key!" begin
   has_philox = true
   try
     rng_create("philox")
@@ -144,9 +143,9 @@ end
   if has_philox
     rng1 = rng_create("philox")
     rng2 = rng_create("philox")
-    Randompack.philox_set_ctr!(rng1; ctr=[1, 2, 3, 4])
+    Randompack.set_state!(rng1; state=[1, 2, 3, 4, 0, 0])
     Randompack.philox_set_key!(rng1; key=[5, 6])
-    Randompack.philox_set_ctr!(rng2; ctr=[1, 2, 3, 4])
+    Randompack.set_state!(rng2; state=[1, 2, 3, 4, 0, 0])
     Randompack.philox_set_key!(rng2; key=[5, 6])
     x1 = random_unif(rng1)
     x2 = random_unif(rng2)
@@ -189,6 +188,28 @@ end
   x1 = random_unif(rng1)
   x2 = random_unif(rng2)
   @test x1 == x2
+end
+
+@testset "chacha_set_nonce!" begin
+  has_chacha = true
+  try
+    rng_create("chacha20")
+  catch
+    has_chacha = false
+  end
+  if has_chacha
+    rng1 = rng_create("chacha20")
+    rng2 = rng_create("chacha20")
+    rng_seed!(rng1, 123)
+    rng_seed!(rng2, 123)
+    Randompack.chacha_set_nonce!(rng1; nonce=[7, 11, 13])
+    Randompack.chacha_set_nonce!(rng2; nonce=[7, 11, 13])
+    x1 = random_unif(rng1)
+    x2 = random_unif(rng2)
+    @test x1 == x2
+  else
+    @test true
+  end
 end
 
 @testset "serialize" begin

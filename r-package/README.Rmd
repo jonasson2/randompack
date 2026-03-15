@@ -79,16 +79,18 @@ rngx <- randompack_rng("x256**")
 rngq <- randompack_rng("pcg64")
 rngs <- randompack_rng("sfc64")
 rngp <- randompack_rng("philox")
+rngc <- randompack_rng("chacha20")
 rngz <- randompack_rng("squares")
 rngr <- randompack_rng("ranlux++")
 rngx$set_state(c(1, 2, 3, 4))                  # general state setter
 rngq$pcg64_set_inc(c(3, 0, 5, 0))              # change PCG stream increment
 rngs$set_state(c(1, 0, 2, 0, 3, 0, 17, 0))     # set full sfc64 state
 rngs$sfc64_set_abc(c(7, 0, 11, 0, 13, 0))      # update only a, b, c
+rngc$chacha_set_nonce(c(7, 11, 13))            # change ChaCha20 nonce
 rngx$jump(128)                                 # jump the state by 2^128 steps
-rngp$philox_set_ctr(c(1, 2, 3, 4))             # set Philox counter
+rngp$set_state(c(1, 0, 2, 0, 3, 0, 4, 0, 0, 0, 0, 0)) # set full Philox state
 rngp$philox_set_key(c(4, 6))                   # set Philox key
-rngz$squares_set_ctr(c(3, 0))                  # set Squares counter
+rngz$set_state(c(3, 0, 0, 0))                  # set full Squares state
 rngz$squares_set_key(c(4, 0))                  # set Squares key
 rngr$jump(32)                                  # jump the state by 2^32 steps
 

@@ -9,7 +9,6 @@
 #include "randompack_config.h"
 
 #if HAVE128
-#include "cwg128_64.h"
 #include "pcg64.h"
 #else
 #include "pcg64_emul.h"
@@ -44,7 +43,7 @@ typedef union {
   xo256 xo;         // 16 words, used by x256++simd
   pcg64_t pcg;      // 4 words
   #if HAVE128
-  cwg128_64_t cwg;  // 5 words
+  uint128_t u128[4];
   #endif
 } randompack_state;
 

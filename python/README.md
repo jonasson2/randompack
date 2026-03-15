@@ -82,16 +82,18 @@ rngx = randompack.Rng("x256**")
 rngp = randompack.Rng("philox")
 rngq = randompack.Rng("pcg64")
 rngs = randompack.Rng("sfc64")
+rngc = randompack.Rng("chacha20")
 rngz = randompack.Rng("squares")
 rngr = randompack.Rng("ranlux++")
 rngx.set_state(state=[1,2,3,4])                  # general state setter
 rngx.jump(128)                                   # jump the state by 2^128 steps
-rngp.philox_set_ctr([1,2,3,4])                   # set Philox counter
+rngp.set_state([1,2,3,4,0,0])                    # set full Philox state
 rngp.philox_set_key([4,6])                       # set Philox key
 rngq.pcg64_set_inc([3, 5])                       # change PCG stream increment
 rngs.set_state([1, 2, 3, 17])                    # set full sfc64 state
 rngs.sfc64_set_abc([7, 11, 13])                  # update only a, b, c
-rngz.squares_set_ctr(3)                          # set Squares counter
+rngc.chacha_set_nonce([7, 11, 13])               # change ChaCha20 nonce
+rngz.set_state([3, 0])                           # set full Squares state
 rngz.squares_set_key(4)                          # set Squares key
 rngr.jump(32)                                    # jump the state by 2^32 steps
 
