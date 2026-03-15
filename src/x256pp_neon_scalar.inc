@@ -1,13 +1,15 @@
 // -*- C -*-
+#define ROTL64(x, k) (((x) << (k)) | ((x) >> (64 - (k))))
+
 #define FAST_STEP_SCALAR_SS(s0,s1,s2,s3,out) do { \
-  uint64_t r_ = rotl_u64((s1)*5, 7)*9; \
+  uint64_t r_ = ROTL64((s1)*5, 7)*9; \
   uint64_t t_ = (s1) << 17; \
   (s2) ^= (s0); \
   (s3) ^= (s1); \
   (s1) ^= (s2); \
   (s0) ^= (s3); \
   (s2) ^= t_; \
-  (s3) = rotl_u64((s3), 45); \
+  (s3) = ROTL64((s3), 45); \
   (out) = r_; \
 } while (0)
 
