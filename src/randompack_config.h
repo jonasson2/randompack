@@ -143,7 +143,6 @@ ALWAYS_INLINE uint64_t clock_nsec(void) {
   return (uint64_t)((1000000000.0*(double)clock())/(double)CLOCKS_PER_SEC);
 }
 
-
 #if defined(PRETEND_NOSIMD)
 #define HAVE_NEON 0
 #elif defined(__aarch64__) || defined(__ARM_NEON) || defined(__ARM_NEON__)

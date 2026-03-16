@@ -119,12 +119,12 @@ HIDDEN bool cpu_has_avx2(void) {
   (outv) = r_; \
 } while (0)
 
+// Following 4 macros are used by xoshiro256**
 #define VEC_ROTL7(x) _mm256_or_si256( \
   _mm256_slli_epi64((x),7), _mm256_srli_epi64((x),64-7))
 #define VEC_MUL5(x) _mm256_add_epi64((x),_mm256_slli_epi64((x),2))
 #define VEC_MUL9(x) _mm256_add_epi64((x),_mm256_slli_epi64((x),3))
-
-#define FAST_STEP_VEC_SS(s0,s1,s2,s3,outv) do { \
+#define FAST_STEP_VEC_SS(s0,s1,s2,s3,outv) do { \  
   VEC_T r_; \
   VEC_T t_; \
   r_ = VEC_MUL9(VEC_ROTL7(VEC_MUL5(s1))); \
@@ -150,7 +150,8 @@ HIDDEN void fill_fast_avx2(uint64_t *buf, size_t len, randompack_state *state) {
 #endif
   for (size_t i = 0; i < len; i += 4) {
     VEC_T r;
-    FAST_STEP_VEC_SS(s0, s1, s2, s3, r);
+    //FAST_STEP_VEC_SS(s0, s1, s2, s3, r);  // for xoshiro256**
+    FAST_STEP_VEC(s0, s1, s2, s3, r);
     VEC_STORE(out + i, r);
   }
   VEC_STORE(&st->s0[0], s0);
