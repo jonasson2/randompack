@@ -74,6 +74,21 @@ static inline void x256ppsimd_jump(int p, randompack_rng *rng) {
   }
 }
 
+static inline void setup_sfc64simd_streams(randompack_rng *rng) {
+  xo256 *st = &rng->state.xo;
+  uint64_t a = rng->state.u64[0];
+  uint64_t b = rng->state.u64[1];
+  uint64_t c = rng->state.u64[2];
+  uint64_t s = rng->state.u64[3];
+  uint64_t delta = 1ULL << 62;
+  for (int i = 0; i < 4; i++) {
+    st->s0[i] = a;
+    st->s1[i] = b;
+    st->s2[i] = c;
+    st->s3[i] = s + (uint64_t)i*delta;
+  }
+}
+
 static inline void normalize_state(randompack_rng *rng) {
   // Make state nonzero for xor-family and ranlux, odd for cwg128 & pcg64.
   int nwords = get_state_words(rng);
@@ -144,6 +159,9 @@ static void rand_randomize(randompack_rng *rng) {
       scatter_to_stream0(rng);
       fill_stream_states_with_jump(rng);
     }
+    else if (rng->engine == SFCSIMD) {
+      setup_sfc64simd_streams(rng);
+    }
   }
 }
 
@@ -189,6 +207,9 @@ static void set_state(uint64_t *state, int nstate, randompack_rng *rng) {
     if (rng->engine == FAST) {
       scatter_to_stream0(rng);
       fill_stream_states_with_jump(rng);
+    }
+    else if (rng->engine == SFCSIMD) {
+      setup_sfc64simd_streams(rng);
     }
   }
   rand_init(rng);

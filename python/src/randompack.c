@@ -38,12 +38,14 @@ static rng_entry rng_table[] = {  // x256++simd is default
   {"squares",  "squares64, Widynski, 2021 (2x64)",             SQUARES, 2,fill_squares  },
   {"philox",   "Philox-4x64, Salmon & Moraes, 2011 (6x64)",    PHILOX,  6,fill_philox   },
   {"sfc64",    "sfc64, Chris Doty-Humphrey, 2013 (4x64)",      SFC64,   4,fill_sfc64    },
+  {"sfc64simd","sfc64, SIMD accelerated (4x4x64)",             SFCSIMD, 4,fill_sfc64simd},
   {"cwg128",   "cwg128, Działa, 2022 (8x64)",                  CWG128,  8,fill_cwg128   },
   {"ranlux++", "ranlux++, Sibidanov, 2017 (9x64)",             RANLUXPP,9,fill_ranluxpp },
   {"chacha20", "ChaCha20, Bernstein, 2008 (6x64)",             CHACHA20,6,fill_chacha   },
 };
-// For x256++simd, the state.xo.s0 (4 words) is seeded or initialized with _setup
-// and then jumped to .xo.s1, .xo.s2 and .xo.s3.
+// For x256++simd, state.xo stream 0 (4 words) is seeded or initialized directly and
+// then jumped to streams 1..3. For sfc64simd, the base state words are replicated to
+// 4 streams with counters s, s+2^62, s+2*2^62, s+3*2^62.
 
 static rng_entry *find_entry(rng_engine e) {
   for (int i = 0; i < LEN(rng_table); i++)
@@ -133,6 +135,9 @@ bool randompack_seed(int seed, uint32_t *spawn_key, int nkey, randompack_rng *rn
   if (rng->engine == FAST) {
     scatter_to_stream0(rng);
     fill_stream_states_with_jump(rng);
+  }
+  else if (rng->engine == SFCSIMD) {
+    setup_sfc64simd_streams(rng);
   }
   rand_init(rng);
   return true;

@@ -188,6 +188,7 @@ static engine_table_entry engine_table[] = {
   {"x128+",         2},
   {"squares",       2},
   {"sfc64",         4},
+  {"sfc64simd",     4},
   {"x256**",        4},
   {"x256++",        4},
   {"x256++simd",    4},

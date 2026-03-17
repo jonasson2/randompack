@@ -1,20 +1,5 @@
 // -*- C -*-
 
-#if HAVE_NEON
-#include <arm_neon.h>
-#define VEC_T uint64x2_t
-#define VEC_LOAD(p) vld1q_u64((const uint64_t *)(p))
-#define VEC_STORE(p,x) vst1q_u64((uint64_t *)(p),(x))
-#define VEC_ADD(a,b) vaddq_u64((a),(b))
-#define VEC_XOR(a,b) veorq_u64((a),(b))
-#define VEC_SHL17(a) vshlq_n_u64((a),17)
-#define VEC_ROTL23(x) vorrq_u64(vshlq_n_u64((x),23),vshrq_n_u64((x),64-23))
-#define VEC_ROTL45(x) vorrq_u64(vshlq_n_u64((x),45),vshrq_n_u64((x),64-45))
-#define HAVE_VEC 1
-#else
-#define HAVE_VEC 0
-#endif
-
 #if HAVE_VEC
 #define FAST_STEP_VEC(s0,s1,s2,s3,outv) do { \
   VEC_T r_; \

@@ -29,6 +29,7 @@ typedef enum {
   PHILOX,
   CHACHA20,
   CWG128,
+  SFCSIMD,
   FAST,
 } rng_engine;
 
@@ -40,7 +41,7 @@ typedef union {
   uint8_t u8[48];   // 6 words, used by chacha20
   uint32_t u32[18]; // 9 words, used when seeding and by chacha20
   uint64_t u64[9];  // used by most engines
-  xo256 xo;         // 16 words, used by x256++simd
+  xo256 xo;         // 16 words, used by x256++simd and sfc64simd
   pcg64_t pcg;      // 4 words
   #if HAVE128
   uint128_t u128[4];

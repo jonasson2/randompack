@@ -72,6 +72,7 @@ static void test_determinism(void) {
   uint64_t pcg[] = {9,10,11,13};
   uint64_t cwg[] = {1,0,2,0,3,0,4,0};
   uint64_t philox[] = {1,2,3,4,5,6};
+  uint64_t sfc64simd[] = {7,11,13,17};
   uint64_t chacha[] = {
     0x0123456789abcdefULL,
     0xfedcba9876543210ULL,
@@ -92,6 +93,7 @@ static void test_determinism(void) {
     {"pcg64", pcg, LEN(pcg)},
     {"cwg128", cwg, LEN(cwg)},
     {"philox", philox, LEN(philox)},
+    {"sfc64simd", sfc64simd, LEN(sfc64simd)},
     {"chacha20", chacha, LEN(chacha)},
   };
 
