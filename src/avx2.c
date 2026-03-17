@@ -105,6 +105,7 @@ HIDDEN bool cpu_has_avx2(void) {
 #define VEC_ADD(a,b) _mm256_add_epi64((a),(b))
 #define VEC_XOR(a,b) _mm256_xor_si256((a),(b))
 #define VEC_SHL3(a) _mm256_slli_epi64((a),3)
+#define VEC_MUL9(a) _mm256_add_epi64(_mm256_slli_epi64((a),3),(a))
 #define VEC_SHR11(a) _mm256_srli_epi64((a),11)
 #define VEC_SHL17(a) _mm256_slli_epi64((a),17)
 #define VEC_ROTL45(x) _mm256_or_si256( \
@@ -175,7 +176,7 @@ HIDDEN void fill_fast_avx2(uint64_t *buf, size_t len, randompack_state *state) {
   (outv) = VEC_ADD(VEC_ADD((a),(b)),(ctr)); \
   (ctr) = VEC_ADD((ctr),(one)); \
   t_ = VEC_XOR((b), VEC_SHR11((b))); \
-  (b) = VEC_ADD((c), VEC_SHL3((c))); \
+  (b) = VEC_MUL9((c)); \
   (c) = VEC_ADD(VEC_ROTL24((c)), (outv)); \
   (a) = t_; \
 } while (0)
