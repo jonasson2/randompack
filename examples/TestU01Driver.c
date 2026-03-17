@@ -30,6 +30,7 @@ static uint64_t words[WORD_BUFSIZE];
 static int half = 0;
 static int w = WORD_BUFSIZE;
 static bool reverse_bits = false;
+static bool stdin_mode = false;
 static bool low_only = false;
 static bool high_only = false;
 static bool low_bytes = false;
@@ -44,11 +45,24 @@ static uint32_t reverse_bits32(uint32_t x) {
 }
 
 static inline void refill_words(void) {
-  if (!randompack_uint64(words, WORD_BUFSIZE, 0, rng)) {
-    char *err = randompack_last_error(rng);
-    fprintf(stderr, "%s\n", err ? err : "randompack_uint64 failed");
-    randompack_free(rng);
-    exit(1);
+  if (stdin_mode) {
+    size_t nread = fread(words, sizeof(words[0]), WORD_BUFSIZE, stdin);
+    if (nread == 0) {
+      fprintf(stderr, "stdin ended before TestU01 completed\n");
+      exit(1);
+    }
+    if (nread < WORD_BUFSIZE) {
+      fprintf(stderr, "short read from stdin\n");
+      exit(1);
+    }
+  }
+  else {
+    if (!randompack_uint64(words, WORD_BUFSIZE, 0, rng)) {
+      char *err = randompack_last_error(rng);
+      fprintf(stderr, "%s\n", err ? err : "randompack_uint64 failed");
+      randompack_free(rng);
+      exit(1);
+    }
   }
   w = 0;
 }
@@ -103,10 +117,11 @@ static unsigned int GetBits(void) {
 
 static void usage(const char *prog) {
   fprintf(stderr,
-    "Usage: %s [-h] [-e engine] [-s seed] [-r] [-l] [-H] [-8] (-S|-C|-B)\n\n"
-    "Run TestU01 on a randompack RNG.\n\n"
+    "Usage: %s [-h] [-i] [-e engine] [-s seed] [-r] [-l] [-H] [-8] (-S|-C|-B)\n\n"
+    "Run TestU01 on a randompack RNG or stdin.\n\n"
     "Options:\n"
     "  -h          Show this help\n"
+    "  -i          Read uint64 values from stdin instead of using randompack\n"
     "  -e engine   RNG engine to use (default engine if omitted)\n"
     "  -s seed     Integer seed passed to randompack_seed\n"
     "  -r          Reverse the 32 bits delivered to TestU01\n"
@@ -126,8 +141,9 @@ int main(int argc, char **argv) {
   long seed = 1;
   bool have_seed = false;
   const char *engine = 0;
-  while ((opt = getopt(argc, argv, "e:s:rlH8SCBh")) != -1) {
+  while ((opt = getopt(argc, argv, "ie:s:rlH8SCBh")) != -1) {
     switch (opt) {
+      case 'i': stdin_mode = true; break;
       case 'e': engine = optarg; break;
       case 's': {
         char *end = 0;
@@ -163,16 +179,17 @@ int main(int argc, char **argv) {
   }
   half = 0;
   w = WORD_BUFSIZE;
-
-  rng = randompack_create(engine);
-  if (!rng) {
-    fprintf(stderr, "failed to create RNG\n");
-    return 1;
-  }
-  if (have_seed && !randompack_seed((int)seed, 0, 0, rng)) {
-    fprintf(stderr, "failed to seed RNG\n");
-    randompack_free(rng);
-    return 1;
+  if (!stdin_mode) {
+    rng = randompack_create(engine);
+    if (!rng) {
+      fprintf(stderr, "failed to create RNG\n");
+      return 1;
+    }
+    if (have_seed && !randompack_seed((int)seed, 0, 0, rng)) {
+      fprintf(stderr, "failed to seed RNG\n");
+      randompack_free(rng);
+      return 1;
+    }
   }
 
   unif01_Gen *gen =
@@ -186,6 +203,7 @@ int main(int argc, char **argv) {
   }
 
   unif01_DeleteExternGenBits(gen);
-  randompack_free(rng);
+  if (rng)
+    randompack_free(rng);
   return 0;
 }

@@ -77,7 +77,6 @@ Yggdrasil/
 products/
 
 # SANDBOX
-sandbox/ranluxpp-portable/
-sandbox/mul576/mul_jirka.c
-sandbox/mul576/mod_m.c
+sandbox/
+
 .jupyter/
