@@ -16,8 +16,8 @@ Table of contents
 C-library
 =========
 MESON SETUP:
-scripts/meson-setup.sh release  # optimized
-scripts/meson-setup.sh debug    # debug-enabled
+scripts/meson-setup.sh release                     # optimized (default buildtype)
+scripts/meson-setup.sh debug --buildtype=debug     # debug-enabled
 = these set library "prefix" to ./install
 
 BUILD:

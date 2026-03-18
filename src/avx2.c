@@ -104,14 +104,13 @@ HIDDEN bool cpu_has_avx2(void) {
 #define VEC_STORE(p,x) _mm256_storeu_si256((__m256i_u *)(p),(x))
 #define VEC_ADD(a,b) _mm256_add_epi64((a),(b))
 #define VEC_XOR(a,b) _mm256_xor_si256((a),(b))
-#define VEC_SHL3(a) _mm256_slli_epi64((a),3)
 #define VEC_MUL9(a) _mm256_add_epi64(_mm256_slli_epi64((a),3),(a))
 #define VEC_SHR11(a) _mm256_srli_epi64((a),11)
 #define VEC_SHL17(a) _mm256_slli_epi64((a),17)
 #define VEC_ROTL45(x) _mm256_or_si256( \
   _mm256_slli_epi64((x),45), _mm256_srli_epi64((x),64-45))
 
-#define VEC_ROTL23(x) _mm256_or_si256(								\
+#define VEC_ROTL23(x) _mm256_or_si256( \
   _mm256_slli_epi64((x),23), _mm256_srli_epi64((x),64-23))
 #define VEC_ROTL24(x) _mm256_or_si256( \
   _mm256_slli_epi64((x),24), _mm256_srli_epi64((x),40))
@@ -130,11 +129,10 @@ HIDDEN bool cpu_has_avx2(void) {
   (outv) = r_; \
 } while (0)
 
-// Following 4 macros are used by xoshiro256**
+// Following 3 macros are used by xoshiro256**
 #define VEC_ROTL7(x) _mm256_or_si256( \
   _mm256_slli_epi64((x),7), _mm256_srli_epi64((x),64-7))
 #define VEC_MUL5(x) _mm256_add_epi64((x),_mm256_slli_epi64((x),2))
-#define VEC_MUL9(x) _mm256_add_epi64((x),_mm256_slli_epi64((x),3))
 #define FAST_STEP_VEC_SS(s0,s1,s2,s3,outv) do { \
   VEC_T r_; \
   VEC_T t_; \
