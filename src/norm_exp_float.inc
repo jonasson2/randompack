@@ -25,25 +25,26 @@ static float norm_tail_draw_f(randompack_rng *rng, uint32_t rabs, float y, int *
   }
 }
 
-ALWAYS_INLINE float normf_likely(uint32_t r, int idx, uint32_t *ki, uint32_t *rabs) {
+ALWAYS_INLINE float normf_likely(uint32_t r, int *idx, uint32_t *ki, uint32_t *rabs) {
   int sign;
   float x;
+  *idx = r & 0xff;
   r >>= 8;
-  *ki = ki_float[idx];
+  *ki = ki_float[*idx];
   sign = r & 0x1;
   *rabs = (r >> 1) & 0x007fffff;
-  x = (*rabs)*wi_float[idx];
+  x = (*rabs)*wi_float[*idx];
   x = flip_sign_if_f(x, sign);
   return x;
 }
 
-NEVER_INLINE float normf_unlikely(randompack_rng *rng, int *w, float x, int idx,
-                                  uint32_t rabs, uint32_t ki) {
+ALWAYS_INLINE float normf_unlikely(randompack_rng *rng, int *w, float x, int idx, uint32_t
+											  *rabs, uint32_t ki) {
   float y, f0, f1, tangent;
   uint32_t r, dr, dk;
   while (true) {
     y = draw_u01f(rng, w);
-    dr = (1U << 23) - rabs;
+    dr = (1U << 23) - *rabs;
     tangent = dr*slope_normf[idx];
     if (LIKELY(idx > 52)) { // idx == 52 straddles the inflection at x=1
       if (y <= tangent) return x;    // below tangent
@@ -51,7 +52,7 @@ NEVER_INLINE float normf_unlikely(randompack_rng *rng, int *w, float x, int idx,
       if (y*dk > dr) goto next_try;     // above secant
     }
     else if (UNLIKELY(idx == 0)) {      // in tail
-      x = norm_tail_draw_f(rng, rabs, y, w);
+      x = norm_tail_draw_f(rng, *rabs, y, w);
       return x;
     }
     else if (LIKELY(idx < 52)) {
@@ -64,9 +65,8 @@ NEVER_INLINE float normf_unlikely(randompack_rng *rng, int *w, float x, int idx,
     if (f1 + y*(f0 - f1) < openlibm_expf(-x*x/2)) return x; // below curve
   next_try:
     r = draw_u32(rng, w);
-    idx = r & 0xff;
-    x = normf_likely(r, idx, &ki, &rabs);
-    if (rabs < ki) return x;
+    x = normf_likely(r, &idx, &ki, rabs);
+    if (*rabs < ki) return x;
   }
 }
 
@@ -75,11 +75,10 @@ ALWAYS_INLINE float draw_normf(randompack_rng *rng, int *w) {
   float x;
   int idx;
   uint32_t r = draw_u32(rng, w);
-  idx = r & 0xff;
-  x = normf_likely(r, idx, &ki, &rabs);
+  x = normf_likely(r, &idx, &ki, &rabs);
   if (LIKELY(rabs < ki)) return x;
   int w2 = *w;
-  x = normf_unlikely(rng, &w2, x, idx, rabs, ki);
+  x = normf_unlikely(rng, &w2, x, idx, &rabs, ki);
   *w = w2;
   return x;
 }
@@ -95,14 +94,13 @@ ALWAYS_INLINE void rand_normf(float *buf, size_t len, randompack_rng *rng) {
     take = rem < 2*BUFSIZE ? (int)rem : 2*BUFSIZE;
     for (int j = 0; j < take; j++) {
       uint32_t r = draw_u32(rng, &w);
-      idx = r & 0xff;
-      x = normf_likely(r, idx, &ki, &rabs);
+      x = normf_likely(r, &idx, &ki, &rabs);
       if (LIKELY(rabs < ki)) {
         buf[i + j] = x;
       }
       else {
         int w2 = w;
-        buf[i + j] = normf_unlikely(rng, &w2, x, idx, rabs, ki);
+        buf[i + j] = normf_unlikely(rng, &w2, x, idx, &rabs, ki);
         w = w2;
       }
     }

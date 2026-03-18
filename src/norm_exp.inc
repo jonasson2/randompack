@@ -69,50 +69,48 @@ static double norm_tail_draw(randompack_rng *rng, uint64_t rabs, double y, int *
   }
 }
 
-ALWAYS_INLINE double norm_likely(uint64_t r, int idx, uint64_t *ki, uint64_t *rabs) {
+ALWAYS_INLINE double norm_likely(uint64_t r, int *idx, uint64_t *ki, uint64_t *rabs) {
   int sign;
   double x;
+  *idx = r & 0xff;
   r >>= 8;
-  *ki = ki_double[idx];
+  *ki = ki_double[*idx];
   sign = r & 0x1;
   *rabs = (r >> 1) & 0x000fffffffffffff;
-  x = (*rabs)*wi_double[idx];
+  x = (*rabs)*wi_double[*idx];
   x = flip_sign_if(x, sign);
   return x;
 }
 
-NEVER_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x, int idx,
-                                  uint64_t rabs, uint64_t ki) {
-  double y, f0, f1;
+ALWAYS_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x, int idx,
+											  uint64_t *rabs, uint64_t ki) {
+  double y, f0, f1, tangent;
   uint64_t r, dr, dk;
   while (true) {
 	 y = draw_u01(rng, w);
-	 dr = (1ULL << 52) - rabs;
+	 dr = (1ULL << 52) - *rabs;
+	 tangent = dr*slope_norm[idx];
 	 if (LIKELY(idx > 52)) { // idx == 52 straddles the inflection at x=1
-		double tangent = dr*slope_norm[idx];
 		if (y <= tangent) return x;    // below tangent
 		dk = (1ULL << 52) - ki;
 		if (y*dk > dr) goto next_try;     // above secant
 	 }
 	 else if (UNLIKELY(idx == 0)) {      // in tail
-		x = norm_tail_draw(rng, rabs, y, w);
+		x = norm_tail_draw(rng, *rabs, y, w);
 		return x;
 	 }
 	 else if (LIKELY(idx < 52)) {
-		double tangent = dr*slope_norm[idx];
 		if (y > tangent) goto next_try;   // above tangent
 		uint64_t dk = (1ULL << 52) - ki;
 		if (y*dk <= dr) return x;      // below secant
 	 }
-	 const double *fi = fi_double + idx;
-	 f0 = fi[-1];
-	 f1 = fi[0];
+	 f0 = fi_double[idx-1];
+	 f1 = fi_double[idx];
 	 if (f1 + y*(f0 - f1) < openlibm_exp(-x*x/2)) return x; // below curve
   next_try:
 	 r = draw_u64(rng, w);
-	 idx = r & 0xff;
-	 x = norm_likely(r, idx, &ki, &rabs);
-	 if (rabs < ki) return x;
+    x = norm_likely(r, &idx, &ki, rabs);
+	 if (*rabs < ki) return x;
   }
 }
 
@@ -121,10 +119,9 @@ ALWAYS_INLINE double draw_norm(randompack_rng *rng, int *w) {
   double x;
   int idx;
   r = draw_u64(rng, w);
-  idx = r & 0xff;
-  x = norm_likely(r, idx, &ki, &rabs);
+  x = norm_likely(r, &idx, &ki, &rabs);
   if (LIKELY(rabs < ki)) return x;
-  x = norm_unlikely(rng, w, x, idx, rabs, ki);
+  x = norm_unlikely(rng, w, x, idx, &rabs, ki);
   return x;
 }
 
@@ -138,21 +135,16 @@ ALWAYS_INLINE void rand_norm(double *buf, size_t len, randompack_rng *rng) {
     int idx, take;
     take = rem < BUFSIZE ? rem : BUFSIZE;
     for (int j = 0; j < take; j++) {
-      uint64_t r = draw_u64(rng, &w);
-      idx = r & 0xff;
-      ki = ki_double[idx];
-      r >>= 8;
-      int sign = r & 0x1;
-      rabs = (r >> 1) & 0x000fffffffffffff;
-      x = rabs*wi_double[idx];
+		uint64_t r = draw_u64(rng, &w);
+      x = norm_likely(r, &idx, &ki, &rabs);
       if (LIKELY(rabs < ki)) {
-        buf[i + j] = flip_sign_if(x, sign);
-      }
-      else {
-        int w2 = w;
-        buf[i + j] = norm_unlikely(rng, &w2, flip_sign_if(x, sign), idx, rabs, ki);
-        w = w2;
-      }
+		  buf[i + j] = x;
+		}
+		else {
+		  int w2 = w;
+		  buf[i + j] = norm_unlikely(rng, &w2, x, idx, &rabs, ki);
+		  w = w2;
+		}
     }
     i += take;
   }
