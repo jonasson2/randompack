@@ -56,7 +56,7 @@ ALWAYS_INLINE double flip_sign_if(double x, int sign) {
   return x;
 }
 
-static double norm_tail_draw(randompack_rng *rng, uint64_t rabs, double y, int *w) {
+NEVER_INLINE double norm_tail_draw(randompack_rng *rng, uint64_t rabs, double y, int *w) {
   double xx, yy, x;
   for (;;) {
     /* Switch to 1.0 - U to avoid log(0.0), see GH 13361 */
@@ -160,7 +160,7 @@ ALWAYS_INLINE double exp_likely(uint64_t r, int *idx, uint64_t *ki, uint64_t *rr
   return r*we_double[*idx];
 }
 
-ALWAYS_INLINE double exp_unlikely(randompack_rng *rng, int *w, double x, int idx, uint64_t
+NEVER_INLINE double exp_unlikely(randompack_rng *rng, int *w, double x, int idx, uint64_t
 											 r, uint64_t ki) {
   double y, f0, f1, tangent;
   uint64_t dr, dk;
