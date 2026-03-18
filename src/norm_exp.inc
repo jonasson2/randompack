@@ -181,23 +181,15 @@ ALWAYS_INLINE double exp_unlikely(randompack_rng *rng, int *w, double x, int idx
 }
 
 ALWAYS_INLINE void rand_exp(double *buf, size_t len, randompack_rng *rng) {
-  int idx, w = enter_u64_mode(rng), w2;
+  align64(rng);
+  draw_raw_copy((uint8_t *)buf, len*sizeof(uint64_t), rng);
+  int idx, w = enter_u64_mode(rng);
   uint64_t r, ki;
-  size_t i = 0;
-  while (i < len) {
-    int take = min(len - i, BUFSIZE);
-    for (size_t j = i; LIKELY(j < i + take); j++) {
-      r = draw_u64(rng, &w);
-      double x = exp_likely(r, &idx, &ki, &r);
-      if (LIKELY(r < ki))
-        buf[j] = x;
-		else {
-		  w2 = w;
-		  buf[j] = exp_unlikely(rng, &w, x, idx, r, ki);
-		  w = w2;
-		}
-    }
-    i += take;
+  double x;
+  for (size_t i = 0; i < len; i++) {
+    memcpy(&r, buf + i, sizeof(r));
+    x = exp_likely(r, &idx, &ki, &r);
+    buf[i] = LIKELY(r < ki) ? x : exp_unlikely(rng, &w, x, idx, r, ki);
   }
   exit_u64_mode(rng, w);
 }
