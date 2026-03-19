@@ -23,12 +23,22 @@ _Static_assert(sizeof(long long) == 8, "randompack requires 64-bit long long");
 #if defined(_MSC_VER)
   #define ALWAYS_INLINE static __forceinline
   #define NEVER_INLINE static __declspec(noinline)
+  #define AVX_TARGET
 #elif defined(__clang__) || defined(__GNUC__)
   #define ALWAYS_INLINE static inline __attribute__((always_inline))
   #define NEVER_INLINE static __attribute__((noinline))
+  #if defined(BUILD_AVX2)
+    #define AVX_TARGET __attribute__((target("avx")))
+    #define AVX_INLINE static inline __attribute__((target("avx")))
+  #else
+    #define AVX_TARGET
+    #define AVX_INLINE static inline
+  #endif
 #else
   #define ALWAYS_INLINE static inline
   #define NEVER_INLINE static
+  #define AVX_TARGET
+  #define AVX_INLINE static inline
 #endif
 
 #define TOLOWER(c) (((c) >= 'A' && (c) <= 'Z') ? ((c)-'A'+'a') : (c))

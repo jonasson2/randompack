@@ -146,19 +146,10 @@ ALWAYS_INLINE void rand_norm(double *buf, size_t len, randompack_rng *rng) {
   exit_u64_mode(rng, w);
 }
 
-ALWAYS_INLINE double exp_likely(uint64_t r, int *idx, uint64_t *ki, uint64_t *rr) {
-  r >>= 3;
-  *idx = r & 0xFF;
-  r >>= 8;
-  *rr = r;
-  *ki = ke_double[*idx];
-  return r*we_double[*idx];
-}
-
-ALWAYS_INLINE double exp_unlikely(randompack_rng *rng, int *w, double x, int idx, uint64_t
-											 r, uint64_t ki) {
+AVX_INLINE double exp_unlikely(randompack_rng *rng, int *w, double x, uint8_t idx,
+                                      uint64_t r) {
   double y, f0, f1, tangent;
-  uint64_t dr, dk;
+  uint64_t ke = ke_double[idx], dr, dk;
   while (true) {
     if (UNLIKELY(idx == 0)) {             // in the tail
       x = ziggurat_exp_r - openlibm_log1p(-draw_u01(rng, w));
@@ -168,32 +159,35 @@ ALWAYS_INLINE double exp_unlikely(randompack_rng *rng, int *w, double x, int idx
     dr = (1ULL << 53) - r;
     tangent = dr*slope_exp[idx];
     if (y <= tangent) return x;        // below tangent
-    dk = (1ULL << 53) - ki;
+    dk = (1ULL << 53) - ke;
     if (y*dk > dr) goto next_try;      // above secant
     f0 = fe_double[idx-1];
     f1 = fe_double[idx];
     if (f1 + y*(f0 - f1) < openlibm_exp(-x)) return x; // below curve
   next_try:
     r = draw_u64(rng, w);
-    x = exp_likely(r, &idx, &ki, &r);
-    if (LIKELY(r < ki)) return x;
+    memcpy(&idx, (uint8_t*)(&r) + 7, 1);
+    r &= 0x1FFFFFFFFFFFFF;
+    ke = ke_double[idx];
+    x = r*we_double[idx];
+    if (LIKELY(r < ke)) return x;
   }
 }
 
-ALWAYS_INLINE void rand_exp(double *buf, size_t len, randompack_rng *rng) {
+AVX_INLINE void rand_exp(double *buf, size_t len, randompack_rng *rng) {
   align64(rng);
   draw_raw_copy((uint8_t *)buf, len*sizeof(uint64_t), rng);
-  int idx, w = enter_u64_mode(rng);
-  uint64_t r, ki;
+  int w = enter_u64_mode(rng);
+  uint8_t idx;
+  uint64_t r;
   double x;
   for (size_t i = 0; i < len; i++) {
-    memcpy(&r, buf + i, sizeof(r));
-    r >>= 3;
-    idx = r & 0xFF;
-    r >>= 8;
-    ki = ke_double[idx];
+    uint8_t *bufpi = (uint8_t*)(buf + i);
+    memcpy(&r, bufpi, sizeof(r));
+    memcpy(&idx, bufpi + 7, 1);
+    r &= 0x1FFFFFFFFFFFFF;
     x = r*we_double[idx];
-    buf[i] = LIKELY(r < ki) ? x : exp_unlikely(rng, &w, x, idx, r, ki);
+    buf[i] = LIKELY(r < ke_double[idx]) ? x : exp_unlikely(rng, &w, x, idx, r);
   }
   exit_u64_mode(rng, w);
 }
