@@ -139,7 +139,7 @@ ALWAYS_INLINE void rand_norm(double *buf, size_t len, randompack_rng *rng) {
     ki = ki_double[idx];
     sign = r & 0x1;
     rabs = (r >> 1) & 0x000fffffffffffff;
-    srabs = sign ? -(int64_t)rabs : rabs;
+    srabs = sign ? -(int64_t)rabs : (int64_t) rabs;
     x = srabs*wi_double[idx];
     buf[i] = LIKELY(rabs < ki) ? x : norm_unlikely(rng, &w, x, idx, &rabs, ki);
   }
@@ -193,12 +193,7 @@ ALWAYS_INLINE void rand_exp(double *buf, size_t len, randompack_rng *rng) {
     r >>= 8;
     ki = ke_double[idx];
     x = r*we_double[idx];
-    if (LIKELY(r < ki)) {
-      buf[i] = x;
-    }
-    else {
-      buf[i] = exp_unlikely(rng, &w, x, idx, r, ki);
-    }
+    buf[i] = LIKELY(r < ki) ? x : exp_unlikely(rng, &w, x, idx, r, ki);
   }
   exit_u64_mode(rng, w);
 }
