@@ -146,7 +146,7 @@ ALWAYS_INLINE void rand_norm(double *buf, size_t len, randompack_rng *rng) {
   exit_u64_mode(rng, w);
 }
 
-AVX_INLINE double exp_unlikely(randompack_rng *rng, int *w, double x, uint8_t idx,
+NORMEXP_INLINE double exp_unlikely(randompack_rng *rng, int *w, double x, uint8_t idx,
                                       uint64_t r) {
   double y, f0, f1, tangent;
   uint64_t ke = ke_double[idx], dr, dk;
@@ -166,7 +166,11 @@ AVX_INLINE double exp_unlikely(randompack_rng *rng, int *w, double x, uint8_t id
     if (f1 + y*(f0 - f1) < openlibm_exp(-x)) return x; // below curve
   next_try:
     r = draw_u64(rng, w);
+#if defined(__x86_64__) || defined(__amd64__) || defined(_M_X64)
     memcpy(&idx, (uint8_t*)(&r) + 7, 1);
+#else
+    idx = r >> 56;
+#endif
     r &= 0x1FFFFFFFFFFFFF;
     ke = ke_double[idx];
     x = r*we_double[idx];
@@ -174,7 +178,7 @@ AVX_INLINE double exp_unlikely(randompack_rng *rng, int *w, double x, uint8_t id
   }
 }
 
-AVX_INLINE void rand_exp(double *buf, size_t len, randompack_rng *rng) {
+NORMEXP_INLINE void rand_exp(double *buf, size_t len, randompack_rng *rng) {
   align64(rng);
   draw_raw_copy((uint8_t *)buf, len*sizeof(uint64_t), rng);
   int w = enter_u64_mode(rng);
@@ -184,7 +188,11 @@ AVX_INLINE void rand_exp(double *buf, size_t len, randompack_rng *rng) {
   for (size_t i = 0; i < len; i++) {
     uint8_t *bufpi = (uint8_t*)(buf + i);
     memcpy(&r, bufpi, sizeof(r));
+#if defined(__x86_64__) || defined(__amd64__) || defined(_M_X64)
     memcpy(&idx, bufpi + 7, 1);
+#else
+    idx = r >> 56;
+#endif
     r &= 0x1FFFFFFFFFFFFF;
     x = r*we_double[idx];
     buf[i] = LIKELY(r < ke_double[idx]) ? x : exp_unlikely(rng, &w, x, idx, r);

@@ -41,6 +41,16 @@ _Static_assert(sizeof(long long) == 8, "randompack requires 64-bit long long");
   #define AVX_INLINE static inline
 #endif
 
+#if defined(BUILD_AVX2) && (defined(__x86_64__) || defined(__amd64__) || defined(_M_X64))
+  #define NORMEXP_INLINE static inline __attribute__((target("avx")))
+#elif defined(__clang__) || defined(__GNUC__)
+  #define NORMEXP_INLINE static inline __attribute__((always_inline))
+#elif defined(_MSC_VER)
+  #define NORMEXP_INLINE static __forceinline
+#else
+  #define NORMEXP_INLINE static inline
+#endif
+
 #define TOLOWER(c) (((c) >= 'A' && (c) <= 'Z') ? ((c)-'A'+'a') : (c))
 #define STRSET(dst, src) snprintf((dst), sizeof(dst), "%s", (src) ? (src) : "")
 #define STRSETF(dst, fmt, ...) snprintf((dst), sizeof(dst), (fmt), __VA_ARGS__)
