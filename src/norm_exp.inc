@@ -129,18 +129,18 @@ ALWAYS_INLINE void rand_norm(double *buf, size_t len, randompack_rng *rng) {
   align64(rng);
   draw_raw_copy((uint8_t *)buf, len*sizeof(uint64_t), rng);
   int w = enter_u64_mode(rng), idx, sign;
-  uint64_t *ki_tab = ki_double, r, rabs, ki;
+  uint64_t r, rabs, ki;
   int64_t srabs;
-  double *wi_tab = wi_double, x;
+  double x;
   for (size_t i = 0; i < len; i++) {
     memcpy(&r, buf + i, sizeof(r));
     idx = r & 0xff;
     r >>= 8;
-    ki = ki_tab[idx];
+    ki = ki_double[idx];
     sign = r & 0x1;
     rabs = (r >> 1) & 0x000fffffffffffff;
     srabs = sign ? -(int64_t)rabs : rabs;
-    x = srabs*wi_tab[idx];
+    x = srabs*wi_double[idx];
     buf[i] = LIKELY(rabs < ki) ? x : norm_unlikely(rng, &w, x, idx, &rabs, ki);
   }
   exit_u64_mode(rng, w);
@@ -188,8 +188,17 @@ ALWAYS_INLINE void rand_exp(double *buf, size_t len, randompack_rng *rng) {
   double x;
   for (size_t i = 0; i < len; i++) {
     memcpy(&r, buf + i, sizeof(r));
-    x = exp_likely(r, &idx, &ki, &r);
-    buf[i] = LIKELY(r < ki) ? x : exp_unlikely(rng, &w, x, idx, r, ki);
+    r >>= 3;
+    idx = r & 0xFF;
+    r >>= 8;
+    ki = ke_double[idx];
+    x = r*we_double[idx];
+    if (LIKELY(r < ki)) {
+      buf[i] = x;
+    }
+    else {
+      buf[i] = exp_unlikely(rng, &w, x, idx, r, ki);
+    }
   }
   exit_u64_mode(rng, w);
 }
