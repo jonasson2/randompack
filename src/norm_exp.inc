@@ -23,6 +23,11 @@
 //   For x{i-1} > 1: reject if below tangent, accept if above secant
 
 #define DBL_SIGNBIT 0x8000000000000000ULL
+#if defined(__x86_64__) || defined(__amd64__) || defined(_M_X64)
+#define TOP_BYTE(dst, src) memcpy(&(dst), (uint8_t*)(&(src)) + 7, 1)
+#else
+#define TOP_BYTE(dst, src) ((dst) = (uint8_t)((src) >> 56))
+#endif
 
 
 #include <stdint.h>
@@ -35,7 +40,7 @@
 #include "assert.h"
 
 
-NORMEXP_INLINE double norm_tail_draw(randompack_rng *rng, uint64_t rabs, double y, int *w) {
+ALWAYS_INLINE double norm_tail_draw(randompack_rng *rng, uint64_t rabs, double y, int *w) {
   double xx, yy, x;
   for (;;) {
     /* Switch to 1.0 - U to avoid log(0.0), see GH 13361 */
@@ -48,12 +53,14 @@ NORMEXP_INLINE double norm_tail_draw(randompack_rng *rng, uint64_t rabs, double 
   }
 }
 
-NORMEXP_INLINE double norm_likely(uint64_t r, uint8_t *idx, uint64_t *ki, uint64_t *rabs) {
-#if defined(__x86_64__) || defined(__amd64__) || defined(_M_X64)
-  memcpy(idx, (uint8_t*)(&r) + 7, 1);
-#else
-  *idx = (uint8_t)(r >> 56);
-#endif
+NEVER_INLINE bool norm_pdf_check(double y, double x, uint8_t idx) {
+  double f0 = fi_double[idx-1];
+  double f1 = fi_double[idx];
+  return f1 + y*(f0 - f1) < openlibm_exp(-x*x/2);
+}
+
+NEVER_INLINE double norm_likely(uint64_t r, uint8_t *idx, uint64_t *ki, uint64_t *rabs) {
+  TOP_BYTE(*idx, r);
   *ki = ki_double[*idx];
   int sign = (r >> 52) & 1;
   *rabs = r & 0x000fffffffffffff;
@@ -62,7 +69,7 @@ NORMEXP_INLINE double norm_likely(uint64_t r, uint8_t *idx, uint64_t *ki, uint64
 }
 
 
-NORMEXP_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x, uint8_t idx,
+NEVER_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x, uint8_t idx,
                                   uint64_t *rabs, uint64_t ki) {
   double y, f0, f1, tangent;
   uint64_t r, dr, dk;
@@ -94,7 +101,18 @@ NORMEXP_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x, uint8
   }
 }
 
-NORMEXP_INLINE double draw_norm(randompack_rng *rng, int *w) {
+// ALWAYS_INLINE double draw_norm(randompack_rng *rng, int *w) {
+//   uint64_t rabs, ki, r;
+//   double x;
+//   uint8_t idx;
+//   r = draw_u64(rng, w);
+//   x = norm_likely(r, &idx, &ki, &rabs);
+//   if (LIKELY(rabs < ki)) return x;
+//   x = norm_unlikely(rng, w, x, idx, &rabs, ki);
+//   return x;
+// }
+
+ALWAYS_INLINE double draw_norm(randompack_rng *rng, int *w) {
   uint64_t rabs, ki, r;
   double x;
   uint8_t idx;
@@ -105,34 +123,62 @@ NORMEXP_INLINE double draw_norm(randompack_rng *rng, int *w) {
   return x;
 }
 
-NORMEXP_INLINE void rand_norm(double *buf, size_t len, randompack_rng *rng) {
+ALWAYS_INLINE void rand_norm(double *buf, size_t len, randompack_rng *rng) {
   align64(rng);
   draw_raw_copy((uint8_t *)buf, len*sizeof(uint64_t), rng);
   int w = enter_u64_mode(rng), sign;
   uint8_t idx;
-  uint64_t r, rabs, ki;
+  uint64_t r, rabs, ki, ru, dr, dk;
   int64_t srabs;
-  double x;
+  double x, y, tangent;
   for (size_t i = 0; i < len; i++) {
     uint8_t *bufpi = (uint8_t*)(buf + i);
     memcpy(&r, bufpi, sizeof(r));
-#if defined(__x86_64__) || defined(__amd64__) || defined(_M_X64)
-    memcpy(&idx, bufpi + 7, 1);
-#else
-    idx = (uint8_t)(r >> 56);
-#endif
+    TOP_BYTE(idx, *(uint64_t*)bufpi);
     ki = ki_double[idx];
     sign = (r >> 52) & 1;
     rabs = r & 0x000fffffffffffff;
     srabs = sign ? -(int64_t)rabs : (int64_t)rabs;
     x = srabs*wi_double[idx];
-    buf[i] = LIKELY(rabs < ki) ? x : norm_unlikely(rng, &w, x, idx, &rabs, ki);
+    if (LIKELY(rabs < ki)) {
+      buf[i] = x;
+      continue;
+    }
+    for (;;) {
+      y = draw_u01(rng, &w);
+      dr = (1ULL << 52) - rabs;
+      tangent = dr*slope_norm[idx];
+      if (LIKELY(idx > 52)) {
+        if (y <= tangent) break;
+        dk = (1ULL << 52) - ki;
+        if (y*dk > dr) goto next_try;
+      }
+      else if (UNLIKELY(idx == 0)) {
+        x = norm_tail_draw(rng, rabs, y, &w);
+        break;
+      }
+      else if (LIKELY(idx < 52)) {
+        if (y > tangent) goto next_try;
+        dk = (1ULL << 52) - ki;
+        if (y*dk <= dr) break;
+      }
+      if (norm_pdf_check(y, x, idx)) break;
+    next_try:
+      ru = draw_u64(rng, &w);
+      TOP_BYTE(idx, ru);
+      ki = ki_double[idx];
+      sign = (ru >> 52) & 1;
+      rabs = ru & 0x000fffffffffffff;
+      srabs = sign ? -(int64_t)rabs : (int64_t)rabs;
+      x = srabs*wi_double[idx];
+      if (rabs < ki) break;
+    }
+    buf[i] = x;
   }
   exit_u64_mode(rng, w);
 }
 
-
-NORMEXP_INLINE double exp_unlikely(randompack_rng *rng, int *w, double x, uint8_t idx,
+ALWAYS_INLINE double exp_unlikely(randompack_rng *rng, int *w, double x, uint8_t idx,
                                       uint64_t r) {
   double y, f0, f1, tangent;
   uint64_t ke = ke_double[idx], dr, dk;
@@ -152,11 +198,7 @@ NORMEXP_INLINE double exp_unlikely(randompack_rng *rng, int *w, double x, uint8_
     if (f1 + y*(f0 - f1) < openlibm_exp(-x)) return x; // below curve
   next_try:
     r = draw_u64(rng, w);
-#if defined(__x86_64__) || defined(__amd64__) || defined(_M_X64)
-    memcpy(&idx, (uint8_t*)(&r) + 7, 1);
-#else
-    idx = (uint8_t)(r >> 56);
-#endif
+    TOP_BYTE(idx, r);
     r &= 0x1FFFFFFFFFFFFF;
     ke = ke_double[idx];
     x = r*we_double[idx];
@@ -164,7 +206,7 @@ NORMEXP_INLINE double exp_unlikely(randompack_rng *rng, int *w, double x, uint8_
   }
 }
 
-NORMEXP_INLINE void rand_exp(double *buf, size_t len, randompack_rng *rng) {
+ALWAYS_INLINE void rand_exp(double *buf, size_t len, randompack_rng *rng) {
   align64(rng);
   draw_raw_copy((uint8_t *)buf, len*sizeof(uint64_t), rng);
   int w = enter_u64_mode(rng);
@@ -174,11 +216,7 @@ NORMEXP_INLINE void rand_exp(double *buf, size_t len, randompack_rng *rng) {
   for (size_t i = 0; i < len; i++) {
     uint8_t *bufpi = (uint8_t*)(buf + i);
     memcpy(&r, bufpi, sizeof(r));
-#if defined(__x86_64__) || defined(__amd64__) || defined(_M_X64)
-    memcpy(&idx, bufpi + 7, 1);
-#else
-    idx = (uint8_t)(r >> 56);
-#endif
+    TOP_BYTE(idx, *(uint64_t*)bufpi);
     r &= 0x1FFFFFFFFFFFFF;
     x = r*we_double[idx];
     buf[i] = LIKELY(r < ke_double[idx]) ? x : exp_unlikely(rng, &w, x, idx, r);

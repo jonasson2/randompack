@@ -244,6 +244,53 @@ static void rand_sample(int p[], int n, int k, randompack_rng *rng) {
 #include "randompack.h"
 #include "randompack_config.h"
 
+// ALWAYS_INLINE void gen_gamma_shape1(double *x, size_t len, double shape,
+//                                     double scale, randompack_rng *rng) {
+//   double d = shape - 1/3.0, dscale = d*scale;
+//   double c = 1/sqrt(9*d), v3, z, v;
+//   enum { NBUF = 50 };
+//   double zbuf[NBUF];
+//   int zpos = NBUF;
+//   bool use_zbuf = len >= 100;
+//   rand_norm(x, len, rng);
+//   int w = enter_u64_mode(rng);
+//   for (size_t i=0; i<len; i++) {
+//     for (;;) {
+//       z = x[i];
+//       v = 1 + c*z;
+//       if (v > 0) {
+//         double u, z2 = z*z, z4 = z2*z2, logu, logv3;
+//         v3 = v*v*v;
+//         u = draw_u01(rng, &w);
+//         if (u < 1 - 0.0331*z4) goto accept;
+//         if (!rng->bitexact) {
+//           logu = log(u);
+//           logv3 = log(v3);
+//         }
+//         else {
+//           logu = openlibm_log(u);
+//           logv3 = openlibm_log(v3);
+//         }
+//         if (logu < 0.5*z2 + d*(1 - v3 + logv3)) goto accept;
+//       }
+//       if (use_zbuf && zpos < NBUF) x[i] = zbuf[zpos++];
+//       else {
+//         exit_u64_mode(rng, w);
+//         if (use_zbuf) {
+//           rand_norm(zbuf, NBUF, rng);
+//           zpos = 1;
+//           x[i] = zbuf[0];
+//         }
+//         else rand_norm(x + i, 1, rng);
+//         w = enter_u64_mode(rng);
+//       }
+//     }
+//   accept:
+//     x[i] = dscale*v3;
+//   }
+//   exit_u64_mode(rng, w);
+// }
+
 ALWAYS_INLINE void gen_gamma_shape1(double *x, size_t len, double shape,
                                      double scale, randompack_rng *rng) {
   double d = shape - 1/3.0, dscale = d*scale;
@@ -257,7 +304,7 @@ ALWAYS_INLINE void gen_gamma_shape1(double *x, size_t len, double shape,
       if (v > 0) {
         double u, z2 = z*z, z4 = z2*z2, logu, logv3;
         v3 = v*v*v;
-		  u = draw_u01(rng, &w);
+        u = draw_u01(rng, &w);
         if (u < 1 - 0.0331*z4) goto accept;
         // compute logs:
         if (!rng->bitexact) {
