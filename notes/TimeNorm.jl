@@ -21,9 +21,22 @@ function base_fill!(buf::Vector{Float64}, sink::Base.RefValue{Float64})
   return nothing
 end
 
-function rp_fill!(rng::Randompack.RNG, buf::Vector{Float64},
-                  sink::Base.RefValue{Float64})
+function rp_fill_exp!(rng::Randompack.RNG, buf::Vector{Float64},
+                      sink::Base.RefValue{Float64})
   random_exp!(rng, buf)
+  consume!(sink, buf)
+  return nothing
+end
+
+function rp_fill_norm!(rng::Randompack.RNG, buf::Vector{Float64},
+                       sink::Base.RefValue{Float64})
+  random_normal!(rng, buf)
+  consume!(sink, buf)
+  return nothing
+end
+
+function base_fill_norm!(buf::Vector{Float64}, sink::Base.RefValue{Float64})
+  randn!(buf)
   consume!(sink, buf)
   return nothing
 end
@@ -73,7 +86,9 @@ function main()
 
   # Warmup
   base_fill!(buf, sink)
-  rp_fill!(rng, buf, sink)
+  rp_fill_exp!(rng, buf, sink)
+  rp_fill_norm!(rng, buf, sink)
+  base_fill_norm!(buf, sink)
   warmup!(0.1)
 
   ns = time_fill!(chunk, reps, bench_time,
@@ -81,8 +96,16 @@ function main()
   @printf("%-22s %8.2f\n", "Julia randexp!", ns)
 
   ns = time_fill!(chunk, reps, bench_time,
-                  () -> rp_fill!(rng, buf, sink), sink)
+                  () -> rp_fill_exp!(rng, buf, sink), sink)
   @printf("%-22s %8.2f\n", "rp exp(x256++simd)", ns)
+
+  ns = time_fill!(chunk, reps, bench_time,
+                  () -> base_fill_norm!(buf, sink), sink)
+  @printf("%-22s %8.2f\n", "Julia randn!", ns)
+
+  ns = time_fill!(chunk, reps, bench_time,
+                  () -> rp_fill_norm!(rng, buf, sink), sink)
+  @printf("%-22s %8.2f\n", "rp norm(x256++simd)", ns)
 
   if sink[] == 123456789
     println("sink")

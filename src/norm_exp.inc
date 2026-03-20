@@ -24,6 +24,7 @@
 
 #define DBL_SIGNBIT 0x8000000000000000ULL
 
+
 #include <stdint.h>
 #include <math.h>
 #include <string.h>
@@ -33,19 +34,6 @@
 #undef NDEBUG
 #include "assert.h"
 
-static int countAboveSecant = 0;
-static int countBelowTangent = 0;
-static int countAboveCurve = 0;
-static int countBelowCurve = 0;
-static int countTail = 0;
-
-void randompack_get_counters(int *cas, int *cbt, int *cc, int *cbc, int *ctail) {
-  *cas = countAboveSecant;
-  *cbt = countBelowTangent;
-  *cc = countAboveCurve;
-  *cbc = countBelowCurve;
-  *ctail = countTail;
-}
 
 NORMEXP_INLINE double norm_tail_draw(randompack_rng *rng, uint64_t rabs, double y, int *w) {
   double xx, yy, x;
@@ -60,13 +48,17 @@ NORMEXP_INLINE double norm_tail_draw(randompack_rng *rng, uint64_t rabs, double 
   }
 }
 
-NORMEXP_INLINE double norm_likely(uint64_t r, uint8_t idx, uint64_t *ki, uint64_t *rabs) {
-  *ki = ki_double[idx];
-  int sign = r & 4096;
-  uint64_t rj = r >> 13;
-  *rabs = rj + rj;
+NORMEXP_INLINE double norm_likely(uint64_t r, uint8_t *idx, uint64_t *ki, uint64_t *rabs) {
+#if defined(__x86_64__) || defined(__amd64__) || defined(_M_X64)
+  memcpy(idx, (uint8_t*)(&r) + 7, 1);
+#else
+  *idx = (uint8_t)(r >> 56);
+#endif
+  *ki = ki_double[*idx];
+  int sign = (r >> 52) & 1;
+  *rabs = r & 0x000fffffffffffff;
   int64_t srabs = sign ? -(int64_t)*rabs : (int64_t)*rabs;
-  return srabs*wi_double[idx];
+  return srabs*wi_double[*idx];
 }
 
 
@@ -97,8 +89,7 @@ NORMEXP_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x, uint8
     if (f1 + y*(f0 - f1) < openlibm_exp(-x*x/2)) return x; // below curve
   next_try:
     r = draw_u64(rng, w);
-    idx = (uint8_t)(r >> 13);
-    x = norm_likely(r, idx, &ki, rabs);
+    x = norm_likely(r, &idx, &ki, rabs);
     if (*rabs < ki) return x;
   }
 }
@@ -108,8 +99,7 @@ NORMEXP_INLINE double draw_norm(randompack_rng *rng, int *w) {
   double x;
   uint8_t idx;
   r = draw_u64(rng, w);
-  idx = (uint8_t)(r >> 13);
-  x = norm_likely(r, idx, &ki, &rabs);
+  x = norm_likely(r, &idx, &ki, &rabs);
   if (LIKELY(rabs < ki)) return x;
   x = norm_unlikely(rng, w, x, idx, &rabs, ki);
   return x;
@@ -126,17 +116,21 @@ NORMEXP_INLINE void rand_norm(double *buf, size_t len, randompack_rng *rng) {
   for (size_t i = 0; i < len; i++) {
     uint8_t *bufpi = (uint8_t*)(buf + i);
     memcpy(&r, bufpi, sizeof(r));
-    uint64_t rj = r >> 13;
-    idx = (uint8_t)rj;
+#if defined(__x86_64__) || defined(__amd64__) || defined(_M_X64)
+    memcpy(&idx, bufpi + 7, 1);
+#else
+    idx = (uint8_t)(r >> 56);
+#endif
     ki = ki_double[idx];
-    sign = r & 4096;
-    rabs = rj + rj;
+    sign = (r >> 52) & 1;
+    rabs = r & 0x000fffffffffffff;
     srabs = sign ? -(int64_t)rabs : (int64_t)rabs;
     x = srabs*wi_double[idx];
     buf[i] = LIKELY(rabs < ki) ? x : norm_unlikely(rng, &w, x, idx, &rabs, ki);
   }
   exit_u64_mode(rng, w);
 }
+
 
 NORMEXP_INLINE double exp_unlikely(randompack_rng *rng, int *w, double x, uint8_t idx,
                                       uint64_t r) {
@@ -161,7 +155,7 @@ NORMEXP_INLINE double exp_unlikely(randompack_rng *rng, int *w, double x, uint8_
 #if defined(__x86_64__) || defined(__amd64__) || defined(_M_X64)
     memcpy(&idx, (uint8_t*)(&r) + 7, 1);
 #else
-    idx = r >> 56;
+    idx = (uint8_t)(r >> 56);
 #endif
     r &= 0x1FFFFFFFFFFFFF;
     ke = ke_double[idx];
@@ -183,7 +177,7 @@ NORMEXP_INLINE void rand_exp(double *buf, size_t len, randompack_rng *rng) {
 #if defined(__x86_64__) || defined(__amd64__) || defined(_M_X64)
     memcpy(&idx, bufpi + 7, 1);
 #else
-    idx = r >> 56;
+    idx = (uint8_t)(r >> 56);
 #endif
     r &= 0x1FFFFFFFFFFFFF;
     x = r*we_double[idx];

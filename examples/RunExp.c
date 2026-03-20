@@ -55,15 +55,7 @@ int main(int argc, char **argv) {
       return 1;
     }
   }
-  int cas, cbt, cc, cbc, ctail;
-  randompack_get_counters(&cas, &cbt, &cc, &cbc, &ctail);
-  double dn = (double)n;
-  printf("n: %d\n", n);
-  printf("above_secant: %d (%.4f%%)\n", cas, 100*cas/dn);
-  printf("below_tangent: %d (%.4f%%)\n", cbt, 100*cbt/dn);
-  printf("curve: %d (%.4f%%)\n", cc, 100*cc/dn);
-  printf("below_curve: %d (%.4f%%)\n", cbc, 100*cbc/dn);
-  printf("tail: %d (%.4f%%)\n", ctail, 100*ctail/dn);
+  printf("n: %d  OK\n", n);
   randompack_free(rng);
   return 0;
 }

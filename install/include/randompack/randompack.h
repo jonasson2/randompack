@@ -91,6 +91,13 @@ bool randompack_norm( // Generate standard normal random numbers N(0,1), false o
   randompack_rng *rng   // in/out  Random number generator
 );
 
+bool randompack_normref( // Reference snapshot of randompack_norm for timing calibration
+  double x[],           // out     vector: standard normal random numbers
+  size_t len,           // in      Number of variates
+  randompack_rng *rng   // in/out  Random number generator
+);
+
+
 bool randompack_normal( // Generate normal random numbers N(mu,sigma), false on error
   double x[],           // out     vector: normal random numbers
   size_t len,           // in      Number of variates
@@ -114,13 +121,6 @@ bool randompack_exp( // Generate exponential random numbers, false on error
   randompack_rng *rng   // in/out  Random number generator
 );
 
-void randompack_get_counters( // Get exp draw counters
-  int *count_above_secant,  // out     Count above secant
-  int *count_below_tangent, // out     Count below tangent
-  int *count_curve,         // out     Count curve
-  int *count_below_curve,    // out     Count below curve
-  int *count_tail              
-);
 
 bool randompack_gamma( // Generate gamma random numbers, false on error
   double x[],           // out     vector: gamma random numbers

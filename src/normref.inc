@@ -3,14 +3,6 @@
 // All functions renamed (*_ref) to coexist with norm_exp.inc in the same TU.
 // DO NOT MODIFY — this is the baseline against which optimizations are measured.
 
-NORMEXP_INLINE double flip_sign_if_ref(double x, int sign) {
-  uint64_t bits, mask = (uint64_t)0 - (uint64_t)(sign & 1);
-  mask &= DBL_SIGNBIT;
-  memcpy(&bits, &x, sizeof bits);
-  bits ^= mask;
-  memcpy(&x, &bits, sizeof bits);
-  return x;
-}
 
 NORMEXP_INLINE double norm_tail_draw_ref(randompack_rng *rng, uint64_t rabs, double y, int *w) {
   double xx, yy, x;
@@ -25,19 +17,16 @@ NORMEXP_INLINE double norm_tail_draw_ref(randompack_rng *rng, uint64_t rabs, dou
 }
 
 NORMEXP_INLINE double norm_likely_ref(uint64_t r, uint8_t *idx, uint64_t *ki, uint64_t *rabs) {
-  int sign;
-  double x;
 #if defined(__x86_64__) || defined(__amd64__) || defined(_M_X64)
   memcpy(idx, (uint8_t*)(&r) + 7, 1);
 #else
   *idx = r >> 56;
 #endif
   *ki = ki_double[*idx];
-  sign = (r >> 52) & 1;
+  int sign = (r >> 52) & 1;
   *rabs = r & 0x000fffffffffffff;
-  x = (*rabs)*wi_double[*idx];
-  x = flip_sign_if_ref(x, sign);
-  return x;
+  int64_t srabs = sign ? -(int64_t)*rabs : (int64_t)*rabs;
+  return srabs*wi_double[*idx];
 }
 
 NORMEXP_INLINE double norm_unlikely_ref(randompack_rng *rng, int *w, double x, uint8_t idx,

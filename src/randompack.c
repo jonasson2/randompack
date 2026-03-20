@@ -675,6 +675,7 @@ bool randompack_normref(double x[], size_t len, randompack_rng *rng) { // refere
   return true;
 }
 
+
 bool randompack_normal(double x[], size_t len, double mu, double sigma,
   randompack_rng *rng) { // general normal
   if (!rng) return false;
