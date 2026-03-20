@@ -54,6 +54,13 @@ time_distributions = executable(
   dependencies : [randompack_dep],
 )
 
+time_norm = executable(
+  'TimeNormC',
+  ['TimeNormC.c', 'TimeUtil.c'] + common_util,
+  include_directories : [common_inc],
+  dependencies : [randompack_dep],
+)
+
 # time_logarithms = executable(
 #   'TimeLogExp',
 #   ['TimeLogExp.c', '../src/sleef.c'] + common_util,

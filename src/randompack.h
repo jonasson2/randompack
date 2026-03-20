@@ -91,6 +91,12 @@ bool randompack_norm( // Generate standard normal random numbers N(0,1), false o
   randompack_rng *rng   // in/out  Random number generator
 );
 
+bool randompack_normref( // Reference snapshot of randompack_norm for timing calibration
+  double x[],           // out     vector: standard normal random numbers
+  size_t len,           // in      Number of variates
+  randompack_rng *rng   // in/out  Random number generator
+);
+
 bool randompack_normal( // Generate normal random numbers N(mu,sigma), false on error
   double x[],           // out     vector: normal random numbers
   size_t len,           // in      Number of variates

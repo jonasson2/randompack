@@ -47,16 +47,7 @@ void randompack_get_counters(int *cas, int *cbt, int *cc, int *cbc, int *ctail) 
   *ctail = countTail;
 }
 
-ALWAYS_INLINE double flip_sign_if(double x, int sign) {
-  uint64_t bits, mask = (uint64_t)0 - (uint64_t)(sign & 1);
-  mask &= DBL_SIGNBIT;
-  memcpy(&bits, &x, sizeof bits);
-  bits ^= mask;
-  memcpy(&x, &bits, sizeof bits);
-  return x;
-}
-
-ALWAYS_INLINE double norm_tail_draw(randompack_rng *rng, uint64_t rabs, double y, int *w) {
+NORMEXP_INLINE double norm_tail_draw(randompack_rng *rng, uint64_t rabs, double y, int *w) {
   double xx, yy, x;
   for (;;) {
     /* Switch to 1.0 - U to avoid log(0.0), see GH 13361 */
@@ -69,20 +60,17 @@ ALWAYS_INLINE double norm_tail_draw(randompack_rng *rng, uint64_t rabs, double y
   }
 }
 
-ALWAYS_INLINE double norm_likely(uint64_t r, int *idx, uint64_t *ki, uint64_t *rabs) {
-  int sign;
-  double x;
-  *idx = r & 0xff;
-  r >>= 8;
-  *ki = ki_double[*idx];
-  sign = r & 0x1;
-  *rabs = (r >> 1) & 0x000fffffffffffff;
-  x = (*rabs)*wi_double[*idx];
-  x = flip_sign_if(x, sign);
-  return x;
+NORMEXP_INLINE double norm_likely(uint64_t r, uint8_t idx, uint64_t *ki, uint64_t *rabs) {
+  *ki = ki_double[idx];
+  int sign = r & 4096;
+  uint64_t rj = r >> 13;
+  *rabs = rj + rj;
+  int64_t srabs = sign ? -(int64_t)*rabs : (int64_t)*rabs;
+  return srabs*wi_double[idx];
 }
 
-ALWAYS_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x, int idx,
+
+NORMEXP_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x, uint8_t idx,
                                   uint64_t *rabs, uint64_t ki) {
   double y, f0, f1, tangent;
   uint64_t r, dr, dk;
@@ -109,37 +97,41 @@ ALWAYS_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x, int id
     if (f1 + y*(f0 - f1) < openlibm_exp(-x*x/2)) return x; // below curve
   next_try:
     r = draw_u64(rng, w);
-    x = norm_likely(r, &idx, &ki, rabs);
+    idx = (uint8_t)(r >> 13);
+    x = norm_likely(r, idx, &ki, rabs);
     if (*rabs < ki) return x;
   }
 }
 
-ALWAYS_INLINE double draw_norm(randompack_rng *rng, int *w) {
+NORMEXP_INLINE double draw_norm(randompack_rng *rng, int *w) {
   uint64_t rabs, ki, r;
   double x;
-  int idx;
+  uint8_t idx;
   r = draw_u64(rng, w);
-  x = norm_likely(r, &idx, &ki, &rabs);
+  idx = (uint8_t)(r >> 13);
+  x = norm_likely(r, idx, &ki, &rabs);
   if (LIKELY(rabs < ki)) return x;
   x = norm_unlikely(rng, w, x, idx, &rabs, ki);
   return x;
 }
 
-ALWAYS_INLINE void rand_norm(double *buf, size_t len, randompack_rng *rng) {
+NORMEXP_INLINE void rand_norm(double *buf, size_t len, randompack_rng *rng) {
   align64(rng);
   draw_raw_copy((uint8_t *)buf, len*sizeof(uint64_t), rng);
-  int w = enter_u64_mode(rng), idx, sign;
+  int w = enter_u64_mode(rng), sign;
+  uint8_t idx;
   uint64_t r, rabs, ki;
   int64_t srabs;
   double x;
   for (size_t i = 0; i < len; i++) {
-    memcpy(&r, buf + i, sizeof(r));
-    idx = r & 0xff;
-    r >>= 8;
+    uint8_t *bufpi = (uint8_t*)(buf + i);
+    memcpy(&r, bufpi, sizeof(r));
+    uint64_t rj = r >> 13;
+    idx = (uint8_t)rj;
     ki = ki_double[idx];
-    sign = r & 0x1;
-    rabs = (r >> 1) & 0x000fffffffffffff;
-    srabs = sign ? -(int64_t)rabs : (int64_t) rabs;
+    sign = r & 4096;
+    rabs = rj + rj;
+    srabs = sign ? -(int64_t)rabs : (int64_t)rabs;
     x = srabs*wi_double[idx];
     buf[i] = LIKELY(rabs < ki) ? x : norm_unlikely(rng, &w, x, idx, &rabs, ki);
   }

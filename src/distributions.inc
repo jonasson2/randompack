@@ -18,6 +18,7 @@ static int LastNonzeroColumn(int m, int n, double A[]) {
 
 //#include "zmgd.inc"   // static zmgd() lives here
 #include "norm_exp.inc"
+#include "normref.inc"
 #include "rand_dble.inc"
 
 static void rand_lognormal(double x[], size_t len, double mu, double sigma,

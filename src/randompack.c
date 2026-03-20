@@ -664,6 +664,17 @@ bool randompack_norm(double x[], size_t len, randompack_rng *rng) { // standard 
   return true;
 }
 
+bool randompack_normref(double x[], size_t len, randompack_rng *rng) { // reference normal
+  if (!rng) return false;
+  if (!x)
+    rng->last_error = "invalid arguments to randompack_normref";
+  else
+    rng->last_error = 0;
+  if (rng->last_error) return false;
+  rand_normref(x, len, rng);
+  return true;
+}
+
 bool randompack_normal(double x[], size_t len, double mu, double sigma,
   randompack_rng *rng) { // general normal
   if (!rng) return false;
