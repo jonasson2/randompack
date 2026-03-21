@@ -29,7 +29,6 @@
 #define TOP_BYTE(dst, src) ((dst) = (uint8_t)((src) >> 56))
 #endif
 
-
 #include <stdint.h>
 #include <math.h>
 #include <string.h>
@@ -72,6 +71,8 @@ ALWAYS_INLINE double norm_likely(uint64_t r, uint8_t *idx, uint64_t *ki, uint64_
 ALWAYS_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x,
                                    uint8_t idx, uint64_t rabs, uint64_t ki) {
   uint64_t ru, dr, dk;
+  int64_t srabs;
+  int sign;
   double y, tangent;
   for (;;) {
     y = draw_u01(rng, w);
@@ -94,7 +95,12 @@ ALWAYS_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x,
     if (below_normpdf(idx, x, y)) return x;
   next_try:
     ru = draw_u64(rng, w);
-    x = norm_likely(ru, &idx, &ki, &rabs);
+    TOP_BYTE(idx, ru);
+    ki = ki_double[idx];
+    sign = (ru >> 52) & 1;
+    rabs = ru & 0x000fffffffffffff;
+    srabs = sign ? -(int64_t)rabs : (int64_t)rabs;
+    x = srabs*wi_double[idx];
     if (rabs < ki) return x;
   }
 }
@@ -105,25 +111,29 @@ ALWAYS_INLINE double draw_norm(randompack_rng *rng, int *w) {
   uint8_t idx;
   r = draw_u64(rng, w);
   x = norm_likely(r, &idx, &ki, &rabs);
-  return LIKELY(rabs < ki) ?
-    x :
-    norm_unlikely(rng, w, x, idx, rabs, ki);
+  if (LIKELY(rabs < ki)) return x;
+  x = norm_unlikely(rng, w, x, idx, rabs, ki);
+  return x;
 }
 
 NEVER_INLINE void rand_norm(double *buf, size_t len, randompack_rng *rng) {
   align64(rng);
   draw_raw_copy((uint8_t *)buf, len*sizeof(uint64_t), rng);
-  int w = enter_u64_mode(rng);
+  int w = enter_u64_mode(rng), sign;
   uint8_t idx;
   uint64_t r, rabs, ki;
+  int64_t srabs;
   double x;
-  double *bufi = buf;
-  for (size_t i = len; i > 0; i--) {
-    memcpy(&r, bufi, sizeof(r));
-    x = norm_likely(r, &idx, &ki, &rabs);
-    *bufi++ = LIKELY(rabs < ki) ?
-      x :
-      norm_unlikely(rng, &w, x, idx, rabs, ki);
+  for (size_t i = len; i-- > 0;) {
+    uint8_t *bufpi = (uint8_t*)(buf + i);
+    memcpy(&r, bufpi, sizeof(r));
+    TOP_BYTE(idx, buf[i]);
+    ki = ki_double[idx];
+    sign = (r >> 52) & 1;
+    rabs = r & 0x000fffffffffffff;
+    srabs = sign ? -(int64_t)rabs : (int64_t)rabs;
+    x = srabs*wi_double[idx];
+    buf[i] = LIKELY(rabs < ki) ? x : norm_unlikely(rng, &w, x, idx, rabs, ki);
   }
   exit_u64_mode(rng, w);
 }
