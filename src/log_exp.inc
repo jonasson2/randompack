@@ -13,7 +13,7 @@ void sleef_expf_inplace(float *x, size_t len);
 void sleef_logf_inplace(float *x, size_t len);
 #endif
 
-static inline void exp_inplace(double *x, size_t len, randompack_rng *rng) {
+NEVER_INLINE void exp_inplace(double *x, size_t len, randompack_rng *rng) {
   if (!rng->bitexact) {
 #if defined(USE_ACCEL_VV)
     for (size_t i = 0; i < len; ) {
@@ -35,7 +35,7 @@ static inline void exp_inplace(double *x, size_t len, randompack_rng *rng) {
   for (size_t i = 0; i < len; i++) x[i] = openlibm_exp(x[i]);
 }
 
-static inline void log_inplace(double *x, size_t len, randompack_rng *rng) {
+NEVER_INLINE void log_inplace(double *x, size_t len, randompack_rng *rng) {
   if (!rng->bitexact) {
 #if defined(USE_ACCEL_VV)
     for (size_t i = 0; i < len; ) {
@@ -57,7 +57,7 @@ static inline void log_inplace(double *x, size_t len, randompack_rng *rng) {
   for (size_t i = 0; i < len; i++) x[i] = openlibm_log(x[i]);
 }
 
-static inline void expf_inplace(float *x, size_t len, randompack_rng *rng) {
+NEVER_INLINE void expf_inplace(float *x, size_t len, randompack_rng *rng) {
   if (!rng->bitexact) {
 #if defined(USE_ACCEL_VV)
     for (size_t i = 0; i < len; ) {
@@ -79,7 +79,7 @@ static inline void expf_inplace(float *x, size_t len, randompack_rng *rng) {
   for (size_t i = 0; i < len; i++) x[i] = openlibm_expf(x[i]);
 }
 
-static inline void logf_inplace(float *x, size_t len, randompack_rng *rng) {
+NEVER_INLINE void logf_inplace(float *x, size_t len, randompack_rng *rng) {
   if (!rng->bitexact) {
 #if defined(USE_ACCEL_VV)
     for (size_t i = 0; i < len; ) {

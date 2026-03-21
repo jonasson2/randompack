@@ -39,8 +39,9 @@
 #undef NDEBUG
 #include "assert.h"
 
+//=============================== NORMAL DISTRIBUTION ==============================
 
-ALWAYS_INLINE double norm_tail_draw(randompack_rng *rng, uint64_t rabs, double y, int *w) {
+NEVER_INLINE double norm_tail_draw(randompack_rng *rng, uint64_t rabs, double y, int *w){
   double xx, yy, x;
   for (;;) {
     /* Switch to 1.0 - U to avoid log(0.0), see GH 13361 */
@@ -53,13 +54,13 @@ ALWAYS_INLINE double norm_tail_draw(randompack_rng *rng, uint64_t rabs, double y
   }
 }
 
-NEVER_INLINE bool norm_pdf_check(double y, double x, uint8_t idx) {
+NEVER_INLINE bool below_normpdf(uint8_t idx, double x, double y) {
   double f0 = fi_double[idx-1];
   double f1 = fi_double[idx];
   return f1 + y*(f0 - f1) < openlibm_exp(-x*x/2);
 }
 
-NEVER_INLINE double norm_likely(uint64_t r, uint8_t *idx, uint64_t *ki, uint64_t *rabs) {
+ALWAYS_INLINE double norm_likely(uint64_t r, uint8_t *idx, uint64_t *ki, uint64_t *rabs) {
   TOP_BYTE(*idx, r);
   *ki = ki_double[*idx];
   int sign = (r >> 52) & 1;
@@ -68,49 +69,42 @@ NEVER_INLINE double norm_likely(uint64_t r, uint8_t *idx, uint64_t *ki, uint64_t
   return srabs*wi_double[*idx];
 }
 
-
-NEVER_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x, uint8_t idx,
-                                  uint64_t *rabs, uint64_t ki) {
-  double y, f0, f1, tangent;
-  uint64_t r, dr, dk;
-  while (true) {
+ALWAYS_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x,
+                                   uint8_t idx, uint64_t rabs, uint64_t ki) {
+  uint64_t ru, dr, dk;
+  int64_t srabs;
+  int sign;
+  double y, tangent;
+  for (;;) {
     y = draw_u01(rng, w);
-    dr = (1ULL << 52) - *rabs;
+    dr = (1ULL << 52) - rabs;
     tangent = dr*slope_norm[idx];
-    if (LIKELY(idx > 52)) { // idx == 52 straddles the inflection at x=1
-      if (y <= tangent) return x;    // below tangent
+    if (LIKELY(idx > 52)) {
+      if (y <= tangent) return x;
       dk = (1ULL << 52) - ki;
-      if (y*dk > dr) goto next_try;     // above secant
+      if (y*dk > dr) goto next_try;
     }
-    else if (UNLIKELY(idx == 0)) {      // in tail
-      x = norm_tail_draw(rng, *rabs, y, w);
+    else if (UNLIKELY(idx == 0)) {
+      x = norm_tail_draw(rng, rabs, y, w);
       return x;
     }
     else if (LIKELY(idx < 52)) {
-      if (y > tangent) goto next_try;   // above tangent
-      uint64_t dk = (1ULL << 52) - ki;
-      if (y*dk <= dr) return x;      // below secant
+      if (y > tangent) goto next_try;
+      dk = (1ULL << 52) - ki;
+      if (y*dk <= dr) return x;
     }
-    f0 = fi_double[idx-1];
-    f1 = fi_double[idx];
-    if (f1 + y*(f0 - f1) < openlibm_exp(-x*x/2)) return x; // below curve
+    if (below_normpdf(idx, x, y)) return x;
   next_try:
-    r = draw_u64(rng, w);
-    x = norm_likely(r, &idx, &ki, rabs);
-    if (*rabs < ki) return x;
+    ru = draw_u64(rng, w);
+    TOP_BYTE(idx, ru);
+    ki = ki_double[idx];
+    sign = (ru >> 52) & 1;
+    rabs = ru & 0x000fffffffffffff;
+    srabs = sign ? -(int64_t)rabs : (int64_t)rabs;
+    x = srabs*wi_double[idx];
+    if (rabs < ki) return x;
   }
 }
-
-// ALWAYS_INLINE double draw_norm(randompack_rng *rng, int *w) {
-//   uint64_t rabs, ki, r;
-//   double x;
-//   uint8_t idx;
-//   r = draw_u64(rng, w);
-//   x = norm_likely(r, &idx, &ki, &rabs);
-//   if (LIKELY(rabs < ki)) return x;
-//   x = norm_unlikely(rng, w, x, idx, &rabs, ki);
-//   return x;
-// }
 
 ALWAYS_INLINE double draw_norm(randompack_rng *rng, int *w) {
   uint64_t rabs, ki, r;
@@ -119,18 +113,18 @@ ALWAYS_INLINE double draw_norm(randompack_rng *rng, int *w) {
   r = draw_u64(rng, w);
   x = norm_likely(r, &idx, &ki, &rabs);
   if (LIKELY(rabs < ki)) return x;
-  x = norm_unlikely(rng, w, x, idx, &rabs, ki);
+  x = norm_unlikely(rng, w, x, idx, rabs, ki);
   return x;
 }
 
-ALWAYS_INLINE void rand_norm(double *buf, size_t len, randompack_rng *rng) {
+NEVER_INLINE void rand_norm(double *buf, size_t len, randompack_rng *rng) {
   align64(rng);
   draw_raw_copy((uint8_t *)buf, len*sizeof(uint64_t), rng);
   int w = enter_u64_mode(rng), sign;
   uint8_t idx;
-  uint64_t r, rabs, ki, ru, dr, dk;
+  uint64_t r, rabs, ki;
   int64_t srabs;
-  double x, y, tangent;
+  double x;
   for (size_t i = 0; i < len; i++) {
     uint8_t *bufpi = (uint8_t*)(buf + i);
     memcpy(&r, bufpi, sizeof(r));
@@ -144,43 +138,25 @@ ALWAYS_INLINE void rand_norm(double *buf, size_t len, randompack_rng *rng) {
       buf[i] = x;
       continue;
     }
-    for (;;) {
-      y = draw_u01(rng, &w);
-      dr = (1ULL << 52) - rabs;
-      tangent = dr*slope_norm[idx];
-      if (LIKELY(idx > 52)) {
-        if (y <= tangent) break;
-        dk = (1ULL << 52) - ki;
-        if (y*dk > dr) goto next_try;
-      }
-      else if (UNLIKELY(idx == 0)) {
-        x = norm_tail_draw(rng, rabs, y, &w);
-        break;
-      }
-      else if (LIKELY(idx < 52)) {
-        if (y > tangent) goto next_try;
-        dk = (1ULL << 52) - ki;
-        if (y*dk <= dr) break;
-      }
-      if (norm_pdf_check(y, x, idx)) break;
-    next_try:
-      ru = draw_u64(rng, &w);
-      TOP_BYTE(idx, ru);
-      ki = ki_double[idx];
-      sign = (ru >> 52) & 1;
-      rabs = ru & 0x000fffffffffffff;
-      srabs = sign ? -(int64_t)rabs : (int64_t)rabs;
-      x = srabs*wi_double[idx];
-      if (rabs < ki) break;
-    }
-    buf[i] = x;
+    buf[i] = norm_unlikely(rng, &w, x, idx, rabs, ki);
   }
   exit_u64_mode(rng, w);
 }
 
+//========================= exponential distribution ===========================
+
+NEVER_INLINE bool below_exppdf(uint8_t idx, double x, double y) {
+  // Use openlibm_exp to ensure cross-platform compatibility (with exp we
+  // the result of the test might depend on the platform)
+  double f0, f1;
+  f0 = fe_double[idx-1];
+  f1 = fe_double[idx];
+  return (f1 + y*(f0 - f1) < openlibm_exp(-x)); // below curve?
+}
+
 ALWAYS_INLINE double exp_unlikely(randompack_rng *rng, int *w, double x, uint8_t idx,
                                       uint64_t r) {
-  double y, f0, f1, tangent;
+  double y, tangent;
   uint64_t ke = ke_double[idx], dr, dk;
   while (true) {
     if (UNLIKELY(idx == 0)) {             // in the tail
@@ -193,9 +169,7 @@ ALWAYS_INLINE double exp_unlikely(randompack_rng *rng, int *w, double x, uint8_t
     if (y <= tangent) return x;        // below tangent
     dk = (1ULL << 53) - ke;
     if (y*dk > dr) goto next_try;      // above secant
-    f0 = fe_double[idx-1];
-    f1 = fe_double[idx];
-    if (f1 + y*(f0 - f1) < openlibm_exp(-x)) return x; // below curve
+    if (below_exppdf(idx, x, y)) return x; // below curve
   next_try:
     r = draw_u64(rng, w);
     TOP_BYTE(idx, r);

@@ -6,8 +6,6 @@
 #include "test_cdfs.h"
 #include "xCheck.h"
 #include "randompack_internal.h"
-#include "openlibm.inc"
-#include "log_exp.inc"
 
 static void check_unif(randompack_rng *rng, char *engine) {
   int n = N_STAT_SLOW;

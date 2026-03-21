@@ -61,12 +61,20 @@ time_norm = executable(
   dependencies : [randompack_dep],
 )
 
-# time_logarithms = executable(
-#   'TimeLogExp',
-#   ['TimeLogExp.c', '../src/sleef.c'] + common_util,
-#   dependencies : [randompack_dep],
-#   c_args: avx2_c_args + cc.get_supported_arguments(['-mfma']),
-# )
+time_logexp_src = ['TimeLogExp.c'] + common_util
+time_logexp_c_args = []
+if build_avx2
+  time_logexp_src += ['../src/sleef.c']
+  time_logexp_c_args = avx2_c_args
+endif
+
+time_logarithms = executable(
+  'TimeLogExp',
+  time_logexp_src,
+  include_directories : [common_inc],
+  dependencies : [randompack_dep],
+  c_args: time_logexp_c_args,
+)
 
 time_integers = executable(
   'TimeIntegers',

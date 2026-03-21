@@ -1,7 +1,9 @@
 // -*- C -*-
 // TimeLogExp.c: time exp/log implementations (ns/value).
 
+#if defined(BUILD_AVX2)
 #include <immintrin.h>
+#endif
 #include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -15,11 +17,20 @@
 #include "randompack_config.h"
 #include "openlibm.inc"
 
+#if defined(USE_ACCEL_VV)
+void vvexp(double *y, const double *x, const int *n);
+void vvlog(double *y, const double *x, const int *n);
+void vvexpf(float *y, const float *x, const int *n);
+void vvlogf(float *y, const float *x, const int *n);
+#endif
+
+#if defined(BUILD_AVX2)
 __m256d Sleef_expd4_u10avx2(__m256d d);
 __m256d Sleef_logd4_u10avx2(__m256d d);
 __m256d Sleef_logd4_u35avx2(__m256d d);
 __m256 Sleef_expf8_u10avx2(__m256 d);
 __m256 Sleef_logf8_u10avx2(__m256 d);
+#endif
 
 static void print_engines(void) {
   int n = 0;
@@ -124,8 +135,14 @@ static inline void consume32(const void *p) {
 
 typedef double (*exp_fn)(double x);
 typedef float (*expf_fn)(float x);
+#if defined(USE_ACCEL_VV)
+typedef void (*vvexp_fn)(double *y, const double *x, const int *n);
+typedef void (*vvexpf_fn)(float *y, const float *x, const int *n);
+#endif
+#if defined(BUILD_AVX2)
 typedef __m256d (*exp_vec_d_fn)(__m256d x);
 typedef __m256 (*exp_vec_f_fn)(__m256 x);
+#endif
 
 typedef struct {
   char *name;
@@ -137,6 +154,18 @@ typedef struct {
   expf_fn fn;
 } expf_spec;
 
+#if defined(USE_ACCEL_VV)
+typedef struct {
+  char *name;
+  vvexp_fn fn;
+} vvexp_spec;
+
+typedef struct {
+  char *name;
+  vvexpf_fn fn;
+} vvexpf_spec;
+#endif
+
 static void apply_fn_scalar(double out[], const double in[], int n, exp_fn fn) {
   for (int i = 0; i < n; i++)
     out[i] = fn(in[i]);
@@ -147,6 +176,17 @@ static void apply_fn_scalar_f(float out[], const float in[], int n, expf_fn fn) 
     out[i] = fn(in[i]);
 }
 
+#if defined(USE_ACCEL_VV)
+static void apply_fn_vv_d(double out[], const double in[], int n, vvexp_fn fn) {
+  fn(out, in, &n);
+}
+
+static void apply_fn_vv_f(float out[], const float in[], int n, vvexpf_fn fn) {
+  fn(out, in, &n);
+}
+#endif
+
+#if defined(BUILD_AVX2)
 static void apply_fn_vec_d(double out[], const double in[], int n, exp_vec_d_fn fn) {
   for (int i = 0; i < n; i += 4) {
     __m256d x = _mm256_loadu_pd(in + i);
@@ -162,6 +202,7 @@ static void apply_fn_vec_f(float out[], const float in[], int n, exp_vec_f_fn fn
     _mm256_storeu_ps(out + i, y);
   }
 }
+#endif
 
 static double time_fn_scalar(int chunk, double bench_time, exp_fn fn, double in[],
                              double out[], randompack_rng *rng) {
@@ -211,6 +252,57 @@ static double time_fn_scalar_f(int chunk, double bench_time, expf_fn fn, float i
   return (calls > 0) ? total/((double)calls*chunk) : 0;
 }
 
+#if defined(USE_ACCEL_VV)
+static double time_fn_vv_d(int chunk, double bench_time, vvexp_fn fn, double in[],
+                           double out[], randompack_rng *rng) {
+  int reps = max(1, 1000000/chunk);
+  int64_t calls = 0;
+  uint64_t total = 0;
+  size_t len = (size_t)chunk;
+  uint64_t t0 = clock_nsec();
+  uint64_t deadline = t0 + (uint64_t)(bench_time*1e9);
+  uint64_t t = t0;
+  while (t < deadline) {
+    ASSERT(randompack_u01(in, len, rng));
+    uint64_t t1 = clock_nsec();
+    for (int i = 0; i < reps; i++) {
+      apply_fn_vv_d(out, in, chunk, fn);
+      consume5(out, chunk);
+    }
+    uint64_t t2 = clock_nsec();
+    total += t2 - t1;
+    calls += reps;
+    t = clock_nsec();
+  }
+  return (calls > 0) ? total/((double)calls*chunk) : 0;
+}
+
+static double time_fn_vv_f(int chunk, double bench_time, vvexpf_fn fn, float in[],
+                           float out[], randompack_rng *rng) {
+  int reps = max(1, 1000000/chunk);
+  int64_t calls = 0;
+  uint64_t total = 0;
+  size_t len = (size_t)chunk;
+  uint64_t t0 = clock_nsec();
+  uint64_t deadline = t0 + (uint64_t)(bench_time*1e9);
+  uint64_t t = t0;
+  while (t < deadline) {
+    ASSERT(randompack_u01f(in, len, rng));
+    uint64_t t1 = clock_nsec();
+    for (int i = 0; i < reps; i++) {
+      apply_fn_vv_f(out, in, chunk, fn);
+      consume32(&out[chunk - 1]);
+    }
+    uint64_t t2 = clock_nsec();
+    total += t2 - t1;
+    calls += reps;
+    t = clock_nsec();
+  }
+  return (calls > 0) ? total/((double)calls*chunk) : 0;
+}
+#endif
+
+#if defined(BUILD_AVX2)
 static double time_fn_vec_d(int chunk, double bench_time, exp_vec_d_fn fn,
                             double in[], double out[], randompack_rng *rng) {
   int reps = max(1, 1000000/chunk);
@@ -258,6 +350,7 @@ static double time_fn_vec_f(int chunk, double bench_time, exp_vec_f_fn fn,
   }
   return (calls > 0) ? total/((double)calls*chunk) : 0;
 }
+#endif
 
 int main(int argc, char **argv) {
   char *engine;
@@ -295,6 +388,7 @@ int main(int argc, char **argv) {
     randompack_free(rng);
     return 1;
   }
+#if defined(BUILD_AVX2)
   double *test_in = 0;
   double *test_out = 0;
   float *test_in_f = 0;
@@ -387,6 +481,7 @@ int main(int argc, char **argv) {
   FREE(test_out);
   FREE(test_in_f);
   FREE(test_out_f);
+#endif
   double *in = 0;
   double *out = 0;
   float *inf = 0;
@@ -409,6 +504,16 @@ int main(int argc, char **argv) {
     { "openlibm_expf", openlibm_expf },
     { "expf", expf },
   };
+#if defined(USE_ACCEL_VV)
+  vvexp_spec vvexps[] = {
+    { "vvexp", vvexp },
+    { "vvlog", vvlog },
+  };
+  vvexpf_spec vvexpfs[] = {
+    { "vvexpf", vvexpf },
+    { "vvlogf", vvlogf },
+  };
+#endif
   printf("time per value:   ns/value\n");
   printf("warmup_time:      %.3f s\n", warmup_time);
   printf("bench_time:       %.3f s per func\n", bench_time);
@@ -418,29 +523,49 @@ int main(int argc, char **argv) {
     double ns = time_fn_scalar(chunk, bench_time, exps[i].fn, in, out, rng);
     printf("%-22s %10.2f\n", exps[i].name, ns);
   }
+#if defined(USE_ACCEL_VV)
+  for (int i = 0; i < LEN(vvexps); i++) {
+    double ns = time_fn_vv_d(chunk, bench_time, vvexps[i].fn, in, out, rng);
+    printf("%-22s %10.2f\n", vvexps[i].name, ns);
+  }
+#endif
+#if defined(BUILD_AVX2)
   double ns = time_fn_vec_d(chunk, bench_time, Sleef_expd4_u10avx2, in, out, rng);
   printf("%-22s %10.2f\n", "sleef_exp", ns);
-  ns = time_fn_scalar(chunk, bench_time, openlibm_log, in, out, rng);
+#endif
+  double ns = time_fn_scalar(chunk, bench_time, openlibm_log, in, out, rng);
   printf("%-22s %10.2f\n", "openlibm_log", ns);
   ns = time_fn_scalar(chunk, bench_time, log, in, out, rng);
   printf("%-22s %10.2f\n", "log", ns);
+#if defined(BUILD_AVX2)
   ns = time_fn_vec_d(chunk, bench_time, Sleef_logd4_u10avx2, in, out, rng);
   printf("%-22s %10.2f\n", "sleef_u10log", ns);
   ns = time_fn_vec_d(chunk, bench_time, Sleef_logd4_u35avx2, in, out, rng);
   printf("%-22s %10.2f\n", "sleef_u35log", ns);
+#endif
   printf("\n%-22s %10s\n", "Function", "float");
   for (int i = 0; i < LEN(expfs); i++) {
     double nsf = time_fn_scalar_f(chunk, bench_time, expfs[i].fn, inf, outf, rng);
     printf("%-22s %10.2f\n", expfs[i].name, nsf);
   }
+#if defined(USE_ACCEL_VV)
+  for (int i = 0; i < LEN(vvexpfs); i++) {
+    double nsf = time_fn_vv_f(chunk, bench_time, vvexpfs[i].fn, inf, outf, rng);
+    printf("%-22s %10.2f\n", vvexpfs[i].name, nsf);
+  }
+#endif
+#if defined(BUILD_AVX2)
   double nsf = time_fn_vec_f(chunk, bench_time, Sleef_expf8_u10avx2, inf, outf, rng);
   printf("%-22s %10.2f\n", "sleef_expf", nsf);
-  nsf = time_fn_scalar_f(chunk, bench_time, openlibm_logf, inf, outf, rng);
+#endif
+  double nsf = time_fn_scalar_f(chunk, bench_time, openlibm_logf, inf, outf, rng);
   printf("%-22s %10.2f\n", "openlibm_logf", nsf);
   nsf = time_fn_scalar_f(chunk, bench_time, logf, inf, outf, rng);
   printf("%-22s %10.2f\n", "logf", nsf);
+#if defined(BUILD_AVX2)
   nsf = time_fn_vec_f(chunk, bench_time, Sleef_logf8_u10avx2, inf, outf, rng);
   printf("%-22s %10.2f\n", "sleef_u10logf", nsf);
+#endif
   FREE(in);
   FREE(out);
   FREE(inf);

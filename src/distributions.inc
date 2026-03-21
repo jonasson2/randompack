@@ -30,10 +30,10 @@ static void rand_lognormal(double x[], size_t len, double mu, double sigma,
 }
 
 // All the rand_uintXX, rand_int and rand_long_long are strict-aliasing-safe
-static void rand_uint8(uint8_t x[], size_t n, uint8_t bound, randompack_rng *rng) {
+static void rand_uint8(uint8_t x[], size_t len, uint8_t bound, randompack_rng *rng) {
   size_t i = 0;
   uint32_t thresh = 0x100u % bound;
-  while (i < n) {
+  while (i < len) {
     uint32_t r = draw_byte(rng);
     uint32_t prod = r*bound;
     uint32_t lo = prod & 0xffu;
@@ -41,11 +41,11 @@ static void rand_uint8(uint8_t x[], size_t n, uint8_t bound, randompack_rng *rng
   }
 }
 
-static void rand_uint16(uint16_t x[], size_t n, uint16_t bound, randompack_rng *rng) {
+static void rand_uint16(uint16_t x[], size_t len, uint16_t bound, randompack_rng *rng) {
   size_t i = 0;
   uint32_t thresh = (uint32_t)((uint32_t)0x10000u % bound);
   int w = enter_u16_mode(rng);
-  while (i < n) {
+  while (i < len) {
     uint32_t r = draw_u16(rng, &w);
     uint32_t prod = r*bound;
     uint32_t lo = prod & 0xffffu;
@@ -54,12 +54,12 @@ static void rand_uint16(uint16_t x[], size_t n, uint16_t bound, randompack_rng *
   exit_u16_mode(rng, w);
 }
 
-static void rand_uint32(uint32_t x[], size_t n, uint32_t bound, randompack_rng *rng) {
+static void rand_uint32(uint32_t x[], size_t len, uint32_t bound, randompack_rng *rng) {
   size_t i = 0;
   if (bound <= 1000u) {
     uint32_t thresh = 0x10000u % bound;
     int w = enter_u16_mode(rng);
-    while (i < n) {
+    while (i < len) {
       uint32_t r = draw_u16(rng, &w);
       uint32_t prod = r*bound;
       uint32_t lo = prod & 0xffffu;
@@ -70,7 +70,7 @@ static void rand_uint32(uint32_t x[], size_t n, uint32_t bound, randompack_rng *
   else {
     uint32_t thresh = (-bound) % bound;
     int w = enter_u32_mode(rng);
-    while (i < n) {
+    while (i < len) {
       uint32_t r = draw_u32(rng, &w);
       uint64_t prod = (uint64_t)r*(uint64_t)bound;
       uint32_t lo = (uint32_t)prod;
@@ -80,12 +80,12 @@ static void rand_uint32(uint32_t x[], size_t n, uint32_t bound, randompack_rng *
   }
 }
 
-static void rand_uint64(uint64_t x[], size_t n, uint64_t bound, randompack_rng *rng) {
+static void rand_uint64(uint64_t x[], size_t len, uint64_t bound, randompack_rng *rng) {
   size_t i = 0;
   if (bound <= 10000ull) {
     uint64_t thresh = 0x10000ull % bound;
     int w = enter_u16_mode(rng);
-    while (i < n) {
+    while (i < len) {
       uint64_t r = draw_u16(rng, &w);
       uint64_t prod = r*bound;
       uint64_t lo = prod & 0xffffull;
@@ -96,7 +96,7 @@ static void rand_uint64(uint64_t x[], size_t n, uint64_t bound, randompack_rng *
   else {
     uint64_t thresh = (-bound) % bound;
     int w = enter_u64_mode(rng);
-    while (i < n) {
+    while (i < len) {
       uint64_t r = draw_u64(rng, &w);
       uint64_t hi, lo;
       MUL64_WIDE(r, bound, hi, lo);
@@ -159,9 +159,9 @@ static void rand_long_long(long long x[], size_t len, long long m, uint64_t boun
   }
 }
 
-static void rand_perm(int p[], int n, randompack_rng *rng) {
-  // Fisher-Yates algorithm, stores a random permutation of 0..n-1 in p
-  for (int i = 0; i < n; i++) {
+static void rand_perm(int p[], int len, randompack_rng *rng) {
+  // Fisher-Yates algorithm, stores a random permutation of 0..len-1 in p
+  for (int i = 0; i < len; i++) {
     int j;
     rand_int(&j, 1, 0, i + 1, rng);
     if (j != i) p[i] = p[j];
@@ -190,8 +190,8 @@ static inline void hashtable_add(int *keys, int mask, int v) {
   }
 }
 
-static void rand_sample_reservoir(int p[], int n, int k, randompack_rng *rng) {
-  // Select k values from 0..n-1, c.f. reservoir sampling on Wikipedia
+static void rand_sample_reservoir(int p[], int len, int k, randompack_rng *rng) {
+  // Select k values from 0..len-1, c.f. reservoir sampling on Wikipedia
   int r;
   p[0] = 0;
   for (int i = 0; i < k; i++) {
@@ -199,26 +199,26 @@ static void rand_sample_reservoir(int p[], int n, int k, randompack_rng *rng) {
     if (r != i) p[i] = p[r];
     p[r] = i;
   }
-  for (int i = k; i < n; i++) {
+  for (int i = k; i < len; i++) {
     rand_int(&r, 1, 0, i + 1, rng);
     if (r < k) p[r] = i;
   }
 }
 
-static void rand_sample_floyd(int p[], int n, int k, randompack_rng *rng) {
-  // Floyd's algorithm: O(k) expected. p[0..k-1] gets k distinct integers from 0..n-1.
+static void rand_sample_floyd(int p[], int len, int k, randompack_rng *rng) {
+  // Floyd's algorithm: O(k) expected. p[0..k-1] gets k distinct integers from 0..len-1.
   if (k <= 0) return;
   int m = 1;
   while (m < 2*k) m <<= 1;
   int mask = m - 1;
   int *keys;
   if (!ALLOC(keys, m)) { // fall-back
-    rand_sample_reservoir(p, n, k, rng);
+    rand_sample_reservoir(p, len, k, rng);
     return;
   }
   for (int i = 0; i < m; i++) keys[i] = -1;
   int out = 0;
-  for (int j = n - k; j < n; j++) {
+  for (int j = len - k; j < len; j++) {
     int t;
     rand_int(&t, 1, 0, j + 1, rng);
     int pick = hashtable_has(keys, mask, t) ? j : t;
@@ -228,10 +228,10 @@ static void rand_sample_floyd(int p[], int n, int k, randompack_rng *rng) {
   FREE(keys);
 }
 
-static void rand_sample(int p[], int n, int k, randompack_rng *rng) {
+static void rand_sample(int p[], int len, int k, randompack_rng *rng) {
   // Floyd for small k, reservoir for big k
-  if (k <= n/2) rand_sample_floyd(p, n, k, rng);
-  else rand_sample_reservoir(p, n, k, rng);
+  if (k <= len/2) rand_sample_floyd(p, len, k, rng);
+  else rand_sample_reservoir(p, len, k, rng);
 }
 
 // -*- C -*-
@@ -244,60 +244,17 @@ static void rand_sample(int p[], int n, int k, randompack_rng *rng) {
 #include "randompack.h"
 #include "randompack_config.h"
 
-ALWAYS_INLINE void gen_gamma_shape1(double *x, size_t len, double shape,
-                                    double scale, randompack_rng *rng) {
-  double d = shape - 1/3.0, dscale = d*scale;
-  double c = 1/sqrt(9*d), v3, z, v;
-  enum { NBUF = 10 };
-  double zbuf[NBUF];
-  int zpos = NBUF;
-  bool use_zbuf = len >= 20;
-  rand_norm(x, len, rng);
-  int w = enter_u64_mode(rng);
-  for (size_t i=0; i<len; i++) {
-    for (;;) {
-      z = x[i];
-      v = 1 + c*z;
-      if (v > 0) {
-        double u, z2 = z*z, z4 = z2*z2, logu, logv3;
-        v3 = v*v*v;
-        u = draw_u01(rng, &w);
-        if (u < 1 - 0.0331*z4) goto accept;
-        if (!rng->bitexact) {
-          logu = log(u);
-          logv3 = log(v3);
-        }
-        else {
-          logu = openlibm_log(u);
-          logv3 = openlibm_log(v3);
-        }
-        if (logu < 0.5*z2 + d*(1 - v3 + logv3)) goto accept;
-      }
-      if (use_zbuf && zpos < NBUF) x[i] = zbuf[zpos++];
-      else {
-        exit_u64_mode(rng, w);
-        if (use_zbuf) {
-          rand_norm(zbuf, NBUF, rng);
-          zpos = 1;
-          x[i] = zbuf[0];
-        }
-        else rand_norm(x + i, 1, rng);
-        w = enter_u64_mode(rng);
-      }
-    }
-  accept:
-    x[i] = dscale*v3;
-  }
-  exit_u64_mode(rng, w);
-}
-
 // ALWAYS_INLINE void gen_gamma_shape1(double *x, size_t len, double shape,
-//                                      double scale, randompack_rng *rng) {
+//                                     double scale, randompack_rng *rng) {
 //   double d = shape - 1/3.0, dscale = d*scale;
 //   double c = 1/sqrt(9*d), v3, z, v;
+//   enum { NBUF = 10 };
+//   double zbuf[NBUF];
+//   int zpos = NBUF;
+//   bool use_zbuf = len >= 20;
 //   rand_norm(x, len, rng);
 //   int w = enter_u64_mode(rng);
-//   for (size_t i = 0; i < len; i++) {
+//   for (size_t i=0; i<len; i++) {
 //     for (;;) {
 //       z = x[i];
 //       v = 1 + c*z;
@@ -306,7 +263,6 @@ ALWAYS_INLINE void gen_gamma_shape1(double *x, size_t len, double shape,
 //         v3 = v*v*v;
 //         u = draw_u01(rng, &w);
 //         if (u < 1 - 0.0331*z4) goto accept;
-//         // compute logs:
 //         if (!rng->bitexact) {
 //           logu = log(u);
 //           logv3 = log(v3);
@@ -317,18 +273,59 @@ ALWAYS_INLINE void gen_gamma_shape1(double *x, size_t len, double shape,
 //         }
 //         if (logu < 0.5*z2 + d*(1 - v3 + logv3)) goto accept;
 //       }
-//       //exit_u64_mode(rng, w);
-//       x[i] = draw_norm(rng, &w);
-//       //rand_norm(x + i, 1, rng);
-//       //w = enter_u64_mode(rng);
-//       continue;
-//     accept:
-//       x[i] = dscale*v3;
-//       break;
-//     }    
+//       if (use_zbuf && zpos < NBUF) x[i] = zbuf[zpos++];
+//       else {
+//         exit_u64_mode(rng, w);
+//         if (use_zbuf) {
+//           rand_norm(zbuf, NBUF, rng);
+//           zpos = 1;
+//           x[i] = zbuf[0];
+//         }
+//         else rand_norm(x + i, 1, rng);
+//         w = enter_u64_mode(rng);
+//       }
+//     }
+//   accept:
+//     x[i] = dscale*v3;
 //   }
 //   exit_u64_mode(rng, w);
 // }
+
+ALWAYS_INLINE void gen_gamma_shape1(double *x, size_t len, double shape,
+												double scale, randompack_rng *rng) {
+  double d = shape - 1/3.0, dscale = d*scale;
+  double c = 1/sqrt(9*d), v3, z, v;
+  rand_norm(x, len, rng);
+  int w = enter_u64_mode(rng);
+  for (size_t i = 0; i < len; i++) {
+    for (;;) {
+      z = x[i];
+      v = 1 + c*z;
+      if (v > 0) {
+        double u, z2 = z*z, z4 = z2*z2, logu, logv3;
+        v3 = v*v*v;
+        u = draw_u01(rng, &w);
+        if (u < 1 - 0.0331*z4) goto accept;
+        // compute logs:
+        if (!rng->bitexact) {
+          logu = log(u);
+          logv3 = log(v3);
+        }
+        else {
+          logu = openlibm_log(u);
+          logv3 = openlibm_log(v3);
+        }
+        if (logu < 0.5*z2 + d*(1 - v3 + logv3)) goto accept;
+      }
+      x[i] = draw_norm(rng, &w);
+      continue;
+    accept:
+      x[i] = dscale*v3;
+      break;
+    }    
+  }
+  exit_u64_mode(rng, w);
+}
 
 ALWAYS_INLINE void gen_gamma(double *x, size_t len, double shape, double scale,
   randompack_rng *rng) {
@@ -337,11 +334,11 @@ ALWAYS_INLINE void gen_gamma(double *x, size_t len, double shape, double scale,
   }
   else {  // shape < 1
 	 double inv_shape = 1.0/shape;
-	 double t[512];
+	 double t[128];
 	 gen_gamma_shape1(x, len, shape + 1, scale, rng);
 	 size_t i = 0;
 	 while (i < len) {
-		size_t n = len - i < 256 ? len - i : 256;
+		size_t n = len - i < 128 ? len - i : 128;
 		rand_dble(t, n, rng);
 		log_inplace(t, n, rng);
 		for (size_t j = 0; j < n; j++) t[j] *= inv_shape;
@@ -352,14 +349,14 @@ ALWAYS_INLINE void gen_gamma(double *x, size_t len, double shape, double scale,
   }
 }
 
-ALWAYS_INLINE void gen_beta(double *x, size_t len, double a, double b,
-                                    randompack_rng *rng) {
+ALWAYS_INLINE void gen_beta(double *x, size_t len, double a, double b, randompack_rng
+									 *rng) {
   // X = Ga/(Ga + Gb) ~ Beta(a,b) if Ga ~ Gamma(a,1) and Gb ~ Gamma(b,1)
   gen_gamma(x, len, a, 1.0, rng);
-  double gb[64];
+  double gb[128];
   size_t i = 0;
   while (i < len) {
-    int n = min(64, len - i);
+    int n = min(128, len - i);
     gen_gamma(gb, n, b, 1.0, rng);
     double hi = 1.0 - DBL_EPSILON;
     for (int j = 0; j < n; j++) { // force the beta-draws to (0, 1)
@@ -376,11 +373,11 @@ ALWAYS_INLINE void gen_beta(double *x, size_t len, double a, double b,
 
 ALWAYS_INLINE void gen_t(double *x, size_t len, double nu, randompack_rng *rng) {
   // Z ~ N(0,1), U ~ Gamma(nu/2, 2) independent => X = Z/sqrt(U/nu) ~ t_nu
-  double u[64];
+  double u[128];
   rand_norm(x, len, rng);
   size_t i = 0;
   while (i < len) {
-    int n = min(64, len - i);
+    int n = min(128, len - i);
     gen_gamma(u, n, 0.5*nu, 2.0, rng);
     for (int j = 0; j < n; j++)
       x[i + j] /= sqrt(u[j]/nu);
@@ -392,11 +389,11 @@ ALWAYS_INLINE void gen_f(double *x, size_t len, double nu1, double nu2,
                                  randompack_rng *rng) {
   // F(nu1,nu2) via gamma ratio:
   //   F = (X1*nu2)/(X2*nu1) where X1 ~ Gamma(nu1/2,1), X2 ~ Gamma(nu2/2,1)
-  double x2[64];
+  double x2[128];
   gen_gamma(x, len, nu1/2.0, 1.0, rng);
   size_t i = 0;
   while (i < len) {
-    int n = min(len - i, 64);
+    int n = min(len - i, 128);
     gen_gamma(x2, n, nu2/2.0, 1.0, rng);
     for (int j = 0; j < n; j++)
       x[i + j] = (x[i + j]*nu2)/(x2[j]*nu1);
@@ -443,9 +440,9 @@ ALWAYS_INLINE void gen_skew_normal(double *x, size_t len, double mu,
   double scale = 1/denom;
   rand_norm(x, len, rng);
   size_t i = 0;
-  double u[64];
+  double u[128];
   while (i < len) {
-    int n = min(64, len - i);
+    int n = min(128, len - i);
     rand_norm(u, n, rng);
     for (int j = 0; j < n; j++) {
       double v = delta*fabs(u[j]) + scale*x[i + j];
@@ -470,7 +467,7 @@ ALWAYS_INLINE void gen_skew_normal(double *x, size_t len, double mu,
 //         and return L on the first call, and let Sig be null and specify L on
 //         subsequent calls. If both Sig and L are null, the function exits with
 //         ok = 0.
-static bool rand_mvn(char transp, double mu[], double Sig[], int d, size_t n,
+static bool rand_mvn(char transp, double mu[], double Sig[], int d, size_t len,
                      double X[], int ldX, double L[], randompack_rng *rng) {
   int info, rank;
   bool Lalloc = false;
@@ -504,35 +501,35 @@ static bool rand_mvn(char transp, double mu[], double Sig[], int d, size_t n,
     FREE(work);
   }
   rank = LastNonzeroColumn(d, d, L);
-  if (n == 0) {
+  if (len == 0) {
     if (Lalloc) FREE(L);
     return true;
   }
   if (rank == d) {
     if (TRAN) {
-      for (size_t i = 0; i < n; i++)
+      for (size_t i = 0; i < len; i++)
         rand_norm(X + i*ldX, d, rng);
-      trmm("Left", "Lower", "NoT", "NotUdia", d, n, 1.0, L, d, X, ldX);
+      trmm("Left", "Lower", "NoT", "NotUdia", d, len, 1.0, L, d, X, ldX);
     }
     else {
       for (int i = 0; i < d; i++)
-        rand_norm(X + i*ldX, n, rng);
-      trmm("Right", "Lower", "T", "NotUdia", n, d, 1.0, L, d, X, ldX);
+        rand_norm(X + i*ldX, len, rng);
+      trmm("Right", "Lower", "T", "NotUdia", len, d, 1.0, L, d, X, ldX);
     }
   }
   else { // Singular Sig, use workspace for the N(0,1) randoms
-    if (!ALLOC(Wrk, n*rank)) goto fail;
-    rand_norm(Wrk, n*rank, rng);
+    if (!ALLOC(Wrk, len*rank)) goto fail;
+    rand_norm(Wrk, len*rank, rng);
     if (TRAN)
-      gemm("NoT", "NoT", d, n, rank, 1.0, L, d, Wrk, rank, 0.0, X, ldX);
+      gemm("NoT", "NoT", d, len, rank, 1.0, L, d, Wrk, rank, 0.0, X, ldX);
     else
-      gemm("NoT", "T", n, d, rank, 1.0, Wrk, n, L, d, 0.0, X, ldX);
+      gemm("NoT", "T", len, d, rank, 1.0, Wrk, len, L, d, 0.0, X, ldX);
     FREE(Wrk);
   }
   if (mu) {
     size_t i;
-    if (TRAN) for (i=0; i<n; i++) axpy(d, 1.0, mu, 1, X + i*d, 1); // add mu to each col
-    else      for (i=0; i<n; i++) axpy(d, 1.0, mu, 1, X + i, n);   // add mu to each row
+    if (TRAN) for (i=0; i<len; i++) axpy(d, 1.0, mu, 1, X + i*d, 1); // add mu to each col
+    else      for (i=0; i<len; i++) axpy(d, 1.0, mu, 1, X + i, len); // add mu to each row
   }
   if (Lalloc) FREE(L);
   return true;
