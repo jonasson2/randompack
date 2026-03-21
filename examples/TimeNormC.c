@@ -68,11 +68,6 @@ static void fill_norm(double out[], int n, double param[], randompack_rng *rng) 
   ASSERT(randompack_norm(out, (size_t)n, rng));
 }
 
-static void fill_normref(double out[], int n, double param[], randompack_rng *rng) {
-  (void)param;
-  ASSERT(randompack_normref(out, (size_t)n, rng));
-}
-
 static void fill_exp(double out[], int n, double param[], randompack_rng *rng) {
   (void)param;
   ASSERT(randompack_exp(out, (size_t)n, 1, rng));
@@ -104,10 +99,8 @@ int main(int argc, char **argv) {
   printf("engine: %s\n", engine);
   printf("chunk:  %d\n\n", chunk);
   double ns_norm = time_double(chunk, bench_time, fill_norm, 0, rng);
-  double ns_ref  = time_double(chunk, bench_time, fill_normref, 0, rng);
   double ns_exp  = time_double(chunk, bench_time, fill_exp, 0, rng);
   printf("norm    %8.2f ns/value\n", ns_norm);
-  printf("normref %8.2f ns/value  (calibration reference)\n", ns_ref);
   printf("exp     %8.2f ns/value\n", ns_exp);
   randompack_free(rng);
   return 0;

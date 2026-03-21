@@ -568,29 +568,6 @@ bool randompack_long_long(long long x[], size_t len, long long m, long long n,
   return true;
 }
 
-// bool randompack_long_long(long long x[], size_t len, long long m, long long n,
-//   randompack_rng *rng) {
-//   if (!rng) return false;
-//   if (!x)
-//     rng->last_error = "invalid arguments to randompack_long_long";
-//   else if (m > n)
-//     rng->last_error = "randompack long long: m must be <= n";
-//   else
-//     rng->last_error = 0;
-//   if (rng->last_error) return false;
-//   if (m == LLONG_MIN && n == LLONG_MAX) {
-//     rand_uint64((uint64_t*)x, len, 0, rng);
-//     return true;
-//   }
-//   uint64_t span = (uint64_t)n - (uint64_t)m;
-//   rand_uint64((uint64_t*)x, len, span + 1, rng);
-//   for (size_t i = 0; i < len; i++) {
-//     uint64_t u = (uint64_t)x[i] + (uint64_t)m;
-//     x[i] = (long long)u;
-//   }
-//   return true;
-// }
-
 bool randompack_perm(int x[], int len, randompack_rng *rng) {
   if (!rng) return false;
   if (!x)
@@ -664,18 +641,6 @@ bool randompack_norm(double x[], size_t len, randompack_rng *rng) { // standard 
   rand_norm(x, len, rng);
   return true;
 }
-
-bool randompack_normref(double x[], size_t len, randompack_rng *rng) { // reference normal
-  if (!rng) return false;
-  if (!x)
-    rng->last_error = "invalid arguments to randompack_normref";
-  else
-    rng->last_error = 0;
-  if (rng->last_error) return false;
-  rand_normref(x, len, rng);
-  return true;
-}
-
 
 bool randompack_normal(double x[], size_t len, double mu, double sigma,
   randompack_rng *rng) { // general normal

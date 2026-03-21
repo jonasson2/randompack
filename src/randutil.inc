@@ -56,15 +56,6 @@ static inline void scatter_to_stream0(randompack_rng *rng) {
   st->s3[0] = u64[3];
 }
 
-static inline void gather_from_stream0(randompack_rng *rng) {
-  xo256 *st = &rng->state.xo;
-  uint64_t *u64 = rng->state.u64;
-  u64[0] = st->s0[0];
-  u64[1] = st->s1[0];
-  u64[2] = st->s2[0];
-  u64[3] = st->s3[0];
-}
-
 static inline void x256ppsimd_jump(int p, randompack_rng *rng) {
   for (int i=0; i<4; i++) {
     uint64_t stream_state[4];

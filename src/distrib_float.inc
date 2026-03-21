@@ -1,19 +1,4 @@
 // -*- mode: c; -*-
-// ALWAYS_INLINE void rand_float(float x[], size_t len, randompack_rng *rng) {
-//   int w = enter_u32_mode(rng);
-//   size_t i = 0;
-//   while (i < len) {
-//     fill_if_empty32(rng, &w);
-//     int take = min(len - i, 2*BUFSIZE - w);
-//     for (int j = 0; j < take; j++) {
-//       uint32_t v = rng->buf.u32[w + j];
-//       x[i + j] = U32_TO_FLOAT(v);
-//     }
-//     w += take;
-//     i += take;
-//   }
-//   exit_u32_mode(rng, w);
-// }
 #if defined(USE_ACCEL_VV)
 void vvexpf(float *y, const float *x, const int *n);
 void vvlogf(float *y, const float *x, const int *n);
