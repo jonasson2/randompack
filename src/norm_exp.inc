@@ -29,6 +29,13 @@
 #define TOP_BYTE(dst, src) ((dst) = (uint8_t)((src) >> 56))
 #endif
 
+#define NORM_LIKELY_DECODE(x, r, idx, ki, rabs, sign, srabs) \
+  ki = ki_double[idx]; \
+  sign = (r >> 52) & 1; \
+  rabs = r & 0x000fffffffffffff; \
+  srabs = sign ? -(int64_t)rabs : (int64_t)rabs; \
+  x = srabs*wi_double[idx];
+
 #include <stdint.h>
 #include <math.h>
 #include <string.h>
@@ -59,15 +66,6 @@ NEVER_INLINE bool below_normpdf(uint8_t idx, double x, double y) {
   return f1 + y*(f0 - f1) < openlibm_exp(-x*x/2);
 }
 
-ALWAYS_INLINE double norm_likely(uint64_t r, uint8_t *idx, uint64_t *ki, uint64_t *rabs) {
-  TOP_BYTE(*idx, r);
-  *ki = ki_double[*idx];
-  int sign = (r >> 52) & 1;
-  *rabs = r & 0x000fffffffffffff;
-  int64_t srabs = sign ? -(int64_t)*rabs : (int64_t)*rabs;
-  return srabs*wi_double[*idx];
-}
-
 ALWAYS_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x,
                                    uint8_t idx, uint64_t rabs, uint64_t ki) {
   uint64_t ru, dr, dk;
@@ -96,11 +94,7 @@ ALWAYS_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x,
   next_try:
     ru = draw_u64(rng, w);
     TOP_BYTE(idx, ru);
-    ki = ki_double[idx];
-    sign = (ru >> 52) & 1;
-    rabs = ru & 0x000fffffffffffff;
-    srabs = sign ? -(int64_t)rabs : (int64_t)rabs;
-    x = srabs*wi_double[idx];
+    NORM_LIKELY_DECODE(x, ru, idx, ki, rabs, sign, srabs);
     if (rabs < ki) return x;
   }
 }
@@ -109,8 +103,11 @@ ALWAYS_INLINE double draw_norm(randompack_rng *rng, int *w) {
   uint64_t rabs, ki, r;
   double x;
   uint8_t idx;
+  int sign;
+  int64_t srabs;
   r = draw_u64(rng, w);
-  x = norm_likely(r, &idx, &ki, &rabs);
+  TOP_BYTE(idx, r);
+  NORM_LIKELY_DECODE(x, r, idx, ki, rabs, sign, srabs);
   if (LIKELY(rabs < ki)) return x;
   x = norm_unlikely(rng, w, x, idx, rabs, ki);
   return x;
@@ -127,12 +124,12 @@ NEVER_INLINE void rand_norm(double *buf, size_t len, randompack_rng *rng) {
   for (size_t i = len; i-- > 0;) {
     uint8_t *bufpi = (uint8_t*)(buf + i);
     memcpy(&r, bufpi, sizeof(r));
+#if defined(__x86_64__) || defined(__amd64__) || defined(_M_X64)
     TOP_BYTE(idx, buf[i]);
-    ki = ki_double[idx];
-    sign = (r >> 52) & 1;
-    rabs = r & 0x000fffffffffffff;
-    srabs = sign ? -(int64_t)rabs : (int64_t)rabs;
-    x = srabs*wi_double[idx];
+#else
+    TOP_BYTE(idx, r);
+#endif
+    NORM_LIKELY_DECODE(x, r, idx, ki, rabs, sign, srabs);
     buf[i] = LIKELY(rabs < ki) ? x : norm_unlikely(rng, &w, x, idx, rabs, ki);
   }
   exit_u64_mode(rng, w);
