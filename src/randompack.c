@@ -27,6 +27,7 @@ typedef struct {
 
 #include "engines.inc"
 #include "buffer_draw.inc"
+#include "scale_inplace.inc"
 
 static rng_entry rng_table[] = {  // x256++simd is default
   {"x256++simd","xoshiro256++, SIMD accelerated (4x4x64)",     FAST,    4,fill_fast     },
@@ -685,8 +686,7 @@ bool randompack_normal(double x[], size_t len, double mu, double sigma,
   }
   rng->last_error = 0;
   rand_norm(x, len, rng);
-  if (mu != 0 || sigma != 1)
-    for (size_t i = 0; i < len; i++) x[i] = mu + sigma*x[i];
+  if (mu != 0 || sigma != 1) shift_scale_double_inplace(x, len, mu, sigma, rng);
   return true;
 }
 
@@ -698,7 +698,7 @@ bool randompack_exp(double x[], size_t len, double scale, randompack_rng *rng) {
   }
   rng->last_error = 0;
   rand_exp(x, len, rng);
-  if (scale != 1) for (size_t i = 0; i < len; i++) x[i] *= scale;
+  if (scale != 1) scale_double_inplace(x, len, scale, rng);
   return true;
 }
 

@@ -32,6 +32,22 @@ void rand_float_avx2(float x[], size_t len, randompack_rng *rng) {
   (void)rng;
 }
 
+void shift_scale_double_avx2(double x[], size_t len, double shift, double scale) {
+  for (size_t i = 0; i < len; i++) x[i] = shift + scale*x[i];
+}
+
+void shift_scale_float_avx2(float x[], size_t len, float shift, float scale) {
+  for (size_t i = 0; i < len; i++) x[i] = shift + scale*x[i];
+}
+
+void scale_double_avx2(double x[], size_t len, double scale) {
+  shift_scale_double_avx2(x, len, 0, scale);
+}
+
+void scale_float_avx2(float x[], size_t len, float scale) {
+  shift_scale_float_avx2(x, len, 0, scale);
+}
+
 #else
 
 #if defined(_MSC_VER)
@@ -291,6 +307,74 @@ HIDDEN void rand_float_avx2(float x[], size_t len, randompack_rng *rng) {
     i += take;
   }
   exit_u32_mode(rng, w);
+}
+
+HIDDEN void shift_scale_double_avx2(double x[], size_t len, double shift,
+  double scale) {
+#if defined(RANDOMPACK_TEST_HOOKS)
+  avx2_used++;
+#endif
+  size_t i = 0;
+  __m256d s = _mm256_set1_pd(scale);
+  __m256d b = _mm256_set1_pd(shift);
+  for (; i + 16 <= len; i += 16) {
+    __m256d v0 = _mm256_loadu_pd(x + i);
+    __m256d v1 = _mm256_loadu_pd(x + i + 4);
+    __m256d v2 = _mm256_loadu_pd(x + i + 8);
+    __m256d v3 = _mm256_loadu_pd(x + i + 12);
+    v0 = _mm256_add_pd(_mm256_mul_pd(v0, s), b);
+    v1 = _mm256_add_pd(_mm256_mul_pd(v1, s), b);
+    v2 = _mm256_add_pd(_mm256_mul_pd(v2, s), b);
+    v3 = _mm256_add_pd(_mm256_mul_pd(v3, s), b);
+    _mm256_storeu_pd(x + i, v0);
+    _mm256_storeu_pd(x + i + 4, v1);
+    _mm256_storeu_pd(x + i + 8, v2);
+    _mm256_storeu_pd(x + i + 12, v3);
+  }
+  for (; i + 4 <= len; i += 4) {
+    __m256d v = _mm256_loadu_pd(x + i);
+    v = _mm256_add_pd(_mm256_mul_pd(v, s), b);
+    _mm256_storeu_pd(x + i, v);
+  }
+  for (; i < len; i++) x[i] = shift + scale*x[i];
+}
+
+HIDDEN void shift_scale_float_avx2(float x[], size_t len, float shift,
+  float scale) {
+#if defined(RANDOMPACK_TEST_HOOKS)
+  avx2_used++;
+#endif
+  size_t i = 0;
+  __m256 s = _mm256_set1_ps(scale);
+  __m256 b = _mm256_set1_ps(shift);
+  for (; i + 32 <= len; i += 32) {
+    __m256 v0 = _mm256_loadu_ps(x + i);
+    __m256 v1 = _mm256_loadu_ps(x + i + 8);
+    __m256 v2 = _mm256_loadu_ps(x + i + 16);
+    __m256 v3 = _mm256_loadu_ps(x + i + 24);
+    v0 = _mm256_add_ps(_mm256_mul_ps(v0, s), b);
+    v1 = _mm256_add_ps(_mm256_mul_ps(v1, s), b);
+    v2 = _mm256_add_ps(_mm256_mul_ps(v2, s), b);
+    v3 = _mm256_add_ps(_mm256_mul_ps(v3, s), b);
+    _mm256_storeu_ps(x + i, v0);
+    _mm256_storeu_ps(x + i + 8, v1);
+    _mm256_storeu_ps(x + i + 16, v2);
+    _mm256_storeu_ps(x + i + 24, v3);
+  }
+  for (; i + 8 <= len; i += 8) {
+    __m256 v = _mm256_loadu_ps(x + i);
+    v = _mm256_add_ps(_mm256_mul_ps(v, s), b);
+    _mm256_storeu_ps(x + i, v);
+  }
+  for (; i < len; i++) x[i] = shift + scale*x[i];
+}
+
+HIDDEN void scale_double_avx2(double x[], size_t len, double scale) {
+  shift_scale_double_avx2(x, len, 0, scale);
+}
+
+HIDDEN void scale_float_avx2(float x[], size_t len, float scale) {
+  shift_scale_float_avx2(x, len, 0, scale);
 }
 
 #endif

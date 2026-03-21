@@ -24,8 +24,7 @@ static int LastNonzeroColumn(int m, int n, double A[]) {
 static void rand_lognormal(double x[], size_t len, double mu, double sigma,
   randompack_rng *rng) {
   rand_norm(x, len, rng); // N(0,1)
-  if (mu != 0 || sigma != 1)
-    for (size_t i = 0; i < len; i++) x[i] = mu + sigma*x[i];
+  if (mu != 0 || sigma != 1) shift_scale_double_inplace(x, len, mu, sigma, rng);
   exp_inplace(x, len, rng);
 }
 
@@ -365,7 +364,7 @@ ALWAYS_INLINE void gen_gumbel(double *x, size_t len, double mu, double beta,
   log_inplace(x, len, rng);
   for (size_t i = 0; i < len; i++) x[i] = -x[i];
   log_inplace(x, len, rng);
-  for (size_t i = 0; i < len; i++) x[i] = mu - beta*x[i];
+  shift_scale_double_inplace(x, len, mu, -beta, rng);
 }
 
 ALWAYS_INLINE void gen_pareto(double *x, size_t len, double xm, double alpha,
@@ -373,7 +372,7 @@ ALWAYS_INLINE void gen_pareto(double *x, size_t len, double xm, double alpha,
   rand_exp(x, len, rng);
   for (size_t i = 0; i < len; i++) x[i] = x[i]/alpha;
   exp_inplace(x, len, rng);
-  for (size_t i = 0; i < len; i++) x[i] *= xm;
+  scale_double_inplace(x, len, xm, rng);
 }
 
 ALWAYS_INLINE void gen_weibull(double *x, size_t len, double shape,
@@ -383,7 +382,7 @@ ALWAYS_INLINE void gen_weibull(double *x, size_t len, double shape,
   log_inplace(x, len, rng);
   for (size_t i = 0; i < len; i++) x[i] *= inv_shape;
   exp_inplace(x, len, rng);
-  if (scale != 1) for (size_t i = 0; i < len; i++) x[i] *= scale;
+  if (scale != 1) scale_double_inplace(x, len, scale, rng);
 }
 
 ALWAYS_INLINE void gen_skew_normal(double *x, size_t len, double mu,

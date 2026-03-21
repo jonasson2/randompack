@@ -1,5 +1,5 @@
 # TimeNorm.jl
-# Minimal exponential buffer fill for inspection and disassembly.
+# Minimal scaled exponential buffer fill for inspection and disassembly.
 
 using Random
 using Randompack
@@ -15,28 +15,18 @@ using Printf
   return nothing
 end
 
-function base_fill!(buf::Vector{Float64}, sink::Base.RefValue{Float64})
+function base_fill!(buf::Vector{Float64}, sink::Base.RefValue{Float64}, scale::Float64)
   randexp!(buf)
+  @inbounds for i in eachindex(buf)
+    buf[i] = scale*buf[i]
+  end
   consume!(sink, buf)
   return nothing
 end
 
 function rp_fill_exp!(rng::Randompack.RNG, buf::Vector{Float64},
-                      sink::Base.RefValue{Float64})
-  random_exp!(rng, buf)
-  consume!(sink, buf)
-  return nothing
-end
-
-function rp_fill_norm!(rng::Randompack.RNG, buf::Vector{Float64},
-                       sink::Base.RefValue{Float64})
-  random_normal!(rng, buf)
-  consume!(sink, buf)
-  return nothing
-end
-
-function base_fill_norm!(buf::Vector{Float64}, sink::Base.RefValue{Float64})
-  randn!(buf)
+                      sink::Base.RefValue{Float64}, scale::Float64)
+  random_exp!(rng, buf; scale=scale)
   consume!(sink, buf)
   return nothing
 end
@@ -77,6 +67,7 @@ end
 function main()
   chunk = 4096
   bench_time = 0.3
+  scale = 2.0
   reps = max(1, floor(Int, 1e6 / chunk))
   buf = Vector{Float64}(undef, chunk)
   sink = Ref{Float64}(0.0)
@@ -85,27 +76,17 @@ function main()
   @printf("%-22s %8s\n", "Method", "ns/value")
 
   # Warmup
-  base_fill!(buf, sink)
-  rp_fill_exp!(rng, buf, sink)
-  rp_fill_norm!(rng, buf, sink)
-  base_fill_norm!(buf, sink)
+  base_fill!(buf, sink, scale)
+  rp_fill_exp!(rng, buf, sink, scale)
   warmup!(0.1)
 
   ns = time_fill!(chunk, reps, bench_time,
-                  () -> base_fill!(buf, sink), sink)
-  @printf("%-22s %8.2f\n", "Julia randexp!", ns)
+                  () -> base_fill!(buf, sink, scale), sink)
+  @printf("%-22s %8.2f\n", "Julia randexp!*", ns)
 
   ns = time_fill!(chunk, reps, bench_time,
-                  () -> rp_fill_exp!(rng, buf, sink), sink)
-  @printf("%-22s %8.2f\n", "rp exp(x256++simd)", ns)
-
-  ns = time_fill!(chunk, reps, bench_time,
-                  () -> base_fill_norm!(buf, sink), sink)
-  @printf("%-22s %8.2f\n", "Julia randn!", ns)
-
-  ns = time_fill!(chunk, reps, bench_time,
-                  () -> rp_fill_norm!(rng, buf, sink), sink)
-  @printf("%-22s %8.2f\n", "rp norm(x256++simd)", ns)
+                  () -> rp_fill_exp!(rng, buf, sink, scale), sink)
+  @printf("%-22s %8.2f\n", "rp exp* (x256++simd)", ns)
 
   if sink[] == 123456789
     println("sink")
