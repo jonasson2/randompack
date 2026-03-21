@@ -530,8 +530,10 @@ int main(int argc, char **argv) {
   }
 #endif
 #if defined(BUILD_AVX2)
-  double ns = time_fn_vec_d(chunk, bench_time, Sleef_expd4_u10avx2, in, out, rng);
-  printf("%-22s %10.2f\n", "sleef_exp", ns);
+  {
+    double ns = time_fn_vec_d(chunk, bench_time, Sleef_expd4_u10avx2, in, out, rng);
+    printf("%-22s %10.2f\n", "sleef_exp", ns);
+  }
 #endif
   double ns = time_fn_scalar(chunk, bench_time, openlibm_log, in, out, rng);
   printf("%-22s %10.2f\n", "openlibm_log", ns);
@@ -555,8 +557,10 @@ int main(int argc, char **argv) {
   }
 #endif
 #if defined(BUILD_AVX2)
-  double nsf = time_fn_vec_f(chunk, bench_time, Sleef_expf8_u10avx2, inf, outf, rng);
-  printf("%-22s %10.2f\n", "sleef_expf", nsf);
+  {
+    double nsf = time_fn_vec_f(chunk, bench_time, Sleef_expf8_u10avx2, inf, outf, rng);
+    printf("%-22s %10.2f\n", "sleef_expf", nsf);
+  }
 #endif
   double nsf = time_fn_scalar_f(chunk, bench_time, openlibm_logf, inf, outf, rng);
   printf("%-22s %10.2f\n", "openlibm_logf", nsf);
