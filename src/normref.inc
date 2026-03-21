@@ -91,7 +91,11 @@ NEVER_INLINE void rand_normref(double *buf, size_t len, randompack_rng *rng) {
   for (size_t i = len; i-- > 0;) {
     uint8_t *bufpi = (uint8_t*)(buf + i);
     memcpy(&r, bufpi, sizeof(r));
+#if defined(__x86_64__) || defined(__amd64__) || defined(_M_X64)
     TOP_BYTE(idx, buf[i]);
+#else
+    TOP_BYTE(idx, r);
+#endif
     ki = ki_double[idx];
     sign = (r >> 52) & 1;
     rabs = r & 0x000fffffffffffff;
