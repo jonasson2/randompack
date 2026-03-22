@@ -68,14 +68,13 @@ NEVER_INLINE bool below_normpdf(uint8_t idx, double x, double y) {
 
 ALWAYS_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x,
                                    uint8_t idx, uint64_t rabs, uint64_t ki) {
-  uint64_t ru, dr, dk;
   int64_t srabs;
+  uint64_t ru;
   int sign;
-  double y, tangent;
   for (;;) {
-    y = draw_u01(rng, w);
-    dr = (1ULL << 52) - rabs;
-    tangent = dr*slope_norm[idx];
+    double y = draw_u01(rng, w);
+    uint64_t dk, dr = (1ULL << 52) - rabs;
+    double tangent = dr*slope_norm[idx];
     if (LIKELY(idx > 52)) {
       if (y <= tangent) return x;
       dk = (1ULL << 52) - ki;

@@ -61,6 +61,13 @@ time_norm = executable(
   dependencies : [randompack_dep],
 )
 
+time_norm_exp = executable(
+  'TimeNormExp',
+  ['TimeNormExp.c', 'TimeUtil.c'] + common_util,
+  include_directories : [common_inc],
+  dependencies : [randompack_dep],
+)
+
 time_logexp_src = ['TimeLogExp.c'] + common_util
 time_logexp_c_args = []
 if build_avx2
