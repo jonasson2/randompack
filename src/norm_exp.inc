@@ -22,19 +22,16 @@
 //   For xi < 1:     reject if above tangent, accept if below secant
 //   For x{i-1} > 1: reject if below tangent, accept if above secant
 
-#define DBL_SIGNBIT 0x8000000000000000ULL
 #if defined(__x86_64__) || defined(__amd64__) || defined(_M_X64)
 #define TOP_BYTE(dst, src) memcpy(&(dst), (uint8_t*)(&(src)) + 7, 1)
 #else
 #define TOP_BYTE(dst, src) ((dst) = (uint8_t)((src) >> 56))
 #endif
 
-#define NORM_LIKELY_DECODE(x, r, idx, ki, rabs, sign, srabs) \
-  ki = ki_double[idx]; \
-  sign = (r >> 52) & 1; \
-  rabs = r & 0x000fffffffffffff; \
-  srabs = sign ? -(int64_t)rabs : (int64_t)rabs; \
-  x = srabs*wi_double[idx];
+#define NORM_LIKELY_DECODE(x, r, idx, ki, rabs)                         \
+ ki = ki_double[idx];                                                   \
+ rabs = r & 0x000fffffffffffff;                                         \
+ x = ((r >> 52) & 1 ? -(int64_t)rabs : (int64_t)rabs) * wi_double[idx];
 
 #include <stdint.h>
 #include <math.h>
@@ -42,7 +39,7 @@
 #include "printX.h"
 #include "randompack.h"
 #include "ziggurat_constants.h"
-#undef NDEBUG
+#include "zig_const.h"
 #include "assert.h"
 
 //=============================== NORMAL DISTRIBUTION ==============================
@@ -66,36 +63,70 @@ NEVER_INLINE bool below_normpdf(uint8_t idx, double x, double y) {
   return f1 + y*(f0 - f1) < openlibm_exp(-x*x/2);
 }
 
+// ALWAYS_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x,
+//                                    uint8_t idx, uint64_t rabs, uint64_t ki) {
+//   uint64_t ru;
+//   const int inflection_idx = 52;
+//   for (;;) {
+//     double y = draw_u01(rng, w);
+//     uint64_t L, R = (1ULL << 52) - rabs;
+//     double tangent = R*slope_norm[idx];
+//     if (LIKELY(idx > inflection_idx)) {
+//       if (y <= tangent) return x;
+//       L = (1ULL << 52) - ki;
+//       if (y*L > R) goto next_try;
+//     }
+//     else if (UNLIKELY(idx == 0)) {
+//       x = norm_tail_draw(rng, rabs, y, w);
+//       return x;
+//     }
+//     else if (LIKELY(idx < inflection_idx)) {
+//       if (y > tangent) goto next_try;
+//       L = (1ULL << 52) - ki;
+//       if (y*L <= R) return x;
+//     }
+//     if (below_normpdf(idx, x, y)) return x;
+//   next_try:
+//     ru = draw_u64(rng, w);
+//     TOP_BYTE(idx, ru);
+//     NORM_LIKELY_DECODE(x, ru, idx, ki, rabs);
+//     if (rabs < ki) return x;
+//   }
+// }
+
 ALWAYS_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x,
                                    uint8_t idx, uint64_t rabs, uint64_t ki) {
-  int64_t srabs;
-  uint64_t ru;
-  int sign;
+  uint64_t ru, tmp, Y, YL;
   const int inflection_idx = 52;
+  double y;
   for (;;) {
-    double y = draw_u01(rng, w);
-    uint64_t dk, dr = (1ULL << 52) - rabs;
-    double tangent = dr*slope_norm[idx];
+    Y = draw_u64(rng, w);
+    uint64_t L = (1ULL << 52) - ki, R = (1ULL << 52) - rabs;
+    MUL64_WIDE(Y, L, YL, tmp); 
     if (LIKELY(idx > inflection_idx)) {
-      if (y <= tangent) return x;
-      dk = (1ULL << 52) - ki;
-      if (y*dk > dr) goto next_try;
+      if (YL > R) goto next_try;
+      if (YL < R - Dzig[idx]) return x;
+    }
+    else if (LIKELY(idx < inflection_idx)) {
+      if (YL < R) return x;
+      if (YL > R + Dzig[idx]) goto next_try;
     }
     else if (UNLIKELY(idx == 0)) {
+      y = U64_TO_DOUBLE(Y);
       x = norm_tail_draw(rng, rabs, y, w);
       return x;
     }
-    else if (LIKELY(idx < inflection_idx)) {
-      if (y > tangent) goto next_try;
-      dk = (1ULL << 52) - ki;
-      if (y*dk <= dr) return x;
+    else {
+      if (YL > R + Dzig52) goto next_try;
+      if (YL < R - Dzig[idx]) return x;
     }
+    y = U64_TO_DOUBLE(Y);
     if (below_normpdf(idx, x, y)) return x;
   next_try:
     ru = draw_u64(rng, w);
     TOP_BYTE(idx, ru);
-    NORM_LIKELY_DECODE(x, ru, idx, ki, rabs, sign, srabs);
-    if (rabs < ki) return x;
+    NORM_LIKELY_DECODE(x, ru, idx, ki, rabs);
+    if (LIKELY(rabs < ki)) return x;
   }
 }
 
@@ -103,11 +134,9 @@ ALWAYS_INLINE double draw_norm(randompack_rng *rng, int *w) {
   uint64_t rabs, ki, r;
   double x;
   uint8_t idx;
-  int sign;
-  int64_t srabs;
   r = draw_u64(rng, w);
   TOP_BYTE(idx, r);
-  NORM_LIKELY_DECODE(x, r, idx, ki, rabs, sign, srabs);
+  NORM_LIKELY_DECODE(x, r, idx, ki, rabs);
   if (LIKELY(rabs < ki)) return x;
   x = norm_unlikely(rng, w, x, idx, rabs, ki);
   return x;
@@ -116,10 +145,9 @@ ALWAYS_INLINE double draw_norm(randompack_rng *rng, int *w) {
 NEVER_INLINE void rand_norm(double *buf, size_t len, randompack_rng *rng) {
   align64(rng);
   draw_raw_copy((uint8_t *)buf, len*sizeof(uint64_t), rng);
-  int w = enter_u64_mode(rng), sign;
+  int w = enter_u64_mode(rng);
   uint8_t idx;
   uint64_t r, rabs, ki;
-  int64_t srabs;
   double x;
   for (size_t i = len; i-- > 0;) {
     uint8_t *bufpi = (uint8_t*)(buf + i);
@@ -129,7 +157,7 @@ NEVER_INLINE void rand_norm(double *buf, size_t len, randompack_rng *rng) {
 #else
     TOP_BYTE(idx, r);
 #endif
-    NORM_LIKELY_DECODE(x, r, idx, ki, rabs, sign, srabs);
+    NORM_LIKELY_DECODE(x, r, idx, ki, rabs);
     buf[i] = LIKELY(rabs < ki) ? x : norm_unlikely(rng, &w, x, idx, rabs, ki);
   }
   exit_u64_mode(rng, w);

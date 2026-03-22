@@ -73,30 +73,30 @@ ALWAYS_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x,
   int sign;
   for (;;) {
     double y = draw_u01(rng, w);
-    // uint64_t dr, dk
-    // uint64_t dr = (1ULL << 52) - rabs;
-    // double tangent = dr*slope_norm[idx];
-    // if (LIKELY(idx > 52)) {
-    //   if (y <= tangent) return x;
-    //   dk = (1ULL << 52) - ki;
-    //   if (y*dk > dr) goto next_try;
-    // }
-    // else if (UNLIKELY(idx == 0)) {
-    //   x = norm_tail_draw(rng, rabs, y, w);
-    //   return x;
-    // }
-    // else if (LIKELY(idx < 52)) {
-    //   if (y > tangent) goto next_try;
-    //   dk = (1ULL << 52) - ki;
-    //   if (y*dk <= dr) return x;
-    // }
-    if (UNLIKELY(idx == 0)) {
+    uint64_t dk;
+    uint64_t dr = (1ULL << 52) - rabs;
+    double tangent = dr*slope_norm[idx];
+    if (LIKELY(idx > 52)) {
+      if (y <= tangent) return x;
+      dk = (1ULL << 52) - ki;
+      if (y*dk > dr) goto next_try;
+    }
+    else if (UNLIKELY(idx == 0)) {
       x = norm_tail_draw(rng, rabs, y, w);
       return x;
     }
-    //if (below_normpdf(idx, x, y)) return x;
-    return x;
-    //next_try:
+    else if (LIKELY(idx < 52)) {
+      if (y > tangent) goto next_try;
+      dk = (1ULL << 52) - ki;
+      if (y*dk <= dr) return x;
+    }
+    // if (UNLIKELY(idx == 0)) {
+    //   x = norm_tail_draw(rng, rabs, y, w);
+    //   return x;
+    // }
+    // return x;
+    if (below_normpdf(idx, x, y)) return x;
+  next_try:
     ru = draw_u64(rng, w);
     TOP_BYTE(idx, ru);
     NORM_LIKELY_DECODE(x, ru, idx, ki, rabs, sign, srabs);
