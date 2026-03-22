@@ -94,7 +94,8 @@ ALWAYS_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x,
       x = norm_tail_draw(rng, rabs, y, w);
       return x;
     }
-    if (below_normpdf(idx, x, y)) return x;
+    //if (below_normpdf(idx, x, y)) return x;
+    return x;
     //next_try:
     ru = draw_u64(rng, w);
     TOP_BYTE(idx, ru);

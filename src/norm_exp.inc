@@ -71,11 +71,12 @@ ALWAYS_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x,
   int64_t srabs;
   uint64_t ru;
   int sign;
+  const int inflection_idx = 52;
   for (;;) {
     double y = draw_u01(rng, w);
     uint64_t dk, dr = (1ULL << 52) - rabs;
     double tangent = dr*slope_norm[idx];
-    if (LIKELY(idx > 52)) {
+    if (LIKELY(idx > inflection_idx)) {
       if (y <= tangent) return x;
       dk = (1ULL << 52) - ki;
       if (y*dk > dr) goto next_try;
@@ -84,7 +85,7 @@ ALWAYS_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x,
       x = norm_tail_draw(rng, rabs, y, w);
       return x;
     }
-    else if (LIKELY(idx < 52)) {
+    else if (LIKELY(idx < inflection_idx)) {
       if (y > tangent) goto next_try;
       dk = (1ULL << 52) - ki;
       if (y*dk <= dr) return x;
