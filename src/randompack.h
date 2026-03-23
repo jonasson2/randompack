@@ -91,6 +91,20 @@ bool randompack_norm( // Generate standard normal random numbers N(0,1), false o
   randompack_rng *rng   // in/out  Random number generator
 );
 
+void randompack_norm_counters_reset(void); // Reset normal draw/pdf counters
+void randompack_norm_counters_get( // Read normal draw/pdf counters
+  uint64_t *draws,      // out     Total normal draws
+  uint64_t *pdf_calls   // out     Count of below_normpdf calls
+);
+
+void randompack_norm_counters_get_slow( // Read normal slow-path counters
+  uint64_t *tail,       // out     Tail path hits (idx == 0)
+  uint64_t *accept,     // out     Slow-path accept without pdf check
+  uint64_t *retry,      // out     Slow-path retry before pdf check
+  uint64_t *pdf_accept, // out     below_normpdf accept
+  uint64_t *pdf_reject  // out     below_normpdf reject
+);
+
 bool randompack_normal( // Generate normal random numbers N(mu,sigma), false on error
   double x[],           // out     vector: normal random numbers
   size_t len,           // in      Number of variates

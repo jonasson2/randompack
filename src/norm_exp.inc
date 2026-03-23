@@ -42,6 +42,38 @@
 #include "zig_const.h"
 #include "assert.h"
 
+static uint64_t norm_pdf_calls = 0;
+static uint64_t norm_draws = 0;
+static uint64_t norm_slow_tail = 0;
+static uint64_t norm_slow_accept = 0;
+static uint64_t norm_slow_retry = 0;
+static uint64_t norm_slow_pdf_accept = 0;
+static uint64_t norm_slow_pdf_reject = 0;
+
+void randompack_norm_counters_reset(void) {
+  norm_pdf_calls = 0;
+  norm_draws = 0;
+  norm_slow_tail = 0;
+  norm_slow_accept = 0;
+  norm_slow_retry = 0;
+  norm_slow_pdf_accept = 0;
+  norm_slow_pdf_reject = 0;
+}
+
+void randompack_norm_counters_get(uint64_t *draws, uint64_t *pdf_calls) {
+  if (draws) *draws = norm_draws;
+  if (pdf_calls) *pdf_calls = norm_pdf_calls;
+}
+
+void randompack_norm_counters_get_slow(uint64_t *tail, uint64_t *accept,
+  uint64_t *retry, uint64_t *pdf_accept, uint64_t *pdf_reject) {
+  if (tail) *tail = norm_slow_tail;
+  if (accept) *accept = norm_slow_accept;
+  if (retry) *retry = norm_slow_retry;
+  if (pdf_accept) *pdf_accept = norm_slow_pdf_accept;
+  if (pdf_reject) *pdf_reject = norm_slow_pdf_reject;
+}
+
 //=============================== NORMAL DISTRIBUTION ==============================
 
 NEVER_INLINE double norm_tail_draw(randompack_rng *rng, uint64_t rabs, double y, int *w){
@@ -60,7 +92,8 @@ NEVER_INLINE double norm_tail_draw(randompack_rng *rng, uint64_t rabs, double y,
 NEVER_INLINE bool below_normpdf(uint8_t idx, double x, double y) {
   double f0 = fi_double[idx-1];
   double f1 = fi_double[idx];
-  return f1 + y*(f0 - f1) < openlibm_exp(-x*x/2);
+  norm_pdf_calls++;
+  return f1 + y*(f0 - f1) < exp(-x*x/2);
 }
 
 // ALWAYS_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x,
@@ -96,32 +129,56 @@ NEVER_INLINE bool below_normpdf(uint8_t idx, double x, double y) {
 
 ALWAYS_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x,
                                    uint8_t idx, uint64_t rabs, uint64_t ki) {
-  uint64_t ru, tmp, Y, YL;
+  uint64_t ru, tmp, L, R, Y, YL;
   const int inflection_idx = 52;
   double y;
   for (;;) {
     Y = draw_u64(rng, w);
-    uint64_t L = (1ULL << 52) - ki, R = (1ULL << 52) - rabs;
-    MUL64_WIDE(Y, L, YL, tmp); 
-    if (LIKELY(idx > inflection_idx)) {
-      if (YL > R) goto next_try;
-      if (YL < R - Dzig[idx]) return x;
-    }
-    else if (LIKELY(idx < inflection_idx)) {
-      if (YL < R) return x;
-      if (YL > R + Dzig[idx]) goto next_try;
-    }
-    else if (UNLIKELY(idx == 0)) {
+    L = (1ULL << 52) - ki;
+    R = (1ULL << 52) - rabs;
+    if (UNLIKELY(idx == 0)) {
       y = U64_TO_DOUBLE(Y);
+      norm_slow_tail++;
       x = norm_tail_draw(rng, rabs, y, w);
       return x;
     }
+    MUL64_WIDE(Y, L, YL, tmp); 
+    if (LIKELY(idx > inflection_idx)) {
+      if (YL > R) {
+        norm_slow_retry++;
+        goto next_try;
+      }
+      if (YL < R - Dzig[idx]) {
+        norm_slow_accept++;
+        return x;
+      }
+    }
+    else if (LIKELY(idx < inflection_idx)) {
+      if (YL < R) {
+        norm_slow_accept++;
+        return x;
+      }
+      if (YL > R + Dzig[idx]) {
+        norm_slow_retry++;
+        goto next_try;
+      }
+    }
     else {
-      if (YL > R + Dzig52) goto next_try;
-      if (YL < R - Dzig[idx]) return x;
+      if (YL > R + Dzig52) {
+        norm_slow_retry++;
+        goto next_try;
+      }
+      if (YL < R - Dzig[idx]) {
+        norm_slow_accept++;
+        return x;
+      }
     }
     y = U64_TO_DOUBLE(Y);
-    if (below_normpdf(idx, x, y)) return x;
+    if (below_normpdf(idx, x, y)) {
+      norm_slow_pdf_accept++;
+      return x;
+    }
+    norm_slow_pdf_reject++;
   next_try:
     ru = draw_u64(rng, w);
     TOP_BYTE(idx, ru);
@@ -157,6 +214,7 @@ NEVER_INLINE void rand_norm(double *buf, size_t len, randompack_rng *rng) {
 #else
     TOP_BYTE(idx, r);
 #endif
+    norm_draws++;
     NORM_LIKELY_DECODE(x, r, idx, ki, rabs);
     buf[i] = LIKELY(rabs < ki) ? x : norm_unlikely(rng, &w, x, idx, rabs, ki);
   }

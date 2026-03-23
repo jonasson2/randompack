@@ -45,6 +45,38 @@
 #undef NDEBUG
 #include "assert.h"
 
+static uint64_t norm_pdf_calls = 0;
+static uint64_t norm_draws = 0;
+static uint64_t norm_slow_tail = 0;
+static uint64_t norm_slow_accept = 0;
+static uint64_t norm_slow_retry = 0;
+static uint64_t norm_slow_pdf_accept = 0;
+static uint64_t norm_slow_pdf_reject = 0;
+
+void randompack_norm_counters_reset(void) {
+  norm_pdf_calls = 0;
+  norm_draws = 0;
+  norm_slow_tail = 0;
+  norm_slow_accept = 0;
+  norm_slow_retry = 0;
+  norm_slow_pdf_accept = 0;
+  norm_slow_pdf_reject = 0;
+}
+
+void randompack_norm_counters_get(uint64_t *draws, uint64_t *pdf_calls) {
+  if (draws) *draws = norm_draws;
+  if (pdf_calls) *pdf_calls = norm_pdf_calls;
+}
+
+void randompack_norm_counters_get_slow(uint64_t *tail, uint64_t *accept,
+  uint64_t *retry, uint64_t *pdf_accept, uint64_t *pdf_reject) {
+  if (tail) *tail = norm_slow_tail;
+  if (accept) *accept = norm_slow_accept;
+  if (retry) *retry = norm_slow_retry;
+  if (pdf_accept) *pdf_accept = norm_slow_pdf_accept;
+  if (pdf_reject) *pdf_reject = norm_slow_pdf_reject;
+}
+
 //=============================== NORMAL DISTRIBUTION ==============================
 
 NEVER_INLINE double norm_tail_draw(randompack_rng *rng, uint64_t rabs, double y, int *w){
@@ -63,6 +95,7 @@ NEVER_INLINE double norm_tail_draw(randompack_rng *rng, uint64_t rabs, double y,
 NEVER_INLINE bool below_normpdf(uint8_t idx, double x, double y) {
   double f0 = fi_double[idx-1];
   double f1 = fi_double[idx];
+  norm_pdf_calls++;
   return f1 + y*(f0 - f1) < openlibm_exp(-x*x/2);
 }
 
@@ -77,25 +110,42 @@ ALWAYS_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x,
     uint64_t dr = (1ULL << 52) - rabs;
     double tangent = dr*slope_norm[idx];
     if (LIKELY(idx > 52)) {
-      if (y <= tangent) return x;
+      if (y <= tangent) {
+        norm_slow_accept++;
+        return x;
+      }
       dk = (1ULL << 52) - ki;
-      if (y*dk > dr) goto next_try;
+      if (y*dk > dr) {
+        norm_slow_retry++;
+        goto next_try;
+      }
     }
     else if (UNLIKELY(idx == 0)) {
+      norm_slow_tail++;
       x = norm_tail_draw(rng, rabs, y, w);
       return x;
     }
     else if (LIKELY(idx < 52)) {
-      if (y > tangent) goto next_try;
+      if (y > tangent) {
+        norm_slow_retry++;
+        goto next_try;
+      }
       dk = (1ULL << 52) - ki;
-      if (y*dk <= dr) return x;
+      if (y*dk <= dr) {
+        norm_slow_accept++;
+        return x;
+      }
     }
     // if (UNLIKELY(idx == 0)) {
     //   x = norm_tail_draw(rng, rabs, y, w);
     //   return x;
     // }
     // return x;
-    if (below_normpdf(idx, x, y)) return x;
+    if (below_normpdf(idx, x, y)) {
+      norm_slow_pdf_accept++;
+      return x;
+    }
+    norm_slow_pdf_reject++;
   next_try:
     ru = draw_u64(rng, w);
     TOP_BYTE(idx, ru);
@@ -134,6 +184,7 @@ NEVER_INLINE void rand_norm(double *buf, size_t len, randompack_rng *rng) {
 #else
     TOP_BYTE(idx, r);
 #endif
+    norm_draws++;
     NORM_LIKELY_DECODE(x, r, idx, ki, rabs, sign, srabs);
     buf[i] = LIKELY(rabs < ki) ? x : norm_unlikely(rng, &w, x, idx, rabs, ki);
   }
