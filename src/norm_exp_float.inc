@@ -128,8 +128,8 @@ ALWAYS_INLINE float expf_unlikely(randompack_rng *rng, int *w, float x, uint8_t 
   while (true) {
     if (UNLIKELY(idx == 0)) x = exp_taildraw_f(rng, w);
     Y = draw_u32(rng, w);
-    L = (1U << 24) - ke;
-    R = (1U << 24) - r;
+    L = (1U << 23) - ke;
+    R = (1U << 23) - r;
     MUL32_WIDE(Y, L, YL, tmp);
     (void)tmp;
     if (YL > R) goto next_try;         // above secant
@@ -139,7 +139,7 @@ ALWAYS_INLINE float expf_unlikely(randompack_rng *rng, int *w, float x, uint8_t 
   next_try:
     r = draw_u32(rng, w);
     idx = r >> 24;
-    r &= 0x00ffffff;
+    r &= 0x007fffff;
     ke = ke_float[idx];
     x = r*we_float[idx];
     if (LIKELY(r < ke)) return x;
@@ -157,7 +157,7 @@ ALWAYS_INLINE void rand_expf(float *buf, size_t len, randompack_rng *rng) {
     uint8_t *bufpi = (uint8_t*)(buf + i);
     memcpy(&r, bufpi, sizeof(r));
     memcpy(&idx, (uint8_t*)(buf + i) + 3, 1);  // measured slightly faster than >> 24
-    r &= 0x00ffffff;
+    r &= 0x007fffff;
     x = r*we_float[idx];
     buf[i] = LIKELY(r < ke_float[idx]) ? x : expf_unlikely(rng, &w, x, idx, r);
   }
