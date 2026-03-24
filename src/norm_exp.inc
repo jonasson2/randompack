@@ -195,13 +195,14 @@ ALWAYS_INLINE void rand_exp(double *buf, size_t len, randompack_rng *rng) {
   int w = enter_u64_mode(rng);
   uint8_t idx;
   uint64_t r;
-  double x, *bufi = buf;
-  for (size_t i = len; i > 0; i--) {
-    memcpy(&r, bufi, sizeof(r));
+  double x;
+  for (size_t i = len; i-- > 0;) {
+    uint8_t *bufpi = (uint8_t*)(buf + i);
+    memcpy(&r, bufpi, sizeof(r));
     memcpy(&idx, (uint8_t*)(buf + i) + 7, 1);  // measured slightly faster than >> 56
     r &= 0x1FFFFFFFFFFFFF;
     x = r*we_double[idx];
-    *bufi++ = LIKELY(r < ke_double[idx]) ? x : exp_unlikely(rng, &w, x, idx, r);
+    buf[i] = LIKELY(r < ke_double[idx]) ? x : exp_unlikely(rng, &w, x, idx, r);
   }
   exit_u64_mode(rng, w);
 }
