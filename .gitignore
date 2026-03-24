@@ -25,6 +25,7 @@ __pycache__/
 randompack.egg-info/
 release-python/
 wheelhouse/
+**/.ipynb_checkpoints/
 
 # REBUILDABLE DOC
 *.pdf

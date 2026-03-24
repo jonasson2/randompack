@@ -100,36 +100,8 @@ int main(int argc, char **argv) {
   printf("chunk:  %d\n\n", chunk);
   randompack_norm_counters_reset();
   double ns_norm = time_double(chunk, bench_time, fill_norm, 0, rng);
-  uint64_t draws = 0;
-  uint64_t pdf_calls = 0;
-  uint64_t tail = 0;
-  uint64_t accept = 0;
-  uint64_t retry = 0;
-  uint64_t pdf_accept = 0;
-  uint64_t pdf_reject = 0;
-  randompack_norm_counters_get(&draws, &pdf_calls);
-  randompack_norm_counters_get_slow(&tail, &accept, &retry, &pdf_accept,
-    &pdf_reject);
-  double pct = draws ? (100* (double)pdf_calls / (double)draws) : 0;
-  double pct_tail = draws ? (100* (double)tail / (double)draws) : 0;
-  double pct_accept = draws ? (100* (double)accept / (double)draws) : 0;
-  double pct_retry = draws ? (100* (double)retry / (double)draws) : 0;
-  double pct_pdf_accept = draws ? (100* (double)pdf_accept / (double)draws) : 0;
-  double pct_pdf_reject = draws ? (100* (double)pdf_reject / (double)draws) : 0;
   double ns_exp = time_double(chunk, bench_time, fill_exp, 0, rng);
   printf("norm %8.2f ns/value\n", ns_norm);
-  printf("norm %8llu draws, %8llu below_normpdf\n",
-    (unsigned long long)draws, (unsigned long long)pdf_calls);
-  printf("norm %8.2f%% below_normpdf\n", pct);
-  printf("slow %8llu tail, %8llu accept, %8llu retry\n",
-    (unsigned long long)tail, (unsigned long long)accept,
-    (unsigned long long)retry);
-  printf("slow %8llu pdf_accept, %8llu pdf_reject\n",
-    (unsigned long long)pdf_accept, (unsigned long long)pdf_reject);
-  printf("slow %8.2f%% tail, %8.2f%% accept, %8.2f%% retry\n",
-    pct_tail, pct_accept, pct_retry);
-  printf("slow %8.2f%% pdf_accept, %8.2f%% pdf_reject\n",
-    pct_pdf_accept, pct_pdf_reject);
   printf("exp  %8.2f ns/value\n", ns_exp);
   randompack_free(rng);
   return 0;

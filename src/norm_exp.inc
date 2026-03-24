@@ -92,7 +92,6 @@ NEVER_INLINE double norm_tail_draw(randompack_rng *rng, uint64_t rabs, double y,
 NEVER_INLINE bool below_normpdf(uint8_t idx, double x, double y) {
   double f0 = fi_double[idx-1];
   double f1 = fi_double[idx];
-  norm_pdf_calls++;
   return f1 + y*(f0 - f1) < exp(-x*x/2);
 }
 
@@ -127,58 +126,40 @@ NEVER_INLINE bool below_normpdf(uint8_t idx, double x, double y) {
 //   }
 // }
 
+#define DBL(x) ((x)*0x1.0p-52)
+
 ALWAYS_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x,
                                    uint8_t idx, uint64_t rabs, uint64_t ki) {
+  printSetNdec(6);
   uint64_t ru, tmp, L, R, Y, YL;
   const int inflection_idx = 52;
-  double y;
+  double f0, f1, y;
   for (;;) {
     Y = draw_u64(rng, w);
     L = (1ULL << 52) - ki;
     R = (1ULL << 52) - rabs;
-    if (UNLIKELY(idx == 0)) {
-      y = U64_TO_DOUBLE(Y);
-      norm_slow_tail++;
-      x = norm_tail_draw(rng, rabs, y, w);
+    double u = U64_TO_DOUBLE(Y);
+    if (UNLIKELY(idx == 0)) {   //
+      x = norm_tail_draw(rng, rabs, u, w);
       return x;
     }
     MUL64_WIDE(Y, L, YL, tmp); 
     if (LIKELY(idx > inflection_idx)) {
-      if (YL > R) {
-        norm_slow_retry++;
-        goto next_try;
-      }
-      if (YL < R - Dzig[idx]) {
-        norm_slow_accept++;
-        return x;
-      }
+      if (YL > R) goto next_try;
+      if (YL + Dzig[idx] < R) return x;
     }
     else if (LIKELY(idx < inflection_idx)) {
-      if (YL < R) {
-        norm_slow_accept++;
-        return x;
-      }
-      if (YL > R + Dzig[idx]) {
-        norm_slow_retry++;
-        goto next_try;
-      }
+      if (YL < R) return x;
+      if (YL > R + Dzig[idx]) goto next_try;
     }
     else {
-      if (YL > R + Dzig52) {
-        norm_slow_retry++;
-        goto next_try;
-      }
-      if (YL < R - Dzig[idx]) {
-        norm_slow_accept++;
-        return x;
-      }
+      if (YL > R + Dzig52) goto next_try;
+      if (YL < R - Dzig[idx]) return x;
     }
-    y = U64_TO_DOUBLE(Y);
-    if (below_normpdf(idx, x, y)) {
-      norm_slow_pdf_accept++;
-      return x;
-    }
-    norm_slow_pdf_reject++;
+    f0 = fi_double[idx-1];
+    f1 = fi_double[idx];
+    y = f1 + u*(f0 - f1);
+    if (below_normpdf(idx, x, y)) return x;
   next_try:
     ru = draw_u64(rng, w);
     TOP_BYTE(idx, ru);
@@ -214,7 +195,6 @@ NEVER_INLINE void rand_norm(double *buf, size_t len, randompack_rng *rng) {
 #else
     TOP_BYTE(idx, r);
 #endif
-    norm_draws++;
     NORM_LIKELY_DECODE(x, r, idx, ki, rabs);
     buf[i] = LIKELY(rabs < ki) ? x : norm_unlikely(rng, &w, x, idx, rabs, ki);
   }
