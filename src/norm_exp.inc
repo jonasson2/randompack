@@ -26,8 +26,11 @@
 #if defined(__x86_64__) || defined(__amd64__) || defined(_M_X64)
 #define TOP_BYTE(dst, src) memcpy(&(dst), (uint8_t*)(&(src)) + 7, 1)
 #else
-#define TOP_BYTE(dst, src) ((dst) = (uint8_t)((uint64_t*)(src) >> 56))
+#define TOP_BYTE(dst, src) ((dst) = (uint8_t)((uint64_t)(src) >> 56))
 #endif
+
+#define top_memcpy(dst, src) memcpy(&(dst), (uint8_t*)(&(src)) + 7, 1)
+#define top_shift(dst, src) ((dst) = ((src) >> 56))
 
 #define NORM_LIKELY_DECODE(x, r, idx, ki, rabs)                         \
  ki = ki_double[idx];                                                   \
@@ -163,7 +166,8 @@ ALWAYS_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x,
     if (below_normpdf(idx, x, y)) return x;
   next_try:
     ru = draw_u64(rng, w);
-    TOP_BYTE(idx, ru);
+    top_memcpy(idx, ru);
+    //TOP_BYTE(idx, ru);
     NORM_LIKELY_DECODE(x, ru, idx, ki, rabs);
     if (LIKELY(rabs < ki)) return x;
   }
@@ -174,7 +178,8 @@ ALWAYS_INLINE double draw_norm(randompack_rng *rng, int *w) {
   double x;
   uint8_t idx;
   r = draw_u64(rng, w);
-  TOP_BYTE(idx, r);
+  // TOP_BYTE(idx, r);
+  top_memcpy(idx, r);
   NORM_LIKELY_DECODE(x, r, idx, ki, rabs);
   if (LIKELY(rabs < ki)) return x;
   x = norm_unlikely(rng, w, x, idx, rabs, ki);
@@ -196,7 +201,7 @@ NEVER_INLINE void rand_norm(double *buf, size_t len, randompack_rng *rng) {
 // #else
 //     TOP_BYTE(idx, r);
 // #endif
-    TOP_BYTE(idx, buf[i]);
+    top_shift(idx, r);
     NORM_LIKELY_DECODE(x, r, idx, ki, rabs);
     buf[i] = LIKELY(rabs < ki) ? x : norm_unlikely(rng, &w, x, idx, rabs, ki);
   }
@@ -233,7 +238,8 @@ ALWAYS_INLINE double exp_unlikely(randompack_rng *rng, int *w, double x, uint8_t
     if (below_exppdf(idx, x, y)) return x; // below curve
   next_try:
     r = draw_u64(rng, w);
-    TOP_BYTE(idx, r);
+    // TOP_BYTE(idx, r);
+    top_memcpy(idx, r);
     r &= 0x1FFFFFFFFFFFFF;
     ke = ke_double[idx];
     x = r*we_double[idx];
@@ -250,7 +256,8 @@ ALWAYS_INLINE void rand_exp(double *buf, size_t len, randompack_rng *rng) {
   double x, *bufi = buf;
   for (size_t i = len; i > 0; i--) {
     memcpy(&r, bufi, sizeof(r));
-    TOP_BYTE(idx, r);
+    //TOP_BYTE(idx, r);
+    top_memcpy(idx, r);
     r &= 0x1FFFFFFFFFFFFF;
     x = r*we_double[idx];
     *bufi++ = LIKELY(r < ke_double[idx]) ? x : exp_unlikely(rng, &w, x, idx, r);
