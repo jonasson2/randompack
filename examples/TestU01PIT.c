@@ -7,6 +7,7 @@
 
 #include <math.h>
 #include <stdbool.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -64,17 +65,18 @@ static double GetU01(void) {
 
 static void usage(const char *prog) {
   fprintf(stderr,
-    "Usage: %s [-h] [-g engine] (-s|-c|-b) [-n|-e]\n\n"
+    "Usage: %s [-h] [-g engine] [-s seed] (-S|-C|-B) [-f] [-n|-e]\n\n"
     "Run TestU01 on PIT-transformed normal or exponential samples.\n\n"
     "Options:\n"
     "  -h          Show this help\n"
     "  -g engine   RNG engine to use (default engine if omitted)\n"
+    "  -s seed     Integer seed passed to randompack_seed\n"
     "  -f          Use float normals (randompack_normf)\n"
     "  -n          PIT of N(0,1) [default]\n"
     "  -e          PIT of Exp(1)\n"
-    "  -s          SmallCrush  (seconds)\n"
-    "  -c          Crush       (minutes to tens of minutes)\n"
-    "  -b          BigCrush    (hours)\n",
+    "  -S          SmallCrush  (seconds)\n"
+    "  -C          Crush       (minutes to tens of minutes)\n"
+    "  -B          BigCrush    (hours)\n",
     prog
   );
 }
@@ -82,13 +84,25 @@ static void usage(const char *prog) {
 int main(int argc, char **argv) {
   int opt;
   enum { NONE, SMALL, CRUSH, BIG } battery = NONE;
+  long seed = 1;
+  bool have_seed = false;
   const char *engine = 0;
-  while ((opt = getopt(argc, argv, "g:scbhfne")) != -1) {
+  while ((opt = getopt(argc, argv, "g:s:SCBhfne")) != -1) {
     switch (opt) {
       case 'g': engine = optarg; break;
-      case 's': battery = SMALL; break;
-      case 'c': battery = CRUSH; break;
-      case 'b': battery = BIG; break;
+      case 's': {
+        char *end = 0;
+        seed = strtol(optarg, &end, 10);
+        if (!optarg[0] || (end && end[0]) || seed < INT_MIN || seed > INT_MAX) {
+          fprintf(stderr, "bad seed '%s'\n", optarg);
+          return 1;
+        }
+        have_seed = true;
+        break;
+      }
+      case 'S': battery = SMALL; break;
+      case 'C': battery = CRUSH; break;
+      case 'B': battery = BIG; break;
       case 'f': use_float = true; break;
       case 'n': use_exp = false; break;
       case 'e': use_exp = true; break;
@@ -105,6 +119,11 @@ int main(int argc, char **argv) {
   rng = randompack_create(engine);
   if (!rng) {
     fprintf(stderr, "failed to create RNG\n");
+    return 1;
+  }
+  if (have_seed && !randompack_seed((int)seed, 0, 0, rng)) {
+    fprintf(stderr, "failed to seed RNG\n");
+    randompack_free(rng);
     return 1;
   }
   unif01_Gen *gen = unif01_CreateExternGen01(

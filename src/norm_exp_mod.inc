@@ -80,7 +80,6 @@ NEVER_INLINE bool below_normpdf(uint8_t idx, double x, double y) {
 
 ALWAYS_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x,
                                    uint8_t idx, uint64_t rabs, uint64_t ki) {
-  printSetNdec(6);
   uint64_t ru, tmp, L, R, Y, YL;
   const int inflection_idx = 52;
   double f0, f1, y;
