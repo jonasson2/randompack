@@ -101,8 +101,8 @@ int main(int argc, char **argv) {
   randompack_norm_counters_reset();
   double ns_norm = time_double(chunk, bench_time, fill_norm, 0, rng);
   double ns_exp = time_double(chunk, bench_time, fill_exp, 0, rng);
-  printf("norm %8.2f ns/value\n", ns_norm);
-  printf("exp  %8.2f ns/value\n", ns_exp);
+  printf("norm %8.3f ns/value\n", ns_norm);
+  printf("exp  %8.3f ns/value\n", ns_exp);
   randompack_free(rng);
   return 0;
 }
