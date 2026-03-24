@@ -95,37 +95,6 @@ NEVER_INLINE bool below_normpdf(uint8_t idx, double x, double y) {
   return f1 + y*(f0 - f1) < openlibm_exp(-x*x/2);
 }
 
-// ALWAYS_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x,
-//                                    uint8_t idx, uint64_t rabs, uint64_t ki) {
-//   uint64_t ru;
-//   const int inflection_idx = 52;
-//   for (;;) {
-//     double y = draw_u01(rng, w);
-//     uint64_t L, R = (1ULL << 52) - rabs;
-//     double tangent = R*slope_norm[idx];
-//     if (LIKELY(idx > inflection_idx)) {
-//       if (y <= tangent) return x;
-//       L = (1ULL << 52) - ki;
-//       if (y*L > R) goto next_try;
-//     }
-//     else if (UNLIKELY(idx == 0)) {
-//       x = norm_tail_draw(rng, rabs, y, w);
-//       return x;
-//     }
-//     else if (LIKELY(idx < inflection_idx)) {
-//       if (y > tangent) goto next_try;
-//       L = (1ULL << 52) - ki;
-//       if (y*L <= R) return x;
-//     }
-//     if (below_normpdf(idx, x, y)) return x;
-//   next_try:
-//     ru = draw_u64(rng, w);
-//     TOP_BYTE(idx, ru);
-//     NORM_LIKELY_DECODE(x, ru, idx, ki, rabs);
-//     if (rabs < ki) return x;
-//   }
-// }
-
 #define DBL(x) ((x)*0x1.0p-52)
 
 ALWAYS_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x,
@@ -143,19 +112,21 @@ ALWAYS_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x,
       x = norm_tail_draw(rng, rabs, u, w);
       return x;
     }
-    MUL64_WIDE(Y, L, YL, tmp); 
-    if (LIKELY(idx > inflection_idx)) {
-      if (YL > R) goto next_try;
-      if (YL + Dzig[idx] < R) return x;
-    }
-    else if (LIKELY(idx < inflection_idx)) {
-      if (YL < R) return x;
-      if (YL > R + Dzig[idx]) goto next_try;
-    }
-    else {
-      if (YL > R + Dzig52) goto next_try;
-      if (YL + Dzig[idx] < R) return x;
-    }
+    MUL64_WIDE(Y, L, YL, tmp);
+	 if (YL + Dzig2[idx] < R) return x;
+	 if (YL > R + Dzig1[idx]) goto next_try;
+	 // if (LIKELY(idx > inflection_idx)) {
+    //   if (YL > R) goto next_try;
+    //   if (YL + Dzig[idx] < R) return x;
+    // }
+    // else if (LIKELY(idx < inflection_idx)) {
+    //   if (YL < R) return x;
+    //   if (YL > R + Dzig[idx]) goto next_try;
+    // }
+    // else {
+    //   if (YL > R + Dzig52) goto next_try;
+    //   if (YL + Dzig[idx] < R) return x;
+    // }
     f0 = fi_double[idx-1];
     f1 = fi_double[idx];
     y = f1 + u*(f0 - f1);
