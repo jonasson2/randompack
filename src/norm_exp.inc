@@ -23,12 +23,6 @@
 //   For xi < 1:     reject if above tangent, accept if below secant
 //   For x{i-1} > 1: reject if below tangent, accept if above secant
 
-#if defined(__x86_64__) || defined(__amd64__) || defined(_M_X64)
-#define TOP_BYTE(dst, src) memcpy(&(dst), (uint8_t*)(&(src)) + 7, 1)
-#else
-#define TOP_BYTE(dst, src) ((dst) = (uint8_t)((uint64_t)(src) >> 56))
-#endif
-
 #define top_memcpy(dst, src) memcpy(&(dst), (uint8_t*)(&(src)) + 7, 1)
 #define top_shift(dst, src) ((dst) = ((src) >> 56))
 
@@ -99,37 +93,6 @@ NEVER_INLINE bool below_normpdf(uint8_t idx, double x, double y) {
   return f1 + y*(f0 - f1) < openlibm_exp(-x*x/2);
 }
 
-// ALWAYS_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x,
-//                                    uint8_t idx, uint64_t rabs, uint64_t ki) {
-//   uint64_t ru;
-//   const int inflection_idx = 52;
-//   for (;;) {
-//     double y = draw_u01(rng, w);
-//     uint64_t L, R = (1ULL << 52) - rabs;
-//     double tangent = R*slope_norm[idx];
-//     if (LIKELY(idx > inflection_idx)) {
-//       if (y <= tangent) return x;
-//       L = (1ULL << 52) - ki;
-//       if (y*L > R) goto next_try;
-//     }
-//     else if (UNLIKELY(idx == 0)) {
-//       x = norm_tail_draw(rng, rabs, y, w);
-//       return x;
-//     }
-//     else if (LIKELY(idx < inflection_idx)) {
-//       if (y > tangent) goto next_try;
-//       L = (1ULL << 52) - ki;
-//       if (y*L <= R) return x;
-//     }
-//     if (below_normpdf(idx, x, y)) return x;
-//   next_try:
-//     ru = draw_u64(rng, w);
-//     TOP_BYTE(idx, ru);
-//     NORM_LIKELY_DECODE(x, ru, idx, ki, rabs);
-//     if (rabs < ki) return x;
-//   }
-// }
-
 #define DBL(x) ((x)*0x1.0p-52)
 
 ALWAYS_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x,
@@ -166,8 +129,8 @@ ALWAYS_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x,
     if (below_normpdf(idx, x, y)) return x;
   next_try:
     ru = draw_u64(rng, w);
+    idx = ru >> 56;
     top_memcpy(idx, ru);
-    //TOP_BYTE(idx, ru);
     NORM_LIKELY_DECODE(x, ru, idx, ki, rabs);
     if (LIKELY(rabs < ki)) return x;
   }
@@ -178,8 +141,7 @@ ALWAYS_INLINE double draw_norm(randompack_rng *rng, int *w) {
   double x;
   uint8_t idx;
   r = draw_u64(rng, w);
-  // TOP_BYTE(idx, r);
-  top_memcpy(idx, r);
+  idx = r >> 56;
   NORM_LIKELY_DECODE(x, r, idx, ki, rabs);
   if (LIKELY(rabs < ki)) return x;
   x = norm_unlikely(rng, w, x, idx, rabs, ki);
@@ -196,12 +158,8 @@ NEVER_INLINE void rand_norm(double *buf, size_t len, randompack_rng *rng) {
   for (size_t i = len; i-- > 0;) {
     uint8_t *bufpi = (uint8_t*)(buf + i);
     memcpy(&r, bufpi, sizeof(r));
-// #if defined(__x86_64__) || defined(__amd64__) || defined(_M_X64)
-//     TOP_BYTE(idx, buf[i]);
-// #else
-//     TOP_BYTE(idx, r);
-// #endif
-    top_shift(idx, r);
+    memcpy(&idx, (uint8_t*)(buf + i) + 7, 1);
+    // idx = r >> 56;
     NORM_LIKELY_DECODE(x, r, idx, ki, rabs);
     buf[i] = LIKELY(rabs < ki) ? x : norm_unlikely(rng, &w, x, idx, rabs, ki);
   }
@@ -238,8 +196,7 @@ ALWAYS_INLINE double exp_unlikely(randompack_rng *rng, int *w, double x, uint8_t
     if (below_exppdf(idx, x, y)) return x; // below curve
   next_try:
     r = draw_u64(rng, w);
-    // TOP_BYTE(idx, r);
-    top_memcpy(idx, r);
+    idx = r >> 56;
     r &= 0x1FFFFFFFFFFFFF;
     ke = ke_double[idx];
     x = r*we_double[idx];
@@ -256,8 +213,7 @@ ALWAYS_INLINE void rand_exp(double *buf, size_t len, randompack_rng *rng) {
   double x, *bufi = buf;
   for (size_t i = len; i > 0; i--) {
     memcpy(&r, bufi, sizeof(r));
-    //TOP_BYTE(idx, r);
-    top_memcpy(idx, r);
+    idx = r >> 56;
     r &= 0x1FFFFFFFFFFFFF;
     x = r*we_double[idx];
     *bufi++ = LIKELY(r < ke_double[idx]) ? x : exp_unlikely(rng, &w, x, idx, r);

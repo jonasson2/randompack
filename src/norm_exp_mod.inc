@@ -190,11 +190,13 @@ NEVER_INLINE void rand_norm(double *buf, size_t len, randompack_rng *rng) {
   for (size_t i = len; i-- > 0;) {
     uint8_t *bufpi = (uint8_t*)(buf + i);
     memcpy(&r, bufpi, sizeof(r));
-#if defined(__x86_64__) || defined(__amd64__) || defined(_M_X64)
+// #if defined(__x86_64__) || defined(__amd64__) || defined(_M_X64)
+//     TOP_BYTE(idx, buf[i]);
+// #else
+//     TOP_BYTE(idx, r);
+// #endif
     TOP_BYTE(idx, buf[i]);
-#else
-    TOP_BYTE(idx, r);
-#endif
+    //idx = r >> 56;
     NORM_LIKELY_DECODE(x, r, idx, ki, rabs);
     buf[i] = LIKELY(rabs < ki) ? x : norm_unlikely(rng, &w, x, idx, rabs, ki);
   }
