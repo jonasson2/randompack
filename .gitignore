@@ -26,7 +26,7 @@ randompack.egg-info/
 release-python/
 wheelhouse/
 **/.ipynb_checkpoints/
-
+**/.virtual_documents/
 # REBUILDABLE DOC
 *.pdf
 tests/*.txt
