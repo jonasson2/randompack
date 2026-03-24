@@ -26,13 +26,13 @@
 #if defined(__x86_64__) || defined(__amd64__) || defined(_M_X64)
 #define TOP_BYTE(dst, src) memcpy(&(dst), (uint8_t*)(&(src)) + 7, 1)
 #else
-#define TOP_BYTE(dst, src) ((dst) = (uint8_t)((src) >> 56))
+#define TOP_BYTE(dst, src) ((dst) = (uint8_t)((uint64_t*)(src) >> 56))
 #endif
 
 #define NORM_LIKELY_DECODE(x, r, idx, ki, rabs)                         \
+ ki = ki_double[idx];                                                   \
  rabs = r & 0x000fffffffffffff;                                         \
- x = ((r >> 52) & 1 ? -(int64_t)rabs : (int64_t)rabs) * wi_double[idx]; \
- ki = ki_double[idx];
+ x = ((r >> 52) & 1 ? -(int64_t)rabs : (int64_t)rabs) * wi_double[idx];
 
 #include <stdint.h>
 #include <math.h>
@@ -188,10 +188,15 @@ NEVER_INLINE void rand_norm(double *buf, size_t len, randompack_rng *rng) {
   uint8_t idx;
   uint64_t r, rabs, ki;
   double x;
-  uint64_t *buf64 = (uint64_t*) buf;
   for (size_t i = len; i-- > 0;) {
-    memcpy(&r, buf64 + i, sizeof(r));  
-    TOP_BYTE(idx, buf64[i]);
+    uint8_t *bufpi = (uint8_t*)(buf + i);
+    memcpy(&r, bufpi, sizeof(r));
+// #if defined(__x86_64__) || defined(__amd64__) || defined(_M_X64)
+//     TOP_BYTE(idx, buf[i]);
+// #else
+//     TOP_BYTE(idx, r);
+// #endif
+    TOP_BYTE(idx, buf[i]);
     NORM_LIKELY_DECODE(x, r, idx, ki, rabs);
     buf[i] = LIKELY(rabs < ki) ? x : norm_unlikely(rng, &w, x, idx, rabs, ki);
   }
