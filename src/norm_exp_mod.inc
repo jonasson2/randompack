@@ -22,19 +22,16 @@
 //   For xi < 1:     reject if above tangent, accept if below secant
 //   For x{i-1} > 1: reject if below tangent, accept if above secant
 
-#define DBL_SIGNBIT 0x8000000000000000ULL
 #if defined(__x86_64__) || defined(__amd64__) || defined(_M_X64)
 #define TOP_BYTE(dst, src) memcpy(&(dst), (uint8_t*)(&(src)) + 7, 1)
 #else
 #define TOP_BYTE(dst, src) ((dst) = (uint8_t)((src) >> 56))
 #endif
 
-#define NORM_LIKELY_DECODE(x, r, idx, ki, rabs, sign, srabs) \
-  ki = ki_double[idx]; \
-  sign = (r >> 52) & 1; \
-  rabs = r & 0x000fffffffffffff; \
-  srabs = sign ? -(int64_t)rabs : (int64_t)rabs; \
-  x = srabs*wi_double[idx];
+#define NORM_LIKELY_DECODE(x, r, idx, ki, rabs)                         \
+ ki = ki_double[idx];                                                   \
+ rabs = r & 0x000fffffffffffff;                                         \
+ x = ((r >> 52) & 1 ? -(int64_t)rabs : (int64_t)rabs) * wi_double[idx];
 
 #include <stdint.h>
 #include <math.h>
@@ -42,7 +39,7 @@
 #include "printX.h"
 #include "randompack.h"
 #include "ziggurat_constants.h"
-#undef NDEBUG
+#include "zig_const.h"
 #include "assert.h"
 
 static uint64_t norm_pdf_calls = 0;
@@ -95,62 +92,79 @@ NEVER_INLINE double norm_tail_draw(randompack_rng *rng, uint64_t rabs, double y,
 NEVER_INLINE bool below_normpdf(uint8_t idx, double x, double y) {
   double f0 = fi_double[idx-1];
   double f1 = fi_double[idx];
-  norm_pdf_calls++;
-  return f1 + y*(f0 - f1) < openlibm_exp(-x*x/2);
+  return f1 + y*(f0 - f1) < exp(-x*x/2);
 }
+
+// ALWAYS_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x,
+//                                    uint8_t idx, uint64_t rabs, uint64_t ki) {
+//   uint64_t ru;
+//   const int inflection_idx = 52;
+//   for (;;) {
+//     double y = draw_u01(rng, w);
+//     uint64_t L, R = (1ULL << 52) - rabs;
+//     double tangent = R*slope_norm[idx];
+//     if (LIKELY(idx > inflection_idx)) {
+//       if (y <= tangent) return x;
+//       L = (1ULL << 52) - ki;
+//       if (y*L > R) goto next_try;
+//     }
+//     else if (UNLIKELY(idx == 0)) {
+//       x = norm_tail_draw(rng, rabs, y, w);
+//       return x;
+//     }
+//     else if (LIKELY(idx < inflection_idx)) {
+//       if (y > tangent) goto next_try;
+//       L = (1ULL << 52) - ki;
+//       if (y*L <= R) return x;
+//     }
+//     if (below_normpdf(idx, x, y)) return x;
+//   next_try:
+//     ru = draw_u64(rng, w);
+//     TOP_BYTE(idx, ru);
+//     NORM_LIKELY_DECODE(x, ru, idx, ki, rabs);
+//     if (rabs < ki) return x;
+//   }
+// }
+
+#define DBL(x) ((x)*0x1.0p-52)
 
 ALWAYS_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x,
                                    uint8_t idx, uint64_t rabs, uint64_t ki) {
-  int64_t srabs;
-  uint64_t ru;
-  int sign;
+  printSetNdec(6);
+  uint64_t ru, tmp, L, R, Y, YL;
+  const int inflection_idx = 52;
+  double f0, f1, y;
   for (;;) {
-    double y = draw_u01(rng, w);
-    uint64_t dk;
-    uint64_t dr = (1ULL << 52) - rabs;
-    double tangent = dr*slope_norm[idx];
-    if (LIKELY(idx > 52)) {
-      if (y <= tangent) {
-        norm_slow_accept++;
-        return x;
-      }
-      dk = (1ULL << 52) - ki;
-      if (y*dk > dr) {
-        norm_slow_retry++;
-        goto next_try;
-      }
-    }
-    else if (UNLIKELY(idx == 0)) {
-      norm_slow_tail++;
-      x = norm_tail_draw(rng, rabs, y, w);
+    Y = draw_u64(rng, w);
+    L = (1ULL << 52) - ki;
+    R = (1ULL << 52) - rabs;
+    double u = U64_TO_DOUBLE(Y);
+    if (UNLIKELY(idx == 0)) {   //
+      x = norm_tail_draw(rng, rabs, u, w);
       return x;
     }
-    else if (LIKELY(idx < 52)) {
-      if (y > tangent) {
-        norm_slow_retry++;
-        goto next_try;
-      }
-      dk = (1ULL << 52) - ki;
-      if (y*dk <= dr) {
-        norm_slow_accept++;
-        return x;
-      }
-    }
-    // if (UNLIKELY(idx == 0)) {
-    //   x = norm_tail_draw(rng, rabs, y, w);
-    //   return x;
+    // MUL64_WIDE(Y, L, YL, tmp); 
+    // if (LIKELY(idx > inflection_idx)) {
+    //   if (YL > R) goto next_try;
+    //   if (YL + Dzig[idx] < R) return x;
     // }
-    // return x;
-    if (below_normpdf(idx, x, y)) {
-      norm_slow_pdf_accept++;
-      return x;
-    }
-    norm_slow_pdf_reject++;
+    // else if (LIKELY(idx < inflection_idx)) {
+    //   if (YL < R) return x;
+    //   if (YL > R + Dzig[idx]) goto next_try;
+    // }
+    // else {
+    //   if (YL > R + Dzig52) goto next_try;
+    //   if (YL < R - Dzig[idx]) return x;
+    // }
+    f0 = fi_double[idx-1];
+    f1 = fi_double[idx];
+    y = f1 + u*(f0 - f1);
+    if (below_normpdf(idx, x, y)) return x;
   next_try:
     ru = draw_u64(rng, w);
     TOP_BYTE(idx, ru);
-    NORM_LIKELY_DECODE(x, ru, idx, ki, rabs, sign, srabs);
-    if (rabs < ki) return x;
+    NORM_LIKELY_DECODE(x, ru, idx, ki, rabs);
+    if (LIKELY(rabs < ki)) return x;
   }
 }
 
@@ -158,11 +172,9 @@ ALWAYS_INLINE double draw_norm(randompack_rng *rng, int *w) {
   uint64_t rabs, ki, r;
   double x;
   uint8_t idx;
-  int sign;
-  int64_t srabs;
   r = draw_u64(rng, w);
   TOP_BYTE(idx, r);
-  NORM_LIKELY_DECODE(x, r, idx, ki, rabs, sign, srabs);
+  NORM_LIKELY_DECODE(x, r, idx, ki, rabs);
   if (LIKELY(rabs < ki)) return x;
   x = norm_unlikely(rng, w, x, idx, rabs, ki);
   return x;
@@ -171,10 +183,9 @@ ALWAYS_INLINE double draw_norm(randompack_rng *rng, int *w) {
 NEVER_INLINE void rand_norm(double *buf, size_t len, randompack_rng *rng) {
   align64(rng);
   draw_raw_copy((uint8_t *)buf, len*sizeof(uint64_t), rng);
-  int w = enter_u64_mode(rng), sign;
+  int w = enter_u64_mode(rng);
   uint8_t idx;
   uint64_t r, rabs, ki;
-  int64_t srabs;
   double x;
   for (size_t i = len; i-- > 0;) {
     uint8_t *bufpi = (uint8_t*)(buf + i);
@@ -184,8 +195,7 @@ NEVER_INLINE void rand_norm(double *buf, size_t len, randompack_rng *rng) {
 #else
     TOP_BYTE(idx, r);
 #endif
-    norm_draws++;
-    NORM_LIKELY_DECODE(x, r, idx, ki, rabs, sign, srabs);
+    NORM_LIKELY_DECODE(x, r, idx, ki, rabs);
     buf[i] = LIKELY(rabs < ki) ? x : norm_unlikely(rng, &w, x, idx, rabs, ki);
   }
   exit_u64_mode(rng, w);
