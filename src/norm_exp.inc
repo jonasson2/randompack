@@ -92,7 +92,7 @@ NEVER_INLINE double norm_tail_draw(randompack_rng *rng, uint64_t rabs, double y,
 NEVER_INLINE bool below_normpdf(uint8_t idx, double x, double y) {
   double f0 = fi_double[idx-1];
   double f1 = fi_double[idx];
-  return f1 + y*(f0 - f1) < exp(-x*x/2);
+  return f1 + y*(f0 - f1) < openlibm_exp(-x*x/2);
 }
 
 // ALWAYS_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x,
@@ -154,7 +154,7 @@ ALWAYS_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x,
     }
     else {
       if (YL > R + Dzig52) goto next_try;
-      if (YL < R - Dzig[idx]) return x;
+      if (YL + Dzig[idx] < R) return x;
     }
     f0 = fi_double[idx-1];
     f1 = fi_double[idx];
