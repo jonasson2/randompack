@@ -93,24 +93,21 @@ ALWAYS_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x,
       x = norm_tail_draw(rng, rabs, u, w);
       return x;
     }
-    // MUL64_WIDE(Y, L, YL, tmp);
-    // (void) tmp;
-    // if (LIKELY(idx > inflection_idx)) {
-    //   if (YL > R) goto next_try;
-    //   if (YL + Dnorm[idx] < R) return x;
-    // }
-    // else if (LIKELY(idx < inflection_idx)) {
-    //   if (YL < R) return x;
-    //   if (YL > R + Dnorm[idx]) goto next_try;
-    // }
-    // else {
-    //   if (YL > R + Dzig52) goto next_try;
-    //   if (YL + Dnorm[idx] < R) return x;
-    // }
-    f0 = fi_double[idx-1];
-    f1 = fi_double[idx];
-    y = f1 + u*(f0 - f1);
-    if (below_normpdf(idx, x, y)) return x;
+    MUL64_WIDE(Y, L, YL, tmp);
+    (void) tmp;
+    if (LIKELY(idx > inflection_idx)) {
+      if (YL > R) goto next_try;
+      if (YL + Dnorm[idx] < R) return x;
+    }
+    else if (LIKELY(idx < inflection_idx)) {
+      if (YL < R) return x;
+      if (YL > R + Dnorm[idx]) goto next_try;
+    }
+    else {
+      if (YL > R + Dzig52) goto next_try;
+      if (YL + Dnorm[idx] < R) return x;
+    }
+    if (below_normpdf(idx, x, u)) return x;
   next_try:
     ru = draw_u64(rng, w);
     idx = ru >> 56;
