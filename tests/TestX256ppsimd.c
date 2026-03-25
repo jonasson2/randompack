@@ -18,7 +18,7 @@ static inline void get_stream_state(uint64_t stream_state[4], int i,
 
 void TestX256ppsimd(void) {
   int n = 10000;
-  int m = 4*n;
+  int m = 8*n;
   uint64_t *a, *b;
   TEST_ALLOC(a, n);
   TEST_ALLOC(b, m);
@@ -32,17 +32,17 @@ void TestX256ppsimd(void) {
   check_success(ok, rng_fast);
   uint64_t xora = 0, xorb = 0;
   for (int i = 0; i < n; i++) xora ^= a[i];
-  for (int i = 0; i < m; i += 4) xorb ^= b[i];
+  for (int i = 0; i < m; i += 8) xorb ^= b[i];
   xCheck(xora == xorb);
-  xCheck(a[n - 1] == b[m - 4]);
+  xCheck(a[n - 1] == b[m - 8]);
   randompack_free(rng_pp);
   randompack_free(rng_fast);
   randompack_rng *rng_fast2 = create_seeded_rng("x256++simd", 42);
   check_rng_clean(rng_fast2);
-  uint64_t states[4][4];
-  for (int i = 0; i < 4; i++) get_stream_state(states[i], i, rng_fast2);
+  uint64_t states[8][4];
+  for (int i = 0; i < 8; i++) get_stream_state(states[i], i, rng_fast2);
   uint64_t xor_pp = 0;
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < 8; i++) {
     randompack_rng *r = randompack_create("x256++");
     check_rng_clean(r);
     ok = randompack_set_state(states[i], 4, r);

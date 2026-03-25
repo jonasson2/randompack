@@ -166,23 +166,44 @@ HIDDEN bool cpu_has_avx2(void) {
 HIDDEN void fill_fast_avx2(uint64_t *buf, size_t len, randompack_state *state) {
   uint64_t *out = buf;
   xo256 *st = &state->xo;
-  VEC_T s0 = VEC_LOAD(&st->s0[0]);
-  VEC_T s1 = VEC_LOAD(&st->s1[0]);
-  VEC_T s2 = VEC_LOAD(&st->s2[0]);
-  VEC_T s3 = VEC_LOAD(&st->s3[0]);
+  VEC_T s00 = VEC_LOAD(&st->s0[0]);
+  VEC_T s10 = VEC_LOAD(&st->s1[0]);
+  VEC_T s20 = VEC_LOAD(&st->s2[0]);
+  VEC_T s30 = VEC_LOAD(&st->s3[0]);
+  VEC_T s01 = VEC_LOAD(&st->s0[4]);
+  VEC_T s11 = VEC_LOAD(&st->s1[4]);
+  VEC_T s21 = VEC_LOAD(&st->s2[4]);
+  VEC_T s31 = VEC_LOAD(&st->s3[4]);
 #if defined(RANDOMPACK_TEST_HOOKS)
   avx2_used++;
 #endif
-  for (size_t i = 0; i < len; i += 4) {
-    VEC_T r;
-    //FAST_STEP_VEC_SS(s0, s1, s2, s3, r);  // for xoshiro256**
-    FAST_STEP_VEC(s0, s1, s2, s3, r);
-    VEC_STORE(out + i, r);
+  for (size_t i = 0; i < len; i += 32) {
+    VEC_T r0, r1, r2, r3, r4, r5, r6, r7;
+    FAST_STEP_VEC(s00, s10, s20, s30, r0);
+    FAST_STEP_VEC(s01, s11, s21, s31, r1);
+    FAST_STEP_VEC(s00, s10, s20, s30, r2);
+    FAST_STEP_VEC(s01, s11, s21, s31, r3);
+    FAST_STEP_VEC(s00, s10, s20, s30, r4);
+    FAST_STEP_VEC(s01, s11, s21, s31, r5);
+    FAST_STEP_VEC(s00, s10, s20, s30, r6);
+    FAST_STEP_VEC(s01, s11, s21, s31, r7);
+    VEC_STORE(out + i, r0);
+    VEC_STORE(out + i + 4, r1);
+    VEC_STORE(out + i + 8, r2);
+    VEC_STORE(out + i + 12, r3);
+    VEC_STORE(out + i + 16, r4);
+    VEC_STORE(out + i + 20, r5);
+    VEC_STORE(out + i + 24, r6);
+    VEC_STORE(out + i + 28, r7);
   }
-  VEC_STORE(&st->s0[0], s0);
-  VEC_STORE(&st->s1[0], s1);
-  VEC_STORE(&st->s2[0], s2);
-  VEC_STORE(&st->s3[0], s3);
+  VEC_STORE(&st->s0[0], s00);
+  VEC_STORE(&st->s1[0], s10);
+  VEC_STORE(&st->s2[0], s20);
+  VEC_STORE(&st->s3[0], s30);
+  VEC_STORE(&st->s0[4], s01);
+  VEC_STORE(&st->s1[4], s11);
+  VEC_STORE(&st->s2[4], s21);
+  VEC_STORE(&st->s3[4], s31);
 }
 
 #define SFC64_STEP_VEC(a,b,c,ctr,one,outv) do { \

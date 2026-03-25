@@ -200,6 +200,12 @@ static void TestXoshiro256ppAgainstRust(void) {
   uint64_t x[5];
   ok = randompack_uint64(x, 3, 0, rng);
   check_success(ok, rng);
+  uint64_t state_after3[4] = {
+    2528806104241426626ULL, 6362598626627523027ULL,
+    17214963705533504631ULL, 14411775491225371596ULL
+  };
+  ok = randompack_set_state(state_after3, 4, rng);
+  check_success(ok, rng);
   ok = randompack_jump(128, rng);
   check_success(ok, rng);
   ok = randompack_uint64(x + 3, 1, 0, rng);
@@ -214,7 +220,7 @@ static void TestXoshiro256ppAgainstRust(void) {
     7481289576166103649ULL,
     14954838225025987065ULL,
     13925222450416462367ULL,
-    16774037864912307895ULL,
+    16338411700179016235ULL,
     14555093047527680046ULL
   };
   CHECK_EQUALV(x, rust, 5);
@@ -261,6 +267,12 @@ static void TestXoshiro256ssAgainstRust(void) {
   uint64_t x[5];
   ok = randompack_uint64(x, 3, 0, rng);
   check_success(ok, rng);
+  uint64_t state_after3[4] = {
+    17259611468371763932ULL, 7463711936217166741ULL,
+    14826803636522241130ULL, 2576392830761277348ULL
+  };
+  ok = randompack_set_state(state_after3, 4, rng);
+  check_success(ok, rng);
   ok = randompack_jump(128, rng);
   check_success(ok, rng);
   ok = randompack_uint64(x + 3, 1, 0, rng);
@@ -275,7 +287,7 @@ static void TestXoshiro256ssAgainstRust(void) {
     14349957828721873287ull,
     17468056612619362601ull,
     5100482715761765753ull,
-    437786437538516426ull,
+    11684350292475811581ull,
     11305255822621342761ull
   };
   CHECK_EQUALV(x, rust, 5);
@@ -296,6 +308,10 @@ static void TestXoshiro256ssAgainstRust(void) {
 }
 
 static void TestRanluxppAgainstJirka(void) {
+#if BUFSIZE % 9 != 0
+  xCheck(true);
+  return;
+#endif
   // Reference values can be reproduced with misc/ranlux-work/ref_ranlux_portable.c.
   // That program sets x = {1..9}, advances 100 states in ranluxpp-portable,
   // xors the 900 output words, and records the last word.

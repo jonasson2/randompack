@@ -11,7 +11,7 @@ void TestAvx2(void) {
     xCheck(false);
     return;
   }
-  if (!rng->cpu_has_avx2) {
+  if (!rng->cpu_has_avx2 || rng->cpu_has_avx512) {
     randompack_free(rng);
     return;
   }

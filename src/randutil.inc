@@ -57,7 +57,7 @@ static inline void scatter_to_stream0(randompack_rng *rng) {
 }
 
 static inline void x256ppsimd_jump(int p, randompack_rng *rng) {
-  for (int i=0; i<4; i++) {
+  for (int i=0; i<8; i++) {
     uint64_t stream_state[4];
     get_stream(stream_state, i, rng);
     xoshiro256_jump(stream_state, p);
@@ -113,7 +113,7 @@ static inline void normalize_state(randompack_rng *rng) {
 }
 
 static inline void fill_stream_states_with_jump(randompack_rng *rng) {
-  for (int i=1; i<4; i++) {
+  for (int i=1; i<8; i++) {
     uint64_t stream_state[4];
     get_stream(stream_state, i-1, rng);
     xoshiro256_jump(stream_state, 253);

@@ -30,7 +30,7 @@ typedef struct {
 #include "scale_inplace.inc"
 
 static rng_entry rng_table[] = {  // x256++simd is default
-  {"x256++simd","xoshiro256++, SIMD accelerated (4x4x64)",     FAST,    4,fill_fast     },
+  {"x256++simd","xoshiro256++, SIMD accelerated (8x4x64)",     FAST,    4,fill_fast     },
   {"x256++",   "xoshiro256++, Vigna & Blackman, 2019 (4x64)",  X256PP,  4,fill_x256pp   },
   {"x256**",   "xoshiro256**, Vigna & Blackman, 2019 (4x64)",  X256SS,  4,fill_x256ss   },
   {"x128+",    "xorshift128+, Vigna, 2014 (2x64)",             X128P,   2,fill_x128p    },
@@ -45,7 +45,7 @@ static rng_entry rng_table[] = {  // x256++simd is default
   {"chacha20", "ChaCha20, Bernstein, 2008 (6x64)",             CHACHA20,6,fill_chacha   },
 };
 // For x256++simd, state.xo stream 0 (4 words) is seeded or initialized directly and
-// then jumped to streams 1..3. For sfc64simd, the base state words are replicated to
+// then jumped to streams 1..7. For sfc64simd, the base state words are replicated to
 // 8 streams with counters s + k*2^61 for k = 0..7.
 
 static rng_entry *find_entry(rng_engine e) {
@@ -107,6 +107,7 @@ randompack_rng *randompack_create(const char *engine) {
   if (rng->engine == SFCSIMD && rng->cpu_has_avx2) rng->fill = fill_sfc64simd_avx2;
 #endif
 #if defined(BUILD_AVX512)
+  if (rng->engine == FAST && rng->cpu_has_avx512) rng->fill = fill_fast_avx512;
   if (rng->engine == SFCSIMD && rng->cpu_has_avx512) rng->fill = fill_sfc64simd_avx512;
 #endif
   rand_randomize(rng);
@@ -356,6 +357,7 @@ bool randompack_deserialize(const uint8_t *buf, int len, randompack_rng *rng) {
   if (rng->engine == SFCSIMD && rng->cpu_has_avx2) rng->fill = fill_sfc64simd_avx2;
 #endif
 #if defined(BUILD_AVX512)
+  if (rng->engine == FAST && rng->cpu_has_avx512) rng->fill = fill_fast_avx512;
   if (rng->engine == SFCSIMD && rng->cpu_has_avx512) rng->fill = fill_sfc64simd_avx512;
 #endif
   return true;
