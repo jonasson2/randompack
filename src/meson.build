@@ -28,13 +28,16 @@ if using_builtin_blas
 endif
 
 build_avx2_define = build_avx2 ? ['-DBUILD_AVX2'] : []
+build_avx512_define = build_avx512 ? ['-DBUILD_AVX512'] : []
 test_hooks_define = get_option('build_tests') ? ['-DRANDOMPACK_TEST_HOOKS'] : []
-base_c_args = local_dpstrf_args + accel_vv_args + build_avx2_define
+base_c_args = local_dpstrf_args + accel_vv_args + build_avx2_define + build_avx512_define
 test_buf_define = '-DBUFSIZE=' + test_bufsize.to_string()
 buf8_c_args = base_c_args + [test_buf_define]
 
 avx2_objs = []
 avx2_objs_buf8 = []
+avx512_objs = []
+avx512_objs_buf8 = []
 if build_avx2
   avx2_lib = static_library(
     'randompack_avx2',
@@ -65,8 +68,30 @@ if build_avx2
   avx2_objs_buf8 = [avx2_lib_buf8.extract_all_objects(recursive: false)]
 endif
 
-extra_objs = avx2_objs + blas_objs
-extra_objs_buf8 = avx2_objs_buf8 + blas_objs
+if build_avx512
+  avx512_lib = static_library(
+    'randompack_avx512',
+    files('avx512.c'),
+    include_directories: randompack_inc,
+    c_args: avx512_c_args + build_avx512_define,
+    pic: true,
+    install: false,
+  )
+  avx512_objs = [avx512_lib.extract_all_objects(recursive: false)]
+
+  avx512_lib_buf8 = static_library(
+    'randompack_avx512_buf8',
+    files('avx512.c'),
+    include_directories: randompack_inc,
+    c_args: avx512_c_args + build_avx512_define + [test_buf_define],
+    pic: true,
+    install: false,
+  )
+  avx512_objs_buf8 = [avx512_lib_buf8.extract_all_objects(recursive: false)]
+endif
+
+extra_objs = avx2_objs + avx512_objs + blas_objs
+extra_objs_buf8 = avx2_objs_buf8 + avx512_objs_buf8 + blas_objs
 
 randompack_lto = fortran_interface ? ['b_lto=false'] : ['b_lto=true']
 

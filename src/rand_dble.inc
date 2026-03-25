@@ -81,6 +81,12 @@ ALWAYS_INLINE void rand_dble_4x53(double x[], size_t len, uint64_t u64[]) {
 }
 
 ALWAYS_INLINE void rand_dble(double x[], size_t len, randompack_rng *rng) {
+#if defined(BUILD_AVX512)
+  if (rng->cpu_has_avx512 && !rng->usefullmantissa) {
+    rand_dble_avx512(x, len, rng);
+    return;
+  }
+#endif
 #if defined(BUILD_AVX2)
   if (rng->cpu_has_avx2) {
     rand_dble_avx2(x, len, rng);

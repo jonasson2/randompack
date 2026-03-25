@@ -39,14 +39,14 @@ static rng_entry rng_table[] = {  // x256++simd is default
   {"squares",  "squares64, Widynski, 2021 (2x64)",             SQUARES, 2,fill_squares  },
   {"philox",   "Philox-4x64, Salmon & Moraes, 2011 (6x64)",    PHILOX,  6,fill_philox   },
   {"sfc64",    "sfc64, Chris Doty-Humphrey, 2013 (4x64)",      SFC64,   4,fill_sfc64    },
-  {"sfc64simd","sfc64, SIMD accelerated (4x4x64)",             SFCSIMD, 4,fill_sfc64simd},
+  {"sfc64simd","sfc64, SIMD accelerated (8x4x64)",             SFCSIMD, 4,fill_sfc64simd},
   {"cwg128",   "cwg128, Działa, 2022 (8x64)",                  CWG128,  8,fill_cwg128   },
   {"ranlux++", "ranlux++, Sibidanov, 2017 (9x64)",             RANLUXPP,9,fill_ranluxpp },
   {"chacha20", "ChaCha20, Bernstein, 2008 (6x64)",             CHACHA20,6,fill_chacha   },
 };
 // For x256++simd, state.xo stream 0 (4 words) is seeded or initialized directly and
 // then jumped to streams 1..3. For sfc64simd, the base state words are replicated to
-// 4 streams with counters s, s+2^62, s+2*2^62, s+3*2^62.
+// 8 streams with counters s + k*2^61 for k = 0..7.
 
 static rng_entry *find_entry(rng_engine e) {
   for (int i = 0; i < LEN(rng_table); i++)
@@ -93,14 +93,21 @@ randompack_rng *randompack_create(const char *engine) {
   if (!ALLOC(rng, 1)) return 0;
   rng->engine = INVALID;
   rng->cpu_has_avx2 = false;
+  rng->cpu_has_avx512 = false;
   if (!select_engine(engine, rng)) {
     rng->last_error = "unknown engine name (spelling error in requested engine)";
     return rng;
   }
+#if defined(BUILD_AVX512)
+  rng->cpu_has_avx512 = cpu_has_avx512();
+#endif
 #if defined(BUILD_AVX2)
   rng->cpu_has_avx2 = cpu_has_avx2();
   if (rng->engine == FAST && rng->cpu_has_avx2) rng->fill = fill_fast_avx2;
   if (rng->engine == SFCSIMD && rng->cpu_has_avx2) rng->fill = fill_sfc64simd_avx2;
+#endif
+#if defined(BUILD_AVX512)
+  if (rng->engine == SFCSIMD && rng->cpu_has_avx512) rng->fill = fill_sfc64simd_avx512;
 #endif
   rand_randomize(rng);
   rand_init(rng);
@@ -342,6 +349,9 @@ bool randompack_deserialize(const uint8_t *buf, int len, randompack_rng *rng) {
 #if defined(BUILD_AVX2)
   if (rng->engine == FAST && rng->cpu_has_avx2) rng->fill = fill_fast_avx2;
   if (rng->engine == SFCSIMD && rng->cpu_has_avx2) rng->fill = fill_sfc64simd_avx2;
+#endif
+#if defined(BUILD_AVX512)
+  if (rng->engine == SFCSIMD && rng->cpu_has_avx512) rng->fill = fill_sfc64simd_avx512;
 #endif
   return true;
 }
@@ -619,15 +629,28 @@ bool randompack_unif(double x[], size_t len, double a, double b,
   if (a==0 && b==1) return true;
 #if defined(FP_FAST_FMA)
   double w = nextafter(b - a, 0.0);
-  for (size_t i = 0; i < len; i++) x[i] = fma(w, x[i], a);
 #else
   double w = b - a;
-  for (size_t i = 0; i < len; i++) {
-    double y = a + w*x[i];
-    y = y > b ? b : y;
-    x[i] = y;
+#endif
+#if defined(BUILD_AVX2)
+  if (rng->cpu_has_avx2) {
+    affine_double_avx2(x, len, a, w, b);
+    return true;
   }
 #endif
+#if defined(BUILD_AVX512)
+  if (rng->cpu_has_avx512) {
+    affine_double_avx512(x, len, a, w, b);
+    return true;
+  }
+#endif
+  for (size_t i = 0; i < len; i++) {
+    double y = a + w*x[i];
+#if !defined(FP_FAST_FMA)
+    y = y > b ? b : y;
+#endif
+    x[i] = y;
+  }
   return true;
 }
 

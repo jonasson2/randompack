@@ -34,14 +34,14 @@ typedef enum {
 } rng_engine;
 
 typedef struct {
-  uint64_t s0[4], s1[4], s2[4], s3[4];
+  uint64_t s0[8], s1[8], s2[8], s3[8];
 } xo256;
 
 typedef union {
   uint8_t u8[48];   // 6 words, used by chacha20
   uint32_t u32[18]; // 9 words, used when seeding and by chacha20
   uint64_t u64[9];  // used by most engines
-  xo256 xo;         // 16 words, used by x256++simd and sfc64simd
+  xo256 xo;         // 32 words, first 16 used by x256++simd, all by 8-lane sfc64simd
   pcg64_t pcg;      // 4 words
   #if HAVE128
   uint128_t u128[4];
@@ -60,6 +60,7 @@ struct randompack_rng {
   bool usefullmantissa;
   bool bitexact;
   bool cpu_has_avx2;
+  bool cpu_has_avx512;
   union {
     uint8_t u8[8*BUFSIZE];
     uint16_t u16[4*BUFSIZE];
@@ -67,6 +68,18 @@ struct randompack_rng {
     uint64_t u64[BUFSIZE];
   } buf;
 };
+
+#if defined(BUILD_AVX512)
+bool cpu_has_avx512(void);
+void fill_sfc64simd_avx512(uint64_t *buf, size_t len, randompack_state *state);
+void rand_dble_avx512(double x[], size_t len, randompack_rng *rng);
+void scale_double_avx512(double x[], size_t len, double scale);
+void scale_float_avx512(float x[], size_t len, float scale);
+void shift_scale_double_avx512(double x[], size_t len, double shift, double scale);
+void affine_double_avx512(double x[], size_t len, double shift, double scale,
+  double hi);
+void shift_scale_float_avx512(float x[], size_t len, float shift, float scale);
+#endif
 
 #if defined(BUILD_AVX2)
 bool cpu_has_avx2(void);
@@ -77,6 +90,8 @@ void rand_float_avx2(float x[], size_t len, randompack_rng *rng);
 void scale_double_avx2(double x[], size_t len, double scale);
 void scale_float_avx2(float x[], size_t len, float scale);
 void shift_scale_double_avx2(double x[], size_t len, double shift, double scale);
+void affine_double_avx2(double x[], size_t len, double shift, double scale,
+  double hi);
 void shift_scale_float_avx2(float x[], size_t len, float shift, float scale);
 #if defined(RANDOMPACK_TEST_HOOKS)
 int randompack_avx2_used(void);

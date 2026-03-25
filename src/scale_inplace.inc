@@ -7,9 +7,14 @@ ALWAYS_INLINE void shift_scale_double_inplace(double *x, size_t len, double shif
     shift_scale_double_avx2(x, len, shift, scale);
     return;
   }
-#else
-  (void)rng;
 #endif
+#if defined(BUILD_AVX512)
+  if (rng->cpu_has_avx512) {
+    shift_scale_double_avx512(x, len, shift, scale);
+    return;
+  }
+#endif
+  (void)rng;
   for (size_t i = 0; i < len; i++) x[i] = shift + scale*x[i];
 }
 
@@ -20,9 +25,14 @@ ALWAYS_INLINE void shift_scale_float_inplace(float *x, size_t len, float shift,
     shift_scale_float_avx2(x, len, shift, scale);
     return;
   }
-#else
-  (void)rng;
 #endif
+#if defined(BUILD_AVX512)
+  if (rng->cpu_has_avx512) {
+    shift_scale_float_avx512(x, len, shift, scale);
+    return;
+  }
+#endif
+  (void)rng;
   for (size_t i = 0; i < len; i++) x[i] = shift + scale*x[i];
 }
 

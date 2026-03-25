@@ -67,14 +67,18 @@ endif
 
 build_avx2 = false
 avx2_c_args = []
+build_avx512 = false
+avx512_c_args = []
 
 if host_machine.cpu_family() in ['x86', 'x86_64']
   if cc.get_id() in ['gcc', 'clang', 'appleclang', 'msvc']
     build_avx2 = true
+    build_avx512 = cc.get_id() != 'msvc'
   endif
 endif
 
 build_avx2 = build_avx2 and not force_nosimd
+build_avx512 = build_avx512 and build_avx2
 
 if build_avx2
   if cc.get_id() == 'msvc'
@@ -82,6 +86,11 @@ if build_avx2
   else
     avx2_c_args = cc.get_supported_arguments(['-mavx2', '-mfma'])
   endif
+endif
+
+if build_avx512
+  avx512_c_args = cc.get_supported_arguments(['-mavx512f', '-mavx512dq'])
+  build_avx512 = avx512_c_args.length() == 2
 endif
 
 c_deps = []

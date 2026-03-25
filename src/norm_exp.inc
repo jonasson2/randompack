@@ -12,7 +12,12 @@
 #define NORM_LIKELY_DECODE(x, r, idx, ki, rabs)                         \
  ki = ki_double[idx];                                                   \
  rabs = r & 0x000fffffffffffff;                                         \
- x = ((r >> 52) & 1 ? -(int64_t)rabs : (int64_t)rabs) * wi_double[idx];
+ do {                                                                    \
+   int64_t s = (int64_t)rabs;                                            \
+   int64_t t = -s;                                                       \
+   if ((r >> 52) & 1) s = t;                                            \
+   x = (double)s * wi_double[idx];                                       \
+ } while (0);
 
 #include <stdint.h>
 #include <math.h>
@@ -112,6 +117,7 @@ ALWAYS_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x,
     idx = ru >> 56;
     NORM_LIKELY_DECODE(x, ru, idx, ki, rabs);
     if (LIKELY(rabs < ki)) return x;
+    return x;
   }
 }
 

@@ -71,8 +71,8 @@ static inline void setup_sfc64simd_streams(randompack_rng *rng) {
   uint64_t b = rng->state.u64[1];
   uint64_t c = rng->state.u64[2];
   uint64_t s = rng->state.u64[3];
-  uint64_t delta = 1ULL << 62;
-  for (int i = 0; i < 4; i++) {
+  uint64_t delta = 1ULL << 61;
+  for (int i = 0; i < 8; i++) {
     st->s0[i] = a;
     st->s1[i] = b;
     st->s2[i] = c;

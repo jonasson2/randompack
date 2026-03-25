@@ -198,10 +198,14 @@ HIDDEN void fill_fast_avx2(uint64_t *buf, size_t len, randompack_state *state) {
 HIDDEN void fill_sfc64simd_avx2(uint64_t *buf, size_t len, randompack_state *state) {
   uint64_t *out = buf;
   xo256 *st = &state->xo;
-  VEC_T a = VEC_LOAD(&st->s0[0]);
-  VEC_T b = VEC_LOAD(&st->s1[0]);
-  VEC_T c = VEC_LOAD(&st->s2[0]);
-  VEC_T d = VEC_LOAD(&st->s3[0]);
+  VEC_T a0 = VEC_LOAD(&st->s0[0]);
+  VEC_T b0 = VEC_LOAD(&st->s1[0]);
+  VEC_T c0 = VEC_LOAD(&st->s2[0]);
+  VEC_T d0 = VEC_LOAD(&st->s3[0]);
+  VEC_T a1 = VEC_LOAD(&st->s0[4]);
+  VEC_T b1 = VEC_LOAD(&st->s1[4]);
+  VEC_T c1 = VEC_LOAD(&st->s2[4]);
+  VEC_T d1 = VEC_LOAD(&st->s3[4]);
   VEC_T one = _mm256_set1_epi64x(1);
 #if defined(RANDOMPACK_TEST_HOOKS)
   avx2_used++;
@@ -209,24 +213,30 @@ HIDDEN void fill_sfc64simd_avx2(uint64_t *buf, size_t len, randompack_state *sta
   size_t i = 0;
   for (; i + 16 <= len; i += 16) {
     VEC_T r0, r1, r2, r3;
-    SFC64_STEP_VEC(a, b, c, d, one, r0);
-    SFC64_STEP_VEC(a, b, c, d, one, r1);
-    SFC64_STEP_VEC(a, b, c, d, one, r2);
-    SFC64_STEP_VEC(a, b, c, d, one, r3);
+    SFC64_STEP_VEC(a0, b0, c0, d0, one, r0);
+    SFC64_STEP_VEC(a1, b1, c1, d1, one, r1);
+    SFC64_STEP_VEC(a0, b0, c0, d0, one, r2);
+    SFC64_STEP_VEC(a1, b1, c1, d1, one, r3);
     VEC_STORE(out + i, r0);
     VEC_STORE(out + i + 4, r1);
     VEC_STORE(out + i + 8, r2);
     VEC_STORE(out + i + 12, r3);
   }
-  for (; i < len; i += 4) {
-    VEC_T r;
-    SFC64_STEP_VEC(a, b, c, d, one, r);
-    VEC_STORE(out + i, r);
+  for (; i < len; i += 8) {
+    VEC_T r0, r1;
+    SFC64_STEP_VEC(a0, b0, c0, d0, one, r0);
+    SFC64_STEP_VEC(a1, b1, c1, d1, one, r1);
+    VEC_STORE(out + i, r0);
+    VEC_STORE(out + i + 4, r1);
   }
-  VEC_STORE(&st->s0[0], a);
-  VEC_STORE(&st->s1[0], b);
-  VEC_STORE(&st->s2[0], c);
-  VEC_STORE(&st->s3[0], d);
+  VEC_STORE(&st->s0[0], a0);
+  VEC_STORE(&st->s1[0], b0);
+  VEC_STORE(&st->s2[0], c0);
+  VEC_STORE(&st->s3[0], d0);
+  VEC_STORE(&st->s0[4], a1);
+  VEC_STORE(&st->s1[4], b1);
+  VEC_STORE(&st->s2[4], c1);
+  VEC_STORE(&st->s3[4], d1);
 }
 
 HIDDEN void rand_dble_avx2(double x[], size_t len, randompack_rng *rng) {
@@ -337,6 +347,65 @@ HIDDEN void shift_scale_double_avx2(double x[], size_t len, double shift,
     _mm256_storeu_pd(x + i, v);
   }
   for (; i < len; i++) x[i] = shift + scale*x[i];
+}
+
+HIDDEN void affine_double_avx2(double x[], size_t len, double shift,
+  double scale, double hi) {
+#if defined(RANDOMPACK_TEST_HOOKS)
+  avx2_used++;
+#endif
+  size_t i = 0;
+  __m256d s = _mm256_set1_pd(scale);
+  __m256d b = _mm256_set1_pd(shift);
+#if !defined(FP_FAST_FMA)
+  __m256d h = _mm256_set1_pd(hi);
+#endif
+  for (; i + 16 <= len; i += 16) {
+    __m256d v0 = _mm256_loadu_pd(x + i);
+    __m256d v1 = _mm256_loadu_pd(x + i + 4);
+    __m256d v2 = _mm256_loadu_pd(x + i + 8);
+    __m256d v3 = _mm256_loadu_pd(x + i + 12);
+#if defined(FP_FAST_FMA) && defined(__FMA__)
+    v0 = _mm256_fmadd_pd(v0, s, b);
+    v1 = _mm256_fmadd_pd(v1, s, b);
+    v2 = _mm256_fmadd_pd(v2, s, b);
+    v3 = _mm256_fmadd_pd(v3, s, b);
+#else
+    v0 = _mm256_add_pd(_mm256_mul_pd(v0, s), b);
+    v1 = _mm256_add_pd(_mm256_mul_pd(v1, s), b);
+    v2 = _mm256_add_pd(_mm256_mul_pd(v2, s), b);
+    v3 = _mm256_add_pd(_mm256_mul_pd(v3, s), b);
+#if !defined(FP_FAST_FMA)
+    v0 = _mm256_min_pd(v0, h);
+    v1 = _mm256_min_pd(v1, h);
+    v2 = _mm256_min_pd(v2, h);
+    v3 = _mm256_min_pd(v3, h);
+#endif
+#endif
+    _mm256_storeu_pd(x + i, v0);
+    _mm256_storeu_pd(x + i + 4, v1);
+    _mm256_storeu_pd(x + i + 8, v2);
+    _mm256_storeu_pd(x + i + 12, v3);
+  }
+  for (; i + 4 <= len; i += 4) {
+    __m256d v = _mm256_loadu_pd(x + i);
+#if defined(FP_FAST_FMA) && defined(__FMA__)
+    v = _mm256_fmadd_pd(v, s, b);
+#else
+    v = _mm256_add_pd(_mm256_mul_pd(v, s), b);
+#if !defined(FP_FAST_FMA)
+    v = _mm256_min_pd(v, h);
+#endif
+#endif
+    _mm256_storeu_pd(x + i, v);
+  }
+for (; i < len; i++) {
+    double y = shift + scale*x[i];
+#if !defined(FP_FAST_FMA)
+    y = y > hi ? hi : y;
+#endif
+    x[i] = y;
+  }
 }
 
 HIDDEN void shift_scale_float_avx2(float x[], size_t len, float shift,
