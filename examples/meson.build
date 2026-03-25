@@ -153,6 +153,12 @@ if testu01_prefix != ''
     dependencies : [randompack_dep] + testu01_libs,
     include_directories : [testu01_inc, common_inc],
   )
+  test_sample_prod = executable(
+    'TestSampleProd',
+    'TestSampleProd.c',
+    dependencies : [randompack_dep] + testu01_libs,
+    include_directories : [testu01_inc, common_inc],
+  )
 endif
 
 if threads_dep.found() and pthreads_ok
