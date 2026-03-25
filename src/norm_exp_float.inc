@@ -40,7 +40,6 @@ ALWAYS_INLINE float normf_unlikely(randompack_rng *rng, int *w, float x,
   printSetNdec(6);
   uint32_t ru, tmp, L, R, Y, YL;
   const int inflection_idx = 52;
-  float f0, f1, y;
   for (;;) {
     Y = draw_u32(rng, w);
     L = (1U << 23) - ki;
@@ -64,10 +63,7 @@ ALWAYS_INLINE float normf_unlikely(randompack_rng *rng, int *w, float x,
       if (YL > R + Dzig52f) goto next_try;
       if (YL + Dnormf[idx] < R) return x;
     }
-    f0 = fi_float[idx-1];
-    f1 = fi_float[idx];
-    y = f1 + u*(f0 - f1);
-    if (below_normpdf_f(idx, x, y)) return x;
+    if (below_normpdf_f(idx, x, u)) return x;
   next_try:
     ru = draw_u32(rng, w);
     idx = ru >> 24;

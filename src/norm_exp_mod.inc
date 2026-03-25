@@ -80,13 +80,13 @@ NEVER_INLINE bool below_normpdf(uint8_t idx, double x, double y) {
 
 ALWAYS_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x,
                                    uint8_t idx, uint64_t rabs, uint64_t ki) {
-  uint64_t ru, tmp, L, R, Y, YL;
-  const int inflection_idx = 52;
-  double f0, f1, y;
+  uint64_t ru, Y;
+  // uint64_t tmp, L, R, YL;
+  // const int inflection_idx = 52;
   for (;;) {
     Y = draw_u64(rng, w);
-    L = (1ULL << 52) - ki;
-    R = (1ULL << 52) - rabs;
+    // L = (1ULL << 52) - ki;
+    // R = (1ULL << 52) - rabs;
     double u = U64_TO_DOUBLE(Y);
     if (UNLIKELY(idx == 0)) {   //
       x = norm_tail_draw(rng, rabs, u, w);
@@ -107,7 +107,7 @@ ALWAYS_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x,
     //   if (YL + Dnorm[idx] < R) return x;
     // }
     if (below_normpdf(idx, x, u)) return x;
-  next_try:
+    //  next_try:
     ru = draw_u64(rng, w);
     idx = ru >> 56;
     NORM_LIKELY_DECODE(x, ru, idx, ki, rabs);
@@ -163,19 +163,20 @@ NEVER_INLINE double exp_taildraw(randompack_rng *rng, int *w) {
 ALWAYS_INLINE double exp_unlikely(randompack_rng *rng, int *w, double x, uint8_t idx,
   uint64_t r) {
   double y;
-  uint64_t Y, YL, R, L, tmp, ke = ke_double[idx];
+  uint64_t Y, ke = ke_double[idx];
+  // uint64_t L, R, YL, tmp;
   while (true) {
     if (UNLIKELY(idx == 0)) x = exp_taildraw(rng, w);
     Y = draw_u64(rng, w);
-    L = (1ULL << 53) - ke;
-    R = (1ULL << 53) - r;
+    // L = (1ULL << 53) - ke;
+    // R = (1ULL << 53) - r;
     // MUL64_WIDE(Y, L, YL, tmp);
     // (void)tmp;
     // if (YL > R) goto next_try;         // above secant
     // if (YL + Dexp[idx] < R) return x;  // below pdf by the gap bound
     y = U64_TO_DOUBLE(Y);
     if (below_exppdf(idx, x, y)) return x; // below curve
-  next_try:
+    // next_try:
     r = draw_u64(rng, w);
     idx = r >> 56;
     r &= 0x1FFFFFFFFFFFFF;

@@ -83,7 +83,6 @@ ALWAYS_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x,
   printSetNdec(6);
   uint64_t ru, tmp, L, R, Y, YL;
   const int inflection_idx = 52;
-  double f0, f1, y;
   for (;;) {
     Y = draw_u64(rng, w);
     L = (1ULL << 52) - ki;
