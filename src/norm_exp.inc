@@ -169,7 +169,7 @@ ALWAYS_INLINE double exp_unlikely(randompack_rng *rng, int *w, double x, uint8_t
   double y;
   uint64_t Y, YL, R, L, tmp, ke = ke_double[idx];
   while (true) {
-    if (UNLIKELY(idx == 0)) x = exp_taildraw(rng, w);
+    if (UNLIKELY(idx == 0)) return exp_taildraw(rng, w);
     Y = draw_u64(rng, w);
     L = (1ULL << 53) - ke;
     R = (1ULL << 53) - r;
