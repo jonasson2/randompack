@@ -8,7 +8,7 @@
 // not handle xorshift128+ but its 2^64 matched the Italian website and the other two were
 // obtained with the same Python program as the rest.
 //
-// Supported jump exponents 32, 64, 96, 128, 192, 254 (the last for the SIMD streams).
+// Supported jump exponents 32, 64, 96, 128, 192, 253 (the last for the SIMD streams).
 
 static inline void xoshiro256_step(uint64_t s[4]) {
   uint64_t t = s[1] << 17;
@@ -37,9 +37,9 @@ static inline void xoshiro256_jump(uint64_t s[4], int p) {
     jump192[4] =
     { 0x76e15d3efefdcbbfULL, 0xc5004e441c522fb3ULL,
       0x77710069854ee241ULL, 0x39109bb02acbe635ULL},
-    jump254[4] =
-    { 0xde5b821c4a3d86e8ULL, 0x861fffe004c85acaULL,
-      0x3413838181a6096fULL, 0x460de3bdbe1cb3acULL};
+    jump253[4] =
+    { 0xdfca68648b28c5afULL, 0xb56437fb2b753802ULL,
+      0xebb82aacdf6ca80dULL, 0xa170e108788db093ULL};
   const uint64_t *jump;
   switch (p) {
   case 32:  jump = jump32;  break;
@@ -47,7 +47,7 @@ static inline void xoshiro256_jump(uint64_t s[4], int p) {
   case 96:  jump = jump96;  break;
   case 128: jump = jump128; break;
   case 192: jump = jump192; break;
-  case 254: jump = jump254; break;
+  case 253: jump = jump253; break;
   default:  assert(0); }
   uint64_t s0, s1, s2, s3;
   s0 = s1 = s2 = s3 = 0;

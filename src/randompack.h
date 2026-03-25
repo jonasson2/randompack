@@ -316,7 +316,7 @@ bool randompack_bitexact( // Use bitexact log/exp (default false)
 );
 
 bool randompack_jump( // Jump xor-family or ranlux rng by 2^p steps, false on error
-  int p,               // in      Jump exponent (32/64/96/128/192)
+  int p,               // in      Jump exponent (32/64/96/128/192, or 253 for x256* engines)
   randompack_rng *rng  // in/out  Random number generator
 );
 

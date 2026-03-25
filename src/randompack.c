@@ -197,8 +197,13 @@ bool randompack_jump(int p, randompack_rng *rng) {
     rng->last_error = "randompack_jump: Only supported for xor-family engines and ranlux++";
     return false;
   }
-  if (rng->engine == X256PP || rng->engine == X256SS || rng->engine == FAST ||
-      rng->engine == RANLUXPP) {
+  if (rng->engine == X256PP || rng->engine == X256SS || rng->engine == FAST) {
+    if (p != 32 && p != 64 && p != 96 && p != 128 && p != 192 && p != 253) {
+      rng->last_error = "unsupported jump exponent (must be 32/64/96/128/192/253)";
+      return false;
+    }
+  }
+  else if (rng->engine == RANLUXPP) {
     if (p != 32 && p != 64 && p != 96 && p != 128 && p != 192) {
       rng->last_error = "unsupported jump exponent (must be 32/64/96/128/192)";
       return false;

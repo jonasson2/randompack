@@ -116,7 +116,7 @@ static inline void fill_stream_states_with_jump(randompack_rng *rng) {
   for (int i=1; i<4; i++) {
     uint64_t stream_state[4];
     get_stream(stream_state, i-1, rng);
-    xoshiro256_jump(stream_state, 254);
+    xoshiro256_jump(stream_state, 253);
     set_stream(i, stream_state, rng);
   }
 }
