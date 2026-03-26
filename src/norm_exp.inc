@@ -96,7 +96,7 @@ NEVER_INLINE double norm_tail_draw(randompack_rng *rng, uint64_t rabs, double y,
   }
 }
 
-ALWAYS_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x,
+NEVER_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x,
                                    uint8_t idx, uint64_t rabs, uint64_t ki) {
   printSetNdec(6);
   uint64_t ru, tmp, L, R, Y, YL;

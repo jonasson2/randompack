@@ -69,34 +69,51 @@ NEVER_INLINE float norm_tail_draw_f(randompack_rng *rng, uint32_t rabs, float y,
   }
 }
 
-ALWAYS_INLINE float normf_unlikely(randompack_rng *rng, int *w, float x,
+ALWAYS_INLINE float avx512_unlikely(randompack_rng *rng, int *w, float x,
+                                    uint8_t idx, uint32_t rabs, uint32_t ki) {
+  for (;;) {
+    float u = draw_u01f(rng, w);
+    if (UNLIKELY(idx == 0)) 
+      return norm_tail_draw_f(rng, rabs, u, w);
+    else if (below_normpdf_f(idx, x, u))
+      return x;
+    uint32_t ru = draw_u32(rng, w);
+    uint8_t idx = ru >> 24;
+    NORM_LIKELY_DECODE_F(x, ru, idx, ki, rabs);
+    if (LIKELY(rabs < ki)) return x;
+  }
+}
+
+NEVER_INLINE float normf_unlikely(randompack_rng *rng, int *w, float x,
   uint8_t idx, uint32_t rabs, uint32_t ki) {
   printSetNdec(6);
   uint32_t ru, tmp, L, R, Y, YL;
   const int inflection_idx = 52;
   for (;;) {
     Y = draw_u32(rng, w);
-    // L = (1U << 23) - ki;
-    // R = (1U << 23) - rabs;
+    L = (1U << 23) - ki;
+    R = (1U << 23) - rabs;
     float u = U32_TO_FLOAT(Y);
     if (UNLIKELY(idx == 0)) {
       x = norm_tail_draw_f(rng, rabs, u, w);
       return x;
     }
-    // MUL32_WIDE(Y, L, YL, tmp);
-    // (void)tmp;
-    // if (LIKELY(idx > inflection_idx)) {
-    //   if (YL > R) goto next_try;
-    //   if (YL + Dnormf[idx] < R) return x;
-    // }
-    // else if (LIKELY(idx < inflection_idx)) {
-    //   if (YL < R) return x;
-    //   if (YL > R + Dnormf[idx]) goto next_try;
-    // }
-    // else {
-    //   if (YL > R + Dzig52f) goto next_try;
-    //   if (YL + Dnormf[idx] < R) return x;
-    // }
+    if (!rng->cpu_has_avx512) {
+      MUL32_WIDE(Y, L, YL, tmp);
+      (void)tmp;
+      if (LIKELY(idx > inflection_idx)) {
+        if (YL > R) goto next_try;
+        if (YL + Dnormf[idx] < R) return x;
+      }
+      else if (LIKELY(idx < inflection_idx)) {
+        if (YL < R) return x;
+        if (YL > R + Dnormf[idx]) goto next_try;
+      }
+      else {
+        if (YL > R + Dzig52f) goto next_try;
+        if (YL + Dnormf[idx] < R) return x;
+      }
+    }
     if (below_normpdf_f(idx, x, u)) return x;
   next_try:
     ru = draw_u32(rng, w);
@@ -114,7 +131,8 @@ ALWAYS_INLINE float draw_normf(randompack_rng *rng, int *w) {
   idx = r >> 24;
   NORM_LIKELY_DECODE_F(x, r, idx, ki, rabs);
   if (LIKELY(rabs < ki)) return x;
-  x = normf_unlikely(rng, w, x, idx, rabs, ki);
+  if (rng->cpu_has_avx512) x = avx512_unlikely(rng, w, x, idx, rabs, ki);
+  else                     x = normf_unlikely(rng, w, x, idx, rabs, ki);
   return x;
 }
 
@@ -125,11 +143,15 @@ NEVER_INLINE void rand_normf(float *buf, size_t len, randompack_rng *rng) {
   uint32_t r, rabs, ki;
   float x;
   for (size_t i = len; i-- > 0;) {
-      uint8_t *bufpi = (uint8_t*)(buf + i);
+    uint8_t *bufpi = (uint8_t*)(buf + i);
     memcpy(&r, bufpi, sizeof(r));
     memcpy(&idx, (uint8_t*)(buf + i) + 3, 1);  // measured slightly faster than >> 24
     NORM_LIKELY_DECODE_F(x, r, idx, ki, rabs);
-    buf[i] = LIKELY(rabs < ki) ? x : normf_unlikely(rng, &w, x, idx, rabs, ki);
+    if (UNLIKELY(rabs > ki)) {
+      if (rng->cpu_has_avx512) x = avx512_unlikely(rng, &w, x, idx, rabs, ki);
+      else                     x = normf_unlikely(rng, &w, x, idx, rabs, ki);
+    }
+    buf[i] = x;
   }
   exit_u32_mode(rng, w);
 }
