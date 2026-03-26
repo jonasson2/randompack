@@ -824,7 +824,3 @@ bool randompack_mvn(char *transp, double mu[], double Sig[], int d, size_t n, do
   }
   else return true;
 }
-
-// =========== Include file with single precision (float) random generators ==============
-
-#include "randompack_float.inc"

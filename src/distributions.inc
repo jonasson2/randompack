@@ -496,6 +496,3 @@ static bool rand_mvn(char transp, double mu[], double Sig[], int d, size_t len,
   if (Lalloc && L) FREE(L);
   return false;
 }
-
-#include "rand_float.inc"
-#include "distrib_float.inc"

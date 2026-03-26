@@ -2,6 +2,7 @@ randompack_inc = [inc] + fortran_inc
 
 randompack_src = files(
   'randompack.c',
+  'randompack_float.c',
   'printX.c',
   'rp_dpstrf.c',
 )

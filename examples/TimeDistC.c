@@ -222,22 +222,22 @@ int main(int argc, char **argv) {
   }
   warmup_cpu(100);
   dist_spec dists[] = {
-    // { U01,       "u01",            0, { 0, 0} },
-    // { UNIF,      "unif(2,5)",      2, { 2, 5} },
+    { U01,       "u01",            0, { 0, 0} },
+    { UNIF,      "unif(2,5)",      2, { 2, 5} },
     { NORM,      "norm",           0, { 0, 0} },
-    // { NORMAL,    "normal(2,3)",    2, { 2, 3} },
-    // { EXP1,      "exp(1)",         1, { 1, 0} },
-    // { EXP2,      "exp(2)",         1, { 2, 0} },
-    // { LOGNORMAL, "lognormal(0,1)", 2, { 0, 1} },
-    // { GUMBEL,    "gumbel(0,1)",    2, { 0, 1} },
-    // { PARETO,    "pareto(1,2)",    2, { 1, 2} },
-    // { GAMMA,     "gamma(2,3)",     2, { 2, 3} },
-    // { GAMMA,     "gamma(0.5,2)",   2, { 0.5, 2} },
-    // { BETA,      "beta(2,5)",      2, { 2, 5} },
-    // { CHI2,      "chi2(5)",        1, { 5, 0} },
-    // { T,         "t(10)",          1, {10, 0} },
-    // { F,         "F(5,10)",        2, { 5,10} },
-    // { WEIBULL,   "weibull(2,3)",   2, { 2, 3} },
+    { NORMAL,    "normal(2,3)",    2, { 2, 3} },
+    { EXP1,      "exp(1)",         1, { 1, 0} },
+    { EXP2,      "exp(2)",         1, { 2, 0} },
+    { LOGNORMAL, "lognormal(0,1)", 2, { 0, 1} },
+    { GUMBEL,    "gumbel(0,1)",    2, { 0, 1} },
+    { PARETO,    "pareto(1,2)",    2, { 1, 2} },
+    { GAMMA,     "gamma(2,3)",     2, { 2, 3} },
+    { GAMMA,     "gamma(0.5,2)",   2, { 0.5, 2} },
+    { BETA,      "beta(2,5)",      2, { 2, 5} },
+    { CHI2,      "chi2(5)",        1, { 5, 0} },
+    { T,         "t(10)",          1, {10, 0} },
+    { F,         "F(5,10)",        2, { 5,10} },
+    { WEIBULL,   "weibull(2,3)",   2, { 2, 3} },
   };
   printf("engine:           %s\n", engine);
   printf("time per value:   ns/value\n");

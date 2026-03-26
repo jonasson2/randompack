@@ -228,5 +228,3 @@ ALWAYS_INLINE void rand_exp(double *buf, size_t len, randompack_rng *rng) {
   }
   exit_u64_mode(rng, w);
 }
-
-#include "norm_exp_float.inc"

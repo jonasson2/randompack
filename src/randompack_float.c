@@ -1,5 +1,23 @@
 // -*- C -*-
 
+#include <stdint.h>
+#include <math.h>
+#include <float.h>
+#include <string.h>
+#include "randompack.h"
+#include "randompack_internal.h"
+#include "printX.h"
+#include "openlibm.inc"
+#include "log_exp_float.inc"
+#include "buffer_draw.inc"
+#include "scale_inplace_float.inc"
+#include "ziggurat_const_float.h"
+#include "zig_D_float.h"
+
+#include "rand_float.inc"
+#include "norm_exp_float.inc"
+#include "distrib_float.inc"
+
 bool randompack_u01f(float x[], size_t len, randompack_rng *rng) {
   if (!rng) return false;
   if (!x)
@@ -18,8 +36,8 @@ bool randompack_uniff(float x[], size_t len, float a, float b, randompack_rng *r
     return false;
   }
   rng->last_error = 0;
-  rand_float(x, len, rng); // x in [0,1)
-  if (a==0 && b==1) return true;
+  rand_float(x, len, rng);
+  if (a == 0 && b == 1) return true;
 #if defined(FP_FAST_FMA)
   float w = nextafterf(b - a, 0.0f);
 #else
