@@ -634,30 +634,12 @@ bool randompack_unif(double x[], size_t len, double a, double b,
   rng->last_error = 0;
   rand_dble(x, len, rng); // x in [0,1)
   if (a==0 && b==1) return true;
-#if defined(FP_FAST_FMA)
+#if defined(FP_FAST_FMA) // guarantee output <= b when input < 1
   double w = nextafter(b - a, 0.0);
-#else
+#else 
   double w = b - a;
 #endif
-#if defined(BUILD_AVX2)
-  if (rng->cpu_has_avx2) {
-    affine_double_avx2(x, len, a, w, b);
-    return true;
-  }
-#endif
-#if defined(BUILD_AVX512)
-  if (rng->cpu_has_avx512) {
-    affine_double_avx512(x, len, a, w, b);
-    return true;
-  }
-#endif
-  for (size_t i = 0; i < len; i++) {
-    double y = a + w*x[i];
-#if !defined(FP_FAST_FMA)
-    y = y > b ? b : y;
-#endif
-    x[i] = y;
-  }
+  shift_scale_double_inplace(x, len, a, w, rng);
   return true;
 }
 

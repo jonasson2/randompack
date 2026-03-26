@@ -329,10 +329,17 @@ HIDDEN void shift_scale_double_avx2(double x[], size_t len, double shift,
     __m256d v1 = _mm256_loadu_pd(x + i + 4);
     __m256d v2 = _mm256_loadu_pd(x + i + 8);
     __m256d v3 = _mm256_loadu_pd(x + i + 12);
+#if defined(__FMA__)
+    v0 = _mm256_fmadd_pd(v0, s, b);
+    v1 = _mm256_fmadd_pd(v1, s, b);
+    v2 = _mm256_fmadd_pd(v2, s, b);
+    v3 = _mm256_fmadd_pd(v3, s, b);
+#else
     v0 = _mm256_add_pd(_mm256_mul_pd(v0, s), b);
     v1 = _mm256_add_pd(_mm256_mul_pd(v1, s), b);
     v2 = _mm256_add_pd(_mm256_mul_pd(v2, s), b);
     v3 = _mm256_add_pd(_mm256_mul_pd(v3, s), b);
+#endif
     _mm256_storeu_pd(x + i, v0);
     _mm256_storeu_pd(x + i + 4, v1);
     _mm256_storeu_pd(x + i + 8, v2);
@@ -340,7 +347,11 @@ HIDDEN void shift_scale_double_avx2(double x[], size_t len, double shift,
   }
   for (; i + 4 <= len; i += 4) {
     __m256d v = _mm256_loadu_pd(x + i);
+#if defined(__FMA__)
+    v = _mm256_fmadd_pd(v, s, b);
+#else
     v = _mm256_add_pd(_mm256_mul_pd(v, s), b);
+#endif
     _mm256_storeu_pd(x + i, v);
   }
   for (; i < len; i++) x[i] = shift + scale*x[i];
@@ -418,10 +429,17 @@ HIDDEN void shift_scale_float_avx2(float x[], size_t len, float shift,
     __m256 v1 = _mm256_loadu_ps(x + i + 8);
     __m256 v2 = _mm256_loadu_ps(x + i + 16);
     __m256 v3 = _mm256_loadu_ps(x + i + 24);
+#if defined(__FMA__)
+    v0 = _mm256_fmadd_ps(v0, s, b);
+    v1 = _mm256_fmadd_ps(v1, s, b);
+    v2 = _mm256_fmadd_ps(v2, s, b);
+    v3 = _mm256_fmadd_ps(v3, s, b);
+#else
     v0 = _mm256_add_ps(_mm256_mul_ps(v0, s), b);
     v1 = _mm256_add_ps(_mm256_mul_ps(v1, s), b);
     v2 = _mm256_add_ps(_mm256_mul_ps(v2, s), b);
     v3 = _mm256_add_ps(_mm256_mul_ps(v3, s), b);
+#endif
     _mm256_storeu_ps(x + i, v0);
     _mm256_storeu_ps(x + i + 8, v1);
     _mm256_storeu_ps(x + i + 16, v2);
@@ -429,7 +447,11 @@ HIDDEN void shift_scale_float_avx2(float x[], size_t len, float shift,
   }
   for (; i + 8 <= len; i += 8) {
     __m256 v = _mm256_loadu_ps(x + i);
+#if defined(__FMA__)
+    v = _mm256_fmadd_ps(v, s, b);
+#else
     v = _mm256_add_ps(_mm256_mul_ps(v, s), b);
+#endif
     _mm256_storeu_ps(x + i, v);
   }
   for (; i < len; i++) x[i] = shift + scale*x[i];

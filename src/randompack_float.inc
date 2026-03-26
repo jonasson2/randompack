@@ -22,15 +22,10 @@ bool randompack_uniff(float x[], size_t len, float a, float b, randompack_rng *r
   if (a==0 && b==1) return true;
 #if defined(FP_FAST_FMA)
   float w = nextafterf(b - a, 0.0f);
-  for (size_t i = 0; i < len; i++) x[i] = fmaf(w, x[i], a);
 #else
   float w = b - a;
-  for (size_t i = 0; i < len; i++) {
-    float y = a + w*x[i];
-    y = y > b ? b : y;
-    x[i] = y;
-  }
 #endif
+  shift_scale_float_inplace(x, len, a, w, rng);
   return true;
 }
 
