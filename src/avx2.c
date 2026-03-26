@@ -177,16 +177,12 @@ HIDDEN void fill_fast_avx2(uint64_t *buf, size_t len, randompack_state *state) {
 #if defined(RANDOMPACK_TEST_HOOKS)
   avx2_used++;
 #endif
-  for (size_t i = 0; i < len; i += 16) {
-    VEC_T r0, r1, r2, r3;
+  for (size_t i = 0; i < len; i += 8) {
+    VEC_T r0, r1;
     FAST_STEP_VEC(s00, s10, s20, s30, r0);
     FAST_STEP_VEC(s01, s11, s21, s31, r1);
-    FAST_STEP_VEC(s00, s10, s20, s30, r2);
-    FAST_STEP_VEC(s01, s11, s21, s31, r3);
     VEC_STORE(out + i, r0);
     VEC_STORE(out + i + 4, r1);
-    VEC_STORE(out + i + 8, r2);
-    VEC_STORE(out + i + 12, r3);
   }
   VEC_STORE(&st->s0[0], s00);
   VEC_STORE(&st->s1[0], s10);
@@ -223,19 +219,7 @@ HIDDEN void fill_sfc64simd_avx2(uint64_t *buf, size_t len, randompack_state *sta
 #if defined(RANDOMPACK_TEST_HOOKS)
   avx2_used++;
 #endif
-  size_t i = 0;
-  for (; i + 16 <= len; i += 16) {
-    VEC_T r0, r1, r2, r3;
-    SFC64_STEP_VEC(a0, b0, c0, d0, one, r0);
-    SFC64_STEP_VEC(a1, b1, c1, d1, one, r1);
-    SFC64_STEP_VEC(a0, b0, c0, d0, one, r2);
-    SFC64_STEP_VEC(a1, b1, c1, d1, one, r3);
-    VEC_STORE(out + i, r0);
-    VEC_STORE(out + i + 4, r1);
-    VEC_STORE(out + i + 8, r2);
-    VEC_STORE(out + i + 12, r3);
-  }
-  for (; i < len; i += 8) {
+  for (size_t i = 0; i < len; i += 8) {
     VEC_T r0, r1;
     SFC64_STEP_VEC(a0, b0, c0, d0, one, r0);
     SFC64_STEP_VEC(a1, b1, c1, d1, one, r1);
