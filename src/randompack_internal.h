@@ -74,6 +74,7 @@ bool cpu_has_avx512(void);
 void fill_fast_avx512(uint64_t *buf, size_t len, randompack_state *state);
 void fill_sfc64simd_avx512(uint64_t *buf, size_t len, randompack_state *state);
 void rand_dble_avx512(double x[], size_t len, randompack_rng *rng);
+void rand_float_avx512(float x[], size_t len, randompack_rng *rng);
 void scale_double_avx512(double x[], size_t len, double scale);
 void scale_float_avx512(float x[], size_t len, float scale);
 void shift_scale_double_avx512(double x[], size_t len, double shift, double scale);

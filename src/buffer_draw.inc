@@ -132,3 +132,16 @@ static inline void draw_raw_copy(uint8_t *out, size_t nbytes, randompack_rng *rn
     i += take;
   }
 }
+
+static inline void draw_raw_copy32(uint32_t *out, size_t nwords, randompack_rng *rng, int *w) {
+  size_t i = 0;
+  while (i < nwords) {
+    fill_if_empty32(rng, w);
+    size_t avail = 2*BUFSIZE - (size_t)(*w);
+    size_t rem = nwords - i;
+    size_t take = rem < avail ? rem : avail;
+    memcpy(out + i, rng->buf.u32 + (size_t)(*w), take*sizeof(uint32_t));
+    *w += (int)take;
+    i += take;
+  }
+}

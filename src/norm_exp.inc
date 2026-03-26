@@ -37,6 +37,9 @@ static uint64_t norm_slow_accept = 0;
 static uint64_t norm_slow_retry = 0;
 static uint64_t norm_slow_pdf_accept = 0;
 static uint64_t norm_slow_pdf_reject = 0;
+static uint64_t exp_pdf_calls = 0;
+static uint64_t exp_draws = 0;
+static uint64_t exp_slow = 0;
 
 void randompack_norm_counters_reset(void) {
   norm_pdf_calls = 0;
@@ -46,6 +49,9 @@ void randompack_norm_counters_reset(void) {
   norm_slow_retry = 0;
   norm_slow_pdf_accept = 0;
   norm_slow_pdf_reject = 0;
+  exp_pdf_calls = 0;
+  exp_draws = 0;
+  exp_slow = 0;
 }
 
 void randompack_norm_counters_get(uint64_t *draws, uint64_t *pdf_calls) {
@@ -60,6 +66,13 @@ void randompack_norm_counters_get_slow(uint64_t *tail, uint64_t *accept,
   if (retry) *retry = norm_slow_retry;
   if (pdf_accept) *pdf_accept = norm_slow_pdf_accept;
   if (pdf_reject) *pdf_reject = norm_slow_pdf_reject;
+}
+
+void randompack_exp_counters_get(uint64_t *draws, uint64_t *slow,
+  uint64_t *pdf_calls) {
+  if (draws) *draws = exp_draws;
+  if (slow) *slow = exp_slow;
+  if (pdf_calls) *pdf_calls = exp_pdf_calls;
 }
 
 //=============================== NORMAL DISTRIBUTION ==============================
@@ -101,17 +114,25 @@ ALWAYS_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x,
     (void) tmp;
     if (LIKELY(idx > inflection_idx)) {
       if (YL > R) goto next_try;
-      if (YL + Dnorm[idx] < R) return x;
+      if (YL + Dnorm[idx] < R) {
+        return x;
+      }
     }
     else if (LIKELY(idx < inflection_idx)) {
-      if (YL < R) return x;
+      if (YL < R) {
+        return x;
+      }
       if (YL > R + Dnorm[idx]) goto next_try;
     }
     else {
       if (YL > R + Dzig52) goto next_try;
-      if (YL + Dnorm[idx] < R) return x;
+      if (YL + Dnorm[idx] < R) {
+        return x;
+      }
     }
-    if (below_normpdf(idx, x, u)) return x;
+    if (below_normpdf(idx, x, u)) {
+      return x;
+    }
   next_try:
     ru = draw_u64(rng, w);
     idx = ru >> 56;
@@ -140,7 +161,7 @@ NEVER_INLINE void rand_norm(double *buf, size_t len, randompack_rng *rng) {
   uint64_t r, rabs, ki;
   double x;
   for (size_t i = len; i-- > 0;) {
-    uint8_t *bufpi = (uint8_t*)(buf + i);
+      uint8_t *bufpi = (uint8_t*)(buf + i);
     memcpy(&r, bufpi, sizeof(r));
     memcpy(&idx, (uint8_t*)(buf + i) + 7, 1);  // measured slightly faster than >> 56
     NORM_LIKELY_DECODE(x, r, idx, ki, rabs);

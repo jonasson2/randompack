@@ -105,6 +105,12 @@ void randompack_norm_counters_get_slow( // Read normal slow-path counters
   uint64_t *pdf_reject  // out     below_normpdf reject
 );
 
+void randompack_exp_counters_get( // Read exponential draw/slow/pdf counters
+  uint64_t *draws,      // out     Total exponential draws
+  uint64_t *slow,       // out     Slow-path entries
+  uint64_t *pdf_calls   // out     Count of below_exppdf calls
+);
+
 bool randompack_normal( // Generate normal random numbers N(mu,sigma), false on error
   double x[],           // out     vector: normal random numbers
   size_t len,           // in      Number of variates
@@ -344,6 +350,13 @@ bool randompack_normf( // Generate normal random floats N(0,1), false on error
   randompack_rng *rng   // in/out  Random number generator
 );
 
+void randompack_float_counters_reset(void); // Reset float norm/exp counters
+void randompack_normf_counters_get( // Read float normal draw/slow/pdf counters
+  uint64_t *draws,      // out     Total float normal draws
+  uint64_t *slow,       // out     Slow-path entries
+  uint64_t *pdf_calls   // out     Count of below_normpdf_f calls
+);
+
 bool randompack_normalf( // Generate normal random floats N(mu,sigma), false on error
   float x[],             // out     vector: normal random numbers
   size_t len,            // in      Number of variates
@@ -365,6 +378,12 @@ bool randompack_expf( // Generate exponential random floats, false on error
   size_t len,          // in      Number of variates
   float scale,         // in      Scale parameter (1.0f → standard exponential)
   randompack_rng *rng  // in/out  Random number generator
+);
+
+void randompack_expf_counters_get( // Read float exponential draw/slow/pdf counters
+  uint64_t *draws,      // out     Total float exponential draws
+  uint64_t *slow,       // out     Slow-path entries
+  uint64_t *pdf_calls   // out     Count of below_exppdf_f calls
 );
 
 bool randompack_gammaf( // Generate gamma random floats, false on error

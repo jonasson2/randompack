@@ -7,17 +7,59 @@
   (hi) = (uint32_t)(_p >> 32);                                 \
 } while (0)
 
-#define NORM_LIKELY_DECODE_F(x, r, idx, ki, rabs)                        \
- ki = ki_float[idx];                                                     \
- rabs = r & 0x007fffff;                                                  \
- x = ((r >> 23) & 1 ? -(int32_t)rabs : (int32_t)rabs) * wi_float[idx];
+#define NORM_LIKELY_DECODE_F(x, r, idx, ki, rabs) \
+ ki = ki_float[idx];                              \
+ rabs = r & 0x007fffff;                           \
+ do {                                             \
+   int32_t s = (int32_t)rabs;                     \
+   int32_t t = -s;                                \
+   if ((r >> 23) & 1) s = t;                      \
+   x = (float)s * wi_float[idx];                  \
+ } while (0);
+
+static uint64_t normf_pdf_calls = 0;
+static uint64_t normf_draws = 0;
+static uint64_t normf_slow = 0;
+static uint64_t expf_pdf_calls = 0;
+static uint64_t expf_draws = 0;
+static uint64_t expf_slow = 0;
+
+void randompack_float_counters_reset(void) {
+  normf_pdf_calls = 0;
+  normf_draws = 0;
+  normf_slow = 0;
+  expf_pdf_calls = 0;
+  expf_draws = 0;
+  expf_slow = 0;
+}
+
+void randompack_normf_counters_get(uint64_t *draws, uint64_t *slow,
+  uint64_t *pdf_calls) {
+  if (draws) *draws = normf_draws;
+  if (slow) *slow = normf_slow;
+  if (pdf_calls) *pdf_calls = normf_pdf_calls;
+}
+
+void randompack_expf_counters_get(uint64_t *draws, uint64_t *slow,
+  uint64_t *pdf_calls) {
+  if (draws) *draws = expf_draws;
+  if (slow) *slow = expf_slow;
+  if (pdf_calls) *pdf_calls = expf_pdf_calls;
+}
 
 //=============================== NORMAL DISTRIBUTION ==============================
 
-NEVER_INLINE float norm_tail_draw_f(randompack_rng *rng, uint32_t rabs, float y, int *w){
+NEVER_INLINE bool below_normpdf_f(uint8_t idx, float x, float y) {
+  float f0 = fi_float[idx-1];
+  float f1 = fi_float[idx];
+  return f1 + y*(f0 - f1) < openlibm_expf(-x*x/2);
+}
+
+NEVER_INLINE float norm_tail_draw_f(randompack_rng *rng, uint32_t rabs, float y,
+  int *w) {
   float xx, yy, x;
   for (;;) {
-    // Switch to 1.0 - U to avoid log(0.0), see GH 13361
+    /* Switch to 1.0 - U to avoid log(0.0), see GH 13361 */
     x = draw_u01f(rng, w);
     xx = -ziggurat_nor_inv_r_f * openlibm_log1pf(-x);
     yy = -openlibm_log1pf(-y);
@@ -27,42 +69,34 @@ NEVER_INLINE float norm_tail_draw_f(randompack_rng *rng, uint32_t rabs, float y,
   }
 }
 
-NEVER_INLINE bool below_normpdf_f(uint8_t idx, float x, float y) {
-  float f0 = fi_float[idx-1];
-  float f1 = fi_float[idx];
-  return f1 + y*(f0 - f1) < openlibm_expf(-x*x/2);
-}
-
-#define FLT(x) ((x)*0x1.0p-23f)
-
 ALWAYS_INLINE float normf_unlikely(randompack_rng *rng, int *w, float x,
-                                   uint8_t idx, uint32_t rabs, uint32_t ki) {
+  uint8_t idx, uint32_t rabs, uint32_t ki) {
   printSetNdec(6);
   uint32_t ru, tmp, L, R, Y, YL;
   const int inflection_idx = 52;
   for (;;) {
     Y = draw_u32(rng, w);
-    L = (1U << 23) - ki;
-    R = (1U << 23) - rabs;
+    // L = (1U << 23) - ki;
+    // R = (1U << 23) - rabs;
     float u = U32_TO_FLOAT(Y);
-    if (UNLIKELY(idx == 0)) {   //
+    if (UNLIKELY(idx == 0)) {
       x = norm_tail_draw_f(rng, rabs, u, w);
       return x;
     }
-    MUL32_WIDE(Y, L, YL, tmp);
-    (void) tmp;
-    if (LIKELY(idx > inflection_idx)) {
-      if (YL > R) goto next_try;
-      if (YL + Dnormf[idx] < R) return x;
-    }
-    else if (LIKELY(idx < inflection_idx)) {
-      if (YL < R) return x;
-      if (YL > R + Dnormf[idx]) goto next_try;
-    }
-    else {
-      if (YL > R + Dzig52f) goto next_try;
-      if (YL + Dnormf[idx] < R) return x;
-    }
+    // MUL32_WIDE(Y, L, YL, tmp);
+    // (void)tmp;
+    // if (LIKELY(idx > inflection_idx)) {
+    //   if (YL > R) goto next_try;
+    //   if (YL + Dnormf[idx] < R) return x;
+    // }
+    // else if (LIKELY(idx < inflection_idx)) {
+    //   if (YL < R) return x;
+    //   if (YL > R + Dnormf[idx]) goto next_try;
+    // }
+    // else {
+    //   if (YL > R + Dzig52f) goto next_try;
+    //   if (YL + Dnormf[idx] < R) return x;
+    // }
     if (below_normpdf_f(idx, x, u)) return x;
   next_try:
     ru = draw_u32(rng, w);
@@ -85,14 +119,13 @@ ALWAYS_INLINE float draw_normf(randompack_rng *rng, int *w) {
 }
 
 NEVER_INLINE void rand_normf(float *buf, size_t len, randompack_rng *rng) {
-  align64(rng);
-  draw_raw_copy((uint8_t *)buf, len*sizeof(uint32_t), rng);
   int w = enter_u32_mode(rng);
+  draw_raw_copy32((uint32_t *)buf, len, rng, &w);
   uint8_t idx;
   uint32_t r, rabs, ki;
   float x;
   for (size_t i = len; i-- > 0;) {
-    uint8_t *bufpi = (uint8_t*)(buf + i);
+      uint8_t *bufpi = (uint8_t*)(buf + i);
     memcpy(&r, bufpi, sizeof(r));
     memcpy(&idx, (uint8_t*)(buf + i) + 3, 1);  // measured slightly faster than >> 24
     NORM_LIKELY_DECODE_F(x, r, idx, ki, rabs);
@@ -109,10 +142,10 @@ NEVER_INLINE bool below_exppdf_f(uint8_t idx, float x, float y) {
   float f0, f1;
   f0 = fe_float[idx-1];
   f1 = fe_float[idx];
-  return (f1 + y*(f0 - f1) < openlibm_expf(-x)); // below curve?
+  return (f1 + y*(f0 - f1) < openlibm_expf(-x));
 }
 
-NEVER_INLINE float exp_taildraw_f(randompack_rng *rng, int *w) {
+ALWAYS_INLINE float exp_taildraw_f(randompack_rng *rng, int *w) {
   float x = ziggurat_exp_r_f - openlibm_log1pf(-draw_u01f(rng, w));
   return x;
 }
@@ -122,16 +155,16 @@ ALWAYS_INLINE float expf_unlikely(randompack_rng *rng, int *w, float x, uint8_t 
   float y;
   uint32_t Y, YL, R, L, tmp, ke = ke_float[idx];
   while (true) {
-    if (UNLIKELY(idx == 0)) x = exp_taildraw_f(rng, w);
+    if (UNLIKELY(idx == 0)) return exp_taildraw_f(rng, w);
     Y = draw_u32(rng, w);
     L = (1U << 23) - ke;
     R = (1U << 23) - r;
     MUL32_WIDE(Y, L, YL, tmp);
     (void)tmp;
-    if (YL > R) goto next_try;         // above secant
-    if (YL + Dexpf[idx] < R) return x;  // below pdf by the gap bound
+    if (LIKELY(YL > R)) goto next_try;
+    if (YL + Dexpf[idx] < R) return x;
     y = U32_TO_FLOAT(Y);
-    if (below_exppdf_f(idx, x, y)) return x; // below curve
+    if (below_exppdf_f(idx, x, y)) return x;
   next_try:
     r = draw_u32(rng, w);
     idx = r >> 24;

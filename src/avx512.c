@@ -26,6 +26,12 @@ void rand_dble_avx512(double x[], size_t len, randompack_rng *rng) {
   (void)rng;
 }
 
+void rand_float_avx512(float x[], size_t len, randompack_rng *rng) {
+  (void)x;
+  (void)len;
+  (void)rng;
+}
+
 void shift_scale_double_avx512(double x[], size_t len, double shift, double scale) {
   for (size_t i = 0; i < len; i++) x[i] = shift + scale*x[i];
 }
@@ -179,6 +185,49 @@ HIDDEN void fill_sfc64simd_avx512(uint64_t *buf, size_t len,
   _mm512_storeu_si512((void *)&st->s1[0], b);
   _mm512_storeu_si512((void *)&st->s2[0], c);
   _mm512_storeu_si512((void *)&st->s3[0], d);
+}
+
+HIDDEN void rand_float_avx512(float x[], size_t len, randompack_rng *rng) {
+  int w = enter_u32_mode(rng);
+  size_t i = 0;
+  while (i < len) {
+    fill_if_empty32(rng, &w);
+    size_t remain = len - i;
+    size_t avail = 2*BUFSIZE - (size_t)w;
+    size_t take = remain < avail ? remain : avail;
+    uint32_t *u32 = rng->buf.u32 + (size_t)w;
+    if (rng->usefullmantissa) {
+      size_t j = 0;
+      __m512 scale = _mm512_set1_ps(0x1.0p-24f);
+      for (; j + 15 < take; j += 16) {
+        __m512i r = _mm512_loadu_si512((const void *)(u32 + j));
+        r = _mm512_srli_epi32(r, 8);
+        __m512 d = _mm512_cvtepi32_ps(r);
+        d = _mm512_mul_ps(d, scale);
+        _mm512_storeu_ps(x + i + j, d);
+      }
+      for (; j < take; j++) {
+        x[i + j] = U32_TO_FLOAT(u32[j]);
+      }
+    }
+    else {
+      size_t j = 0;
+      __m512 scale = _mm512_set1_ps(0x1.0p-23f);
+      for (; j + 15 < take; j += 16) {
+        __m512i r = _mm512_loadu_si512((const void *)(u32 + j));
+        r = _mm512_srli_epi32(r, 9);
+        __m512 d = _mm512_cvtepi32_ps(r);
+        d = _mm512_mul_ps(d, scale);
+        _mm512_storeu_ps(x + i + j, d);
+      }
+      for (; j < take; j++) {
+        x[i + j] = (float)(u32[j] >> 9)*0x1.0p-23f;
+      }
+    }
+    w += (int)take;
+    i += take;
+  }
+  exit_u32_mode(rng, w);
 }
 
 HIDDEN void shift_scale_double_avx512(double x[], size_t len, double shift,
