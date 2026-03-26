@@ -9,15 +9,17 @@
 // Accept if x <= x{i-1}.
 // Draw y if x{i-1} < x <= x{i}
 
-#define NORM_LIKELY_DECODE(x, r, idx, ki, rabs)                         \
- ki = ki_double[idx];                                                   \
- rabs = r & 0x000fffffffffffff;                                         \
- do {                                                                    \
-   int64_t s = (int64_t)rabs;                                            \
-   int64_t t = -s;                                                       \
-   if ((r >> 52) & 1) s = t;                                            \
-   x = (double)s * wi_double[idx];                                       \
+#define NORM_LIKELY_DECODE(x, r, idx, ki, rabs) \
+ ki = ki_double[idx];                           \
+ rabs = r & 0x000fffffffffffff;                 \
+ do {                                           \
+   int64_t s = (int64_t)rabs;                   \
+   int64_t t = -s;                              \
+   if ((r >> 52) & 1) s = t;                    \
+   x = (double)s * wi_double[idx];              \
  } while (0);
+
+#define DBL(x) ((x)*0x1.0p-52)
 
 #include <stdint.h>
 #include <math.h>
@@ -62,6 +64,12 @@ void randompack_norm_counters_get_slow(uint64_t *tail, uint64_t *accept,
 
 //=============================== NORMAL DISTRIBUTION ==============================
 
+NEVER_INLINE bool below_normpdf(uint8_t idx, double x, double y) {
+  double f0 = fi_double[idx-1];
+  double f1 = fi_double[idx];
+  return f1 + y*(f0 - f1) < openlibm_exp(-x*x/2);
+}
+
 NEVER_INLINE double norm_tail_draw(randompack_rng *rng, uint64_t rabs, double y, int *w){
   double xx, yy, x;
   for (;;) {
@@ -74,14 +82,6 @@ NEVER_INLINE double norm_tail_draw(randompack_rng *rng, uint64_t rabs, double y,
     y = draw_u01(rng, w);
   }
 }
-
-NEVER_INLINE bool below_normpdf(uint8_t idx, double x, double y) {
-  double f0 = fi_double[idx-1];
-  double f1 = fi_double[idx];
-  return f1 + y*(f0 - f1) < openlibm_exp(-x*x/2);
-}
-
-#define DBL(x) ((x)*0x1.0p-52)
 
 ALWAYS_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x,
                                    uint8_t idx, uint64_t rabs, uint64_t ki) {
@@ -160,7 +160,7 @@ NEVER_INLINE bool below_exppdf(uint8_t idx, double x, double y) {
   return (f1 + y*(f0 - f1) < openlibm_exp(-x)); // below curve?
 }
 
-NEVER_INLINE double exp_taildraw(randompack_rng *rng, int *w) {
+ALWAYS_INLINE double exp_taildraw(randompack_rng *rng, int *w) {
   double x = ziggurat_exp_r - openlibm_log1p(-draw_u01(rng, w));
   return x;
 }
@@ -176,7 +176,7 @@ ALWAYS_INLINE double exp_unlikely(randompack_rng *rng, int *w, double x, uint8_t
     R = (1ULL << 53) - r;
     MUL64_WIDE(Y, L, YL, tmp);
     (void)tmp;
-    if (YL > R) goto next_try;         // above secant
+    if (LIKELY(YL > R)) goto next_try;         // above secant
     if (YL + Dexp[idx] < R) return x;  // below pdf by the gap bound
     y = U64_TO_DOUBLE(Y);
     if (below_exppdf(idx, x, y)) return x; // below curve
