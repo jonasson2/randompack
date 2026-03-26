@@ -69,7 +69,7 @@ NEVER_INLINE float norm_tail_draw_f(randompack_rng *rng, uint32_t rabs, float y,
   }
 }
 
-ALWAYS_INLINE float avx512_unlikely(randompack_rng *rng, int *w, float x,
+NEVER_INLINE float avx512_unlikely(randompack_rng *rng, int *w, float x,
                                     uint8_t idx, uint32_t rabs, uint32_t ki) {
   for (;;) {
     float u = draw_u01f(rng, w);
@@ -78,7 +78,7 @@ ALWAYS_INLINE float avx512_unlikely(randompack_rng *rng, int *w, float x,
     else if (below_normpdf_f(idx, x, u))
       return x;
     uint32_t ru = draw_u32(rng, w);
-    uint8_t idx = ru >> 24;
+    idx = ru >> 24;
     NORM_LIKELY_DECODE_F(x, ru, idx, ki, rabs);
     if (LIKELY(rabs < ki)) return x;
   }
