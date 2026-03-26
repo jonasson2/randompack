@@ -177,24 +177,16 @@ HIDDEN void fill_fast_avx2(uint64_t *buf, size_t len, randompack_state *state) {
 #if defined(RANDOMPACK_TEST_HOOKS)
   avx2_used++;
 #endif
-  for (size_t i = 0; i < len; i += 32) {
-    VEC_T r0, r1, r2, r3, r4, r5, r6, r7;
+  for (size_t i = 0; i < len; i += 16) {
+    VEC_T r0, r1, r2, r3;
     FAST_STEP_VEC(s00, s10, s20, s30, r0);
     FAST_STEP_VEC(s01, s11, s21, s31, r1);
     FAST_STEP_VEC(s00, s10, s20, s30, r2);
     FAST_STEP_VEC(s01, s11, s21, s31, r3);
-    FAST_STEP_VEC(s00, s10, s20, s30, r4);
-    FAST_STEP_VEC(s01, s11, s21, s31, r5);
-    FAST_STEP_VEC(s00, s10, s20, s30, r6);
-    FAST_STEP_VEC(s01, s11, s21, s31, r7);
     VEC_STORE(out + i, r0);
     VEC_STORE(out + i + 4, r1);
     VEC_STORE(out + i + 8, r2);
     VEC_STORE(out + i + 12, r3);
-    VEC_STORE(out + i + 16, r4);
-    VEC_STORE(out + i + 20, r5);
-    VEC_STORE(out + i + 24, r6);
-    VEC_STORE(out + i + 28, r7);
   }
   VEC_STORE(&st->s0[0], s00);
   VEC_STORE(&st->s1[0], s10);

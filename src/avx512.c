@@ -103,7 +103,7 @@ HIDDEN void fill_fast_avx512(uint64_t *buf, size_t len,
   __m512i s2 = _mm512_loadu_si512((const void *)&st->s2[0]);
   __m512i s3 = _mm512_loadu_si512((const void *)&st->s3[0]);
   size_t i = 0;
-  for (; i < len; i += 32) {
+  for (; i < len; i += 16) {
     __m512i sum0 = _mm512_add_epi64(s0, s3);
     __m512i r0 = _mm512_add_epi64(
       _mm512_or_si512(_mm512_slli_epi64(sum0, 23), _mm512_srli_epi64(sum0, 41)),
@@ -130,36 +130,8 @@ HIDDEN void fill_fast_avx512(uint64_t *buf, size_t len,
     s2 = _mm512_xor_si512(s2, t1);
     s3 = _mm512_or_si512(_mm512_slli_epi64(s3, 45), _mm512_srli_epi64(s3, 19));
 
-    __m512i sum2 = _mm512_add_epi64(s0, s3);
-    __m512i r2 = _mm512_add_epi64(
-      _mm512_or_si512(_mm512_slli_epi64(sum2, 23), _mm512_srli_epi64(sum2, 41)),
-      s0
-    );
-    __m512i t2 = _mm512_slli_epi64(s1, 17);
-    s2 = _mm512_xor_si512(s2, s0);
-    s3 = _mm512_xor_si512(s3, s1);
-    s1 = _mm512_xor_si512(s1, s2);
-    s0 = _mm512_xor_si512(s0, s3);
-    s2 = _mm512_xor_si512(s2, t2);
-    s3 = _mm512_or_si512(_mm512_slli_epi64(s3, 45), _mm512_srli_epi64(s3, 19));
-
-    __m512i sum3 = _mm512_add_epi64(s0, s3);
-    __m512i r3 = _mm512_add_epi64(
-      _mm512_or_si512(_mm512_slli_epi64(sum3, 23), _mm512_srli_epi64(sum3, 41)),
-      s0
-    );
-    __m512i t3 = _mm512_slli_epi64(s1, 17);
-    s2 = _mm512_xor_si512(s2, s0);
-    s3 = _mm512_xor_si512(s3, s1);
-    s1 = _mm512_xor_si512(s1, s2);
-    s0 = _mm512_xor_si512(s0, s3);
-    s2 = _mm512_xor_si512(s2, t3);
-    s3 = _mm512_or_si512(_mm512_slli_epi64(s3, 45), _mm512_srli_epi64(s3, 19));
-
     _mm512_storeu_si512((void *)(out + i), r0);
     _mm512_storeu_si512((void *)(out + i + 8), r1);
-    _mm512_storeu_si512((void *)(out + i + 16), r2);
-    _mm512_storeu_si512((void *)(out + i + 24), r3);
   }
   _mm512_storeu_si512((void *)&st->s0[0], s0);
   _mm512_storeu_si512((void *)&st->s1[0], s1);

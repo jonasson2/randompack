@@ -80,7 +80,7 @@ static inline void copy32(void *dst, const void *src, int n) { memcpy(dst, src, 
 static inline void copy64(void *dst, const void *src, int n) { memcpy(dst, src, n*8); }
 
 #ifndef BUFSIZE
-#define BUFSIZE 288
+#define BUFSIZE 144
 #endif
 
 _Static_assert(BUFSIZE % 8 == 0, "BUFSIZE must be a multiple of 8 (for chacha20)");
