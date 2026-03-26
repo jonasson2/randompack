@@ -117,7 +117,6 @@ ALWAYS_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x,
     idx = ru >> 56;
     NORM_LIKELY_DECODE(x, ru, idx, ki, rabs);
     if (LIKELY(rabs < ki)) return x;
-    return x;
   }
 }
 
