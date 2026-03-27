@@ -13,9 +13,7 @@
  ki = ki_double[idx];                           \
  rabs = r & 0x000fffffffffffff;                 \
  do {                                           \
-   int64_t s = (int64_t)rabs;                   \
-   int64_t t = -s;                              \
-   if ((r >> 52) & 1) s = t;                    \
+   int64_t s = ((int64_t)(r << 11)) >> 11;      \
    x = (double)s * wi_double[idx];              \
  } while (0);
 
@@ -97,19 +95,19 @@ NEVER_INLINE double norm_tail_draw(randompack_rng *rng, uint64_t rabs, double y,
 }
 
 NEVER_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x,
-                                   uint8_t idx, uint64_t rabs, uint64_t ki) {
+                                  uint8_t idx, uint64_t rabs, uint64_t ki) {
   printSetNdec(6);
   uint64_t ru, tmp, L, R, Y, YL;
   const int inflection_idx = 52;
   for (;;) {
     Y = draw_u64(rng, w);
-    L = (1ULL << 52) - ki;
-    R = (1ULL << 52) - rabs;
-    double u = U64_TO_DOUBLE(Y);
     if (UNLIKELY(idx == 0)) {   //
+      double u = U64_TO_DOUBLE(Y);
       x = norm_tail_draw(rng, rabs, u, w);
       return x;
     }
+    L = (1ULL << 52) - ki;
+    R = (1ULL << 52) - rabs;
     MUL64_WIDE(Y, L, YL, tmp);
     (void) tmp;
     if (LIKELY(idx > inflection_idx)) {
@@ -130,7 +128,7 @@ NEVER_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x,
         return x;
       }
     }
-    if (below_normpdf(idx, x, u)) {
+    if (below_normpdf(idx, x, U64_TO_DOUBLE(Y))) {
       return x;
     }
   next_try:
@@ -161,9 +159,9 @@ NEVER_INLINE void rand_norm(double *buf, size_t len, randompack_rng *rng) {
   uint64_t r, rabs, ki;
   double x;
   for (size_t i = len; i-- > 0;) {
-      uint8_t *bufpi = (uint8_t*)(buf + i);
+    uint8_t *bufpi = (uint8_t*)(buf + i);
     memcpy(&r, bufpi, sizeof(r));
-    memcpy(&idx, (uint8_t*)(buf + i) + 7, 1);  // measured slightly faster than >> 56
+    memcpy(&idx, bufpi + 7, 1);
     NORM_LIKELY_DECODE(x, r, idx, ki, rabs);
     buf[i] = LIKELY(rabs < ki) ? x : norm_unlikely(rng, &w, x, idx, rabs, ki);
   }
