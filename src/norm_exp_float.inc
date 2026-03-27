@@ -83,7 +83,6 @@ NEVER_INLINE float avx512_unlikely(randompack_rng *rng, int *w, float x,
 
 NEVER_INLINE float normf_unlikely(randompack_rng *rng, int *w, float x,
   uint8_t idx, uint32_t rabs, uint32_t ki) {
-  printSetNdec(6);
   uint32_t ru, tmp, L, R, Y, YL;
   const int inflection_idx = 52;
   for (;;) {

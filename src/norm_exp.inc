@@ -93,9 +93,8 @@ NEVER_INLINE double norm_tail_draw(randompack_rng *rng, uint64_t rabs, double y,
   }
 }
 
-NEVER_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x,
-                                  uint8_t idx, uint64_t rabs, uint64_t ki) {
-  printSetNdec(6);
+NEVER_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x, uint8_t idx,
+                                  uint64_t rabs, uint64_t ki) {
   uint64_t ru, tmp, L, R, Y, YL;
   const int inflection_idx = 52;
   for (;;) {
