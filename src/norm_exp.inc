@@ -20,13 +20,6 @@
 #include "zig_D.h"
 #include "assert.h"
 
-ALWAYS_INLINE double norm_decode(uint64_t r, uint8_t idx, uint64_t *ki, uint64_t *rabs) {
-  int64_t s = ((int64_t)(r << 11)) >> 11;
-  *ki = ki_double[idx];
-  *rabs = r & 0x000fffffffffffff;
-  return (double)s * wi_double[idx];
-}
-
 static uint64_t norm_pdf_calls = 0;
 static uint64_t norm_draws = 0;
 static uint64_t norm_slow_tail = 0;
@@ -74,6 +67,13 @@ void randompack_exp_counters_get(uint64_t *draws, uint64_t *slow,
 
 //=============================== NORMAL DISTRIBUTION ==============================
 
+ALWAYS_INLINE double norm_decode(uint64_t r, uint8_t idx, uint64_t *ki, uint64_t *rabs) {
+  int64_t s = ((int64_t)(r << 11)) >> 11; // change sign
+  *ki = ki_double[idx];
+  *rabs = r & 0x000fffffffffffff;
+  return (double)s * wi_double[idx];
+}
+
 NEVER_INLINE bool below_normpdf(uint8_t idx, double x, double y) {
   double f0 = fi_double[idx-1];
   double f1 = fi_double[idx];
@@ -100,7 +100,7 @@ NEVER_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x,
   const int inflection_idx = 52;
   for (;;) {
     Y = draw_u64(rng, w);
-    if (UNLIKELY(idx == 0)) {   //
+    if (UNLIKELY(idx == 0)) {
       double u = U64_TO_DOUBLE(Y);
       x = norm_tail_draw(rng, rabs, u, w);
       return x;
@@ -111,25 +111,18 @@ NEVER_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x,
     (void) tmp;
     if (LIKELY(idx > inflection_idx)) {
       if (YL > R) goto next_try;
-      if (YL + Dnorm[idx] < R) {
-        return x;
-      }
+      if (YL + Dnorm[idx] < R) return x;
     }
     else if (LIKELY(idx < inflection_idx)) {
-      if (YL < R) {
-        return x;
-      }
+      if (YL < R) return x;
       if (YL > R + Dnorm[idx]) goto next_try;
     }
     else {
       if (YL > R + Dzig52) goto next_try;
-      if (YL + Dnorm[idx] < R) {
-        return x;
-      }
+      if (YL + Dnorm[idx] < R) return x;
     }
-    if (below_normpdf(idx, x, U64_TO_DOUBLE(Y))) {
-      return x;
-    }
+    double u = U64_TO_DOUBLE(Y);
+    if (below_normpdf(idx, x, u)) return x;
   next_try:
     ru = draw_u64(rng, w);
     idx = ru >> 56;
@@ -178,7 +171,7 @@ NEVER_INLINE bool below_exppdf(uint8_t idx, double x, double y) {
   return (f1 + y*(f0 - f1) < openlibm_exp(-x)); // below curve?
 }
 
-ALWAYS_INLINE double exp_taildraw(randompack_rng *rng, int *w) {
+NEVER_INLINE double exp_taildraw(randompack_rng *rng, int *w) {
   double x = ziggurat_exp_r - openlibm_log1p(-draw_u01(rng, w));
   return x;
 }
