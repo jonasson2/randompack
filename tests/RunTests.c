@@ -133,6 +133,7 @@ int main(int argc, char **argv) {
   run_test("Uint64",      TestUint64);
   run_test("Reference",   TestReference);
   run_test("X256ppsimd",  TestX256ppsimd);
+  run_test("Sfc64simd",   TestSfc64simd);
   run_test("Ranluxpp",    TestRanluxpp);
   run_test("Int",         TestInt);
   run_test("LongLong",    TestLongLong);

@@ -35,6 +35,7 @@ void TestSeed(void);
 void TestSetState(void);
 void TestReference(void);
 void TestX256ppsimd(void);
+void TestSfc64simd(void);
 void TestRanluxpp(void);
 void TestDpstrf(void);
 void TestBuffer(void);
