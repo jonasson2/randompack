@@ -1784,15 +1784,17 @@ def engines():
     >>> import randompack
     >>> randompack.engines()
     x256++simd  xorshift256++, with SIMD accelaration (4x64)
+    sfc64simd   sfc64, with SIMD accelaration (4x64)
     x256++      xoshiro256++, Vigna & Blackman, 2019 (4x64)
     x256**      xoshiro256**, Vigna & Blackman, 2019 (4x64)
-    xoro++      xoroshiro128++, Vigna & Blackman, 2016 (2x64)
     x128+       xorshift128+, Vigna, 2014 (2x64)
+    xoro++      xoroshiro128++, Vigna & Blackman, 2016 (2x64)
     pcg64       PCG64-DXSM, O'Neill, 2014 (4x64)
     sfc64       sfc64, Chris Doty-Humphrey, 2013 (4x64)
-    cwg128      cwg128, Działa, 2022 (8x64)
-    philox      Philox-4x64, Salmon & Moraes, 2011 (6x64)
     squares     squares64, Widynski, 2021 (2x64)
+    philox      Philox-4x64, Salmon & Moraes, 2011 (6x64)
+    cwg128      cwg128, Działa, 2022 (8x64)
+    ranlux++    ranlux++, Sibidanov, 2017 (9x64)
     chacha20    ChaCha20, Bernstein, 2008 (6x64)
     """
     

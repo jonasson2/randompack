@@ -39,7 +39,6 @@ perf_opt = get_option('perf')
 force_no128 = get_option('force_no128')
 force_nosimd = get_option('force_nosimd')
 test_bufsize = get_option('test_bufsize')
-norm_exp_mod = get_option('norm_exp_mod')
 if perf_opt
   add_project_arguments('-DRANDOMPACK_PERF', language: 'c')
   add_project_arguments(
@@ -51,10 +50,6 @@ if perf_opt
     ]),
     language: 'c'
   )
-endif
-
-if norm_exp_mod
-  add_project_arguments('-DNORM_EXP_MOD', language: 'c')
 endif
 
 if force_nosimd

@@ -35,7 +35,10 @@ wrap_sources = [custom_target(
   output: 'randompack__core.c',
   command: [cython, '-3', '@INPUT@', '-o', '@OUTPUT@'],
 )]
-core_sources = files('src/randompack.c')
+core_sources = files(
+  'src/randompack.c',
+  'src/randompack_float.c',
+)
 
 deps = [py_dep]
 

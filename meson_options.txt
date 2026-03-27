@@ -45,12 +45,6 @@ option('perf',
   description: 'Enable performance benchmarking flags/macros'
 )
 
-option('norm_exp_mod',
-  type: 'boolean',
-  value: false,
-  description: 'Use src/norm_exp_mod.inc instead of src/norm_exp.inc'
-)
-
 option('force_no128',
   type: 'boolean',
   value: false,

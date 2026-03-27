@@ -6,6 +6,12 @@ cd "$REPO_ROOT"
 
 # MAKE THE R PACKAGE MATCH THE C PACKAGE
 
+# Remove artifacts that are intentionally excluded from the rsync.
+rm -f \
+  r-package/src/randompack_float.c \
+  r-package/src/*_float.inc \
+  r-package/src/*_float.h
+
 # SYNC SOURCE FILES
 rsync -av --delete \
   --include='rp_dpstrf.c' \
@@ -17,6 +23,7 @@ rsync -av --delete \
   --exclude='meson.build' \
   --exclude='blas.f' \
   --exclude='printX.c' \
+  --exclude='randompack_float.c' \
   --exclude='*_float.inc' \
   --exclude='*_float.h' \
   src/ \
@@ -24,11 +31,3 @@ rsync -av --delete \
 
 # COPY LICENSE FILE
 cp -f LICENSE r-package/inst/THIRD-PARTY-NOTICES
-
-# COMMENT OUT ALL FLOAT INCLUDES
-# Find all source files and comment out any #include with *_float.*
-find r-package/src -type f \( -name "*.c" -o -name "*.h" -o -name "*.inc" \) \
-  -exec sed -i.bak 's|^\(#include.*_float\.\)|// \1|' {} \;
-
-# Remove backup files
-rm -f r-package/src/*.bak

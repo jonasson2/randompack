@@ -31,15 +31,15 @@ typedef struct {
 
 static rng_entry rng_table[] = {  // x256++simd is default
   {"x256++simd","xoshiro256++, SIMD accelerated (8x4x64)",     FAST,    4,fill_fast     },
+  {"sfc64simd","sfc64, SIMD accelerated (8x4x64)",             SFCSIMD, 4,fill_sfc64simd},
   {"x256++",   "xoshiro256++, Vigna & Blackman, 2019 (4x64)",  X256PP,  4,fill_x256pp   },
   {"x256**",   "xoshiro256**, Vigna & Blackman, 2019 (4x64)",  X256SS,  4,fill_x256ss   },
   {"x128+",    "xorshift128+, Vigna, 2014 (2x64)",             X128P,   2,fill_x128p    },
   {"xoro++",   "xoroshiro128++, Vigna & Blackman, 2016 (2x64)",XORO,    2,fill_xoro128pp},
   {"pcg64",    "PCG64-DXSM, O'Neill, 2014 (4x64)",             PCG64,   4,fill_pcg64    },
+  {"sfc64",    "sfc64, Chris Doty-Humphrey, 2013 (4x64)",      SFC64,   4,fill_sfc64    },
   {"squares",  "squares64, Widynski, 2021 (2x64)",             SQUARES, 2,fill_squares  },
   {"philox",   "Philox-4x64, Salmon & Moraes, 2011 (6x64)",    PHILOX,  6,fill_philox   },
-  {"sfc64",    "sfc64, Chris Doty-Humphrey, 2013 (4x64)",      SFC64,   4,fill_sfc64    },
-  {"sfc64simd","sfc64, SIMD accelerated (8x4x64)",             SFCSIMD, 4,fill_sfc64simd},
   {"cwg128",   "cwg128, Działa, 2022 (8x64)",                  CWG128,  8,fill_cwg128   },
   {"ranlux++", "ranlux++, Sibidanov, 2017 (9x64)",             RANLUXPP,9,fill_ranluxpp },
   {"chacha20", "ChaCha20, Bernstein, 2008 (6x64)",             CHACHA20,6,fill_chacha   },

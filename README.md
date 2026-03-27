@@ -56,6 +56,7 @@ single-precision (float) variants.
 - sampling without replacement
 - continuous uniform
 - normal (standard and general)
+- skew-normal
 - lognormal
 - exponential
 - gamma
@@ -77,15 +78,16 @@ state-based. When selecting an engine the names are case-insensitive. In the
 following table W denotes the number of 64-bit state words.
 
 - ENGINE      W  DESCRIPTION
-- x256++simd  4  xorshift256++, SIMD accelerated (Vigna and Blackman, 2018)
+- x256++simd  4  xorshift256++, SIMD accelerated
+- sfc64simd   4  sfc64, SIMD accelerated
 - x256++      4  xoshiro256++ (Vigna and Blackman, 2018)
 - x256**      4  xoshiro256** (Vigna and Blackman, 2018)
 - x128+       2  xorshift128+ (Vigna, 2014)
 - xoro++      2  xoroshiro128++ (Vigna and Blackman, 2016)
 - pcg64       4  PCG64 DXSM (O’Neill, 2014)
+- sfc64       4  sfc64 (Chris Doty-Humphrey, 2010)
 - squares     2  squares64 (Widynski, 2021)
 - philox      6  Philox-4×64 (Salmon and Moraes, 2011)
-- sfc64       4  sfc64 (Chris Doty-Humphrey, 2010)
 - cwg128      5  cwg128 (Działa, 2022)
 - ranlux++    9  ranlux++ (Sibidanov, 2017)
 - chacha20    6  ChaCha20 (Bernstein, 2008)
@@ -107,12 +109,11 @@ seed_seq_fe128, also adopted by NumPy to initialize its random number
 generators. The mechanism supports reproducible construction of independent
 substreams via optional spawn keys.
 
-For all engines except cwg128 and chacha20 an alternative way of creating
-independent streams exists: with jumps for the xor-family and ranlux++, setting
-the key of the counter based generators squares and philox, setting the
-$(a,b,c)$ state of sfc64, and setting the increment of pcg64. State
-serialization supports checkpointing and allows simulations to be stopped and
-restarted exactly.
+For all engines an alternative way of creating independent streams exists: with jumps for
+the xor-family and ranlux++, and with setting the key of the counter based generators
+squares and philox, the $(a,b,c)$ state of sfc64, the increment of pcg64 and cwg128, and
+the nonce of chacha20. State serialization supports checkpointing and allows simulations
+to be stopped and restarted exactly.
 
 Note that for Philox and squares, users should not change the counter while the
 generator is in use (via randompack_set_state), contrary to the case when they
@@ -163,13 +164,15 @@ The test framework supports increasing the size of generated test vectors
 (currently ranging from `2e4` to `5e5`) for more comprehensive, longer-running
 test suites.
 
-## SIMD support [this requires editing]
-The program advances four independent RNG streams. On Arm (Apple M-series)
-processors, SIMD vector instructions provide two lanes, and each lane uses
-instruction-level parallelism (ILP) via loop unrolling to give two independent
-execution chains. On modern x86-64 processors with AVX2, four SIMD lanes are
-used instead. On other processors, four-way loop unrolling is used to advance
-the four streams.
+## SIMD support
+
+The two SIMD (single-intstruction multiple-data) accelerated engines use the SIMD
+instruction sets of modern CPUs, AVX2, AVX-512 and NEON, to speed up execution. Eight
+independent RNG streams are advanced in parallel. On NEON (e.g. Apple M-series) processors
+vector instructions provide two lanes, and each lane uses instruction-level parallelism
+(ILP) via loop unrolling to give four independent execution chains. On x86-64 processors
+with AVX2, four SIMD lanes with two chains are used, and on AVX-512 eight lanes. On other
+processors eight-way loop unrolling is used to advance the eight streams.
 
 ## Building and installation
 Randompack relies on the Meson/Ninja build system. Install these programs if

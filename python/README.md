@@ -50,7 +50,7 @@ rng2 = rng.duplicate()              # identical independent copy
 
 ### Continuous distributions
 ```python
-x = rng.unif(100)                   # 100 draws from U(0,1)
+x = rng.unif(100)                   # 100 float64 draws from U(0,1)
 y = rng.unif(100, a=2, b=5)         # 100 draws from U(2,5)
 s = rng.unif()                      # scalar draw
 z = rng.normal(5)                   # 5 standard normal draws
@@ -65,6 +65,7 @@ rng.unif(out=x)                     # use shape and data type of x
 x = rng.int(100, 1, 6)              # integers in [1,6] (inclusive)
 p = rng.perm(10)                    # permutation of 0...9
 s = rng.sample(20, 5)               # 5-element sample from 0...19 (without replacement)
+b = rng.raw(1000)                   # bytes object with 1000 elements
 ```
 
 ### Multivariate normal

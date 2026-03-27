@@ -185,18 +185,19 @@ typedef struct {
 } engine_table_entry;
 
 static engine_table_entry engine_table[] = {
-  {"x128+",         2},
-  {"squares",       2},
-  {"sfc64",         4},
-  {"sfc64simd",     4},
-  {"x256**",        4},
-  {"x256++",        4},
   {"x256++simd",    4},
-  {"chacha20",      6},
-  {"philox",        6},
+  {"sfc64simd",     4},
+  {"x256++",        4},
+  {"x256**",        4},
+  {"x128+",         2},
+  {"xoro++",        2},
   {"pcg64",         4},
+  {"sfc64",         4},
+  {"squares",       2},
+  {"philox",        6},
   {"cwg128",        8},
   {"ranlux++",      9},
+  {"chacha20",      6},
 };
 char **get_engines(int *n);
 void free_engines(char **engines, int n);

@@ -22,14 +22,16 @@ NULL
 #' @section Available Engines:
 #' \tabular{lll}{
 #'   \code{x256++simd} \tab\tab xorshift256++ with streams (default) \cr
+#'   \code{sfc64simd} \tab\tab sfc64 with streams \cr
+#'   \code{x256++} \tab\tab xoshiro256++ (Vigna and Blackman, 2018) \cr
 #'   \code{x256**} \tab\tab xoshiro256** (Vigna and Blackman, 2018) \cr
-#'   \code{xoro++} \tab\tab xoroshiro128++ (Vigna and Blackman, 2016) \cr
 #'   \code{x128+} \tab\tab xorshift128+ (Vigna, 2014) \cr
+#'   \code{xoro++} \tab\tab xoroshiro128++ (Vigna and Blackman, 2016) \cr
 #'   \code{pcg64} \tab\tab PCG64 DXSM (O'Neill, 2014) \cr
-#'   \code{cwg128} \tab\tab cwg128 (Działa, 2022) \cr
 #'   \code{sfc64} \tab\tab sfc64 (Chris Doty-Humphrey, 2013) \cr
-#'   \code{philox} \tab\tab Philox-4×64 (Salmon and Moraes, 2011) \cr
 #'   \code{squares} \tab\tab squares64 (Widynski, 2021) \cr
+#'   \code{philox} \tab\tab Philox-4×64 (Salmon and Moraes, 2011) \cr
+#'   \code{cwg128} \tab\tab cwg128 (Działa, 2022) \cr
 #'   \code{ranlux++} \tab\tab ranlux++ (Sibidanov, 2017) \cr
 #'   \code{chacha20} \tab\tab ChaCha20 (Bernstein, 2008) \cr
 #' }
@@ -169,7 +171,7 @@ NULL
 #' rng3$deserialize(raw_state)              # restore state
 #' identical(rng$unif(3), rng3$unif(3))     # TRUE
 #' rng_sq <- randompack_rng("squares")      # engine-specific state setting
-#' rng_sq$set_state(c(2, 0))                # counter = (2,0)
+#' rng_sq$set_state(c(2, 0, 0, 0))          # counter = (2,0)
 #' rng_sq$squares_set_key(c(3,4))
 #'
 #' @seealso \code{\link{randompack_engines}} to list all available engines
