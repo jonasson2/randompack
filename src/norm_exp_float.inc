@@ -7,15 +7,12 @@
   (hi) = (uint32_t)(_p >> 32);                                 \
 } while (0)
 
-#define NORM_LIKELY_DECODE_F(x, r, idx, ki, rabs) \
- ki = ki_float[idx];                              \
- rabs = r & 0x007fffff;                           \
- do {                                             \
-   int32_t s = (int32_t)rabs;                     \
-   int32_t t = -s;                                \
-   if ((r >> 23) & 1) s = t;                      \
-   x = (float)s * wi_float[idx];                  \
- } while (0);
+ALWAYS_INLINE float norm_decodef(uint32_t r, uint8_t idx, uint32_t *ki, uint32_t *rabs) {
+  int32_t s = ((int32_t)(r << 8)) >> 8;
+  *ki = ki_float[idx];
+  *rabs = r & 0x007fffff;
+  return (float)s * wi_float[idx];
+}
 
 static uint64_t normf_pdf_calls = 0;
 static uint64_t normf_draws = 0;
@@ -79,7 +76,7 @@ NEVER_INLINE float avx512_unlikely(randompack_rng *rng, int *w, float x,
       return x;
     uint32_t ru = draw_u32(rng, w);
     idx = ru >> 24;
-    NORM_LIKELY_DECODE_F(x, ru, idx, ki, rabs);
+    x = norm_decodef(ru, idx, &ki, &rabs);
     if (LIKELY(rabs < ki)) return x;
   }
 }
@@ -118,7 +115,7 @@ NEVER_INLINE float normf_unlikely(randompack_rng *rng, int *w, float x,
   next_try:
     ru = draw_u32(rng, w);
     idx = ru >> 24;
-    NORM_LIKELY_DECODE_F(x, ru, idx, ki, rabs);
+    x = norm_decodef(ru, idx, &ki, &rabs);
     if (LIKELY(rabs < ki)) return x;
   }
 }
@@ -129,7 +126,7 @@ ALWAYS_INLINE float draw_normf(randompack_rng *rng, int *w) {
   uint8_t idx;
   r = draw_u32(rng, w);
   idx = r >> 24;
-  NORM_LIKELY_DECODE_F(x, r, idx, ki, rabs);
+  x = norm_decodef(r, idx, &ki, &rabs);
   if (LIKELY(rabs < ki)) return x;
   if (rng->cpu_has_avx512) x = avx512_unlikely(rng, w, x, idx, rabs, ki);
   else                     x = normf_unlikely(rng, w, x, idx, rabs, ki);
@@ -146,7 +143,7 @@ NEVER_INLINE void rand_normf(float *buf, size_t len, randompack_rng *rng) {
     uint8_t *bufpi = (uint8_t*)(buf + i);
     memcpy(&r, bufpi, sizeof(r));
     memcpy(&idx, (uint8_t*)(buf + i) + 3, 1);  // measured slightly faster than >> 24
-    NORM_LIKELY_DECODE_F(x, r, idx, ki, rabs);
+    x = norm_decodef(r, idx, &ki, &rabs);
     if (UNLIKELY(rabs > ki)) {
       if (rng->cpu_has_avx512) x = avx512_unlikely(rng, &w, x, idx, rabs, ki);
       else                     x = normf_unlikely(rng, &w, x, idx, rabs, ki);

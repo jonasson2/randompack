@@ -9,14 +9,6 @@
 // Accept if x <= x{i-1}.
 // Draw y if x{i-1} < x <= x{i}
 
-#define NORM_LIKELY_DECODE(x, r, idx, ki, rabs) \
- ki = ki_double[idx];                           \
- rabs = r & 0x000fffffffffffff;                 \
- do {                                           \
-   int64_t s = ((int64_t)(r << 11)) >> 11;      \
-   x = (double)s * wi_double[idx];              \
- } while (0);
-
 #define DBL(x) ((x)*0x1.0p-52)
 
 #include <stdint.h>
@@ -27,6 +19,13 @@
 #include "ziggurat_const_double.h"
 #include "zig_D.h"
 #include "assert.h"
+
+ALWAYS_INLINE double norm_decode(uint64_t r, uint8_t idx, uint64_t *ki, uint64_t *rabs) {
+  int64_t s = ((int64_t)(r << 11)) >> 11;
+  *ki = ki_double[idx];
+  *rabs = r & 0x000fffffffffffff;
+  return (double)s * wi_double[idx];
+}
 
 static uint64_t norm_pdf_calls = 0;
 static uint64_t norm_draws = 0;
@@ -134,7 +133,7 @@ NEVER_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x,
   next_try:
     ru = draw_u64(rng, w);
     idx = ru >> 56;
-    NORM_LIKELY_DECODE(x, ru, idx, ki, rabs);
+    x = norm_decode(ru, idx, &ki, &rabs);
     if (LIKELY(rabs < ki)) return x;
   }
 }
@@ -145,7 +144,7 @@ ALWAYS_INLINE double draw_norm(randompack_rng *rng, int *w) {
   uint8_t idx;
   r = draw_u64(rng, w);
   idx = r >> 56;
-  NORM_LIKELY_DECODE(x, r, idx, ki, rabs);
+  x = norm_decode(r, idx, &ki, &rabs);
   if (LIKELY(rabs < ki)) return x;
   x = norm_unlikely(rng, w, x, idx, rabs, ki);
   return x;
@@ -162,7 +161,7 @@ NEVER_INLINE void rand_norm(double *buf, size_t len, randompack_rng *rng) {
     uint8_t *bufpi = (uint8_t*)(buf + i);
     memcpy(&r, bufpi, sizeof(r));
     memcpy(&idx, bufpi + 7, 1);
-    NORM_LIKELY_DECODE(x, r, idx, ki, rabs);
+    x = norm_decode(r, idx, &ki, &rabs);
     buf[i] = LIKELY(rabs < ki) ? x : norm_unlikely(rng, &w, x, idx, rabs, ki);
   }
   exit_u64_mode(rng, w);
