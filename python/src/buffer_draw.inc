@@ -1,4 +1,10 @@
 // -*- C -*-
+
+#ifndef RANDOMPACK_BUFFER_DRAW_INC
+#define RANDOMPACK_BUFFER_DRAW_INC
+
+#include <string.h>
+
 ALWAYS_INLINE void fill_buf_if_empty(randompack_rng *rng) {
   if (UNLIKELY(rng->buf_word >= BUFSIZE)) {
     rng->buf_word = rng->buf_byte = 0;
@@ -46,7 +52,7 @@ ALWAYS_INLINE void align64(randompack_rng *rng) { // align to beginning or word
 ALWAYS_INLINE uint8_t draw_byte(randompack_rng *rng) {
   fill_buf_if_empty(rng);
   uint64_t w = rng->buf.u64[rng->buf_word];
-  uint8_t b = w >> (8 * rng->buf_byte);
+  uint8_t b = w >> (8*rng->buf_byte);
   rng->buf_byte++;
   if (rng->buf_byte >= 8) {
     rng->buf_byte = 0;
@@ -132,3 +138,19 @@ static inline void draw_raw_copy(uint8_t *out, size_t nbytes, randompack_rng *rn
     i += take;
   }
 }
+
+static inline void draw_raw_copy32(uint32_t *out, size_t nwords, randompack_rng *rng,
+  int *w) {
+  size_t i = 0;
+  while (i < nwords) {
+    fill_if_empty32(rng, w);
+    size_t avail = 2*BUFSIZE - (size_t)(*w);
+    size_t rem = nwords - i;
+    size_t take = rem < avail ? rem : avail;
+    memcpy(out + i, rng->buf.u32 + (size_t)(*w), take*sizeof(uint32_t));
+    *w += (int)take;
+    i += take;
+  }
+}
+
+#endif

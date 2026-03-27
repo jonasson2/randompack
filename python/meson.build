@@ -35,11 +35,39 @@ wrap_sources = [custom_target(
   output: 'randompack__core.c',
   command: [cython, '-3', '@INPUT@', '-o', '@OUTPUT@'],
 )]
-core_sources = files('src/randompack.c')
+core_sources = files(
+  'src/randompack.c',
+  'src/randompack_float.c',
+)
 
 deps = [py_dep]
 
 host_system = host_machine.system()
+build_avx2 = false
+avx2_c_args = []
+build_avx512 = false
+avx512_c_args = []
+
+if host_machine.cpu_family() in ['x86', 'x86_64']
+  if cc.get_id() in ['gcc', 'clang', 'appleclang', 'msvc']
+    build_avx2 = true
+    build_avx512 = cc.get_id() != 'msvc'
+  endif
+endif
+
+if build_avx2
+  if cc.get_id() == 'msvc'
+    avx2_c_args = ['/arch:AVX2']
+  else
+    avx2_c_args = cc.get_supported_arguments(['-mavx2', '-mfma'])
+    build_avx2 = avx2_c_args.length() == 2
+  endif
+endif
+
+if build_avx512
+  avx512_c_args = cc.get_supported_arguments(['-mavx512f', '-mavx512dq'])
+  build_avx512 = avx512_c_args.length() == 2
+endif
 
 math_dep = cc.find_library('m', required: false)
 if math_dep.found()
@@ -47,7 +75,17 @@ if math_dep.found()
 endif
 
 extra_sources = []
+extra_objs = []
 core_c_args = []
+if cc.has_argument('-O3')
+  core_c_args += ['-O3']
+endif
+if build_avx2
+  core_c_args += ['-DBUILD_AVX2']
+endif
+if build_avx512
+  core_c_args += ['-DBUILD_AVX512']
+endif
 
 conda_option = get_option('conda')
 blas_dep = disabler()
@@ -146,9 +184,38 @@ if using_accelerate and (not using_builtin_blas)
   core_c_args += ['-DUSE_ACCEL_VV']
 endif
 
+if build_avx2
+  avx2_lib = static_library(
+    'randompack_avx2',
+    files(
+      'src/avx2.c',
+      'src/inplace_logexp.c',
+      'src/sleef.c',
+    ),
+    include_directories: inc,
+    c_args: avx2_c_args + ['-DBUILD_AVX2'],
+    pic: true,
+    install: false,
+  )
+  extra_objs += [avx2_lib.extract_all_objects(recursive: false)]
+endif
+
+if build_avx512
+  avx512_lib = static_library(
+    'randompack_avx512',
+    files('src/avx512.c'),
+    include_directories: inc,
+    c_args: avx512_c_args + ['-DBUILD_AVX512'],
+    pic: true,
+    install: false,
+  )
+  extra_objs += [avx512_lib.extract_all_objects(recursive: false)]
+endif
+
 py.extension_module(
   '_core',
   sources: wrap_sources + core_sources + extra_sources,
+  objects: extra_objs,
   include_directories: inc,
   dependencies: deps,
   c_args: core_c_args,

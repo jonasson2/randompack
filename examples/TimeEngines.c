@@ -73,7 +73,6 @@ int main(int argc, char **argv) {
     return help ? 0 : 1;
   }
 #if defined(__linux__)
-  pin_to_cpu0();
 #endif
   warmup_cpu(100);
   printf("throughput:       GB/s (decimal), computed as bytes/ns\n");

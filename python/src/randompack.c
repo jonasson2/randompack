@@ -27,9 +27,10 @@ typedef struct {
 
 #include "engines.inc"
 #include "buffer_draw.inc"
+#include "scale_inplace.inc"
 
 static rng_entry rng_table[] = {  // x256++simd is default
-  {"x256++simd","xoshiro256++, SIMD accelerated (4x4x64)",     FAST,    4,fill_fast     },
+  {"x256++simd","xoshiro256++, SIMD accelerated (8x4x64)",     FAST,    4,fill_fast     },
   {"x256++",   "xoshiro256++, Vigna & Blackman, 2019 (4x64)",  X256PP,  4,fill_x256pp   },
   {"x256**",   "xoshiro256**, Vigna & Blackman, 2019 (4x64)",  X256SS,  4,fill_x256ss   },
   {"x128+",    "xorshift128+, Vigna, 2014 (2x64)",             X128P,   2,fill_x128p    },
@@ -38,14 +39,14 @@ static rng_entry rng_table[] = {  // x256++simd is default
   {"squares",  "squares64, Widynski, 2021 (2x64)",             SQUARES, 2,fill_squares  },
   {"philox",   "Philox-4x64, Salmon & Moraes, 2011 (6x64)",    PHILOX,  6,fill_philox   },
   {"sfc64",    "sfc64, Chris Doty-Humphrey, 2013 (4x64)",      SFC64,   4,fill_sfc64    },
-  {"sfc64simd","sfc64, SIMD accelerated (4x4x64)",             SFCSIMD, 4,fill_sfc64simd},
+  {"sfc64simd","sfc64, SIMD accelerated (8x4x64)",             SFCSIMD, 4,fill_sfc64simd},
   {"cwg128",   "cwg128, Działa, 2022 (8x64)",                  CWG128,  8,fill_cwg128   },
   {"ranlux++", "ranlux++, Sibidanov, 2017 (9x64)",             RANLUXPP,9,fill_ranluxpp },
   {"chacha20", "ChaCha20, Bernstein, 2008 (6x64)",             CHACHA20,6,fill_chacha   },
 };
 // For x256++simd, state.xo stream 0 (4 words) is seeded or initialized directly and
-// then jumped to streams 1..3. For sfc64simd, the base state words are replicated to
-// 4 streams with counters s, s+2^62, s+2*2^62, s+3*2^62.
+// then jumped to streams 1..7. For sfc64simd, the base state words are replicated to
+// 8 streams with counters s + k*2^61 for k = 0..7.
 
 static rng_entry *find_entry(rng_engine e) {
   for (int i = 0; i < LEN(rng_table); i++)
@@ -92,13 +93,22 @@ randompack_rng *randompack_create(const char *engine) {
   if (!ALLOC(rng, 1)) return 0;
   rng->engine = INVALID;
   rng->cpu_has_avx2 = false;
+  rng->cpu_has_avx512 = false;
   if (!select_engine(engine, rng)) {
     rng->last_error = "unknown engine name (spelling error in requested engine)";
     return rng;
   }
+#if defined(BUILD_AVX512)
+  rng->cpu_has_avx512 = cpu_has_avx512();
+#endif
 #if defined(BUILD_AVX2)
   rng->cpu_has_avx2 = cpu_has_avx2();
   if (rng->engine == FAST && rng->cpu_has_avx2) rng->fill = fill_fast_avx2;
+  if (rng->engine == SFCSIMD && rng->cpu_has_avx2) rng->fill = fill_sfc64simd_avx2;
+#endif
+#if defined(BUILD_AVX512)
+  if (rng->engine == FAST && rng->cpu_has_avx512) rng->fill = fill_fast_avx512;
+  if (rng->engine == SFCSIMD && rng->cpu_has_avx512) rng->fill = fill_sfc64simd_avx512;
 #endif
   rand_randomize(rng);
   rand_init(rng);
@@ -188,8 +198,13 @@ bool randompack_jump(int p, randompack_rng *rng) {
     rng->last_error = "randompack_jump: Only supported for xor-family engines and ranlux++";
     return false;
   }
-  if (rng->engine == X256PP || rng->engine == X256SS || rng->engine == FAST ||
-      rng->engine == RANLUXPP) {
+  if (rng->engine == X256PP || rng->engine == X256SS || rng->engine == FAST) {
+    if (p != 32 && p != 64 && p != 96 && p != 128 && p != 192 && p != 253) {
+      rng->last_error = "unsupported jump exponent (must be 32/64/96/128/192/253)";
+      return false;
+    }
+  }
+  else if (rng->engine == RANLUXPP) {
     if (p != 32 && p != 64 && p != 96 && p != 128 && p != 192) {
       rng->last_error = "unsupported jump exponent (must be 32/64/96/128/192)";
       return false;
@@ -339,6 +354,11 @@ bool randompack_deserialize(const uint8_t *buf, int len, randompack_rng *rng) {
   }
 #if defined(BUILD_AVX2)
   if (rng->engine == FAST && rng->cpu_has_avx2) rng->fill = fill_fast_avx2;
+  if (rng->engine == SFCSIMD && rng->cpu_has_avx2) rng->fill = fill_sfc64simd_avx2;
+#endif
+#if defined(BUILD_AVX512)
+  if (rng->engine == FAST && rng->cpu_has_avx512) rng->fill = fill_fast_avx512;
+  if (rng->engine == SFCSIMD && rng->cpu_has_avx512) rng->fill = fill_sfc64simd_avx512;
 #endif
   return true;
 }
@@ -565,29 +585,6 @@ bool randompack_long_long(long long x[], size_t len, long long m, long long n,
   return true;
 }
 
-// bool randompack_long_long(long long x[], size_t len, long long m, long long n,
-//   randompack_rng *rng) {
-//   if (!rng) return false;
-//   if (!x)
-//     rng->last_error = "invalid arguments to randompack_long_long";
-//   else if (m > n)
-//     rng->last_error = "randompack long long: m must be <= n";
-//   else
-//     rng->last_error = 0;
-//   if (rng->last_error) return false;
-//   if (m == LLONG_MIN && n == LLONG_MAX) {
-//     rand_uint64((uint64_t*)x, len, 0, rng);
-//     return true;
-//   }
-//   uint64_t span = (uint64_t)n - (uint64_t)m;
-//   rand_uint64((uint64_t*)x, len, span + 1, rng);
-//   for (size_t i = 0; i < len; i++) {
-//     uint64_t u = (uint64_t)x[i] + (uint64_t)m;
-//     x[i] = (long long)u;
-//   }
-//   return true;
-// }
-
 bool randompack_perm(int x[], int len, randompack_rng *rng) {
   if (!rng) return false;
   if (!x)
@@ -637,17 +634,12 @@ bool randompack_unif(double x[], size_t len, double a, double b,
   rng->last_error = 0;
   rand_dble(x, len, rng); // x in [0,1)
   if (a==0 && b==1) return true;
-#if defined(FP_FAST_FMA)
+#if defined(FP_FAST_FMA) // guarantee output <= b when input < 1
   double w = nextafter(b - a, 0.0);
-  for (size_t i = 0; i < len; i++) x[i] = fma(w, x[i], a);
-#else
+#else 
   double w = b - a;
-  for (size_t i = 0; i < len; i++) {
-    double y = a + w*x[i];
-    y = y > b ? b : y;
-    x[i] = y;
-  }
 #endif
+  shift_scale_double_inplace(x, len, a, w, rng);
   return true;
 }
 
@@ -671,8 +663,7 @@ bool randompack_normal(double x[], size_t len, double mu, double sigma,
   }
   rng->last_error = 0;
   rand_norm(x, len, rng);
-  if (mu != 0 || sigma != 1)
-    for (size_t i = 0; i < len; i++) x[i] = mu + sigma*x[i];
+  if (mu != 0 || sigma != 1) shift_scale_double_inplace(x, len, mu, sigma, rng);
   return true;
 }
 
@@ -684,7 +675,7 @@ bool randompack_exp(double x[], size_t len, double scale, randompack_rng *rng) {
   }
   rng->last_error = 0;
   rand_exp(x, len, rng);
-  if (scale != 1) for (size_t i = 0; i < len; i++) x[i] *= scale;
+  if (scale != 1) scale_double_inplace(x, len, scale, rng);
   return true;
 }
 
@@ -833,7 +824,3 @@ bool randompack_mvn(char *transp, double mu[], double Sig[], int d, size_t n, do
   }
   else return true;
 }
-
-// =========== Include file with single precision (float) random generators ==============
-
-#include "randompack_float.inc"

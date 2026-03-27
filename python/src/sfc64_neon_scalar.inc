@@ -1,12 +1,12 @@
 // -*- C -*-
 
 #if HAVE_VEC
-#define SFC64_STEP_VEC(a, b, c, ctr, outv) do { \
+#define SFC64_STEP_VEC(a, b, c, ctr, one, outv) do { \
   VEC_T t_; \
   (outv) = VEC_ADD(VEC_ADD((a), (b)), (ctr)); \
-  (ctr) = VEC_ADD((ctr), VEC_SET1(1)); \
+  (ctr) = VEC_ADD((ctr), (one)); \
   t_ = VEC_XOR((b), VEC_SHR11((b))); \
-  (b) = VEC_ADD((c), VEC_SHL3((c))); \
+  (b) = VEC_MUL9((c)); \
   (c) = VEC_ADD(VEC_ROTL24((c)), (outv)); \
   (a) = t_; \
 } while (0)
@@ -24,12 +24,26 @@ static inline void fill_sfc64simd(uint64_t *buf, size_t len, randompack_state *s
   VEC_T b1 = VEC_LOAD(&st->s1[2]);
   VEC_T c1 = VEC_LOAD(&st->s2[2]);
   VEC_T d1 = VEC_LOAD(&st->s3[2]);
-  for (size_t i = 0; i < len; i += 4) {
-    VEC_T r0, r1;
-    SFC64_STEP_VEC(a0, b0, c0, d0, r0);
-    SFC64_STEP_VEC(a1, b1, c1, d1, r1);
+  VEC_T a2 = VEC_LOAD(&st->s0[4]);
+  VEC_T b2 = VEC_LOAD(&st->s1[4]);
+  VEC_T c2 = VEC_LOAD(&st->s2[4]);
+  VEC_T d2 = VEC_LOAD(&st->s3[4]);
+  VEC_T a3 = VEC_LOAD(&st->s0[6]);
+  VEC_T b3 = VEC_LOAD(&st->s1[6]);
+  VEC_T c3 = VEC_LOAD(&st->s2[6]);
+  VEC_T d3 = VEC_LOAD(&st->s3[6]);
+  VEC_T one = VEC_SET1(1);
+  size_t i = 0;
+  for (; i < len; i += 8) {
+    VEC_T r0, r1, r2, r3;
+    SFC64_STEP_VEC(a0, b0, c0, d0, one, r0);
+    SFC64_STEP_VEC(a1, b1, c1, d1, one, r1);
+    SFC64_STEP_VEC(a2, b2, c2, d2, one, r2);
+    SFC64_STEP_VEC(a3, b3, c3, d3, one, r3);
     VEC_STORE(out + i, r0);
     VEC_STORE(out + i + 2, r1);
+    VEC_STORE(out + i + 4, r2);
+    VEC_STORE(out + i + 6, r3);
   }
   VEC_STORE(&st->s0[0], a0);
   VEC_STORE(&st->s1[0], b0);
@@ -39,40 +53,27 @@ static inline void fill_sfc64simd(uint64_t *buf, size_t len, randompack_state *s
   VEC_STORE(&st->s1[2], b1);
   VEC_STORE(&st->s2[2], c1);
   VEC_STORE(&st->s3[2], d1);
+  VEC_STORE(&st->s0[4], a2);
+  VEC_STORE(&st->s1[4], b2);
+  VEC_STORE(&st->s2[4], c2);
+  VEC_STORE(&st->s3[4], d2);
+  VEC_STORE(&st->s0[6], a3);
+  VEC_STORE(&st->s1[6], b3);
+  VEC_STORE(&st->s2[6], c3);
+  VEC_STORE(&st->s3[6], d3);
 #else
-  uint64_t a0 = st->s0[0], b0 = st->s1[0], c0 = st->s2[0], d0 = st->s3[0];
-  uint64_t a1 = st->s0[1], b1 = st->s1[1], c1 = st->s2[1], d1 = st->s3[1];
-  uint64_t a2 = st->s0[2], b2 = st->s1[2], c2 = st->s2[2], d2 = st->s3[2];
-  uint64_t a3 = st->s0[3], b3 = st->s1[3], c3 = st->s2[3], d3 = st->s3[3];
-  for (size_t i = 0; i < len; i += 4) {
-    uint64_t r0 = a0 + b0 + d0++;
-    uint64_t r1 = a1 + b1 + d1++;
-    uint64_t r2 = a2 + b2 + d2++;
-    uint64_t r3 = a3 + b3 + d3++;
-    uint64_t na0 = b0 ^ (b0 >> 11);
-    uint64_t na1 = b1 ^ (b1 >> 11);
-    uint64_t na2 = b2 ^ (b2 >> 11);
-    uint64_t na3 = b3 ^ (b3 >> 11);
-    b0 = c0 + (c0 << 3);
-    b1 = c1 + (c1 << 3);
-    b2 = c2 + (c2 << 3);
-    b3 = c3 + (c3 << 3);
-    c0 = ROTL(c0, 24) + r0;
-    c1 = ROTL(c1, 24) + r1;
-    c2 = ROTL(c2, 24) + r2;
-    c3 = ROTL(c3, 24) + r3;
-    a0 = na0;
-    a1 = na1;
-    a2 = na2;
-    a3 = na3;
-    out[i] = r0;
-    out[i + 1] = r1;
-    out[i + 2] = r2;
-    out[i + 3] = r3;
+  for (size_t i = 0; i < len; i += 8) {
+    for (int j = 0; j < 8; j++) {
+      uint64_t a = st->s0[j];
+      uint64_t b = st->s1[j];
+      uint64_t c = st->s2[j];
+      uint64_t d = st->s3[j];
+      out[i + j] = a + b + d;
+      st->s3[j] = d + 1;
+      st->s0[j] = b ^ (b >> 11);
+      st->s1[j] = c + (c << 3);
+      st->s2[j] = ROTL(c, 24) + out[i + j];
+    }
   }
-  st->s0[0] = a0; st->s1[0] = b0; st->s2[0] = c0; st->s3[0] = d0;
-  st->s0[1] = a1; st->s1[1] = b1; st->s2[1] = c1; st->s3[1] = d1;
-  st->s0[2] = a2; st->s1[2] = b2; st->s2[2] = c2; st->s3[2] = d2;
-  st->s0[3] = a3; st->s1[3] = b3; st->s2[3] = c3; st->s3[3] = d3;
 #endif
 }

@@ -12,8 +12,7 @@ from typing import Callable, List
 import numpy as np
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-if ROOT not in sys.path:
-  sys.path.insert(0, ROOT)
+sys.path = [p for p in sys.path if os.path.abspath(p or os.getcwd()) != ROOT]
 
 import randompack as rp
 
@@ -91,8 +90,11 @@ def make_dists() -> List[Dist]:
   def np_f_5_10(rng: np.random.Generator, n: int) -> np.ndarray:
     return rng.f(5.0, 10.0, n)
 
-  def np_weibull_2_1(rng: np.random.Generator, n: int) -> np.ndarray:
-    return rng.weibull(2.0, n)
+  def np_gamma_0_5_2(rng: np.random.Generator, n: int) -> np.ndarray:
+    return rng.gamma(0.5, 2.0, n)
+
+  def np_weibull_2_3(rng: np.random.Generator, n: int) -> np.ndarray:
+    return 3.0*rng.weibull(2.0, n)
 
   def rp_u01(rng: rp.Rng, n: int) -> np.ndarray:
     return rng.unif(size=n)
@@ -136,8 +138,11 @@ def make_dists() -> List[Dist]:
   def rp_f_5_10(rng: rp.Rng, n: int) -> np.ndarray:
     return rng.f(size=n, nu1=5, nu2=10)
 
-  def rp_weibull_2_1(rng: rp.Rng, n: int) -> np.ndarray:
-    return rng.weibull(size=n, shape=2, scale=1)
+  def rp_gamma_0_5_2(rng: rp.Rng, n: int) -> np.ndarray:
+    return rng.gamma(size=n, shape=0.5, scale=2)
+
+  def rp_weibull_2_3(rng: rp.Rng, n: int) -> np.ndarray:
+    return rng.weibull(size=n, shape=2, scale=3)
 
   return [
     Dist("unif(0,1)", np_u01, rp_u01),
@@ -150,11 +155,12 @@ def make_dists() -> List[Dist]:
     Dist("gumbel(0,1)", np_gumbel_0_1, rp_gumbel_0_1),
     Dist("pareto(1,2)", np_pareto_1_2, rp_pareto_1_2),
     Dist("gamma(2,3)", np_gamma_2_3, rp_gamma_2_3),
-    Dist("chi2(5)", np_chi2_5, rp_chi2_5),
+    Dist("gamma(0.5,2)", np_gamma_0_5_2, rp_gamma_0_5_2),
     Dist("beta(2,5)", np_beta_2_5, rp_beta_2_5),
+    Dist("chi2(5)", np_chi2_5, rp_chi2_5),
     Dist("t(10)", np_t_10, rp_t_10),
     Dist("F(5,10)", np_f_5_10, rp_f_5_10),
-    Dist("weibull(2,1)", np_weibull_2_1, rp_weibull_2_1),
+    Dist("weibull(2,3)", np_weibull_2_3, rp_weibull_2_3),
   ]
 
 

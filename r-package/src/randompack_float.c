@@ -1,5 +1,23 @@
 // -*- C -*-
 
+#include <stdint.h>
+#include <math.h>
+#include <float.h>
+#include <string.h>
+#include "randompack.h"
+#include "randompack_internal.h"
+#include "printX.h"
+#include "openlibm.inc"
+// #include "log_exp_float.inc"
+#include "buffer_draw.inc"
+// #include "scale_inplace_float.inc"
+// #include "ziggurat_const_float.h"
+// #include "zig_D_float.h"
+
+// #include "rand_float.inc"
+// #include "norm_exp_float.inc"
+// #include "distrib_float.inc"
+
 bool randompack_u01f(float x[], size_t len, randompack_rng *rng) {
   if (!rng) return false;
   if (!x)
@@ -18,19 +36,14 @@ bool randompack_uniff(float x[], size_t len, float a, float b, randompack_rng *r
     return false;
   }
   rng->last_error = 0;
-  rand_float(x, len, rng); // x in [0,1)
-  if (a==0 && b==1) return true;
+  rand_float(x, len, rng);
+  if (a == 0 && b == 1) return true;
 #if defined(FP_FAST_FMA)
   float w = nextafterf(b - a, 0.0f);
-  for (size_t i = 0; i < len; i++) x[i] = fmaf(w, x[i], a);
 #else
   float w = b - a;
-  for (size_t i = 0; i < len; i++) {
-    float y = a + w*x[i];
-    y = y > b ? b : y;
-    x[i] = y;
-  }
 #endif
+  shift_scale_float_inplace(x, len, a, w, rng);
   return true;
 }
 
@@ -53,7 +66,7 @@ bool randompack_expf(float x[], size_t len, float scale, randompack_rng *rng) {
   }
   rng->last_error = 0;
   rand_expf(x, len, rng);
-  if (scale != 1.0f) for (size_t i = 0; i < len; i++) x[i] *= scale;
+  if (scale != 1.0f) scale_float_inplace(x, len, scale, rng);
   return true;
 }
 
@@ -66,8 +79,7 @@ bool randompack_normalf(float x[], size_t len, float mu, float sigma,
   }
   rng->last_error = 0;
   rand_normf(x, len, rng);
-  if (mu != 0 || sigma != 1)
-    for (size_t i = 0; i < len; i++) x[i] = mu + sigma*x[i];
+  if (mu != 0 || sigma != 1) shift_scale_float_inplace(x, len, mu, sigma, rng);
   return true;
 }
 

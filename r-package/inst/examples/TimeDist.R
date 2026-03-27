@@ -11,19 +11,41 @@ if (!requireNamespace("dqrng", quietly = TRUE)) {
 }
 
 args <- commandArgs(trailingOnly = TRUE)
+if (any(args == "-h")) {
+  cat("Usage: Rscript TimeDist.R [-b] [-c chunk] [engine]\n")
+  cat("  -b        Enable bitexact mode\n")
+  cat("  -c chunk  Set chunk size (default 4096)\n")
+  quit(save="no", status=0)
+}
 bitexact <- any(args == "-b")
 args <- args[args != "-b"]
+chunk <- 4096L
+chunk_flag_sep <- which(args == "-c")
+if (length(chunk_flag_sep) == 1L) {
+  if (chunk_flag_sep == length(args)) {
+    stop("Use -c <chunk> with a following positive integer.")
+  }
+  chunk_arg <- args[[chunk_flag_sep + 1L]]
+  chunk <- as.integer(chunk_arg)
+  if (is.na(chunk) || chunk <= 0L) {
+    stop("Chunk size must be a positive integer.")
+  }
+  args <- args[-c(chunk_flag_sep, chunk_flag_sep + 1L)]
+}
+if (length(chunk_flag_sep) > 1L) {
+  stop("Use -c <chunk> at most once.")
+}
 engine <- if (length(args) >= 1L) args[[1]] else ""
 if (!nzchar(engine)) engine <- "x256++simd"
 
 rng <- randompack::randompack_rng(engine=engine, bitexact=bitexact)
 
-chunk = 4096
 bench_time = 0.2
 reps = max(1, floor(1e6 / chunk))
 
 cat(sprintf("Platform:  %s\n", R.version$platform))
 cat(sprintf("Engine:    %s\n", engine))
+cat(sprintf("Chunk:     %d\n", chunk))
 cat(sprintf("Time/case: %.3f s\n", bench_time))
 
 time_dist = function(f, chunk, reps, bench_time) {

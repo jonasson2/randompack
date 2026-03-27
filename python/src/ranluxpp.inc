@@ -162,17 +162,6 @@ ALWAYS_INLINE int shly240(uint64_t y[9]) {
   return co;
 }
 
-ALWAYS_INLINE int shly48(uint64_t y[9]) {
-  int co = (int)((y[5] >> 16) & 1);
-  y[5] = (y[5] << 48) | (y[4] >> 16);
-  y[4] = (y[4] << 48) | (y[3] >> 16);
-  y[3] = (y[3] << 48) | (y[2] >> 16);
-  y[2] = (y[2] << 48) | (y[1] >> 16);
-  y[1] = (y[1] << 48) | (y[0] >> 16);
-  y[0] =  y[0] << 48;
-  return co;
-}
-
 ALWAYS_INLINE void corr_r_minus_cm(uint64_t r[9], int c) {
   uint64_t
     c0 = (uint64_t)abs(c),

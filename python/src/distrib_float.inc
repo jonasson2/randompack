@@ -1,19 +1,4 @@
 // -*- mode: c; -*-
-// ALWAYS_INLINE void rand_float(float x[], size_t len, randompack_rng *rng) {
-//   int w = enter_u32_mode(rng);
-//   size_t i = 0;
-//   while (i < len) {
-//     fill_if_empty32(rng, &w);
-//     int take = min(len - i, 2*BUFSIZE - w);
-//     for (int j = 0; j < take; j++) {
-//       uint32_t v = rng->buf.u32[w + j];
-//       x[i + j] = U32_TO_FLOAT(v);
-//     }
-//     w += take;
-//     i += take;
-//   }
-//   exit_u32_mode(rng, w);
-// }
 #if defined(USE_ACCEL_VV)
 void vvexpf(float *y, const float *x, const int *n);
 void vvlogf(float *y, const float *x, const int *n);
@@ -22,8 +7,7 @@ void vvlogf(float *y, const float *x, const int *n);
 static void rand_lognormalf(float x[], size_t len, float mu, float sigma,
   randompack_rng *rng) {
   rand_normf(x, len, rng); // N(0,1)
-  if (mu != 0 || sigma != 1)
-    for (size_t i = 0; i < len; i++) x[i] = mu + sigma*x[i];
+  if (mu != 0 || sigma != 1) shift_scale_float_inplace(x, len, mu, sigma, rng);
   expf_inplace(x, len, rng);
 }
 
@@ -145,7 +129,7 @@ ALWAYS_INLINE void gen_gumbelf(float *x, size_t len, float mu, float beta,
   logf_inplace(x, len, rng);
   for (size_t i = 0; i < len; i++) x[i] = -x[i];
   logf_inplace(x, len, rng);
-  for (size_t i = 0; i < len; i++) x[i] = mu - beta*x[i];
+  shift_scale_float_inplace(x, len, mu, -beta, rng);
 }
 
 ALWAYS_INLINE void gen_paretof(float *x, size_t len, float xm, float alpha,
@@ -153,7 +137,7 @@ ALWAYS_INLINE void gen_paretof(float *x, size_t len, float xm, float alpha,
   rand_expf(x, len, rng);
   for (size_t i = 0; i < len; i++) x[i] = x[i]/alpha;
   expf_inplace(x, len, rng);
-  for (size_t i = 0; i < len; i++) x[i] *= xm;
+  scale_float_inplace(x, len, xm, rng);
 }
 
 ALWAYS_INLINE void gen_weibullf(float *x, size_t len, float shape,
@@ -163,7 +147,7 @@ ALWAYS_INLINE void gen_weibullf(float *x, size_t len, float shape,
   logf_inplace(x, len, rng);
   for (size_t i = 0; i < len; i++) x[i] *= inv_shape;
   expf_inplace(x, len, rng);
-  if (scale != 1.0f) for (size_t i = 0; i < len; i++) x[i] *= scale;
+  if (scale != 1.0f) scale_float_inplace(x, len, scale, rng);
 }
 
 ALWAYS_INLINE void gen_skew_normalf(float *x, size_t len, float mu,

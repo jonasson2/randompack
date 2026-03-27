@@ -9,7 +9,10 @@
 // Accept if x <= x{i-1}.
 // Draw y if x{i-1} < x <= x{i}
 
-#define DBL(x) ((x)*0x1.0p-52)
+#define NORM_LIKELY_DECODE(x, r, idx, ki, rabs)                         \
+ ki = ki_double[idx];                                                   \
+ rabs = r & 0x000fffffffffffff;                                         \
+ x = ((r >> 52) & 1 ? -(int64_t)rabs : (int64_t)rabs) * wi_double[idx];
 
 #include <stdint.h>
 #include <math.h>
@@ -27,9 +30,6 @@ static uint64_t norm_slow_accept = 0;
 static uint64_t norm_slow_retry = 0;
 static uint64_t norm_slow_pdf_accept = 0;
 static uint64_t norm_slow_pdf_reject = 0;
-static uint64_t exp_pdf_calls = 0;
-static uint64_t exp_draws = 0;
-static uint64_t exp_slow = 0;
 
 void randompack_norm_counters_reset(void) {
   norm_pdf_calls = 0;
@@ -39,9 +39,6 @@ void randompack_norm_counters_reset(void) {
   norm_slow_retry = 0;
   norm_slow_pdf_accept = 0;
   norm_slow_pdf_reject = 0;
-  exp_pdf_calls = 0;
-  exp_draws = 0;
-  exp_slow = 0;
 }
 
 void randompack_norm_counters_get(uint64_t *draws, uint64_t *pdf_calls) {
@@ -58,27 +55,7 @@ void randompack_norm_counters_get_slow(uint64_t *tail, uint64_t *accept,
   if (pdf_reject) *pdf_reject = norm_slow_pdf_reject;
 }
 
-void randompack_exp_counters_get(uint64_t *draws, uint64_t *slow,
-  uint64_t *pdf_calls) {
-  if (draws) *draws = exp_draws;
-  if (slow) *slow = exp_slow;
-  if (pdf_calls) *pdf_calls = exp_pdf_calls;
-}
-
 //=============================== NORMAL DISTRIBUTION ==============================
-
-ALWAYS_INLINE double norm_decode(uint64_t r, uint8_t idx, uint64_t *ki, uint64_t *rabs) {
-  int64_t s = ((int64_t)(r << 11)) >> 11; // change sign
-  *ki = ki_double[idx];
-  *rabs = r & 0x000fffffffffffff;
-  return (double)s * wi_double[idx];
-}
-
-NEVER_INLINE bool below_normpdf(uint8_t idx, double x, double y) {
-  double f0 = fi_double[idx-1];
-  double f1 = fi_double[idx];
-  return f1 + y*(f0 - f1) < openlibm_exp(-x*x/2);
-}
 
 NEVER_INLINE double norm_tail_draw(randompack_rng *rng, uint64_t rabs, double y, int *w){
   double xx, yy, x;
@@ -93,39 +70,47 @@ NEVER_INLINE double norm_tail_draw(randompack_rng *rng, uint64_t rabs, double y,
   }
 }
 
-NEVER_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x, uint8_t idx,
-                                  uint64_t rabs, uint64_t ki) {
-  uint64_t ru, tmp, L, R, Y, YL;
-  const int inflection_idx = 52;
+NEVER_INLINE bool below_normpdf(uint8_t idx, double x, double y) {
+  double f0 = fi_double[idx-1];
+  double f1 = fi_double[idx];
+  return f1 + y*(f0 - f1) < openlibm_exp(-x*x/2);
+}
+
+#define DBL(x) ((x)*0x1.0p-52)
+
+ALWAYS_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x,
+                                   uint8_t idx, uint64_t rabs, uint64_t ki) {
+  uint64_t ru, Y;
+  // uint64_t tmp, L, R, YL;
+  // const int inflection_idx = 52;
   for (;;) {
     Y = draw_u64(rng, w);
-    if (UNLIKELY(idx == 0)) {
-      double u = U64_TO_DOUBLE(Y);
+    // L = (1ULL << 52) - ki;
+    // R = (1ULL << 52) - rabs;
+    double u = U64_TO_DOUBLE(Y);
+    if (UNLIKELY(idx == 0)) {   //
       x = norm_tail_draw(rng, rabs, u, w);
       return x;
     }
-    L = (1ULL << 52) - ki;
-    R = (1ULL << 52) - rabs;
-    MUL64_WIDE(Y, L, YL, tmp);
-    (void) tmp;
-    if (LIKELY(idx > inflection_idx)) {
-      if (YL > R) goto next_try;
-      if (YL + Dnorm[idx] < R) return x;
-    }
-    else if (LIKELY(idx < inflection_idx)) {
-      if (YL < R) return x;
-      if (YL > R + Dnorm[idx]) goto next_try;
-    }
-    else {
-      if (YL > R + Dzig52) goto next_try;
-      if (YL + Dnorm[idx] < R) return x;
-    }
-    double u = U64_TO_DOUBLE(Y);
+    // MUL64_WIDE(Y, L, YL, tmp);
+    // (void) tmp;
+    // if (LIKELY(idx > inflection_idx)) {
+    //   if (YL > R) goto next_try;
+    //   if (YL + Dnorm[idx] < R) return x;
+    // }
+    // else if (LIKELY(idx < inflection_idx)) {
+    //   if (YL < R) return x;
+    //   if (YL > R + Dnorm[idx]) goto next_try;
+    // }
+    // else {
+    //   if (YL > R + Dzig52) goto next_try;
+    //   if (YL + Dnorm[idx] < R) return x;
+    // }
     if (below_normpdf(idx, x, u)) return x;
-  next_try:
+    //  next_try:
     ru = draw_u64(rng, w);
     idx = ru >> 56;
-    x = norm_decode(ru, idx, &ki, &rabs);
+    NORM_LIKELY_DECODE(x, ru, idx, ki, rabs);
     if (LIKELY(rabs < ki)) return x;
   }
 }
@@ -136,7 +121,7 @@ ALWAYS_INLINE double draw_norm(randompack_rng *rng, int *w) {
   uint8_t idx;
   r = draw_u64(rng, w);
   idx = r >> 56;
-  x = norm_decode(r, idx, &ki, &rabs);
+  NORM_LIKELY_DECODE(x, r, idx, ki, rabs);
   if (LIKELY(rabs < ki)) return x;
   x = norm_unlikely(rng, w, x, idx, rabs, ki);
   return x;
@@ -152,8 +137,8 @@ NEVER_INLINE void rand_norm(double *buf, size_t len, randompack_rng *rng) {
   for (size_t i = len; i-- > 0;) {
     uint8_t *bufpi = (uint8_t*)(buf + i);
     memcpy(&r, bufpi, sizeof(r));
-    memcpy(&idx, bufpi + 7, 1);
-    x = norm_decode(r, idx, &ki, &rabs);
+    memcpy(&idx, (uint8_t*)(buf + i) + 7, 1);  // measured slightly faster than >> 56
+    NORM_LIKELY_DECODE(x, r, idx, ki, rabs);
     buf[i] = LIKELY(rabs < ki) ? x : norm_unlikely(rng, &w, x, idx, rabs, ki);
   }
   exit_u64_mode(rng, w);
@@ -178,19 +163,20 @@ NEVER_INLINE double exp_taildraw(randompack_rng *rng, int *w) {
 ALWAYS_INLINE double exp_unlikely(randompack_rng *rng, int *w, double x, uint8_t idx,
   uint64_t r) {
   double y;
-  uint64_t Y, YL, R, L, tmp, ke = ke_double[idx];
+  uint64_t Y, ke = ke_double[idx];
+  // uint64_t L, R, YL, tmp;
   while (true) {
-    if (UNLIKELY(idx == 0)) return exp_taildraw(rng, w);
+    if (UNLIKELY(idx == 0)) x = exp_taildraw(rng, w);
     Y = draw_u64(rng, w);
-    L = (1ULL << 53) - ke;
-    R = (1ULL << 53) - r;
-    MUL64_WIDE(Y, L, YL, tmp);
-    (void)tmp;
-    if (LIKELY(YL > R)) goto next_try;         // above secant
-    if (YL + Dexp[idx] < R) return x;  // below pdf by the gap bound
+    // L = (1ULL << 53) - ke;
+    // R = (1ULL << 53) - r;
+    // MUL64_WIDE(Y, L, YL, tmp);
+    // (void)tmp;
+    // if (YL > R) goto next_try;         // above secant
+    // if (YL + Dexp[idx] < R) return x;  // below pdf by the gap bound
     y = U64_TO_DOUBLE(Y);
     if (below_exppdf(idx, x, y)) return x; // below curve
-  next_try:
+    // next_try:
     r = draw_u64(rng, w);
     idx = r >> 56;
     r &= 0x1FFFFFFFFFFFFF;
@@ -206,14 +192,15 @@ ALWAYS_INLINE void rand_exp(double *buf, size_t len, randompack_rng *rng) {
   int w = enter_u64_mode(rng);
   uint8_t idx;
   uint64_t r;
-  double x;
-  for (size_t i = len; i-- > 0;) {
-    uint8_t *bufpi = (uint8_t*)(buf + i);
-    memcpy(&r, bufpi, sizeof(r));
+  double x, *bufi = buf;
+  for (size_t i = len; i > 0; i--) {
+    memcpy(&r, bufi, sizeof(r));
     memcpy(&idx, (uint8_t*)(buf + i) + 7, 1);  // measured slightly faster than >> 56
     r &= 0x1FFFFFFFFFFFFF;
     x = r*we_double[idx];
-    buf[i] = LIKELY(r < ke_double[idx]) ? x : exp_unlikely(rng, &w, x, idx, r);
+    *bufi++ = LIKELY(r < ke_double[idx]) ? x : exp_unlikely(rng, &w, x, idx, r);
   }
   exit_u64_mode(rng, w);
 }
+
+#include "norm_exp_float.inc"

@@ -56,17 +56,8 @@ static inline void scatter_to_stream0(randompack_rng *rng) {
   st->s3[0] = u64[3];
 }
 
-static inline void gather_from_stream0(randompack_rng *rng) {
-  xo256 *st = &rng->state.xo;
-  uint64_t *u64 = rng->state.u64;
-  u64[0] = st->s0[0];
-  u64[1] = st->s1[0];
-  u64[2] = st->s2[0];
-  u64[3] = st->s3[0];
-}
-
 static inline void x256ppsimd_jump(int p, randompack_rng *rng) {
-  for (int i=0; i<4; i++) {
+  for (int i=0; i<8; i++) {
     uint64_t stream_state[4];
     get_stream(stream_state, i, rng);
     xoshiro256_jump(stream_state, p);
@@ -80,8 +71,8 @@ static inline void setup_sfc64simd_streams(randompack_rng *rng) {
   uint64_t b = rng->state.u64[1];
   uint64_t c = rng->state.u64[2];
   uint64_t s = rng->state.u64[3];
-  uint64_t delta = 1ULL << 62;
-  for (int i = 0; i < 4; i++) {
+  uint64_t delta = 1ULL << 61;
+  for (int i = 0; i < 8; i++) {
     st->s0[i] = a;
     st->s1[i] = b;
     st->s2[i] = c;
@@ -122,10 +113,10 @@ static inline void normalize_state(randompack_rng *rng) {
 }
 
 static inline void fill_stream_states_with_jump(randompack_rng *rng) {
-  for (int i=1; i<4; i++) {
+  for (int i=1; i<8; i++) {
     uint64_t stream_state[4];
     get_stream(stream_state, i-1, rng);
-    xoshiro256_jump(stream_state, 254);
+    xoshiro256_jump(stream_state, 253);
     set_stream(i, stream_state, rng);
   }
 }

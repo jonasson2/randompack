@@ -91,6 +91,26 @@ bool randompack_norm( // Generate standard normal random numbers N(0,1), false o
   randompack_rng *rng   // in/out  Random number generator
 );
 
+void randompack_norm_counters_reset(void); // Reset normal draw/pdf counters
+void randompack_norm_counters_get( // Read normal draw/pdf counters
+  uint64_t *draws,      // out     Total normal draws
+  uint64_t *pdf_calls   // out     Count of below_normpdf calls
+);
+
+void randompack_norm_counters_get_slow( // Read normal slow-path counters
+  uint64_t *tail,       // out     Tail path hits (idx == 0)
+  uint64_t *accept,     // out     Slow-path accept without pdf check
+  uint64_t *retry,      // out     Slow-path retry before pdf check
+  uint64_t *pdf_accept, // out     below_normpdf accept
+  uint64_t *pdf_reject  // out     below_normpdf reject
+);
+
+void randompack_exp_counters_get( // Read exponential draw/slow/pdf counters
+  uint64_t *draws,      // out     Total exponential draws
+  uint64_t *slow,       // out     Slow-path entries
+  uint64_t *pdf_calls   // out     Count of below_exppdf calls
+);
+
 bool randompack_normal( // Generate normal random numbers N(mu,sigma), false on error
   double x[],           // out     vector: normal random numbers
   size_t len,           // in      Number of variates
@@ -114,13 +134,6 @@ bool randompack_exp( // Generate exponential random numbers, false on error
   randompack_rng *rng   // in/out  Random number generator
 );
 
-void randompack_get_counters( // Get exp draw counters
-  int *count_above_secant,  // out     Count above secant
-  int *count_below_tangent, // out     Count below tangent
-  int *count_curve,         // out     Count curve
-  int *count_below_curve,    // out     Count below curve
-  int *count_tail              
-);
 
 bool randompack_gamma( // Generate gamma random numbers, false on error
   double x[],           // out     vector: gamma random numbers
@@ -309,7 +322,7 @@ bool randompack_bitexact( // Use bitexact log/exp (default false)
 );
 
 bool randompack_jump( // Jump xor-family or ranlux rng by 2^p steps, false on error
-  int p,               // in      Jump exponent (32/64/96/128/192)
+  int p,               // in      Jump exponent (32/64/96/128/192, or 253 for x256* engines)
   randompack_rng *rng  // in/out  Random number generator
 );
 
@@ -337,6 +350,13 @@ bool randompack_normf( // Generate normal random floats N(0,1), false on error
   randompack_rng *rng   // in/out  Random number generator
 );
 
+void randompack_float_counters_reset(void); // Reset float norm/exp counters
+void randompack_normf_counters_get( // Read float normal draw/slow/pdf counters
+  uint64_t *draws,      // out     Total float normal draws
+  uint64_t *slow,       // out     Slow-path entries
+  uint64_t *pdf_calls   // out     Count of below_normpdf_f calls
+);
+
 bool randompack_normalf( // Generate normal random floats N(mu,sigma), false on error
   float x[],             // out     vector: normal random numbers
   size_t len,            // in      Number of variates
@@ -358,6 +378,12 @@ bool randompack_expf( // Generate exponential random floats, false on error
   size_t len,          // in      Number of variates
   float scale,         // in      Scale parameter (1.0f → standard exponential)
   randompack_rng *rng  // in/out  Random number generator
+);
+
+void randompack_expf_counters_get( // Read float exponential draw/slow/pdf counters
+  uint64_t *draws,      // out     Total float exponential draws
+  uint64_t *slow,       // out     Slow-path entries
+  uint64_t *pdf_calls   // out     Count of below_exppdf_f calls
 );
 
 bool randompack_gammaf( // Generate gamma random floats, false on error
