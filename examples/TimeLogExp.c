@@ -363,7 +363,6 @@ int main(int argc, char **argv) {
     return help ? 0 : 1;
   }
 #if defined(__linux__)
-  pin_to_cpu0();
 #endif
   randompack_rng *rng = randompack_create(engine);
   if (!rng) {

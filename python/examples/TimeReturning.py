@@ -10,8 +10,7 @@ import time
 import numpy as np
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-if ROOT not in sys.path:
-  sys.path.insert(0, ROOT)
+sys.path = [p for p in sys.path if os.path.abspath(p or os.getcwd()) != ROOT]
 
 import randompack as rp
 
@@ -98,11 +97,15 @@ def main() -> None:
                  bench_time)
   print(f"{'gamma(2,3)':<18} {ns:8.2f}")
 
-  ns = time_dist(lambda: rng.chi2(chunk, nu=5), chunk, reps, bench_time)
-  print(f"{'chi2(5)':<18} {ns:8.2f}")
+  ns = time_dist(lambda: rng.gamma(chunk, shape=0.5, scale=2), chunk, reps,
+                 bench_time)
+  print(f"{'gamma(0.5,2)':<18} {ns:8.2f}")
 
   ns = time_dist(lambda: rng.beta(chunk, a=2, b=5), chunk, reps, bench_time)
   print(f"{'beta(2,5)':<18} {ns:8.2f}")
+
+  ns = time_dist(lambda: rng.chi2(chunk, nu=5), chunk, reps, bench_time)
+  print(f"{'chi2(5)':<18} {ns:8.2f}")
 
   ns = time_dist(lambda: rng.t(chunk, nu=10), chunk, reps, bench_time)
   print(f"{'t(10)':<18} {ns:8.2f}")
@@ -111,9 +114,9 @@ def main() -> None:
                  bench_time)
   print(f"{'F(5,10)':<18} {ns:8.2f}")
 
-  ns = time_dist(lambda: rng.weibull(chunk, shape=2, scale=1), chunk, reps,
+  ns = time_dist(lambda: rng.weibull(chunk, shape=2, scale=3), chunk, reps,
                  bench_time)
-  print(f"{'weibull(2,1)':<18} {ns:8.2f}")
+  print(f"{'weibull(2,3)':<18} {ns:8.2f}")
 
 
 if __name__ == "__main__":

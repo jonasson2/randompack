@@ -104,7 +104,6 @@ int main(void) {
   double out[LEN];
   fast_state st;
   init_fast_state(&st, 7);
-  pin_to_cpu0();
   warmup_cpu(50);
   double ns = time_fast_u01(out, LEN, 0.8, &st);
   printf("Time per draw: %.3f ns\n", ns);

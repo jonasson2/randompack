@@ -27,7 +27,6 @@ int main(void) {
   const double warmup_time = 0.2;
   const double bench_time = 0.8;
 #if defined(__linux__)
-  pin_to_cpu0();
 #endif
   randompack_rng *rng = randompack_create(engine);
   if (!rng) {
