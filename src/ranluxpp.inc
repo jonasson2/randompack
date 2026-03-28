@@ -192,7 +192,7 @@ ALWAYS_INLINE void mod9x9(uint64_t x[9], uint64_t z[18]) {
   corr_r_minus_cm(x, c);
 }
 
-static ALIGN64 void fill_ranluxpp(uint64_t *buf, size_t len,
+static inline ALIGN64 void fill_ranluxpp(uint64_t *buf, size_t len,
   randompack_state *state) {
   uint64_t *out = buf;
   uint64_t s[9];

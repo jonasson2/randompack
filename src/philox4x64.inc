@@ -65,7 +65,7 @@ philox4x64(philox4x64_ctr_t ctr, philox4x64_key_t key) {
   return ctr;
 }
 
-static ALIGN64 void fill_philox(uint64_t *buf, size_t len,
+static inline ALIGN64 void fill_philox(uint64_t *buf, size_t len,
   randompack_state *state) {
   uint64_t *out = buf;
   philox4x64_ctr_t ctr;

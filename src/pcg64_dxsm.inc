@@ -7,7 +7,7 @@
 //
 // SPDX-License-Identifier: 0BSD OR MIT-0
 
-static ALIGN64 void
+static inline ALIGN64 void
 fill_pcg64(uint64_t *buf, size_t len, randompack_state *state) {
   uint64_t *out = buf;
 

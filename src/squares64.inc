@@ -24,7 +24,7 @@ static inline uint64_t squares64(uint64_t ctr, uint64_t key) {
    ctr++;                                       \
  } while(0)
 
-static ALIGN64 void fill_squares(uint64_t *buf, size_t len,
+static inline ALIGN64 void fill_squares(uint64_t *buf, size_t len,
   randompack_state *state) {
   uint64_t *out = buf;
   uint64_t ctr = state->u64[0];

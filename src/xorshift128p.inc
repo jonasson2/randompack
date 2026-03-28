@@ -1,5 +1,5 @@
 // -*- mode: c -*-
-static ALIGN64 void fill_x128p(uint64_t *buf, size_t len, randompack_state *state) {
+static inline ALIGN64 void fill_x128p(uint64_t *buf, size_t len, randompack_state *state) {
   // With parameters (23,18,5), from Vigna (2014, arXiv:1404.0390)
   uint64_t *out = buf;
   size_t n = len;
