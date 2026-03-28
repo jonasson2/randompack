@@ -6,7 +6,7 @@ option('blas',
   description: 'System BLAS: builtin/accelerate/mkl/openblas/auto/system (auto searches accelerate/mkl/openblas)'
 )
 
-# Creates <build-dir>/examples/Test01Driver
+# Creates <build-dir>/examples/TestU01Driver
 # TestU01 prefix should be given as an absolute path.
 option('TestU01',
   type: 'string',

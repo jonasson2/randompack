@@ -1,8 +1,7 @@
-fortran_interface = build_fortran_interface
 fortran_src = []
 fortran_inc = []
 
-if fortran_interface
+if build_fortran_interface
   fortran_src = files(
     'src/randompack.f90',
   )

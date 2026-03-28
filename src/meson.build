@@ -94,8 +94,6 @@ endif
 extra_objs = avx2_objs + avx512_objs + blas_objs
 extra_objs_buf8 = avx2_objs_buf8 + avx512_objs_buf8 + blas_objs
 
-randompack_lto = fortran_interface ? ['b_lto=false'] : ['b_lto=true']
-
 librandompack = shared_library(
   'randompack',
   randompack_src,
@@ -103,7 +101,6 @@ librandompack = shared_library(
   include_directories: randompack_inc,
   dependencies: c_deps,
   c_args: base_c_args,
-  #override_options: randompack_lto,
   install: true,
 )
 

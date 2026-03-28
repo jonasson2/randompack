@@ -433,15 +433,15 @@ the different engines for creating mathematically proven independent
 streams: jumps for ranlux and the xor family, keys for the
 counter-based engines, $(a,b,c)$ state for sfc64, increments for pcg64
 and cwg128, and the nonce for ChaCha20. These stream-selection
-operations would typically be used together with the duplicate
-function when setting up parallel simulations.
+operations would typically be used together with the provided
+RNG duplicate function when setting up parallel simulations.
 
-Randompack’s randomize function obtains cryptographically secure system
-entropy from the operating system: it uses \texttt{RtlGenRandom} on
-Windows, \texttt{arc4random\_buf} on macOS and OpenBSD, and
-\texttt{getrandom} on Linux and other Unixes which support it, with
-\texttt{/dev/urandom} as a fallback. If that too is unavailable, an
-emergency fallback mixes in the system clock. 
+Randompack’s randomize function obtains (cryptographically secure)
+system entropy from the operating system: it uses
+\texttt{RtlGenRandom} on Windows, \texttt{arc4random\_buf} on macOS
+and OpenBSD, and \texttt{getrandom} on Linux and other Unixes which
+support it, with \texttt{/dev/urandom} as a fallback. If that too is
+unavailable, an emergency fallback mixes in the system clock.
 
 \cite{matsumoto2007initialization}
 

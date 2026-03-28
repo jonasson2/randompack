@@ -1,6 +1,6 @@
 # Development note:
 #
-# To installed in editable mode use:
+# To install in editable mode use:
 #
 #   pip install -e . --no-build-isolation
 #

@@ -94,7 +94,6 @@ math_dep = cc.find_library('m', required: false)
 c_deps += math_dep.found() ? [math_dep] : []
 
 rt_dep = disabler()
-rt_deps = []
 if host_system == 'linux'
   rt_dep = cc.find_library('rt', required: false)
   c_deps += rt_dep.found() ? [rt_dep] : []
@@ -209,7 +208,6 @@ endif
 if build_fortran and not build_fortran_interface
   message('Fortran interface disabled by build_fortran_interface option')
 endif
-fortran_interface = false
 fortran_src = []
 fortran_inc = []
 
@@ -235,6 +233,7 @@ pkg.generate(
 )
 
 if get_option('build_examples')
+  subdir('benchmark')
   subdir('examples')
 endif
 

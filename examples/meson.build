@@ -12,7 +12,7 @@ if threads_dep.found()
 endif
 mpi_dep = dependency('mpi', required: false)
 
-run_varmasim = executable(
+run_random = executable(
   'RunRandom',
   ['RunRandom.c'] + common_util,
   include_directories : [common_inc],
@@ -22,70 +22,6 @@ run_varmasim = executable(
 run_exp = executable(
   'RunExp',
   ['RunExp.c'] + common_util,
-  include_directories : [common_inc],
-  dependencies : [randompack_dep],
-)
-
-time_engines = executable(
-  'TimeEngines',
-  ['TimeEngines.c', 'TimeUtil.c'] + common_util,
-  include_directories : [common_inc],
-  dependencies : [randompack_dep],
-)
-
-time_fast = executable(
-  'TimeFast',
-  ['TimeFast.c', 'TimeUtil.c'] + common_util,
-  include_directories : [common_inc],
-  dependencies : [randompack_dep],
-)
-
-time_fast_direct = executable(
-  'TimeFastDirect',
-  ['TimeFastDirect.c', 'TimeUtil.c'] + common_util,
-  include_directories : [common_inc],
-  dependencies : [randompack_dep],
-)
-
-time_distributions = executable(
-  'TimeDistC',
-  ['TimeDistC.c', 'TimeUtil.c'] + common_util,
-  include_directories : [common_inc],
-  dependencies : [randompack_dep],
-)
-
-time_norm = executable(
-  'TimeNormC',
-  ['TimeNormC.c', 'TimeUtil.c'] + common_util,
-  include_directories : [common_inc],
-  dependencies : [randompack_dep],
-)
-
-time_norm_exp = executable(
-  'TimeNormExp',
-  ['TimeNormExp.c', 'TimeUtil.c'] + common_util,
-  include_directories : [common_inc],
-  dependencies : [randompack_dep],
-)
-
-time_logexp_src = ['TimeLogExp.c'] + common_util
-time_logexp_c_args = []
-if build_avx2
-  time_logexp_src += ['../src/sleef.c']
-  time_logexp_c_args = avx2_c_args
-endif
-
-time_logarithms = executable(
-  'TimeLogExp',
-  ['TimeUtil.c'] + time_logexp_src,
-  include_directories : [common_inc],
-  dependencies : [randompack_dep],
-  c_args: time_logexp_c_args,
-)
-
-time_integers = executable(
-  'TimeIntegers',
-  ['TimeIntegers.c', 'TimeUtil.c'] + common_util,
   include_directories : [common_inc],
   dependencies : [randompack_dep],
 )
@@ -120,13 +56,6 @@ if build_fortran
     dependencies : [randompack_dep],
     link_args : darwin_link_args,
   )
-  time_distributions_f = executable(
-    'TimeDistFortran',
-    'TimeDistFortran.f90',
-    link_language: 'fortran',
-    dependencies : [randompack_dep],
-    link_args : darwin_link_args,
-  )
 endif
 
 testu01_prefix = get_option('TestU01')
@@ -150,12 +79,6 @@ if testu01_prefix != ''
   testu01_pit = executable(
     'TestU01PIT',
     'TestU01PIT.c',
-    dependencies : [randompack_dep] + testu01_libs,
-    include_directories : [testu01_inc, common_inc],
-  )
-  test_sample_prod = executable(
-    'TestSampleProd',
-    'TestSampleProd.c',
     dependencies : [randompack_dep] + testu01_libs,
     include_directories : [testu01_inc, common_inc],
   )

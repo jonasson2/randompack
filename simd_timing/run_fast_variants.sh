@@ -10,5 +10,5 @@ for v in $variants; do
   cp "src/${v}.inc" src/fast.inc
   ninja -C release >/dev/null
   printf "%s " "$v"
-  release/examples/TimeFast
+  release/benchmark/TimeFast
 done
