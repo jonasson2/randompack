@@ -12,6 +12,7 @@
 #include <string.h>
 #include "getopt.h"
 
+#include "TimeUtil.h"
 #include "Util.h"
 #include "randompack.h"
 #include "randompack_config.h"
@@ -379,7 +380,7 @@ int main(int argc, char **argv) {
   uint64_t deadline = t0 + (uint64_t)(warmup_time*1e9);
   uint64_t t = t0;
   while (t < deadline) {
-    warmup_cpu(10);
+    warmup_cpu(0.1);
     t = clock_nsec();
   }
   if (chunk % 4 != 0 || chunk % 8 != 0) {

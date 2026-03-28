@@ -2,7 +2,8 @@
 // The core of this file is copied from prng.di.unimi.it/xoshiro256starstar.c, written in
 // 2018 by David Blackman and Sebastiano Vigna (vigna@acm.org; public domain).
 
-static inline void fill_x256ss(uint64_t *buf, size_t len, randompack_state *state) {
+static ALIGN64 void fill_x256ss(uint64_t *buf, size_t len,
+  randompack_state *state) {
   uint64_t *out = buf;
   size_t n = len;
   uint64_t s0 = state->u64[0];

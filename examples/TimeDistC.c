@@ -219,7 +219,7 @@ int main(int argc, char **argv) {
     randompack_free(rngf);
     return 1;
   }
-  warmup_cpu(100);
+  warmup_cpu(0.1);
   dist_spec dists[] = {
     { U01,       "u01",            0, { 0, 0} },
     { UNIF,      "unif(2,5)",      2, { 2, 5} },

@@ -94,7 +94,7 @@ int main(int argc, char **argv) {
     randompack_free(rng);
     return 1;
   }
-  warmup_cpu(100);
+  warmup_cpu(0.1);
   printf("engine: %s\n", engine);
   printf("chunk:  %d\n\n", chunk);
   randompack_norm_counters_reset();

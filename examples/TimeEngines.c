@@ -18,29 +18,44 @@ static void print_help(void) {
   printf("Options:\n");
   printf("  -h            Show this help message\n");
   printf("  -t seconds    Benchmark time per engine (default 0.1)\n");
+  printf("  -w seconds    CPU warmup time before timing (default 0.1)\n");
   printf("  -c chunk      Chunk size (values per fill, default 4096)\n");
   printf("  -s seed       RNG seed (default 7)\n\n");
+  printf("  -S            Benchmark SIMD engines only\n");
+  printf("  -n            Benchmark non-SIMD engines only\n\n");
   printf("Notes:\n");
   printf("  Reports GB/s as bytes/ns: uint64 uses 8/ns.\n");
 }
 
 static bool get_options(int argc, char **argv,
-                        double *bench_time, int *chunk, int *seed, bool *help) {
+  double *bench_time, double *warmup_time, int *chunk, int *seed, bool *simd_only,
+  bool *nonsimd_only, bool *help) {
   opterr = 0;
   optind = 1;
   int opt;
   *bench_time = 0.1;
+  *warmup_time = 0.1;
   *chunk = 4096;
   *seed = 7;
+  *simd_only = false;
+  *nonsimd_only = false;
   *help = false;
-  while ((opt = getopt(argc, argv, "ht:c:s:")) != -1) {
+  while ((opt = getopt(argc, argv, "hSt:w:c:s:n")) != -1) {
     switch (opt) {
       case 'h':
         *help = true;
         return true;
+      case 'S':
+        *simd_only = true;
+        break;
       case 't':
         *bench_time = atof(optarg);
         if (*bench_time <= 0)
+          return false;
+        break;
+      case 'w':
+        *warmup_time = atof(optarg);
+        if (*warmup_time < 0)
           return false;
         break;
       case 'c':
@@ -51,10 +66,15 @@ static bool get_options(int argc, char **argv,
       case 's':
         *seed = atoi(optarg);
         break;
+      case 'n':
+        *nonsimd_only = true;
+        break;
       default:
         return false;
     }
   }
+  if (*simd_only && *nonsimd_only)
+    return false;
   if (optind < argc)
     return false;
   return true;
@@ -64,19 +84,26 @@ static void fill_u64(uint64_t out[], int n, randompack_rng *rng) {
   randompack_uint64(out, (size_t)n, 0, rng);
 }
 
+static bool is_simd_engine(const char *name) {
+  return !strcmp(name, "x256++simd") || !strcmp(name, "sfc64simd");
+}
+
 int main(int argc, char **argv) {
   double bench_time;
+  double warmup_time;
   int chunk, seed;
-  bool help;
-  if (!get_options(argc, argv, &bench_time, &chunk, &seed, &help) || help) {
+  bool simd_only, nonsimd_only, help;
+  if (!get_options(argc, argv, &bench_time, &warmup_time, &chunk, &seed, &simd_only,
+                   &nonsimd_only, &help) || help) {
     print_help();
     return help ? 0 : 1;
   }
 #if defined(__linux__)
 #endif
-  warmup_cpu(100);
+  warmup_cpu(warmup_time);
   printf("throughput:       GB/s (decimal), computed as bytes/ns\n");
   printf("bench_time:       %.3f s per engine\n", bench_time);
+  printf("warmup_time:      %.3f s\n", warmup_time);
   printf("chunk:            %d\n\n", chunk);
   int n = 0;
   int emax = 0;
@@ -104,6 +131,11 @@ int main(int argc, char **argv) {
   printf("%-18s %10s %8s\n", "Engine", "ns/64bits", "GB/s");
   for (int i = 0; i < n; i++) {
     char *name = engines + i*emax;
+    bool is_simd = is_simd_engine(name);
+    if (simd_only && !is_simd)
+      continue;
+    if (nonsimd_only && is_simd)
+      continue;
     randompack_rng *rng = randompack_create(name);
     if (!rng) {
       fprintf(stderr, "randompack_create failed: %s\n", name);

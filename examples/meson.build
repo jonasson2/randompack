@@ -42,7 +42,7 @@ time_fast = executable(
 
 time_fast_direct = executable(
   'TimeFastDirect',
-  ['TimeFastDirect.c'] + common_util,
+  ['TimeFastDirect.c', 'TimeUtil.c'] + common_util,
   include_directories : [common_inc],
   dependencies : [randompack_dep],
 )
@@ -77,7 +77,7 @@ endif
 
 time_logarithms = executable(
   'TimeLogExp',
-  time_logexp_src,
+  ['TimeUtil.c'] + time_logexp_src,
   include_directories : [common_inc],
   dependencies : [randompack_dep],
   c_args: time_logexp_c_args,
@@ -85,7 +85,7 @@ time_logarithms = executable(
 
 time_integers = executable(
   'TimeIntegers',
-  ['TimeIntegers.c'] + common_util,
+  ['TimeIntegers.c', 'TimeUtil.c'] + common_util,
   include_directories : [common_inc],
   dependencies : [randompack_dep],
 )

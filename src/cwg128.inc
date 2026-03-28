@@ -1,5 +1,6 @@
 // -*- C -*-
-static inline void fill_cwg128(uint64_t *buf, size_t len, randompack_state *state) {
+static ALIGN64 void fill_cwg128(uint64_t *buf, size_t len,
+  randompack_state *state) {
   uint64_t *out = buf;
   uint128_t c0 = state->u128[0]; // odd increment
   uint128_t c1 = state->u128[1];

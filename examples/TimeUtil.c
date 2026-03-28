@@ -6,6 +6,7 @@
 #include "TimeUtil.h"
 #include "Util.h"
 
+#include <math.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -33,6 +34,26 @@ static inline void consume32(const void *p) {
   uint32_t u;
   memcpy(&u, p, sizeof(u));
   sink ^= u;
+}
+
+void warmup_cpu(double seconds) {
+  if (seconds <= 0)
+    return;
+  volatile double sink = 0;
+  double x = 1.000001;
+  uint64_t t0 = clock_nsec();
+  uint64_t deadline = t0 + (uint64_t)(seconds*1e9);
+  uint64_t t = t0;
+  while (t < deadline) {
+    for (int i = 0; i < 1000; i++) {
+      sink += log(x);
+      x += 0.000001;
+      if (x >= 2)
+        x = 1.000001;
+    }
+    t = clock_nsec();
+  }
+  (void)sink;
 }
 
 double time_u64(int chunk, double bench_time, fill_u64_fn fill, randompack_rng *rng) {

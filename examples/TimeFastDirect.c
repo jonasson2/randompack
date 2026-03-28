@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
+#include "TimeUtil.h"
 #include "Util.h"
 #include "randompack_config.h"
 #if HAVE_AVX2
@@ -104,7 +105,7 @@ int main(void) {
   double out[LEN];
   fast_state st;
   init_fast_state(&st, 7);
-  warmup_cpu(50);
+  warmup_cpu(0.1);
   double ns = time_fast_u01(out, LEN, 0.8, &st);
   printf("Time per draw: %.3f ns\n", ns);
   return 0;

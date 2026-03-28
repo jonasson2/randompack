@@ -30,20 +30,6 @@ double get_time(void) { // seconds
   return 1e-9*(double)clock_nsec();
 }  
 
-// Warm up the CPU by drawing n million uint64 randoms with x256++
-void warmup_cpu(int n) {
-  #define NBUF 1000
-  uint64_t buf[NBUF];
-  randompack_rng *rng = randompack_create("x256++");
-  ASSERT(rng);
-  ASSERT(randompack_seed(1, 0, 0, rng));
-  int reps = max(1, n*1000000/NBUF);
-  for (int i = 0; i < reps; i++) {
-    ASSERT(randompack_uint64(buf, NBUF, 0, rng));
-  }
-  randompack_free(rng);
-}
-
 void pin_to_cpu0(void) {
 #if defined(__linux__)
   cpu_set_t set;

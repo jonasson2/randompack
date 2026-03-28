@@ -35,6 +35,10 @@ typedef void (*fill_float_fn)( // Callback type: fill out with random floats
   randompack_rng *rng  // RNG handle
 );
 
+void warmup_cpu( // Warm up the CPU with scalar math for the requested time
+  double seconds // warmup time in seconds
+);
+
 double time_u64( // Benchmark uint64 fill amortizing time-keeping overhead, return ns
   int chunk,             // number of values generated per fill call
   double bench_time,     // repeat until this time (in seconds) has elapsed

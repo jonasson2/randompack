@@ -17,7 +17,7 @@ static void warmup_min_time(double seconds) {
   uint64_t deadline = t0 + (uint64_t)(seconds*1e9);
   uint64_t t = t0;
   while (t < deadline) {
-    warmup_cpu(10);
+    warmup_cpu(0.1);
     t = clock_nsec();
   }
 }

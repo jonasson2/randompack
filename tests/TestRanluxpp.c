@@ -44,6 +44,8 @@ static void step_state(uint64_t x[9]) {
 }
 
 void TestMul9x9(void) {
+  if (0)
+    test_fill_ranluxpp(0, 0, 0);
   uint64_t x[9];
   uint64_t z[18];
   uint64_t expect_lo[9];

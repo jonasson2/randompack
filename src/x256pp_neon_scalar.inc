@@ -16,7 +16,8 @@
 } while (0)
 #endif
 
-static inline void fill_fast(uint64_t *buf, size_t len, randompack_state *state) {
+static ALIGN64 void fill_fast(uint64_t *buf, size_t len,
+  randompack_state *state) {
   uint64_t *out = buf;
   xo256 *st = &state->xo;
 #if HAVE_NEON

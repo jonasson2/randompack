@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "getopt.h"
+#include "TimeUtil.h"
 #include "Util.h"
 #include "randompack.h"
 #include "randompack_config.h"
@@ -234,7 +235,7 @@ int main(int argc, char **argv) {
     randompack_free(rng);
     return 1;
   }
-  warmup_cpu(100);
+  warmup_cpu(0.1);
   struct { int n; char *label; } int_ranges[] = {
     { 3, "1-3" },
     { 20, "1-20" },
