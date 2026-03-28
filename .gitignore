@@ -45,6 +45,7 @@ a.out
 /nogit/
 *.ppt
 *.log
+r-package/src/Makevars
 
 C BUILD FILES AND FOLDERS
 *.obj
