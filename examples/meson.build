@@ -19,20 +19,6 @@ run_random = executable(
   dependencies : [randompack_dep],
 )
 
-run_exp = executable(
-  'RunExp',
-  ['RunExp.c'] + common_util,
-  include_directories : [common_inc],
-  dependencies : [randompack_dep],
-)
-
-examine_resolution = executable(
-  'ExamineResolution',
-  'ExamineResolution.c',
-  include_directories : [common_inc],
-  dependencies : [randompack_dep],
-)
-
 draw_example = executable(
   'DrawDemo',
   'DrawDemo.c',

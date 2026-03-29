@@ -214,7 +214,7 @@ options; details are available via the `-h` option.
   MB/s by repeatedly drawing blocks of 1024 `uint64` values.
 - `TimeIntegers` reports time per generated value (in ns) for selected integer
   distributions.
-- `TimeDistributions` reports time per generated value (in ns) for each
+- `TimeDistCpp` reports time per generated value (in ns) for each
   continuous distribution in double and float, using the default engine
   (`xoshiro256++`).
 

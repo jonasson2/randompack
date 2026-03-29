@@ -190,6 +190,7 @@ need_fortran = local_dpstrf
 has_fortran = add_languages('fortran', required: need_fortran, native: false)
 build_fortran = has_fortran
 build_fortran_interface = build_fortran and get_option('build_fortran_interface')
+build_cpp = add_languages('cpp', required: false, native: false)
 
 if has_fortran
   fc = meson.get_compiler('fortran')

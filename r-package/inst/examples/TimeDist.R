@@ -11,32 +11,54 @@ if (!requireNamespace("dqrng", quietly = TRUE)) {
 }
 
 args <- commandArgs(trailingOnly = TRUE)
-if (any(args == "-h")) {
-  cat("Usage: Rscript TimeDist.R [-b] [-c chunk] [engine]\n")
-  cat("  -b        Enable bitexact mode\n")
-  cat("  -c chunk  Set chunk size (default 4096)\n")
-  quit(save="no", status=0)
-}
-bitexact <- any(args == "-b")
-args <- args[args != "-b"]
 chunk <- 4096L
-chunk_flag_sep <- which(args == "-c")
-if (length(chunk_flag_sep) == 1L) {
-  if (chunk_flag_sep == length(args)) {
-    stop("Use -c <chunk> with a following positive integer.")
-  }
-  chunk_arg <- args[[chunk_flag_sep + 1L]]
-  chunk <- as.integer(chunk_arg)
-  if (is.na(chunk) || chunk <= 0L) {
-    stop("Chunk size must be a positive integer.")
-  }
-  args <- args[-c(chunk_flag_sep, chunk_flag_sep + 1L)]
+engine <- ""
+bitexact <- FALSE
+
+print_help <- function() {
+  cat("Usage: Rscript TimeDist.R [-h] [-b] [-c chunk] [-e engine] [engine]\n")
+  cat("  -h         Show this help message\n")
+  cat("  -b         Enable bitexact mode\n")
+  cat("  -c chunk   Set chunk size (default 4096)\n")
+  cat("  -e engine  Set RNG engine (default x256++simd)\n")
 }
-if (length(chunk_flag_sep) > 1L) {
-  stop("Use -c <chunk> at most once.")
+
+i <- 1L
+while (i <= length(args)) {
+  arg <- args[[i]]
+  if (arg == "-h") {
+    print_help()
+    quit(save="no", status=0)
+  } else if (arg == "-b") {
+    bitexact <- TRUE
+  } else if (arg == "-c") {
+    if (i == length(args)) {
+      stop("Use -c <chunk> with a following positive integer.")
+    }
+    i <- i + 1L
+    chunk <- as.integer(args[[i]])
+    if (is.na(chunk) || chunk <= 0L) {
+      stop("Chunk size must be a positive integer.")
+    }
+  } else if (arg == "-e") {
+    if (i == length(args)) {
+      stop("Use -e <engine> with a following engine name.")
+    }
+    i <- i + 1L
+    engine <- args[[i]]
+  } else if (startsWith(arg, "-")) {
+    stop(sprintf("Unknown option: %s", arg))
+  } else if (!nzchar(engine)) {
+    engine <- arg
+  } else {
+    stop(sprintf("Unexpected argument: %s", arg))
+  }
+  i <- i + 1L
 }
-engine <- if (length(args) >= 1L) args[[1]] else ""
-if (!nzchar(engine)) engine <- "x256++simd"
+
+if (!nzchar(engine)) {
+  engine <- "x256++simd"
+}
 
 rng <- randompack::randompack_rng(engine=engine, bitexact=bitexact)
 

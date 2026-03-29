@@ -11,37 +11,9 @@ time_engines = executable(
   dependencies : [randompack_dep],
 )
 
-time_fast = executable(
-  'TimeFast',
-  ['TimeFast.c', 'TimeUtil.c'] + common_util,
-  include_directories : [common_inc],
-  dependencies : [randompack_dep],
-)
-
-time_fast_direct = executable(
-  'TimeFastDirect',
-  ['TimeFastDirect.c', 'TimeUtil.c'] + common_util,
-  include_directories : [common_inc],
-  dependencies : [randompack_dep],
-)
-
 time_dist_c = executable(
-  'TimeDistC',
-  ['TimeDistC.c', 'TimeUtil.c'] + common_util,
-  include_directories : [common_inc],
-  dependencies : [randompack_dep],
-)
-
-time_norm_c = executable(
-  'TimeNormC',
-  ['TimeNormC.c', 'TimeUtil.c'] + common_util,
-  include_directories : [common_inc],
-  dependencies : [randompack_dep],
-)
-
-time_norm_exp = executable(
-  'TimeNormExp',
-  ['TimeNormExp.c', 'TimeUtil.c'] + common_util,
+  'TimeDistributions',
+  ['TimeDistributions.c', 'TimeUtil.c'] + common_util,
   include_directories : [common_inc],
   dependencies : [randompack_dep],
 )
@@ -67,6 +39,14 @@ time_integers = executable(
   include_directories : [common_inc],
   dependencies : [randompack_dep],
 )
+
+if build_cpp
+  time_dist_cpp = executable(
+    'TimeDistCpp',
+    'TimeDistCpp.cpp',
+    dependencies : [randompack_dep],
+  )
+endif
 
 if build_fortran
   darwin_link_args = host_machine.system() == 'darwin' ? ['-Wl,-no_warn_duplicate_libraries'] : []

@@ -1,5 +1,5 @@
 // -*- C -*-
-// TimeDistC.c: time distributions (ns/value), double and float.
+// TimeDistributions.c: time distributions (ns/value), double and float.
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -45,8 +45,8 @@ static void print_engines(void) {
 }
 
 static void print_help(void) {
-  printf("TimeDistC — time distributions (ns/value), double and float\n");
-  printf("Usage: TimeDistC [options]\n\n");
+  printf("TimeDistributions — time distributions (ns/value), double and float\n");
+  printf("Usage: TimeDistributions [options]\n\n");
   printf("Options:\n");
   printf("  -h            Show this help message\n");
   printf("  -e engine     RNG engine (default x256++simd)\n");
@@ -242,7 +242,6 @@ int main(int argc, char **argv) {
   printf("time per value:   ns/value\n");
   printf("bench_time:       %.3f s per distribution\n", bench_time);
   printf("chunk:            %d\n\n", chunk);
-  printf("bitexact:         %s\n\n", bitexact ? "on" : "off");
   printf("%-14s %8s %8s\n", "Distribution", "double", "float");
   for (int i = 0; i < LEN(dists); i++) {
     double par[3];

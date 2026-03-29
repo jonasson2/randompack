@@ -132,7 +132,7 @@ julia test/runtests.jl             # run the Julia tests
 Benchmarking
 ============
 cd <projectroot>/release/examples  # enter build folder
-TimeDistC                          # benchmark distributions with C randompack
+TimeDistributions                  # benchmark distributions with C randompack
 TimeDistFortran                    # = distributions with Fortran randompack
 TimeEngines                        # = engines with C bitstream samples
 TimeIntegers                       # = integer sampling with C
@@ -143,7 +143,7 @@ Rscript r-package/inst/examples/TimeDist.R  # compare R-randompack with base-R a
 julia Randompack.jl/examples/TimeDist.jl    # compare Julia randompack with the built-in
 python python/examples/TimeDist.py          # compare Python-randompack with numpy.random
 
-release/benchmark/TimeDistC -h             # display short help
+release/benchmark/TimeDistributions -h     # display short help
 .                                           # the other benchmark programs also accept -h
 
 Extra Testing
