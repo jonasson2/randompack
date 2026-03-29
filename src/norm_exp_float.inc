@@ -14,36 +14,6 @@ ALWAYS_INLINE float norm_decodef(uint32_t r, uint8_t idx, uint32_t *ki, uint32_t
   return (float)s * wi_float[idx];
 }
 
-static uint64_t normf_pdf_calls = 0;
-static uint64_t normf_draws = 0;
-static uint64_t normf_slow = 0;
-static uint64_t expf_pdf_calls = 0;
-static uint64_t expf_draws = 0;
-static uint64_t expf_slow = 0;
-
-void randompack_float_counters_reset(void) {
-  normf_pdf_calls = 0;
-  normf_draws = 0;
-  normf_slow = 0;
-  expf_pdf_calls = 0;
-  expf_draws = 0;
-  expf_slow = 0;
-}
-
-void randompack_normf_counters_get(uint64_t *draws, uint64_t *slow,
-  uint64_t *pdf_calls) {
-  if (draws) *draws = normf_draws;
-  if (slow) *slow = normf_slow;
-  if (pdf_calls) *pdf_calls = normf_pdf_calls;
-}
-
-void randompack_expf_counters_get(uint64_t *draws, uint64_t *slow,
-  uint64_t *pdf_calls) {
-  if (draws) *draws = expf_draws;
-  if (slow) *slow = expf_slow;
-  if (pdf_calls) *pdf_calls = expf_pdf_calls;
-}
-
 //=============================== NORMAL DISTRIBUTION ==============================
 
 NEVER_INLINE bool below_normpdf_f(uint8_t idx, float x, float y) {

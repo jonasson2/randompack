@@ -11,7 +11,7 @@
 
 typedef struct randompack_rng randompack_rng;
 
-//=============================== CREATION AND SETUP ===============================
+//================================== CREATION AND SETUP ==================================
 
 randompack_rng *randompack_create( // Create randomized RNG of given engine type, error→0
   const char *engine    // in      Type ("x256++simd" [default], "pcg64",... 0→default)
@@ -36,7 +36,7 @@ randompack_rng *randompack_duplicate( // Clone an RNG (identical engine+state), 
   randompack_rng *rng   // in      RNG to duplicate
 );
 
-//============================== ENGINE INFORMATION ==============================
+//================================== ENGINE INFORMATION ==================================
 
 bool randompack_engines( // Return supported RNG engine names and their descriptions
   char *engines,      // out     n×eng_maxlen buffer of engine names (0 → query mode)
@@ -50,39 +50,7 @@ char *randompack_last_error( // Get last error string, or 0 if none
   randompack_rng *rng   // in      Random number generator
 );
 
-//================================ SERIALIZATION =================================
-
-bool randompack_serialize( // Serialize an RNG to an opaque byte buffer
-  uint8_t *buf,          // out     buffer for serialization (may be 0 if *len==0)
-  int *len,              // in/out  0 → query size; otherwise buffer length
-  randompack_rng *rng    // in      RNG to serialize
-);
-
-bool randompack_deserialize( // Restore an RNG from an opaque byte buffer
-  const uint8_t *buf,    // in      buffer with serialization
-  int len,               // in      buffer length
-  randompack_rng *rng    // out     target RNG (must be allocated)
-);
-
-//================================ CONFIGURATION =================================
-
-bool randompack_full_mantissa( // Use full mantissa for doubles (default false)
-  randompack_rng *rng,  // in/out  Random number generator
-  bool enable           // in      true → 53-bit mantissa, false → 52-bit
-);
-
-bool randompack_bitexact( // Use bitexact log/exp (default false)
-  randompack_rng *rng,  // in/out  Random number generator
-  bool enable           // in      true → openlibm, false → system/vforce/sleef
-);
-
-bool randompack_set_state( // Set state of general engine directly
-  uint64_t state[],     // in      state words (must be nonzero for xor-family)
-  int nstate,           // in      number of state words provided, depends on engine
-  randompack_rng *rng   // in/out  target RNG
-);
-
-//============================== STREAM SELECTION ==============================
+//=================================== STREAM SELECTION ===================================
 
 bool randompack_jump( // Jump xor-family or ranlux rng by 2^p steps, false on error
   int p,               // in      Jump exponent (32/64/96/128/192, or 253 for x256* engines)
@@ -119,10 +87,42 @@ bool randompack_sfc64_set_abc( // Set the sfc64 a,b,c state words directly
   randompack_rng *rng  // in/out  target RNG
 );
 
-//=============================== RAW BITSTREAMS ===============================
+//==================================== CONFIGURATION =====================================
+
+bool randompack_full_mantissa( // Use full mantissa (default false)
+  randompack_rng *rng,  // in/out  Random number generator
+  bool enable           // in      true → 24/53-bit mantissa, false → 23/52-bit
+);
+
+bool randompack_bitexact( // Use bitexact log/exp (default false)
+  randompack_rng *rng,  // in/out  Random number generator
+  bool enable           // in      true → bitexact, false → fast, vectorized
+);
+
+bool randompack_set_state( // Set state of general engine directly
+  uint64_t state[],     // in      state words (must be nonzero for xor-family)
+  int nstate,           // in      number of state words provided, depends on engine
+  randompack_rng *rng   // in/out  target RNG
+);
+
+//==================================== SERIALIZATION =====================================
+
+bool randompack_serialize( // Serialize an RNG to an opaque byte buffer
+  uint8_t *buf,          // out     buffer for serialization (may be 0 if *len==0)
+  int *len,              // in/out  0 → query size; otherwise buffer length
+  randompack_rng *rng    // in      RNG to serialize
+);
+
+bool randompack_deserialize( // Restore an RNG from an opaque byte buffer
+  const uint8_t *buf,    // in      buffer with serialization
+  int len,               // in      buffer length
+  randompack_rng *rng    // out     target RNG (must be allocated)
+);
+
+//==================================== RAW BITSTREAMS ====================================
 
 bool randompack_raw( // Generate random bytes (raw bitstream), false on error
-  void *out,            // out     vector of bytes (compatible with arrays of any type)
+  void *out,            // out     vector of bytes (compatible with any type)
   size_t nbytes,        // in      number of bytes requested
   randompack_rng *rng   // in/out  random number generator
 );
@@ -155,7 +155,7 @@ bool randompack_uint64( // Generate uint64 in [0, bound), false on error
   randompack_rng *rng  // in/out  random number generator
 );
 
-//=========================== DISCRETE DISTRIBUTIONS ============================
+//================================ DISCRETE DISTRIBUTIONS ================================
 
 bool randompack_int( // Generate uniform integers in [m, n], false on error
   int x[],              // out     vector of integers
@@ -186,7 +186,7 @@ bool randompack_sample( // Sample without replacement from 0..n-1, false on erro
   randompack_rng *rng   // in/out  Random number generator
 );
 
-//========================== CONTINUOUS DISTRIBUTIONS ===========================
+//=============================== CONTINUOUS DISTRIBUTIONS ===============================
 
 bool randompack_u01( // Generate uniform random numbers in [0,1), false on error
   double x[],           // out     vector: uniform random numbers in [0,1)
@@ -208,21 +208,6 @@ bool randompack_norm( // Generate standard normal random numbers N(0,1), false o
   randompack_rng *rng   // in/out  Random number generator
 );
 
-void randompack_norm_counters_reset(void); // Reset normal draw/pdf counters
-
-void randompack_norm_counters_get( // Read normal draw/pdf counters
-  uint64_t *draws,      // out     Total normal draws
-  uint64_t *pdf_calls   // out     Count of below_normpdf calls
-);
-
-void randompack_norm_counters_get_slow( // Read normal slow-path counters
-  uint64_t *tail,       // out     Tail path hits (idx == 0)
-  uint64_t *accept,     // out     Slow-path accept without pdf check
-  uint64_t *retry,      // out     Slow-path retry before pdf check
-  uint64_t *pdf_accept, // out     below_normpdf accept
-  uint64_t *pdf_reject  // out     below_normpdf reject
-);
-
 bool randompack_normal( // Generate normal random numbers N(mu,sigma), false on error
   double x[],           // out     vector: normal random numbers
   size_t len,           // in      Number of variates
@@ -236,12 +221,6 @@ bool randompack_exp( // Generate exponential random numbers, false on error
   size_t len,           // in      Number of variates
   double scale,         // in      Scale parameter (1.0 → standard exponential)
   randompack_rng *rng   // in/out  Random number generator
-);
-
-void randompack_exp_counters_get( // Read exponential draw/slow/pdf counters
-  uint64_t *draws,      // out     Total exponential draws
-  uint64_t *slow,       // out     Slow-path entries
-  uint64_t *pdf_calls   // out     Count of below_exppdf calls
 );
 
 bool randompack_lognormal( // Generate lognormal random numbers, false on error
@@ -323,7 +302,7 @@ bool randompack_skew_normal( // Generate skew-normal random numbers, false on er
   randompack_rng *rng   // in/out  Random number generator
 );
 
-//============================== MULTIVARIATE NORMAL ==============================
+//================================= MULTIVARIATE NORMAL ==================================
 
 bool randompack_mvn( // Generate multivariate normal randoms N(mu,Sig), false on error
   char *transp,         // in      "N" to get n×d X, "T" to get d×n X
@@ -337,7 +316,7 @@ bool randompack_mvn( // Generate multivariate normal randoms N(mu,Sig), false on
   randompack_rng *rng   // in/out  Random number generator
 );
 
-//====================== CONTINUOUS DISTRIBUTIONS (FLOAT) ======================
+//=========================== CONTINUOUS DISTRIBUTIONS (FLOAT) ===========================
 
 bool randompack_u01f( // Generate uniform random floats in [0,1), false on error
   float x[],            // out     vector: uniform random numbers in [0,1)
@@ -359,14 +338,6 @@ bool randompack_normf( // Generate normal random floats N(0,1), false on error
   randompack_rng *rng   // in/out  Random number generator
 );
 
-void randompack_float_counters_reset(void); // Reset float norm/exp counters
-
-void randompack_normf_counters_get( // Read float normal draw/slow/pdf counters
-  uint64_t *draws,      // out     Total float normal draws
-  uint64_t *slow,       // out     Slow-path entries
-  uint64_t *pdf_calls   // out     Count of below_normpdf_f calls
-);
-
 bool randompack_normalf( // Generate normal random floats N(mu,sigma), false on error
   float x[],            // out     vector: normal random numbers
   size_t len,           // in      Number of variates
@@ -380,12 +351,6 @@ bool randompack_expf( // Generate exponential random floats, false on error
   size_t len,           // in      Number of variates
   float scale,          // in      Scale parameter (1.0f → standard exponential)
   randompack_rng *rng   // in/out  Random number generator
-);
-
-void randompack_expf_counters_get( // Read float exponential draw/slow/pdf counters
-  uint64_t *draws,      // out     Total float exponential draws
-  uint64_t *slow,       // out     Slow-path entries
-  uint64_t *pdf_calls   // out     Count of below_exppdf_f calls
 );
 
 bool randompack_lognormalf( // Generate lognormal random floats, false on error

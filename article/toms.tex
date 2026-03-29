@@ -103,11 +103,11 @@ distribution plays an important role, and other important ones are the
 exponential and the gamma distributions. Random sampling from several
 other distributions can be done by combining samples from these three
 (see Section xxx). The Box-Muller method (1958) requires the
-evaluation of a square root, a logarithm, a sine, and a cosine for each
-pair of samples, but a few years later Marsaglia and Bray proposed the
-polar method where the two trigonometrict functions were replaced by
-rejection sampling with acceptance rate $\pi/4$. Rejection sampling
-had already been used by von Neuman in his exponential method
+evaluation of a square root, a logarithm, a sine, and a cosine for
+each pair of samples, but a few years later Marsaglia and Bray
+proposed the polar method where the two trigonometrict functions were
+replaced by rejection sampling with acceptance rate $\pi/4$. Rejection
+sampling had already been used by von Neuman in his exponential method
 \cite{vonneumann1951rejection}. It also plays a central role in the
 ratio of uniforms method (1977) \cite{kinderman1977ratio,leva1992fast}
 which has an acceptance rate of 73\% and needs two uniform samples but
@@ -117,11 +117,12 @@ proposed in two stages by Marsaglia and Tsang
 \cite{marsaglia1984fast,marsaglia2000ziggurat}, the revised method
 drawing from the tail using an earlier idea \cite{marsaglia1964tail}.
 The seminal article from 2000 gives ziggurat algorithms for both
-normal and exponential variates, as well as a notably elegant method
-for the gamma distribution, that has since been adopted by most RNG
-libraries. All three are implemented in Randompack. Before 2000
-various algorithms had been devised for the gamma distribution, all of
-them based on some sort of rejection and many quite complex.
+normal and exponential variates. In the same year Marsaglia and Tsang
+published a notably elegant method for the gamma distribution, that
+has since been adopted by most RNG libraries
+\cite{marsaglia2000gamma}. Before 2000 various algorithms had been
+devised for the gamma distribution, all of them based on some sort of
+rejection and many quite complex.
 
 Around the turn of the century, random number research placed
 increasing emphasis on the statistical quality of RNGs, on devising
@@ -403,24 +404,25 @@ including Sibidanov's, are Gnu-licensed
 \cite{sibidanov2017ranluxpp,hahnfeld2021ranluxpp,jirka2021portable}.
 
 \subsection{State initialization and stream control}
-Randompack provides four classes of of RNG engine initialization:
+Randompack provides four classes of RNG engine initialization:
 deterministic seeding, explicit stream selection, randomization from
 system entropy, and exact assignment of the full internal state.
 
 Seeding deserves careful treatment as some RNGs may show poor
 statistical behaviour if seeded directly with a small seed. A better
-approach is to mix the seed and spread it across the full state, using a
-process that is radically different from the RNG being seeded
+approach is to mix the seed and spread it across the full state, using
+a process that is radically different from the RNG being seeded
 \cite{matsumoto2007initialization,oneill2014pcg,blackman2021scrambled}.
 As noted in the Introduction, SplitMix \cite{steele2014splitmix} could
 be used for this purpose, but O'Neill's \texttt{seed\_seq\_fe128}
-\cite{oneill2015seedseq} provides an alternative adopted in Randompack.
-It hashes and mixes a vector of seeds into a 128-bit \emph{entropy pool}
-and then applying different hash functions to the pool to generate the
-output state. O'Neill aims for strict avalanche, meaning that flipping a
-bit in the seed material flips each output bit with probability $1/2$,
-and reports empirical results consistent with such behaviour. NumPy's
-seeding is likewise based on O'Neill's \texttt{seed_seq} work.
+\cite{oneill2015seedseq} provides an alternative adopted in
+Randompack. It hashes and mixes a vector of seeds into a 128-bit
+\emph{entropy pool} and then applying different hash functions to the
+pool to generate the output state. O'Neill aims for strict avalanche,
+meaning that flipping a bit in the seed material flips each output bit
+with probability $1/2$, and reports empirical results consistent with
+such behaviour. NumPy's seeding is likewise based on O'Neill's
+\texttt{seed\_seq} work.
 
 In Randompack the user seed together with a spawn key of arbitrary
 length constitutes the input to the seeding mixer. This creates one
@@ -433,8 +435,8 @@ the different engines for creating mathematically proven independent
 streams: jumps for ranlux and the xor family, keys for the
 counter-based engines, $(a,b,c)$ state for sfc64, increments for pcg64
 and cwg128, and the nonce for ChaCha20. These stream-selection
-operations would typically be used together with the provided
-RNG duplicate function when setting up parallel simulations.
+operations would typically be used together with the provided RNG
+duplicate function when setting up parallel simulations.
 
 Randompack’s randomize function obtains (cryptographically secure)
 system entropy from the operating system: it uses
@@ -442,6 +444,144 @@ system entropy from the operating system: it uses
 and OpenBSD, and \texttt{getrandom} on Linux and other Unixes which
 support it, with \texttt{/dev/urandom} as a fallback. If that too is
 unavailable, an emergency fallback mixes in the system clock.
+
+\section{Algorithms for distributions}
+All the Randompack random drawing functions have three parameters, a
+buffer to be filled with drawn samples, its length, and the RNG to
+use. 
+
+In this section...
+\subsection{Continuous distributions}
+Randompack supports the computation of 14 continuous distributions
+(Table \ref{tab:continuous}). Uniformly distributed samples in $[0,1)$
+are provided by \texttt{randompack\_u01} and general intervals are
+supported by \texttt{randompack\_unif}. The randompack engines all
+compute a stream of bits that can be interpreted as either 64-bit or
+32-bit words. In the following $U(0,1)$-doubles are considered, the
+float case being analogous.
+
+% -*- no-auto-fill -*-
+
+\begin{table}[t]
+\centering
+\begin{tabular}{lll}
+  \toprule
+  Function             & Notation                           & Algorithm                                      \\
+  \midrule
+  \texttt{u01}         & $U(0,1)$                             & integer-to-double map                        \\
+  \texttt{unif}        & $U(a,b)$                             & shift-scale transform                        \\
+  \texttt{norm}        & $N(0,1)$                             & ziggurat (Marsaglia-Tsang, McFarland modied) \\
+  \texttt{normal}      & $N(\mu,\sigma^2)$                    & shift-scale transform                        \\
+  \texttt{exp}         & $\mathrm{Exp}(\beta)$                & ziggurat (Marsaglia-Tsang, McFarland modied) \\
+  \texttt{lognormal}   & $\log N(\mu,\sigma^2)$               & exponential transform                        \\
+  \texttt{gamma}       & $\Gamma(\alpha,\theta)$              & Marsaglia--Tsang rejection method            \\
+  \texttt{beta}        & $\mathrm{Beta}(a,b)$                 & ratio of independent gamma draws             \\
+  \texttt{chi2}        & $\chi^2_\nu$                         & gamma special case ($\alpha=\nu/2, \theta=2$)\\
+  \texttt{t}           & $t_\nu$                              & normal--gamma scale mixture                  \\
+  \texttt{f}           & $F_{\nu_1,\nu_2}$                    & ratio of gammas                              \\
+  \texttt{gumbel}      & $\mathrm{Gumbel}(\mu,\beta)$         & inverse CDF transform                        \\
+  \texttt{pareto}      & $\mathrm{Pareto}(x_m,\alpha)$        & exponential transform of Exp(1)              \\
+  \texttt{weibull}     & $\mathrm{Weibull}(k,\lambda)$        & power transform of Exp(1)                    \\
+  \texttt{skew\_normal}& $\mathrm{SN}(\mu,\sigma,\alpha)$     & Azzalini construction                        \\
+  \texttt{mvn}         & $N(\mu,\Sigma)$                      & Cholesky factor transform and normal draws   \\
+  \bottomrule
+\end{tabular}
+\caption{Randompack sampling functions returning double values for continuous distributions. The actual function names include the prefix \texttt{randompack\_}, e.g. \texttt{randompack\_u01}. Float versions of all the functions are also provided with the suffix \texttt{f}, e.g. \texttt{randompack\_u01f}.}
+\label{tab:continuous}
+\end{table}
+
+\begin{table}[t]
+\centering
+\begin{tabular}{lll}
+  \toprule
+  Function            & Notation                          & Description                                  \\
+  \midrule                                                                                      
+  \texttt{int}        & $\mathrm{Unif}\{m,\ldots,n\}$     & 32-bit integers, Lemire unbiased sampling    \\
+  \texttt{long\_long} & $\mathrm{Unif}\{m,\ldots,n\}$     & 64-bit integers, Lemire unbiased sampling    \\
+  \texttt{perm}       & permutation of $\{0,\ldots,n-1\}$ & Fisher--Yates shuffle                        \\
+  \texttt{sample}     & $k$-subset of $\{0,\ldots,n-1\}$  & Floyd / reservoir sampling                   \\
+  \texttt{uint8}      & $\mathrm{Unif}\{0,\ldots,b-1\}$   & bounded / unbounded unsigned 8-bit integers  \\
+  \texttt{uint16}     & $\mathrm{Unif}\{0,\ldots,b-1\}$   & bounded / unbounded unsigned 16-bit integers \\
+  \texttt{uint32}     & $\mathrm{Unif}\{0,\ldots,b-1\}$   & bounded / unbounded unsigned 32-bit integers \\
+  \texttt{uint64}     & $\mathrm{Unif}\{0,\ldots,b-1\}$   & bounded / unbounded unsigned 64-bit integers \\
+  \texttt{raw}        & raw bitstream                     & raw unbounded bitstream into \texttt{void} buffer \\
+  \bottomrule
+\end{tabular}
+\caption{Randompack sampling functions for discrete distributions. The actual function names include the prefix
+  \texttt{randompack\_}, e.g. \texttt{randompack\_int}. When the \texttt{uint$n$} functions are called with
+  $b = 0$ they generate unbounded integers over the full range $\{0,\ldots,2^n-1\}$.}
+\label{tab:discrete}
+\end{table}
+
+Let $u$ be a 64-bit word, interpreted as an integer in $[0,2^{64})$.
+Two common methods exist to convert $u$ to a double $x$ in $[0, 1)$:
+\begin{itemize}
+\item Let $x = \left\lfloor u/2^{11} \right\rfloor 2^{-53}$.
+\item Put $\lfloor u/2^{12}\rfloor$ in the fraction field of $x$, and 1023
+in its exponent field, giving $x \in [1,2)$. Then subtract 1.
+\end{itemize}
+%
+The first method corresponds to \texttt{x = (u >> 11) * 0x1.0p-53} and
+gives a 53-bit resolution floating-point number. The second method,
+giving 52-bit resolution, often compiles to faster code and is the one
+used by default in Randompack. In C it may be obtained with:
+%
+\begin{lstlisting}[style=tightcode]
+bits = (u >> 12) | 0x3ff0000000000000ULL;
+memcpy(&x, &bits, 8);
+x -= 1;
+\end{lstlisting}
+%
+Randompack offers a full-mantissa function to select between the two
+resolutions.
+
+Normal and exponential samples are obtained using the ziggurat method
+since 2000 \cite{marsaglia2000ziggurat,doornik2005improved} discussed
+above. It has become quite widespread in recent software: NumPy,
+Julia, Matlab, Octave, GSL, Boost, Rust and Java all implement some
+version of it. Randompack uses the same geometry as most of these
+libraries with 256 equal-area strips, all but the base strip
+rectangular. Precomputed constants describing the details of the
+geometry are copied from NumPy.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.7\textwidth]{fig1.pdf}
+\caption{Illustration of the ziggurat method for the exponential
+  distribution and 3 strips. The base strip is the region below
+  $y = y_2$ and the pdf $f(x)$. Strip 2 is the rectangle $ACDF$, $x^*$
+  maximizes the vertical distance between $f(x)$ and the secant $BD$,
+  and $GH$ is the tangent at $(x^*, f(x^*))$. Initially $x \in [0,
+  x_2)$ is drawn. If $x < x_1$ (the fast accept region) the algorithm
+  returns $x$ immediately. If not, the original 2000-version next
+  draws $y \in [y_2, y_1)$, computes $f(x)$ immediately, accepts $x$
+  if $y < f(x)$ and rejects it otherwise. Randompack also draws $y$ in
+  the same interval, accepts $x$ if $y$ is below the tangent rejects
+  it if $y$ is above the secant, and only computes $f(x)$ if $(x,y)$
+  is in the trapezium $BDHG$. With McFarland's method strip 2 is the
+  trapezium $ABDF$. If $x$ is not fast-accepted, a fresh $(x,y)$ is
+  drawn in $\triangle BDE$, it is accepted if $y$ is below the
+  tangent, otherwise $f(x)$ is evaluated and $y$ compared with it.}
+\label{fig:ziggurat}
+\end{figure}
+
+The 2000-version has a 0.069\% rejection rate for normal sampling and
+1.10\% for exponential sampling (~\ref{fig:ziggurat-slow-path}). It
+requires 15 pdf-evaluations (and thus exp evaluations) for 1000 normal
+samples and 23 for 1000 exponential samples. In 2016 McFarland
+\cite{McFarland2016} proposed an improved version, where most of these
+exp evaluations are saved. The method employs trapezoidal strips with
+much lower rejection rate (~\ref{fig:ziggurat}. However, its triangle
+sampling is somewhat costly, and therefore Randompack uses the
+original strip definitions but incorporates McFarland's savings in
+pdf computations: For each 1000 normal draws it requires only 1.2
+exp evaluations and for exp draws the rate is half of that. Compared
+with 
+
+
+
+. Randompack uses
+the method 
 
 \cite{matsumoto2007initialization}
 

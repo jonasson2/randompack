@@ -176,148 +176,6 @@ char *randompack_last_error(randompack_rng *rng) {
   return rng->last_error;
 }
 
-//================================ SERIALIZATION =================================
-
-static rng_entry *find_entry(rng_engine e) {
-  for (int i = 0; i < LEN(rng_table); i++)
-    if (rng_table[i].engine == e) return &rng_table[i];
-  return 0;
-}
-
-enum { RNG_STATE_WORDS = sizeof(((randompack_rng *)0)->state)/sizeof(uint64_t) };
-
-typedef struct {
-  uint32_t version;
-  uint32_t engine;
-  uint64_t state_u64[RNG_STATE_WORDS];
-  uint32_t buf_word;
-  uint32_t buf_byte;
-  uint32_t reserved0;
-  uint32_t reserved1;
-  uint64_t buf[BUFSIZE];
-} rng_blob;
-
-enum {
-  STATE_NEED =
-  sizeof(uint32_t)*2
-  + sizeof(((rng_blob *)0)->state_u64)
-  + sizeof(uint32_t)*4
-  + sizeof(((rng_blob *)0)->buf)
-};
-
-#include "serializations.inc"
-
-bool randompack_serialize(uint8_t *buf, int *len, randompack_rng *rng) {
-  // Returns the complete internal state of rng as an opaque byte buffer
-  if (!rng) return false;
-  rng->last_error = 0;
-  if (!len) {
-    rng->last_error = "randompack serialize: len is null";
-    return false;
-  }
-  int need = STATE_NEED;
-  if (!buf) { // Report needed buffer size
-    *len = need;
-    return true;
-  }
-  if (*len < need) {
-    rng->last_error = "randompack serialize: buffer too small";
-    return false;
-  }
-  serialize(buf, *len, rng);
-  return true;
-}
-
-bool randompack_deserialize(const uint8_t *buf, int len, randompack_rng *rng) {
-  // Restores the rng state using a buffer obtained with randompack_serialize
-  if (!rng) return false;
-  rng->last_error = 0;
-  if (!buf || len <= 0) {
-    rng->last_error = "randompack deserialize: invalid arguments";
-    return false;
-  }
-  rng_blob blob = {0};
-  memcpy(&blob, buf, min(len, STATE_NEED));
-  rng_entry *ent = find_entry(blob.engine);
-  int need = STATE_NEED;
-  if (blob.version != 1 || !ent || len < need) {
-    rng->last_error = "randompack deserialize: corrupt state buffer";
-    return false;
-  }
-  if (rng->engine != INVALID && rng->engine != blob.engine) {
-    rng->last_error = "randompack deserialize: engine mismatch";
-    return false;
-  }
-  bool ok = deserialize(&blob, ent, rng);
-  if (!ok) {
-    rng->last_error = "randompack deserialize: allocation failed";
-    return false;
-  }
-#if defined(BUILD_AVX2)
-  if (rng->engine == FAST && rng->cpu_has_avx2) rng->fill = fill_fast_avx2;
-  if (rng->engine == SFCSIMD && rng->cpu_has_avx2) rng->fill = fill_sfc64simd_avx2;
-#endif
-#if defined(BUILD_AVX512)
-  if (rng->engine == FAST && rng->cpu_has_avx512) rng->fill = fill_fast_avx512;
-  if (rng->engine == SFCSIMD && rng->cpu_has_avx512) rng->fill = fill_sfc64simd_avx512;
-#endif
-  return true;
-}
-
-//================================ CONFIGURATION =================================
-
-bool randompack_full_mantissa(randompack_rng *rng, bool enable) {
-  if (!rng) return false;
-  if (rng->engine == INVALID) {
-    rng->last_error = "randompack full_mantissa: invalid rng";
-    return false;
-  }
-  rng->last_error = 0;
-  rng->usefullmantissa = enable;
-  return true;
-}
-
-bool randompack_bitexact(randompack_rng *rng, bool enable) {
-  if (!rng) return false;
-  if (rng->engine == INVALID) {
-    rng->last_error = "randompack bitexact: invalid rng";
-    return false;
-  }
-  rng->last_error = 0;
-  rng->bitexact = enable;
-  return true;
-}
-
-bool randompack_set_state(uint64_t state[], int nstate, randompack_rng *rng) {
-  if (!rng) return false;
-  rng->last_error = 0;
-  if (!state || nstate < 0) {
-    rng->last_error = "randompack set_state: invalid arguments";
-    return false;
-  }
-  if (rng->engine == INVALID) {
-    rng->last_error = "randompack set_state: invalid rng";
-    return false;
-  }
-  int nwords = get_state_words(rng);
-  if (nwords <= 0)
-    rng->last_error = "randompack set_state: unknown engine";
-  else if (nstate != nwords)
-    rng->last_error = "randompack set_state: wrong nstate for this engine";
-  else if (rng->engine == X256PP || rng->engine == X256SS || rng->engine == FAST ||
-           rng->engine == XORO || rng->engine == X128P || rng->engine == RANLUXPP) {
-    if (all_zero_state(state, nstate))
-      rng->last_error = "randompack set_state: all-zero state is invalid";
-  }
-  else if (rng->engine == CWG128 && (state[0] & 1) == 0)
-    rng->last_error = "randompack set_state: cwg128 increment must be odd";
-  else if (rng->engine == PCG64 && (state[2] & 1) == 0)
-    rng->last_error = "randompack set_state: pcg64 increment must be odd";
-  if (rng->last_error) return false;
-  set_state(state, nstate, rng);
-  return true;
-}
-
 //============================== STREAM SELECTION ==============================
 
 bool randompack_jump(int p, randompack_rng *rng) {
@@ -432,6 +290,148 @@ bool randompack_sfc64_set_abc(uint64_t abc[3], randompack_rng *rng) {
     return false;
   }
   sfc64_set_abc(abc, rng);
+  return true;
+}
+
+//================================ CONFIGURATION =================================
+
+bool randompack_full_mantissa(randompack_rng *rng, bool enable) {
+  if (!rng) return false;
+  if (rng->engine == INVALID) {
+    rng->last_error = "randompack full_mantissa: invalid rng";
+    return false;
+  }
+  rng->last_error = 0;
+  rng->usefullmantissa = enable;
+  return true;
+}
+
+bool randompack_bitexact(randompack_rng *rng, bool enable) {
+  if (!rng) return false;
+  if (rng->engine == INVALID) {
+    rng->last_error = "randompack bitexact: invalid rng";
+    return false;
+  }
+  rng->last_error = 0;
+  rng->bitexact = enable;
+  return true;
+}
+
+bool randompack_set_state(uint64_t state[], int nstate, randompack_rng *rng) {
+  if (!rng) return false;
+  rng->last_error = 0;
+  if (!state || nstate < 0) {
+    rng->last_error = "randompack set_state: invalid arguments";
+    return false;
+  }
+  if (rng->engine == INVALID) {
+    rng->last_error = "randompack set_state: invalid rng";
+    return false;
+  }
+  int nwords = get_state_words(rng);
+  if (nwords <= 0)
+    rng->last_error = "randompack set_state: unknown engine";
+  else if (nstate != nwords)
+    rng->last_error = "randompack set_state: wrong nstate for this engine";
+  else if (rng->engine == X256PP || rng->engine == X256SS || rng->engine == FAST ||
+           rng->engine == XORO || rng->engine == X128P || rng->engine == RANLUXPP) {
+    if (all_zero_state(state, nstate))
+      rng->last_error = "randompack set_state: all-zero state is invalid";
+  }
+  else if (rng->engine == CWG128 && (state[0] & 1) == 0)
+    rng->last_error = "randompack set_state: cwg128 increment must be odd";
+  else if (rng->engine == PCG64 && (state[2] & 1) == 0)
+    rng->last_error = "randompack set_state: pcg64 increment must be odd";
+  if (rng->last_error) return false;
+  set_state(state, nstate, rng);
+  return true;
+}
+
+//================================ SERIALIZATION =================================
+
+static rng_entry *find_entry(rng_engine e) {
+  for (int i = 0; i < LEN(rng_table); i++)
+    if (rng_table[i].engine == e) return &rng_table[i];
+  return 0;
+}
+
+enum { RNG_STATE_WORDS = sizeof(((randompack_rng *)0)->state)/sizeof(uint64_t) };
+
+typedef struct {
+  uint32_t version;
+  uint32_t engine;
+  uint64_t state_u64[RNG_STATE_WORDS];
+  uint32_t buf_word;
+  uint32_t buf_byte;
+  uint32_t reserved0;
+  uint32_t reserved1;
+  uint64_t buf[BUFSIZE];
+} rng_blob;
+
+enum {
+  STATE_NEED =
+  sizeof(uint32_t)*2
+  + sizeof(((rng_blob *)0)->state_u64)
+  + sizeof(uint32_t)*4
+  + sizeof(((rng_blob *)0)->buf)
+};
+
+#include "serializations.inc"
+
+bool randompack_serialize(uint8_t *buf, int *len, randompack_rng *rng) {
+  // Returns the complete internal state of rng as an opaque byte buffer
+  if (!rng) return false;
+  rng->last_error = 0;
+  if (!len) {
+    rng->last_error = "randompack serialize: len is null";
+    return false;
+  }
+  int need = STATE_NEED;
+  if (!buf) { // Report needed buffer size
+    *len = need;
+    return true;
+  }
+  if (*len < need) {
+    rng->last_error = "randompack serialize: buffer too small";
+    return false;
+  }
+  serialize(buf, *len, rng);
+  return true;
+}
+
+bool randompack_deserialize(const uint8_t *buf, int len, randompack_rng *rng) {
+  // Restores the rng state using a buffer obtained with randompack_serialize
+  if (!rng) return false;
+  rng->last_error = 0;
+  if (!buf || len <= 0) {
+    rng->last_error = "randompack deserialize: invalid arguments";
+    return false;
+  }
+  rng_blob blob = {0};
+  memcpy(&blob, buf, min(len, STATE_NEED));
+  rng_entry *ent = find_entry(blob.engine);
+  int need = STATE_NEED;
+  if (blob.version != 1 || !ent || len < need) {
+    rng->last_error = "randompack deserialize: corrupt state buffer";
+    return false;
+  }
+  if (rng->engine != INVALID && rng->engine != blob.engine) {
+    rng->last_error = "randompack deserialize: engine mismatch";
+    return false;
+  }
+  bool ok = deserialize(&blob, ent, rng);
+  if (!ok) {
+    rng->last_error = "randompack deserialize: allocation failed";
+    return false;
+  }
+#if defined(BUILD_AVX2)
+  if (rng->engine == FAST && rng->cpu_has_avx2) rng->fill = fill_fast_avx2;
+  if (rng->engine == SFCSIMD && rng->cpu_has_avx2) rng->fill = fill_sfc64simd_avx2;
+#endif
+#if defined(BUILD_AVX512)
+  if (rng->engine == FAST && rng->cpu_has_avx512) rng->fill = fill_fast_avx512;
+  if (rng->engine == SFCSIMD && rng->cpu_has_avx512) rng->fill = fill_sfc64simd_avx512;
+#endif
   return true;
 }
 

@@ -20,51 +20,6 @@
 #include "zig_D.h"
 #include "assert.h"
 
-static uint64_t norm_pdf_calls = 0;
-static uint64_t norm_draws = 0;
-static uint64_t norm_slow_tail = 0;
-static uint64_t norm_slow_accept = 0;
-static uint64_t norm_slow_retry = 0;
-static uint64_t norm_slow_pdf_accept = 0;
-static uint64_t norm_slow_pdf_reject = 0;
-static uint64_t exp_pdf_calls = 0;
-static uint64_t exp_draws = 0;
-static uint64_t exp_slow = 0;
-
-void randompack_norm_counters_reset(void) {
-  norm_pdf_calls = 0;
-  norm_draws = 0;
-  norm_slow_tail = 0;
-  norm_slow_accept = 0;
-  norm_slow_retry = 0;
-  norm_slow_pdf_accept = 0;
-  norm_slow_pdf_reject = 0;
-  exp_pdf_calls = 0;
-  exp_draws = 0;
-  exp_slow = 0;
-}
-
-void randompack_norm_counters_get(uint64_t *draws, uint64_t *pdf_calls) {
-  if (draws) *draws = norm_draws;
-  if (pdf_calls) *pdf_calls = norm_pdf_calls;
-}
-
-void randompack_norm_counters_get_slow(uint64_t *tail, uint64_t *accept,
-  uint64_t *retry, uint64_t *pdf_accept, uint64_t *pdf_reject) {
-  if (tail) *tail = norm_slow_tail;
-  if (accept) *accept = norm_slow_accept;
-  if (retry) *retry = norm_slow_retry;
-  if (pdf_accept) *pdf_accept = norm_slow_pdf_accept;
-  if (pdf_reject) *pdf_reject = norm_slow_pdf_reject;
-}
-
-void randompack_exp_counters_get(uint64_t *draws, uint64_t *slow,
-  uint64_t *pdf_calls) {
-  if (draws) *draws = exp_draws;
-  if (slow) *slow = exp_slow;
-  if (pdf_calls) *pdf_calls = exp_pdf_calls;
-}
-
 //=============================== NORMAL DISTRIBUTION ==============================
 
 ALWAYS_INLINE double norm_decode(uint64_t r, uint8_t idx, uint64_t *ki, uint64_t *rabs) {
