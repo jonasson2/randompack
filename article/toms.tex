@@ -575,10 +575,14 @@ much lower rejection rate (~\ref{fig:ziggurat}. However, its triangle
 sampling is somewhat costly, and therefore Randompack uses the
 original strip definitions but incorporates McFarland's savings in
 pdf computations: For each 1000 normal draws it requires only 1.2
-exp evaluations and for exp draws the rate is half of that. Compared
+exp evaluations and for the exponential distribution the rate is half of that.
+
+The resulting savings in execution time 
+Compared
 with 
 
-
+ Mac norm 13 exp 18
+Ubuntu 12, 15, cluster norm 65, exp 12
 
 . Randompack uses
 the method 
