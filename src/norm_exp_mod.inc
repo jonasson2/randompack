@@ -59,22 +59,22 @@ NEVER_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x, uint8_t
       x = norm_tail_draw(rng, rabs, u, w);
       return x;
     }
-    L = (1ULL << 52) - ki;
-    R = (1ULL << 52) - rabs;
-    MUL64_WIDE(Y, L, YL, tmp);
-    (void) tmp;
-    if (LIKELY(idx > inflection_idx)) {
-      if (YL > R) goto next_try;
-      if (YL + Dnorm[idx] < R) return x;
-    }
-    else if (LIKELY(idx < inflection_idx)) {
-      if (YL < R) return x;
-      if (YL > R + Dnorm[idx]) goto next_try;
-    }
-    else {
-      if (YL > R + Dzig52) goto next_try;
-      if (YL + Dnorm[idx] < R) return x;
-    }
+    // L = (1ULL << 52) - ki;
+    // R = (1ULL << 52) - rabs;
+    // MUL64_WIDE(Y, L, YL, tmp);
+    // (void) tmp;
+    // if (LIKELY(idx > inflection_idx)) {
+    //   if (YL > R) goto next_try;
+    //   if (YL + Dnorm[idx] < R) return x;
+    // }
+    // else if (LIKELY(idx < inflection_idx)) {
+    //   if (YL < R) return x;
+    //   if (YL > R + Dnorm[idx]) goto next_try;
+    // }
+    // else {
+    //   if (YL > R + Dzig52) goto next_try;
+    //   if (YL + Dnorm[idx] < R) return x;
+    // }
     double u = U64_TO_DOUBLE(Y);
     if (below_normpdf(idx, x, u)) return x;
   next_try:
@@ -137,12 +137,12 @@ ALWAYS_INLINE double exp_unlikely(randompack_rng *rng, int *w, double x, uint8_t
   while (true) {
     if (UNLIKELY(idx == 0)) return exp_taildraw(rng, w);
     Y = draw_u64(rng, w);
-    L = (1ULL << 53) - ke;
-    R = (1ULL << 53) - r;
-    MUL64_WIDE(Y, L, YL, tmp);
-    (void)tmp;
-    if (LIKELY(YL > R)) goto next_try;         // above secant
-    if (YL + Dexp[idx] < R) return x;  // below pdf by the gap bound
+    // L = (1ULL << 53) - ke;
+    // R = (1ULL << 53) - r;
+    // MUL64_WIDE(Y, L, YL, tmp);
+    // (void)tmp;
+    // if (LIKELY(YL > R)) goto next_try;         // above secant
+    // if (YL + Dexp[idx] < R) return x;  // below pdf by the gap bound
     y = U64_TO_DOUBLE(Y);
     if (below_exppdf(idx, x, y)) return x; // below curve
   next_try:
