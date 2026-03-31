@@ -11,7 +11,22 @@
 #define VEC_SHL3(a) vshlq_n_u64((a), 3)
 #define VEC_SHL17(a) vshlq_n_u64((a), 17)
 #define VEC_SHR11(a) vshrq_n_u64((a), 11)
+#if defined(__aarch64__) && (defined(__GNUC__) || defined(__clang__))
+// Compute x * 9 lane-wise as (x << 3) + x with explicit AArch64 AdvSIMD instructions.
+static inline VEC_T vec_mul9_asm(VEC_T x) {
+  VEC_T res;
+  __asm__(
+    "shl %0.2d, %1.2d, #3\n\t"
+    "add %0.2d, %0.2d, %1.2d"
+    : "=w"(res)
+    : "w"(x)
+  );
+  return res;
+}
+#define VEC_MUL9(x) vec_mul9_asm((x))
+#else
 #define VEC_MUL9(x) VEC_ADD(vshlq_n_u64((x), 3), (x))
+#endif
 #define VEC_ROTL23(x) vorrq_u64(vshlq_n_u64((x), 23), vshrq_n_u64((x), 41))
 #define VEC_ROTL24(x) vorrq_u64(vshlq_n_u64((x), 24), vshrq_n_u64((x), 40))
 #define VEC_ROTL45(x) vorrq_u64(vshlq_n_u64((x), 45), vshrq_n_u64((x), 19))
