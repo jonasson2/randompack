@@ -8,6 +8,18 @@ randompack_src = files(
 )
 randompack_src += fortran_src
 
+build_arm_sleef = (
+  host_machine.cpu_family() in ['aarch64', 'arm64'] and
+  host_machine.system() != 'darwin' and
+  not force_nosimd
+)
+if build_arm_sleef
+  randompack_src += files(
+    'inplace_logexp.c',
+    'sleef_arm.c',
+  )
+endif
+
 blas_objs = []
 if using_builtin_blas
   fc = meson.get_compiler('fortran')
