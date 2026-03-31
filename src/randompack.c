@@ -568,8 +568,8 @@ bool randompack_sample(int x[], int len, int k, randompack_rng *rng) {
   if (!rng) return false;
   if (!x || k < 0 || k > len)
     rng->last_error = "invalid arguments to randompack_sample";
-  else if (len > INT_MAX - 1)
-    rng->last_error = "randompack sample: len must be <= 2^31 - 2";	 
+  else if (len > INT_MAX)
+    rng->last_error = "randompack sample: len must be < 2^31";
   else
     rng->last_error = 0;
   if (rng->last_error) return false;
