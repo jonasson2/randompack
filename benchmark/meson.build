@@ -30,11 +30,14 @@ time_logexp_c_args = []
 time_logexp_dependencies = [randompack_dep]
 if build_avx2
   time_logexp_src += ['../src/sleef.c']
+  time_logexp_src += ['../src/inplace_logexp.c']
   time_logexp_src += ['sleef_logu10.c']
   time_logexp_c_args = avx2_c_args
 endif
 if host_machine.cpu_family() in ['aarch64', 'arm64'] and not force_nosimd
+  time_logexp_src += ['../src/inplace_logexp.c']
   time_logexp_src += ['../src/sleef_arm.c']
+  time_logexp_c_args += cc.get_supported_arguments(['-Wno-attributes'])
 endif
 if build_avx512
   sleef_avx512_lib = static_library(

@@ -4,7 +4,7 @@ void vvexp(double *y, const double *x, const int *n);
 void vvlog(double *y, const double *x, const int *n);
 #endif
 
-#if defined(BUILD_AVX2)
+#if defined(BUILD_AVX2) || (defined(__aarch64__) && !defined(__APPLE__))
 void sleef_exp_inplace(double *x, size_t len);
 void sleef_log_inplace(double *x, size_t len);
 #endif
@@ -24,6 +24,9 @@ NEVER_INLINE void exp_inplace(double *x, size_t len, randompack_rng *rng) {
       sleef_exp_inplace(x, len);
       return;
     }
+#elif defined(__aarch64__) && !defined(__APPLE__)
+    sleef_exp_inplace(x, len);
+    return;
 #endif
     for (size_t i = 0; i < len; i++) x[i] = exp(x[i]);
     return;
@@ -46,6 +49,9 @@ NEVER_INLINE void log_inplace(double *x, size_t len, randompack_rng *rng) {
       sleef_log_inplace(x, len);
       return;
     }
+#elif defined(__aarch64__) && !defined(__APPLE__)
+    sleef_log_inplace(x, len);
+    return;
 #endif
     for (size_t i = 0; i < len; i++) x[i] = log(x[i]);
     return;

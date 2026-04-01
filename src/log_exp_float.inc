@@ -4,7 +4,7 @@ void vvexpf(float *y, const float *x, const int *n);
 void vvlogf(float *y, const float *x, const int *n);
 #endif
 
-#if defined(BUILD_AVX2)
+#if defined(BUILD_AVX2) || (defined(__aarch64__) && !defined(__APPLE__))
 void sleef_expf_inplace(float *x, size_t len);
 void sleef_logf_inplace(float *x, size_t len);
 #endif
@@ -24,6 +24,9 @@ NEVER_INLINE void expf_inplace(float *x, size_t len, randompack_rng *rng) {
       sleef_expf_inplace(x, len);
       return;
     }
+#elif defined(__aarch64__) && !defined(__APPLE__)
+    sleef_expf_inplace(x, len);
+    return;
 #endif
     for (size_t i = 0; i < len; i++) x[i] = expf(x[i]);
     return;
@@ -46,6 +49,9 @@ NEVER_INLINE void logf_inplace(float *x, size_t len, randompack_rng *rng) {
       sleef_logf_inplace(x, len);
       return;
     }
+#elif defined(__aarch64__) && !defined(__APPLE__)
+    sleef_logf_inplace(x, len);
+    return;
 #endif
     for (size_t i = 0; i < len; i++) x[i] = logf(x[i]);
     return;

@@ -13,6 +13,9 @@ build_arm_sleef = (
   host_machine.system() != 'darwin' and
   not force_nosimd
 )
+arm_sleef_c_args = build_arm_sleef ? cc.get_supported_arguments(
+  ['-Wno-attributes']
+) : []
 if build_arm_sleef
   randompack_src += files(
     'inplace_logexp.c',
@@ -24,6 +27,8 @@ blas_objs = []
 if using_builtin_blas
   fc = meson.get_compiler('fortran')
   blas_f_args = fc.get_supported_arguments([
+    '-w',
+    '-std=legacy',
     '-Wno-compare-reals',
     '-Wno-unused-dummy-argument',
     '-Wno-obsolescent',
@@ -43,7 +48,7 @@ endif
 build_avx2_define = build_avx2 ? ['-DBUILD_AVX2'] : []
 build_avx512_define = build_avx512 ? ['-DBUILD_AVX512'] : []
 test_hooks_define = get_option('build_tests') ? ['-DRANDOMPACK_TEST_HOOKS'] : []
-base_c_args = local_dpstrf_args + accel_vv_args + build_avx2_define + build_avx512_define
+base_c_args = local_dpstrf_args + accel_vv_args + build_avx2_define + build_avx512_define + arm_sleef_c_args
 test_buf_define = '-DBUFSIZE=' + test_bufsize.to_string()
 buf8_c_args = base_c_args + [test_buf_define]
 

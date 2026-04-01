@@ -2,8 +2,8 @@
 // Compare C++ standard library <random> vs randompack distributions (ns/value).
 //
 // Example build:
-//   c++ -O3 -std=c++17 -I../src TimeDistCpp.cpp \
-//     -L../release/src -lrandompack -Wl,-rpath,../release/src -o TimeDistCpp
+//   c++ -O3 -std=c++17 -I../src TimeDistCpp.cpp
+//   -L../release/src -lrandompack -Wl,-rpath,../release/src -o TimeDistCpp
 
 #include <cmath>
 #include <cstdint>
