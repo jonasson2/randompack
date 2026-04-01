@@ -10,8 +10,8 @@
 ALWAYS_INLINE float norm_decodef(uint32_t r, uint8_t idx, uint32_t *ki, uint32_t *rabs) {
   *ki = ki_float[idx];
   *rabs = r & 0x007fffff;
-  int32_t sign = -((int32_t)((r >> 23) & 1));
-  int32_t s = ((int32_t)*rabs ^ sign) - sign;  // branchless +/- rabs
+  int32_t s = (int32_t)*rabs;
+  if ((r >> 23) & 1) s = -s;
   return (float)s * wi_float[idx];
 }
 
@@ -165,7 +165,7 @@ ALWAYS_INLINE float expf_unlikely(randompack_rng *rng, int *w, float x, uint8_t 
   }
 }
 
-ALWAYS_INLINE void rand_expf(float *buf, size_t len, randompack_rng *rng) {
+NEVER_INLINE void rand_expf(float *buf, size_t len, randompack_rng *rng) {
   align64(rng);
   draw_raw_copy((uint8_t *)buf, len*sizeof(uint32_t), rng);
   int w = enter_u32_mode(rng);
