@@ -25,8 +25,8 @@
 ALWAYS_INLINE double norm_decode(uint64_t r, uint8_t idx, uint64_t *ki, uint64_t *rabs) {
   *ki = ki_double[idx];
   *rabs = r & 0x000fffffffffffff;
-  int64_t sign = -((int64_t)((r >> 52) & 1));
-  int64_t s = ((int64_t)*rabs ^ sign) - sign;  // branchless +/- rabs
+  int64_t s = (int64_t)*rabs;
+  if ((r >> 52) & 1) s = -s;
   return (double)s * wi_double[idx];
 }
 
@@ -62,7 +62,7 @@ NEVER_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x, uint8_t
     }
     L = (1ULL << 52) - ki;
     R = (1ULL << 52) - rabs;
-    MUL64_WIDE(Y, L, YL, tmp);
+    MUL64_WIDE(Y, L, YL, tmp);  //
     (void) tmp;
     if (LIKELY(idx > inflection_idx)) {
       if (YL > R) goto next_try;
@@ -156,7 +156,7 @@ ALWAYS_INLINE double exp_unlikely(randompack_rng *rng, int *w, double x, uint8_t
   }
 }
 
-ALWAYS_INLINE void rand_exp(double *buf, size_t len, randompack_rng *rng) {
+NEVER_INLINE void rand_exp(double *buf, size_t len, randompack_rng *rng) {
   align64(rng);
   draw_raw_copy((uint8_t *)buf, len*sizeof(uint64_t), rng);
   int w = enter_u64_mode(rng);
