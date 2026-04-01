@@ -8,6 +8,10 @@ void vvlog(double *y, const double *x, const int *n);
 void sleef_exp_inplace(double *x, size_t len);
 void sleef_log_inplace(double *x, size_t len);
 #endif
+#if defined(BUILD_AVX512)
+void sleef_exp_inplace_avx512(double *x, size_t len);
+void sleef_log_inplace_avx512(double *x, size_t len);
+#endif
 
 NEVER_INLINE void exp_inplace(double *x, size_t len, randompack_rng *rng) {
   if (!rng->bitexact) {
@@ -19,12 +23,20 @@ NEVER_INLINE void exp_inplace(double *x, size_t len, randompack_rng *rng) {
       i += chunk;
     }
     return;
-#elif defined(BUILD_AVX2)
+#endif
+#if defined(BUILD_AVX512)
+    if (rng->cpu_has_avx512) {
+      sleef_exp_inplace_avx512(x, len);
+      return;
+    }
+#endif
+#if defined(BUILD_AVX2)
     if (rng->cpu_has_avx2) {
       sleef_exp_inplace(x, len);
       return;
     }
-#elif defined(__aarch64__) && !defined(__APPLE__)
+#endif
+#if defined(__aarch64__) && !defined(__APPLE__)
     sleef_exp_inplace(x, len);
     return;
 #endif
@@ -44,12 +56,20 @@ NEVER_INLINE void log_inplace(double *x, size_t len, randompack_rng *rng) {
       i += chunk;
     }
     return;
-#elif defined(BUILD_AVX2)
+#endif
+#if defined(BUILD_AVX512)
+    if (rng->cpu_has_avx512) {
+      sleef_log_inplace_avx512(x, len);
+      return;
+    }
+#endif
+#if defined(BUILD_AVX2)
     if (rng->cpu_has_avx2) {
       sleef_log_inplace(x, len);
       return;
     }
-#elif defined(__aarch64__) && !defined(__APPLE__)
+#endif
+#if defined(__aarch64__) && !defined(__APPLE__)
     sleef_log_inplace(x, len);
     return;
 #endif

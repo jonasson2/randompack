@@ -89,7 +89,10 @@ endif
 if build_avx512
   avx512_lib = static_library(
     'randompack_avx512',
-    files('avx512.c'),
+    files(
+      'avx512.c',
+      'sleef_avx512.c',
+    ),
     include_directories: randompack_inc,
     c_args: avx512_c_args + build_avx512_define,
     pic: true,
@@ -99,7 +102,10 @@ if build_avx512
 
   avx512_lib_buf8 = static_library(
     'randompack_avx512_buf8',
-    files('avx512.c'),
+    files(
+      'avx512.c',
+      'sleef_avx512.c',
+    ),
     include_directories: randompack_inc,
     c_args: avx512_c_args + build_avx512_define + [test_buf_define],
     pic: true,

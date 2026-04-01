@@ -35,8 +35,8 @@ void vvexpf(float *y, const float *x, const int *n);
 void vvlogf(float *y, const float *x, const int *n);
 #endif
 #if defined(BUILD_AVX512)
-void sleef_avx512_exp(double out[], const double in[], int n);
-void sleef_avx512_log(double out[], const double in[], int n);
+void sleef_exp_inplace_avx512(double *x, size_t len);
+void sleef_log_inplace_avx512(double *x, size_t len);
 #endif
 #if defined(BUILD_AVX2) || (defined(__aarch64__) || defined(_M_ARM64)) && !defined(__APPLE__)
 void sleef_exp_inplace(double *x, size_t len);
@@ -251,6 +251,18 @@ static void apply_fn_scalar_f(float out[], const float in[], int n, expf_fn fn) 
 }
 
 #if defined(BUILD_AVX512)
+static void sleef_avx512_exp_adapter(double out[], const double in[], int n) {
+  if (out != in)
+    memcpy(out, in, (size_t)n*sizeof(double));
+  sleef_exp_inplace_avx512(out, (size_t)n);
+}
+
+static void sleef_avx512_log_adapter(double out[], const double in[], int n) {
+  if (out != in)
+    memcpy(out, in, (size_t)n*sizeof(double));
+  sleef_log_inplace_avx512(out, (size_t)n);
+}
+
 static void apply_fn_arr_d(double out[], const double in[], int n, arr_d_fn fn) {
   fn(out, in, n);
 }
@@ -275,8 +287,8 @@ static void apply_fn_vv_f(float out[], const float in[], int n, vvexpf_fn fn) {
 #endif
 
 #if defined(BUILD_AVX512)
-static double time_fn_arr_d(int chunk, double bench_time, arr_d_fn fn, double in[],
-                            double out[], randompack_rng *rng) {
+static double time_fn_arr_d(int chunk, double bench_time, arr_d_fn fn, double out[],
+                            randompack_rng *rng) {
   int reps = max(1, 1000000/chunk);
   int64_t calls = 0;
   uint64_t total = 0;
@@ -285,10 +297,10 @@ static double time_fn_arr_d(int chunk, double bench_time, arr_d_fn fn, double in
   uint64_t deadline = t0 + (uint64_t)(bench_time*1e9);
   uint64_t t = t0;
   while (t < deadline) {
-    ASSERT(randompack_u01(in, len, rng));
+    ASSERT(randompack_u01(out, len, rng));
     uint64_t t1 = clock_nsec();
     for (int i = 0; i < reps; i++) {
-      apply_fn_arr_d(out, in, chunk, fn);
+      apply_fn_arr_d(out, out, chunk, fn);
       consume5(out, chunk);
     }
     uint64_t t2 = clock_nsec();
@@ -485,15 +497,16 @@ static bool smoke_arr_d(arr_d_fn fn, exp_fn ref_fn, exp_fn libm_fn,
 
 static bool run_avx512_smoke_tests(void) {
   double tests[] = { 0.2, 3.0 };
-  return smoke_arr_d(sleef_avx512_exp, exp, openlibm_exp, tests, LEN(tests)) &&
-      smoke_arr_d(sleef_avx512_log, log, openlibm_log, tests, LEN(tests));
+  return smoke_arr_d(sleef_avx512_exp_adapter, exp, openlibm_exp, tests, LEN(tests)) &&
+      smoke_arr_d(sleef_avx512_log_adapter, log, openlibm_log, tests, LEN(tests));
 }
 
 static void print_arr_bench_d(int chunk, double bench_time, double in[],
                               double out[], randompack_rng *rng,
                               arr_d_spec specs[], int n) {
+  (void)in;
   for (int i = 0; i < n; i++) {
-    double ns = time_fn_arr_d(chunk, bench_time, specs[i].fn, in, out, rng);
+    double ns = time_fn_arr_d(chunk, bench_time, specs[i].fn, out, rng);
     printf("%-22s %10.2f\n", specs[i].name, ns);
   }
 }
@@ -582,10 +595,10 @@ int main(int argc, char **argv) {
 #endif
 #if defined(BUILD_AVX512)
   arr_d_spec avx512_exps[] = {
-    { "sleef_avx512_exp", sleef_avx512_exp },
+    { "sleef_avx512_exp", sleef_avx512_exp_adapter },
   };
   arr_d_spec avx512_logs[] = {
-    { "sleef_avx512_u35log", sleef_avx512_log },
+    { "sleef_avx512_u35log", sleef_avx512_log_adapter },
   };
 #endif
   printf("time per value:   ns/value\n");

@@ -42,7 +42,7 @@ endif
 if build_avx512
   sleef_avx512_lib = static_library(
     'benchmark_sleef_avx512',
-    files('sleef_avx512.c'),
+    files('../src/sleef_avx512.c'),
     c_args: avx512_c_args,
     pic: true,
     install: false,
