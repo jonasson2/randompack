@@ -29,6 +29,7 @@ time_logexp_src = ['TimeLogExp.c'] + common_util
 time_logexp_c_args = []
 if build_avx2
   time_logexp_src += ['../src/sleef.c']
+  time_logexp_src += ['sleef_logu10.c']
   time_logexp_c_args = avx2_c_args
 endif
 
