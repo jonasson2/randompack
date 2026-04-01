@@ -20,6 +20,14 @@
 #include "randompack_config.h"
 #include "openlibm.inc"
 
+#if defined(BUILD_AVX512) && (defined(__x86_64__) || defined(_M_X64))
+#if defined(_MSC_VER)
+#include <intrin.h>
+#else
+#include <cpuid.h>
+#endif
+#endif
+
 #if defined(USE_ACCEL_VV)
 void vvexp(double *y, const double *x, const int *n);
 void vvlog(double *y, const double *x, const int *n);
@@ -174,6 +182,38 @@ typedef struct {
   char *name;
   arr_d_fn fn;
 } arr_d_spec;
+
+#if defined(BUILD_AVX512) && (defined(__x86_64__) || defined(_M_X64))
+static bool cpu_has_avx512_local(void) {
+#if defined(_MSC_VER)
+  int info[4];
+  __cpuid(info, 1);
+  int osxsave = (info[2] & (1 << 27)) != 0;
+  int avx = (info[2] & (1 << 28)) != 0;
+  if (!(osxsave && avx))
+    return false;
+  unsigned long long xcr = _xgetbv(0);
+  if ((xcr & 0xe6) != 0xe6)
+    return false;
+  __cpuidex(info, 7, 0);
+  return (info[1] & (1 << 16)) != 0 && (info[1] & (1 << 17)) != 0;
+#else
+  unsigned int eax, ebx, ecx, edx;
+  if (!__get_cpuid(1, &eax, &ebx, &ecx, &edx))
+    return false;
+  if (!(ecx & (1 << 27)) || !(ecx & (1 << 28)))
+    return false;
+  unsigned int xcr0_lo, xcr0_hi;
+  __asm__ volatile ("xgetbv" : "=a"(xcr0_lo), "=d"(xcr0_hi) : "c"(0));
+  if ((xcr0_lo & 0xe6) != 0xe6)
+    return false;
+  if (__get_cpuid_max(0, 0) < 7)
+    return false;
+  __cpuid_count(7, 0, eax, ebx, ecx, edx);
+  return (ebx & (1 << 16)) != 0 && (ebx & (1 << 17)) != 0;
+#endif
+}
+#endif
 
 #if defined(BUILD_AVX2) || defined(__aarch64__) || defined(_M_ARM64)
 typedef struct {
@@ -598,6 +638,9 @@ int main(int argc, char **argv) {
   double bench_time;
   int chunk, seed;
   bool help;
+#if defined(BUILD_AVX512) && (defined(__x86_64__) || defined(_M_X64))
+  bool has_avx512 = cpu_has_avx512_local();
+#endif
   if (!get_options(argc, argv, &engine, &bench_time, &chunk, &seed, &help) ||
       help) {
     print_help();
@@ -638,7 +681,7 @@ int main(int argc, char **argv) {
   }
 #endif
 #if defined(BUILD_AVX512)
-  if (!run_avx512_smoke_tests()) {
+  if (has_avx512 && !run_avx512_smoke_tests()) {
     fprintf(stderr, "AVX-512 smoke test failed\n");
     randompack_free(rng);
     return 1;
@@ -707,7 +750,8 @@ int main(int argc, char **argv) {
   print_vec_bench_d(chunk, bench_time, in, out, rng, vec_exps, LEN(vec_exps));
 #endif
 #if defined(BUILD_AVX512)
-  print_arr_bench_d(chunk, bench_time, in, out, rng, avx512_exps, LEN(avx512_exps));
+  if (has_avx512)
+    print_arr_bench_d(chunk, bench_time, in, out, rng, avx512_exps, LEN(avx512_exps));
 #endif
   double ns = time_fn_scalar(chunk, bench_time, openlibm_log, in, out, rng);
   printf("%-22s %10.2f\n", "openlibm_log", ns);
@@ -723,7 +767,8 @@ int main(int argc, char **argv) {
   print_vec_bench_d(chunk, bench_time, in, out, rng, vec_logs, LEN(vec_logs));
 #endif
 #if defined(BUILD_AVX512)
-  print_arr_bench_d(chunk, bench_time, in, out, rng, avx512_logs, LEN(avx512_logs));
+  if (has_avx512)
+    print_arr_bench_d(chunk, bench_time, in, out, rng, avx512_logs, LEN(avx512_logs));
 #endif
   printf("\n%-22s %10s\n", "Function", "float");
   for (int i = 0; i < LEN(expfs); i++) {
