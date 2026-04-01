@@ -25,8 +25,8 @@
 ALWAYS_INLINE double norm_decode(uint64_t r, uint8_t idx, uint64_t *ki, uint64_t *rabs) {
   *ki = ki_double[idx];
   *rabs = r & 0x000fffffffffffff;
-  int64_t s = (int64_t)*rabs;
-  if ((r >> 52) & 1) s = -s;
+  int64_t sign = -((int64_t)((r >> 52) & 1));
+  int64_t s = ((int64_t)*rabs ^ sign) - sign;  // branchless +/- rabs
   return (double)s * wi_double[idx];
 }
 
