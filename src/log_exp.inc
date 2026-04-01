@@ -23,7 +23,7 @@ NEVER_INLINE void exp_inplace(double *x, size_t len, randompack_rng *rng) {
       i += chunk;
     }
     return;
-#endif
+#elif defined(__x86_64__) || defined(_M_X64)
 #if defined(BUILD_AVX512)
     if (rng->cpu_has_avx512) {
       sleef_exp_inplace_avx512(x, len);
@@ -36,12 +36,15 @@ NEVER_INLINE void exp_inplace(double *x, size_t len, randompack_rng *rng) {
       return;
     }
 #endif
-#if defined(__aarch64__) && !defined(__APPLE__)
-    sleef_exp_inplace(x, len);
-    return;
-#endif
     for (size_t i = 0; i < len; i++) x[i] = exp(x[i]);
     return;
+// #elif defined(__aarch64__) && !defined(__APPLE__)
+//     sleef_exp_inplace(x, len);
+//     return;
+#else
+    for (size_t i = 0; i < len; i++) x[i] = exp(x[i]);
+    return;
+#endif
   }
   for (size_t i = 0; i < len; i++) x[i] = openlibm_exp(x[i]);
 }
@@ -56,7 +59,7 @@ NEVER_INLINE void log_inplace(double *x, size_t len, randompack_rng *rng) {
       i += chunk;
     }
     return;
-#endif
+#elif defined(__x86_64__) || defined(_M_X64)
 #if defined(BUILD_AVX512)
     if (rng->cpu_has_avx512) {
       sleef_log_inplace_avx512(x, len);
@@ -69,12 +72,15 @@ NEVER_INLINE void log_inplace(double *x, size_t len, randompack_rng *rng) {
       return;
     }
 #endif
-#if defined(__aarch64__) && !defined(__APPLE__)
-    sleef_log_inplace(x, len);
-    return;
-#endif
     for (size_t i = 0; i < len; i++) x[i] = log(x[i]);
     return;
+// #elif defined(__aarch64__) && !defined(__APPLE__)
+//     sleef_log_inplace(x, len);
+//     return;
+#else
+    for (size_t i = 0; i < len; i++) x[i] = log(x[i]);
+    return;
+#endif
   }
   for (size_t i = 0; i < len; i++) x[i] = openlibm_log(x[i]);
 }

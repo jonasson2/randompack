@@ -24,12 +24,15 @@ NEVER_INLINE void expf_inplace(float *x, size_t len, randompack_rng *rng) {
       sleef_expf_inplace(x, len);
       return;
     }
+    for (size_t i = 0; i < len; i++) x[i] = expf(x[i]);
+    return;
 #elif defined(__aarch64__) && !defined(__APPLE__)
     sleef_expf_inplace(x, len);
     return;
-#endif
+#else
     for (size_t i = 0; i < len; i++) x[i] = expf(x[i]);
     return;
+#endif
   }
   for (size_t i = 0; i < len; i++) x[i] = openlibm_expf(x[i]);
 }
@@ -49,12 +52,15 @@ NEVER_INLINE void logf_inplace(float *x, size_t len, randompack_rng *rng) {
       sleef_logf_inplace(x, len);
       return;
     }
-#elif defined(__aarch64__) && !defined(__APPLE__)
-    sleef_logf_inplace(x, len);
-    return;
-#endif
     for (size_t i = 0; i < len; i++) x[i] = logf(x[i]);
     return;
+// #elif defined(__aarch64__) && !defined(__APPLE__)
+//     sleef_logf_inplace(x, len);
+//     return;
+#else
+    for (size_t i = 0; i < len; i++) x[i] = logf(x[i]);
+    return;
+#endif
   }
   for (size_t i = 0; i < len; i++) x[i] = openlibm_logf(x[i]);
 }
