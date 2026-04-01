@@ -12,6 +12,10 @@ fi
 builddir="$1"
 shift
 
+if [ -e "$builddir" ]; then
+  rm -rf "$builddir"
+fi
+
 buildtype="release"
 while [ $# -gt 0 ]; do
   case "$1" in

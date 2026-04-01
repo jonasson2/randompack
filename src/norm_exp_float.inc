@@ -8,9 +8,10 @@
 } while (0)
 
 ALWAYS_INLINE float norm_decodef(uint32_t r, uint8_t idx, uint32_t *ki, uint32_t *rabs) {
-  int32_t s = ((int32_t)(r << 8)) >> 8;
   *ki = ki_float[idx];
   *rabs = r & 0x007fffff;
+  int32_t s = (int32_t)*rabs;
+  if ((r >> 23) & 1) s = -s;
   return (float)s * wi_float[idx];
 }
 

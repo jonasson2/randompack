@@ -23,9 +23,10 @@
 //=============================== NORMAL DISTRIBUTION ==============================
 
 ALWAYS_INLINE double norm_decode(uint64_t r, uint8_t idx, uint64_t *ki, uint64_t *rabs) {
-  int64_t s = ((int64_t)(r << 11)) >> 11; // change sign
   *ki = ki_double[idx];
   *rabs = r & 0x000fffffffffffff;
+  int64_t s = (int64_t)*rabs;
+  if ((r >> 52) & 1) s = -s;
   return (double)s * wi_double[idx];
 }
 
