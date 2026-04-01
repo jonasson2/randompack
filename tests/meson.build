@@ -44,13 +44,14 @@ extra_util = files(
   'incbet.c',
   'igam.c',
 )
+dpstrf_test_src = files('../src/rp_dpstrf.c')
 
 blas_test_args = using_builtin_blas ? ['-DRANDOMPACK_BUILTIN_BLAS'] : []
 test_buf_define = '-DBUFSIZE=' + test_bufsize.to_string()
 
 run_tests = executable(
   'RunTests',
-  test_sources + extra_util,
+  test_sources + extra_util + dpstrf_test_src,
   include_directories: [common_inc],
   dependencies : [randompack_dep],
   c_args : ['-DRANDOMPACK_TEST_HOOKS'] + blas_test_args,
@@ -61,7 +62,7 @@ test('RunTests', run_tests, args : ['-v'])
 run_tests_buf8 = executable(
   # Small buffer test to stress the buffer draw machinery
   'RunTestsBuf8',
-  test_sources + extra_util,
+  test_sources + extra_util + dpstrf_test_src,
   include_directories: [common_inc],
   dependencies : [randompack_buf8_dep],
   c_args : ['-DRANDOMPACK_TEST_HOOKS', test_buf_define] + blas_test_args,

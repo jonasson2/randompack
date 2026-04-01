@@ -27,17 +27,33 @@ time_norm_exp = executable(
 
 time_logexp_src = ['TimeLogExp.c'] + common_util
 time_logexp_c_args = []
+time_logexp_dependencies = [randompack_dep]
 if build_avx2
   time_logexp_src += ['../src/sleef.c']
   time_logexp_src += ['sleef_logu10.c']
   time_logexp_c_args = avx2_c_args
+endif
+if host_machine.cpu_family() in ['aarch64', 'arm64'] and not force_nosimd
+  time_logexp_src += ['../src/sleef_arm.c']
+endif
+if build_avx512
+  sleef_avx512_lib = static_library(
+    'benchmark_sleef_avx512',
+    files('sleef_avx512.c'),
+    c_args: avx512_c_args,
+    pic: true,
+    install: false,
+  )
+  time_logexp_dependencies += declare_dependency(
+    objects: [sleef_avx512_lib.extract_all_objects(recursive: false)],
+  )
 endif
 
 time_log_exp = executable(
   'TimeLogExp',
   ['TimeUtil.c'] + time_logexp_src,
   include_directories : [common_inc],
-  dependencies : [randompack_dep],
+  dependencies : time_logexp_dependencies,
   c_args: time_logexp_c_args,
 )
 
