@@ -410,6 +410,7 @@ static double time_fn_vv_f(int chunk, double bench_time, vvexpf_fn fn, float in[
 }
 #endif
 
+#if defined(BUILD_AVX2) || (defined(__aarch64__) || defined(_M_ARM64)) && !defined(__APPLE__)
 static double time_fn_inplace_d(int chunk, double bench_time, inplace_d_fn fn,
                                 double in[], double out[], randompack_rng *rng) {
   int reps = max(1, 1000000/chunk);
@@ -459,6 +460,7 @@ static double time_fn_inplace_f(int chunk, double bench_time, inplace_f_fn fn,
   }
   return (calls > 0) ? total/((double)calls*chunk) : 0;
 }
+
 static void print_inplace_bench_d(int chunk, double bench_time, double in[],
                                   double out[], randompack_rng *rng,
                                   inplace_d_spec specs[], int n) {
@@ -476,6 +478,7 @@ static void print_inplace_bench_f(int chunk, double bench_time, float in[],
     printf("%-22s %10.2f\n", specs[i].name, ns);
   }
 }
+#endif
 
 #if defined(BUILD_AVX512)
 static bool smoke_arr_d(arr_d_fn fn, exp_fn ref_fn, exp_fn libm_fn,
