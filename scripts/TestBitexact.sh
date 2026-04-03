@@ -16,6 +16,7 @@ have_params=false
 engine='x256++simd'
 precision=double
 set_bitexact=true
+print_host=${TESTBITEXACT_PRINT_HOST-1}
 
 quote_sh() {
   printf "'%s'" "$(printf "%s" "$1" | sed "s/'/'\\\\''/g")"
@@ -79,18 +80,22 @@ fi
 if [ "$set_bitexact" = false ]; then
   set -- "$@" -x
 fi
-printf "%-10s %s\n" "host:" "local"
+if [ "$print_host" = 1 ]; then
+  printf "%-10s %s\n" "host:" "local"
+fi
 "$@"
 
 if [ -n "$remote_host" ]; then
-  remote_cmd="cd $(quote_sh "$remote_folder") && scripts/TestBitexact.sh -f $(quote_sh "$remote_folder") -b $(quote_sh "$builddir") -s $(quote_sh "$seed") -n $(quote_sh "$ndraws") -d $(quote_sh "$dist") -e $(quote_sh "$engine") -P $(quote_sh "$precision")"
+  remote_cmd="cd $(quote_sh "$remote_folder") && TESTBITEXACT_PRINT_HOST=0 scripts/TestBitexact.sh -f $(quote_sh "$remote_folder") -b $(quote_sh "$builddir") -s $(quote_sh "$seed") -n $(quote_sh "$ndraws") -d $(quote_sh "$dist") -e $(quote_sh "$engine") -P $(quote_sh "$precision")"
   if [ "$have_params" = true ]; then
     remote_cmd="$remote_cmd -p $(quote_sh "$params")"
   fi
   if [ "$set_bitexact" = false ]; then
     remote_cmd="$remote_cmd -x"
   fi
-  printf "\n"
-  printf "%-10s %s\n" "host:" "$remote_host"
+  if [ "$print_host" = 1 ]; then
+    printf "\n"
+    printf "%-10s %s\n" "host:" "$remote_host"
+  fi
   ssh "$remote_host" "$remote_cmd"
 fi
