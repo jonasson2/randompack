@@ -64,7 +64,7 @@ static void print_help(void) {
   printf("  -h            Show this help message\n");
   printf("  -x            Do not set bitexact mode\n");
   printf("  -s SEED       Seed (default 123)\n");
-  printf("  -n N          Number of draws (default 1000000000)\n");
+  printf("  -n N          Number of draws (default 100000000)\n");
   printf("  -d DIST       Distribution (default N(0,1))\n");
   printf("  -p LIST       Parameters (default depends on distribution)\n");
   printf("  -e ENGINE     RNG engine (default x256++simd)\n");
@@ -296,7 +296,7 @@ static bool fill_float(float *x, size_t len, dist_t dist, double *p, randompack_
 
 int main(int argc, char **argv) {
   uint64_t seed = 123;
-  uint64_t ndraws = 1000000000ull;
+  uint64_t ndraws = 100000000ull;
   char *dist_name = "N(0,1)";
   char *par_text = "";
   char *engine = "x256++simd";

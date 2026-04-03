@@ -9,7 +9,7 @@ remote_host=
 remote_folder=randompack
 builddir=release
 seed=123
-ndraws=1e9
+ndraws=1e8
 dist='N(0,1)'
 params=
 have_params=false
@@ -40,7 +40,7 @@ Options:
   -s SEED           Seed
                     Default: 123
   -n NDRAWS         Number of draws
-                    Default: 1e9
+                    Default: 1e8
   -d DIST           Distribution
                     Default: N(0,1)
   -p PARAMS         Distribution parameters, comma-separated
