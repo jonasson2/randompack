@@ -79,6 +79,13 @@ Yggdrasil/
 products/
 
 # SANDBOX
-sandbox/
+sandbox/*
+!sandbox/bigcrush/
+sandbox/bigcrush/*
+!sandbox/bigcrush/*.sh
+!sandbox/bigcrush/*.py
+!sandbox/bigcrush/*.awk
+!sandbox/bigcrush/*.cpp
+!sandbox/bigcrush/*.slurm
 
 .jupyter/

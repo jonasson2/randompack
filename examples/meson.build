@@ -19,6 +19,13 @@ run_random = executable(
   dependencies : [randompack_dep],
 )
 
+test_bitexact = executable(
+  'TestBitexact',
+  ['TestBitexact.c'] + common_util,
+  include_directories : [common_inc],
+  dependencies : [randompack_dep],
+)
+
 draw_example = executable(
   'DrawDemo',
   'DrawDemo.c',
