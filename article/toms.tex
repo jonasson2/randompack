@@ -343,8 +343,11 @@ for the engines are that they should
 
 \begin{table}
 \caption{Random number generators (engines) implemented in Randompack.
-The default generator, a SIMD-accelerated version of the xoshiro256++
-with short name x256++simd, is not listed.}
+Two engines have SIMD-accelerated versions that are not listed, 
+xoshiro256++ and sfc64, with short names \texttt{x256++simd} and
+\texttt{sfc64simd}, the former of which has been selected as
+Randompack's default engine.
+
 \label{tab:engines}
 \begin{tabular}{llcclcc}
 \toprule
@@ -693,30 +696,30 @@ random bits.
 
 \subsection{SIMD acceleration}
 
-Randompack makes substantial use of SIMD instructions on modern CPUs.
-There are three main SIMD architectures in use: NEON on ARM processors
-on the three
-main current CPU SIMD platforms: NEON on ARM, and AVX2 or, where
-available, AVX-512 on x86-64. These instruction sets allow parallel
-operation on 64-bit words, with 2 lanes for NEON, 4 for AVX2, and 8
-for AVX-512, for a large class of arithmetic, logical, and
-data-movement operations, though not for all operations.
+Randompack makes substantial use of vector SIMD instructions on modern
+CPUs. There are three main SIMD architectures in use: NEON (on ARM
+processors), AVX2 and AVX-512 (on X86-64 processors). The provided
+SIMD instructions allow operating in parallel on 32 bit or 64 bit
+words, with two 64-bit lanes for NEON, four for AVX2 and eight for
+AVX-512. In addition, modern CPUs can often execute several
+instruction chains in parallel through instruction-level parallelism
+(ILP). Both SIMD and ILP depend on the computations being independent
+and can be realized through loop unrolling and multiple parallel state
+updates.
 
-Randompack makes substantial use of SIMD instructions on the three main
-current CPU SIMD platforms: NEON on ARM, AVX2 on x86-64, and AVX-512
-on newer x86-64 processors. These instruction sets allow 2, 4, and 8
-64-bit words, respectively, to be operated on in parallel by a single
-instruction, for a large class of arithmetic, logical, and data-movement
-operations, though not for all operations. In addition, modern
-processors can often execute several independent instruction chains in
-parallel through instruction-level parallelism.
-
-In Randompack, SIMD support is used in three main places. First, two
-engines have SIMD implementations. Several others were explored, but
+In Randompack, SIMD support is used in four main places. First, two
+engines have SIMD implementations, xoshiro256++. Several others were explored, but
 these two proved the most amenable to efficient vectorization. Second,
-SIMD is used in shift--scale transformations. Third, it is used in the
-integer-to-double conversion routines. Together these yield substantial
-speed-ups, with the SIMD engines providing the largest part of the gain.
+SIMD is used in shift--scale transformations, e.g. to get $U(a,b)$ and
+general normal samples from $U(0,1)$ and standard normal samples.
+Third, it is used in the integer-to-double conversion functions.
+Fourth, vectorized logarithms and exponentials from the Sleef library
+\cite{sleef_github,shibata2020sleef} are used to speed up the sampling
+of all the supported continuouse distributions except uniform,
+exponential, and normal.
+
+Together these yield substantial speed-ups, with the SIMD engines
+providing the largest part of the gain.
 
 The SIMD engines are designed by combining several independent scalar
 streams into one vectorized engine. In the AVX-512 version, eight

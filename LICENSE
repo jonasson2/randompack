@@ -49,6 +49,10 @@ randutils seed_seq_fe128
 Melissa O’Neill — https://github.com/imneme/pcg-cpp — MIT
 Files: src/seed_seq_fe128.inc, tests/randutils.hpp
 
+SLEEF
+SLEEF Project — https://github.com/shibatch/sleef — Boost Software License 1.0
+Files: src/sleef.c, src/sleef_arm.c, src/sleef_avx512.c
+
 getopt
 OpenBSD / NetBSD — https://github.com/openbsd/src — BSD-style
 Files: examples/getopt.c, examples/getopt.h
