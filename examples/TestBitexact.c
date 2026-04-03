@@ -211,6 +211,45 @@ static bool parse_dist(const char *s, dist_t *dist, int *npar) {
   return true;
 }
 
+static bool default_params(dist_t dist, double *p, char *text, size_t ntext) {
+  switch (dist) {
+    case DIST_U01:
+    case DIST_NORM:
+      if (ntext > 0) text[0] = '\0';
+      return true;
+    case DIST_UNIF:
+    case DIST_NORMAL:
+    case DIST_LOGNORMAL:
+    case DIST_GUMBEL:
+      p[0] = 0;
+      p[1] = 1;
+      snprintf(text, ntext, "0,1");
+      return true;
+    case DIST_EXP:
+    case DIST_CHI2:
+    case DIST_T:
+      p[0] = 1;
+      snprintf(text, ntext, "1");
+      return true;
+    case DIST_GAMMA:
+    case DIST_BETA:
+    case DIST_F:
+    case DIST_PARETO:
+    case DIST_WEIBULL:
+      p[0] = 1;
+      p[1] = 1;
+      snprintf(text, ntext, "1,1");
+      return true;
+    case DIST_SKEW_NORMAL:
+      p[0] = 0;
+      p[1] = 1;
+      p[2] = 0;
+      snprintf(text, ntext, "0,1,0");
+      return true;
+  }
+  return false;
+}
+
 static bool fill_double(double *x, size_t len, dist_t dist, double *p, randompack_rng *rng) {
   switch (dist) {
     case DIST_U01: return randompack_u01(x, len, rng);
@@ -305,9 +344,19 @@ int main(int argc, char **argv) {
     return 1;
   }
   double p[3] = {0, 0, 0};
-  if (!parse_double_list(par_text, p, npar)) {
-    fprintf(stderr, "TestBitexact: bad parameter list %s\n", par_text);
-    return 1;
+  char default_par_text[32];
+  if (par_text[0] == 0) {
+    if (!default_params(dist, p, default_par_text, sizeof(default_par_text))) {
+      fprintf(stderr, "TestBitexact: default parameter setup failed\n");
+      return 1;
+    }
+    par_text = default_par_text;
+  }
+  else {
+    if (!parse_double_list(par_text, p, npar)) {
+      fprintf(stderr, "TestBitexact: bad parameter list %s\n", par_text);
+      return 1;
+    }
   }
   randompack_rng *rng = randompack_create(engine);
   if (!rng) {

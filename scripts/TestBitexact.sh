@@ -51,6 +51,10 @@ Options:
                     Default: double
   -x                Do not set bitexact mode
                     Default: off
+
+Distributions:
+  u01, unif, norm, normal, exp, lognormal, gamma, beta, chi2, t, f,
+  gumbel, pareto, weibull, skew_normal
 EOF
 }
 
