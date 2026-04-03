@@ -62,6 +62,8 @@ static void print_help(void) {
   printf("Usage: TestBitexact [options]\n\n");
   printf("Options:\n");
   printf("  -h            Show this help message\n");
+  printf("  -x            Do not set bitexact mode\n");
+  printf("  -s SEED       Seed (default 123)\n");
   printf("  -n N          Number of draws (default 1000000000)\n");
   printf("  -d DIST       Distribution (default N(0,1))\n");
   printf("  -p LIST       Parameters (default depends on distribution)\n");
@@ -254,19 +256,25 @@ static bool fill_float(float *x, size_t len, dist_t dist, double *p, randompack_
 }
 
 int main(int argc, char **argv) {
+  uint64_t seed = 123;
   uint64_t ndraws = 1000000000ull;
   char *dist_name = "N(0,1)";
   char *par_text = "";
   char *engine = "x256++simd";
   char *prec_text = "double";
   bool use_float = false;
+  bool set_bitexact = true;
   bool help = false;
   bool badopt = false;
   opterr = 0;
   optind = 1;
   int c;
-  while ((c = getopt(argc, argv, "hn:d:p:e:P:")) != -1) {
+  while ((c = getopt(argc, argv, "hxs:n:d:p:e:P:")) != -1) {
     if (c == 'h') help = true;
+    else if (c == 'x') set_bitexact = false;
+    else if (c == 's') {
+      if (!parse_u64(optarg, &seed)) badopt = true;
+    }
     else if (c == 'n') {
       if (!parse_u64(optarg, &ndraws)) badopt = true;
     }
@@ -312,17 +320,19 @@ int main(int argc, char **argv) {
     randompack_free(rng);
     return 1;
   }
-  if (!randompack_seed(123, 0, 0, rng)) {
+  if (!randompack_seed(seed, 0, 0, rng)) {
     msg = randompack_last_error(rng);
     fprintf(stderr, "TestBitexact: %s\n", msg ? msg : "seed failed");
     randompack_free(rng);
     return 1;
   }
-  if (!randompack_bitexact(rng, true)) {
-    msg = randompack_last_error(rng);
-    fprintf(stderr, "TestBitexact: %s\n", msg ? msg : "bitexact failed");
-    randompack_free(rng);
-    return 1;
+  if (set_bitexact) {
+    if (!randompack_bitexact(rng, true)) {
+      msg = randompack_last_error(rng);
+      fprintf(stderr, "TestBitexact: %s\n", msg ? msg : "bitexact failed");
+      randompack_free(rng);
+      return 1;
+    }
   }
   if (!use_float) {
     double *x = malloc(65536*sizeof(double));
@@ -355,7 +365,7 @@ int main(int argc, char **argv) {
     printf("%-10s %s\n", "params:", par_text);
     printf("%-10s %s\n", "precision:", prec_text);
     printf("%-10s %" PRIu64 "\n", "draws:", ndraws);
-    printf("%-10s 123\n", "seed:");
+    printf("%-10s %" PRIu64 "\n", "seed:", seed);
     printf("%-10s 0x%016" PRIx64 "\n", "xor:", xorsum);
     printf("%-10s %.17g\n", "last:", last);
     free(x);
@@ -391,7 +401,7 @@ int main(int argc, char **argv) {
     printf("%-10s %s\n", "params:", par_text);
     printf("%-10s %s\n", "precision:", prec_text);
     printf("%-10s %" PRIu64 "\n", "draws:", ndraws);
-    printf("%-10s 123\n", "seed:");
+    printf("%-10s %" PRIu64 "\n", "seed:", seed);
     printf("%-10s 0x%08" PRIx32 "\n", "xor:", xorsum);
     printf("%-10s %.9g\n", "last:", last);
     free(x);

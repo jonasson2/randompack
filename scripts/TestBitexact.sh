@@ -8,47 +8,89 @@ cd "$REPO_ROOT"
 remote_host=
 remote_folder=randompack
 builddir=release
+seed=123
 ndraws=1e9
 dist='N(0,1)'
 params=
 have_params=false
 engine='x256++simd'
 precision=double
+set_bitexact=true
 
 quote_sh() {
   printf "'%s'" "$(printf "%s" "$1" | sed "s/'/'\\\\''/g")"
 }
 
 usage() {
-  echo "usage: scripts/TestBitexact.sh [-h remote-host] [-f remote-folder] [-b remote-build] [-n number-of-draws] [-d distribution] [-p parameters] [-e engine] [-P precision]" 1>&2
+  cat 1>&2 <<EOF
+TestBitexact.sh - compare deterministic draw summaries locally and remotely
+
+Usage:
+  scripts/TestBitexact.sh [options]
+
+Options:
+  -h                Show this help message
+  -r REMOTE_HOST    Remote host to run the same test on
+                    Default: none
+  -f REMOTE_FOLDER  Remote repo folder
+                    Default: randompack
+  -b BUILD          Build folder
+                    Default: release
+  -s SEED           Seed
+                    Default: 123
+  -n NDRAWS         Number of draws
+                    Default: 1e9
+  -d DIST           Distribution
+                    Default: N(0,1)
+  -p PARAMS         Distribution parameters, comma-separated
+                    Default: distribution-dependent
+  -e ENGINE         RNG engine
+                    Default: x256++simd
+  -P PRECISION      Precision: double or float
+                    Default: double
+  -x                Do not set bitexact mode
+                    Default: off
+EOF
 }
 
-while getopts "h:f:b:n:d:p:e:P:" opt
+while getopts "hr:f:b:s:n:d:p:e:P:x" opt
 do
   case "$opt" in
-    h) remote_host=$OPTARG ;;
+    h) usage; exit 0 ;;
+    r) remote_host=$OPTARG ;;
     f) remote_folder=$OPTARG ;;
     b) builddir=$OPTARG ;;
+    s) seed=$OPTARG ;;
     n) ndraws=$OPTARG ;;
     d) dist=$OPTARG ;;
     p) params=$OPTARG; have_params=true ;;
     e) engine=$OPTARG ;;
     P) precision=$OPTARG ;;
+    x) set_bitexact=false ;;
     *) usage; exit 1 ;;
   esac
 done
 
 ninja -C "$builddir" examples/TestBitexact >/dev/null
-set -- "$builddir/examples/TestBitexact" -n "$ndraws" -d "$dist" -e "$engine" -P "$precision"
+set -- "$builddir/examples/TestBitexact" -s "$seed" -n "$ndraws" -d "$dist" -e "$engine" -P "$precision"
 if [ "$have_params" = true ]; then
   set -- "$@" -p "$params"
 fi
+if [ "$set_bitexact" = false ]; then
+  set -- "$@" -x
+fi
+printf "%-10s %s\n" "host:" "local"
 "$@"
 
 if [ -n "$remote_host" ]; then
-  remote_cmd="cd $(quote_sh "$remote_folder") && scripts/TestBitexact.sh -f $(quote_sh "$remote_folder") -b $(quote_sh "$builddir") -n $(quote_sh "$ndraws") -d $(quote_sh "$dist") -e $(quote_sh "$engine") -P $(quote_sh "$precision")"
+  remote_cmd="cd $(quote_sh "$remote_folder") && scripts/TestBitexact.sh -f $(quote_sh "$remote_folder") -b $(quote_sh "$builddir") -s $(quote_sh "$seed") -n $(quote_sh "$ndraws") -d $(quote_sh "$dist") -e $(quote_sh "$engine") -P $(quote_sh "$precision")"
   if [ "$have_params" = true ]; then
     remote_cmd="$remote_cmd -p $(quote_sh "$params")"
   fi
+  if [ "$set_bitexact" = false ]; then
+    remote_cmd="$remote_cmd -x"
+  fi
+  printf "\n"
+  printf "%-10s %s\n" "host:" "$remote_host"
   ssh "$remote_host" "$remote_cmd"
 fi
