@@ -8,6 +8,7 @@ cd "$REPO_ROOT"
 remote_host=
 remote_folder=randompack
 builddir=release
+cmp_build=
 seed=123
 ndraws=1e8
 dist='N(0,1)'
@@ -29,28 +30,19 @@ TestBitexact.sh - compare deterministic draw summaries locally and remotely
 Usage:
   scripts/TestBitexact.sh [options]
 
-Options:
+Options (defaults in brackets):
   -h                Show this help message
-  -r REMOTE_HOST    Remote host to run the same test on
-                    Default: none
-  -f REMOTE_FOLDER  Remote repo folder
-                    Default: randompack
-  -b BUILD          Build folder
-                    Default: release
-  -s SEED           Seed
-                    Default: 123
-  -n NDRAWS         Number of draws
-                    Default: 1e8
-  -d DIST           Distribution
-                    Default: N(0,1)
-  -p PARAMS         Distribution parameters, comma-separated
-                    Default: distribution-dependent
-  -e ENGINE         RNG engine
-                    Default: x256++simd
-  -P PRECISION      Precision: double or float
-                    Default: double
-  -x                Do not set bitexact mode
-                    Default: off
+  -r REMOTE_HOST    Remote host to run the same test on [none]
+  -f REMOTE_FOLDER  Remote repo folder [randompack]
+  -b BUILD          Local build folder [release]
+  -c BUILD          Comparison build folder [same as -b]
+  -s SEED           Seed [123]
+  -n NDRAWS         Number of draws [1e8]
+  -d DIST           Distribution [N(0,1)]
+  -p PARAMS         Distribution parameters, comma-separated [distribution-dependent]
+  -e ENGINE         RNG engine [x256++simd]
+  -P PRECISION      Precision: double or float [double]
+  -x                Do not set bitexact mode [off]
 
 Distributions:
   u01, unif, norm, normal, exp, lognormal, gamma, beta, chi2, t, f,
@@ -58,13 +50,14 @@ Distributions:
 EOF
 }
 
-while getopts "hr:f:b:s:n:d:p:e:P:x" opt
+while getopts "hr:f:b:c:s:n:d:p:e:P:x" opt
 do
   case "$opt" in
     h) usage; exit 0 ;;
     r) remote_host=$OPTARG ;;
     f) remote_folder=$OPTARG ;;
     b) builddir=$OPTARG ;;
+    c) cmp_build=$OPTARG ;;
     s) seed=$OPTARG ;;
     n) ndraws=$OPTARG ;;
     d) dist=$OPTARG ;;
@@ -76,6 +69,10 @@ do
   esac
 done
 
+if [ -z "$cmp_build" ]; then
+  cmp_build=$builddir
+fi
+
 ninja -C "$builddir" examples/TestBitexact >/dev/null
 set -- "$builddir/examples/TestBitexact" -s "$seed" -n "$ndraws" -d "$dist" -e "$engine" -P "$precision"
 if [ "$have_params" = true ]; then
@@ -86,20 +83,44 @@ if [ "$set_bitexact" = false ]; then
 fi
 if [ "$print_host" = 1 ]; then
   printf "%-10s %s\n" "host:" "local"
+  printf "%-10s %s\n" "build:" "$builddir"
 fi
 "$@"
 
-if [ -n "$remote_host" ]; then
-  remote_cmd="cd $(quote_sh "$remote_folder") && TESTBITEXACT_PRINT_HOST=0 scripts/TestBitexact.sh -f $(quote_sh "$remote_folder") -b $(quote_sh "$builddir") -s $(quote_sh "$seed") -n $(quote_sh "$ndraws") -d $(quote_sh "$dist") -e $(quote_sh "$engine") -P $(quote_sh "$precision")"
+if [ -n "$remote_host" ] || [ "$cmp_build" != "$builddir" ]; then
+  if [ -n "$remote_host" ]; then
+    remote_cmd="cd $(quote_sh "$remote_folder") && TESTBITEXACT_PRINT_HOST=0 scripts/TestBitexact.sh -f $(quote_sh "$remote_folder") -b $(quote_sh "$cmp_build") -s $(quote_sh "$seed") -n $(quote_sh "$ndraws") -d $(quote_sh "$dist") -e $(quote_sh "$engine") -P $(quote_sh "$precision")"
+  else
+    ninja -C "$cmp_build" examples/TestBitexact >/dev/null
+    set -- "$cmp_build/examples/TestBitexact" -s "$seed" -n "$ndraws" -d "$dist" -e "$engine" -P "$precision"
+  fi
   if [ "$have_params" = true ]; then
-    remote_cmd="$remote_cmd -p $(quote_sh "$params")"
+    if [ -n "$remote_host" ]; then
+      remote_cmd="$remote_cmd -p $(quote_sh "$params")"
+    else
+      set -- "$@" -p "$params"
+    fi
   fi
   if [ "$set_bitexact" = false ]; then
-    remote_cmd="$remote_cmd -x"
+    if [ -n "$remote_host" ]; then
+      remote_cmd="$remote_cmd -x"
+    else
+      set -- "$@" -x
+    fi
   fi
   if [ "$print_host" = 1 ]; then
     printf "\n"
-    printf "%-10s %s\n" "host:" "$remote_host"
+    if [ -n "$remote_host" ]; then
+      printf "%-10s %s\n" "host:" "$remote_host"
+      printf "%-10s %s\n" "build:" "$cmp_build"
+    else
+      printf "%-10s %s\n" "host:" "local"
+      printf "%-10s %s\n" "build:" "$cmp_build"
+    fi
   fi
-  ssh "$remote_host" "$remote_cmd"
+  if [ -n "$remote_host" ]; then
+    ssh "$remote_host" "bash -lc $(quote_sh "$remote_cmd")"
+  else
+    "$@"
+  fi
 fi
