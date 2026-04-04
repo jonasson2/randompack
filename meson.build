@@ -44,8 +44,7 @@ elif cc.get_id() in ['clang', 'appleclang']
   fp_args += cc.get_supported_arguments(['-ffp-model=precise'])
   fp_args += cc.get_supported_arguments(['-ffp-contract=off'])
 elif cc.get_id() == 'intel-llvm'
-  fp_args += cc.get_supported_arguments(['-fp-model=precise'])
-  fp_args += cc.get_supported_arguments(['-ffp-contract=off'])
+  fp_args += cc.get_supported_arguments(['-fp-model=strict'])
 else
   fp_args += cc.get_supported_arguments(['-ffp-contract=off'])
 endif
