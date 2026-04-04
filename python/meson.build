@@ -49,7 +49,7 @@ build_avx512 = false
 avx512_c_args = []
 
 if host_machine.cpu_family() in ['x86', 'x86_64']
-  if cc.get_id() in ['gcc', 'clang', 'appleclang', 'msvc']
+  if cc.get_id() in ['gcc', 'clang', 'appleclang', 'msvc', 'intel-llvm']
     build_avx2 = true
     build_avx512 = cc.get_id() != 'msvc'
   endif

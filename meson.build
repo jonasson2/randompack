@@ -43,7 +43,7 @@ elif cc.get_id() == 'intel-cl'
 elif cc.get_id() in ['clang', 'appleclang']
   fp_args += cc.get_supported_arguments(['-ffp-model=precise'])
   fp_args += cc.get_supported_arguments(['-ffp-contract=off'])
-elif cc.get_id() == 'icx'
+elif cc.get_id() == 'intel-llvm'
   fp_args += cc.get_supported_arguments(['-fp-model=precise'])
   fp_args += cc.get_supported_arguments(['-ffp-contract=off'])
 else
@@ -90,7 +90,7 @@ build_avx512 = false
 avx512_c_args = []
 
 if host_machine.cpu_family() in ['x86', 'x86_64']
-  if cc.get_id() in ['gcc', 'clang', 'appleclang', 'msvc']
+  if cc.get_id() in ['gcc', 'clang', 'appleclang', 'msvc', 'intel-llvm']
     build_avx2 = true
     build_avx512 = cc.get_id() != 'msvc'
   endif
