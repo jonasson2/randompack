@@ -52,6 +52,8 @@ ABBREV = {
     "string_AutoCor": "AutoCor",
 }
 
+THRESHOLDS = [1e-3, 1e-4, 1e-5, 1e-6]
+
 
 def format_q(value):
     if value == 0.0:
@@ -69,6 +71,11 @@ def format_min(entry):
     return f"{format_q(value)} ({ABBREV[family]},{seed})"
 
 
+def format_lowest(entry):
+    value, engine, family, seed = entry
+    return f"{format_q(value)} [{engine},{ABBREV[family]},{seed}]"
+
+
 def format_expected(nruns, tests_per_run, threshold):
     expected = nruns*tests_per_run*2*threshold
     return f"{expected:.1f}"
@@ -80,6 +87,17 @@ def format_sdev(values):
     mean = sum(values)/len(values)
     var = sum((x - mean)*(x - mean) for x in values)/len(values)
     return f"{math.sqrt(var):.2f}"
+
+
+def format_mean(values):
+    if not values:
+        return "-"
+    return sum(values)/len(values)
+
+
+def format_mean_cell(value, index):
+    decimals = [3, 4, 4, 5]
+    return f"{value:.{decimals[index]}f}"
 
 
 def format_overdispersion(obs_sdev, exp_sdev):
@@ -184,30 +202,27 @@ def summarize(values, seeds, show_family_in_min, overdisp):
     pair_counts = {}
     for engine in values:
         seen_engines.append(engine)
-        pair_counts[engine] = [set(), set(), set()]
+        pair_counts[engine] = [set() for _ in THRESHOLDS]
     for engine, engine_values in values.items():
         for value, family, seed in engine_values:
             key = (engine, seed)
             if key not in run_counts:
-                run_counts[key] = [0, 0, 0]
-            if value < 1e-3:
-                run_counts[key][0] += 1
-                pair_counts[engine][0].add((seed, family))
-            if value < 1e-4:
-                run_counts[key][1] += 1
-                pair_counts[engine][1].add((seed, family))
-            if value < 1e-5:
-                run_counts[key][2] += 1
-                pair_counts[engine][2].add((seed, family))
+                run_counts[key] = [0 for _ in THRESHOLDS]
+            for i, threshold in enumerate(THRESHOLDS):
+                if value < threshold:
+                    run_counts[key][i] += 1
+                    pair_counts[engine][i].add((seed, family))
 
     header = [
         "Engine",
         "n(q<1e-3)",
         "n(q<1e-4)",
         "n(q<1e-5)",
+        "n(q<1e-6)",
         "lowest-q",
         "2nd-lowest",
         "3rd-lowest",
+        "4th-lowest",
     ]
 
     rows = []
@@ -235,14 +250,11 @@ def summarize(values, seeds, show_family_in_min, overdisp):
             tests_per_run = -1
     for engine in engines:
         engine_values = sorted(values[engine], key=lambda item: (item[0], item[1], item[2]))
-        counts = [
-            sum(1 for value, _, _ in engine_values if value < 1e-3),
-            sum(1 for value, _, _ in engine_values if value < 1e-4),
-            sum(1 for value, _, _ in engine_values if value < 1e-5),
-        ]
+        counts = [sum(1 for value, _, _ in engine_values if value < threshold)
+                  for threshold in THRESHOLDS]
         total_counts[engine] = counts
         mins = []
-        for i in range(3):
+        for i in range(4):
             if len(engine_values) <= i:
                 mins.append("-")
             elif show_family_in_min:
@@ -254,9 +266,11 @@ def summarize(values, seeds, show_family_in_min, overdisp):
             format_count(counts[0], len(pair_counts[engine][0]), True),
             format_count(counts[1], len(pair_counts[engine][1]), True),
             format_count(counts[2], len(pair_counts[engine][2]), False),
+            format_count(counts[3], len(pair_counts[engine][3]), False),
             mins[0],
             mins[1],
             mins[2],
+            mins[3],
         ]
         rows.append(row)
 
@@ -267,25 +281,54 @@ def summarize(values, seeds, show_family_in_min, overdisp):
     if same_tests_per_run:
         total_nruns = len(run_counts)
         tests_per_run = next(iter(tests_per_run_by_engine.values()))
-        obs_sdev_row = [
-            "Obs.sdev",
-            format_sdev([counts[0] for counts in run_counts.values()]),
-            format_sdev([counts[1] for counts in run_counts.values()]),
-            format_sdev([counts[2] for counts in run_counts.values()]),
+        obs_mean_row = ["Obs.mean n"] + [
+            format_mean([counts[i] for counts in run_counts.values()]) for i in range(4)
+        ] + [
+            "-",
             "-",
             "-",
             "-",
         ]
-        exp_sdev = [
-            math.sqrt(tests_per_run*0.002*(1 - 0.002)),
-            math.sqrt(tests_per_run*0.0002*(1 - 0.0002)),
-            math.sqrt(tests_per_run*0.00002*(1 - 0.00002)),
+        exp_mean = [tests_per_run*2*threshold for threshold in THRESHOLDS]
+        exp_mean_row = [
+            "Exp.mean n",
+            format_mean_cell(exp_mean[0], 0),
+            format_mean_cell(exp_mean[1], 1),
+            format_mean_cell(exp_mean[2], 2),
+            format_mean_cell(exp_mean[3], 3),
+            "-",
+            "-",
+            "-",
+            "-",
         ]
+        obs_mean_row = [
+            "Obs.mean n",
+            format_mean_cell(obs_mean_row[1], 0),
+            format_mean_cell(obs_mean_row[2], 1),
+            format_mean_cell(obs_mean_row[3], 2),
+            format_mean_cell(obs_mean_row[4], 3),
+            "-",
+            "-",
+            "-",
+            "-",
+        ]
+        obs_sdev_row = ["Obs.n-sdev"] + [
+            format_sdev([counts[i] for counts in run_counts.values()]) for i in range(4)
+        ] + [
+            "-",
+            "-",
+            "-",
+            "-",
+        ]
+        exp_sdev = [math.sqrt(tests_per_run*(2*threshold)*(1 - 2*threshold))
+                    for threshold in THRESHOLDS]
         exp_sdev_row = [
-            "Exp.sdev",
+            "Exp.n-sdev",
             f"{exp_sdev[0]:.2f}",
             f"{exp_sdev[1]:.2f}",
             f"{exp_sdev[2]:.2f}",
+            f"{exp_sdev[3]:.2f}",
+            "-",
             "-",
             "-",
             "-",
@@ -294,38 +337,41 @@ def summarize(values, seeds, show_family_in_min, overdisp):
             float(obs_sdev_row[1]),
             float(obs_sdev_row[2]),
             float(obs_sdev_row[3]),
+            float(obs_sdev_row[4]),
         ]
         used_overdisp = [
             overdisp[0] if overdisp else obs_sdev[0]/exp_sdev[0],
             overdisp[1] if overdisp else obs_sdev[1]/exp_sdev[1],
             overdisp[2] if overdisp else obs_sdev[2]/exp_sdev[2],
+            overdisp[3] if overdisp else obs_sdev[3]/exp_sdev[3],
         ]
         model_sdev = [
             used_overdisp[0]*exp_sdev[0],
             used_overdisp[1]*exp_sdev[1],
             used_overdisp[2]*exp_sdev[2],
+            used_overdisp[3]*exp_sdev[3],
         ]
         overdisp_row = [
-            "Overdisp",
+            "Overdisp.",
             f"{used_overdisp[0]:.3f}",
             f"{used_overdisp[1]:.3f}",
             f"{used_overdisp[2]:.3f}",
+            f"{used_overdisp[3]:.3f}",
+            "-",
             "-",
             "-",
             "-",
         ]
         if same_nruns:
             nruns = next(iter(nruns_by_engine.values()))
-            mu = [
-                tests_per_run*nruns*0.002,
-                tests_per_run*nruns*0.0002,
-                tests_per_run*nruns*0.00002,
-            ]
+            mu = [tests_per_run*nruns*2*threshold for threshold in THRESHOLDS]
             expected_row = [
-                "Expected",
+                "Expected total",
                 format_expected(nruns, tests_per_run, 1e-3),
                 format_expected(nruns, tests_per_run, 1e-4),
                 format_expected(nruns, tests_per_run, 1e-5),
+                format_expected(nruns, tests_per_run, 1e-6),
+                "-",
                 "-",
                 "-",
                 "-",
@@ -335,11 +381,16 @@ def summarize(values, seeds, show_family_in_min, overdisp):
                 format_ci(mu[0], model_sdev[0], nruns),
                 format_ci(mu[1], model_sdev[1], nruns),
                 format_ci(mu[2], model_sdev[2], nruns),
+                format_ci(mu[3], model_sdev[3], nruns),
+                "-",
                 "-",
                 "-",
                 "-",
             ]
-            per_rows.extend([expected_row, obs_sdev_row, exp_sdev_row, overdisp_row, ci_row])
+            per_rows.extend([
+                expected_row, obs_mean_row, exp_mean_row, obs_sdev_row,
+                exp_sdev_row, overdisp_row, ci_row
+            ])
             if len(engines) == 1:
                 counts = total_counts[engines[0]]
                 gamma_p_row = [
@@ -347,31 +398,33 @@ def summarize(values, seeds, show_family_in_min, overdisp):
                     format_gamma_pvalue(counts[0], mu[0], model_sdev[0], nruns),
                     format_gamma_pvalue(counts[1], mu[1], model_sdev[1], nruns),
                     format_gamma_pvalue(counts[2], mu[2], model_sdev[2], nruns),
+                    format_gamma_pvalue(counts[3], mu[3], model_sdev[3], nruns),
+                    "-",
                     "-",
                     "-",
                     "-",
                 ]
                 per_rows.append(gamma_p_row)
         if len(engines) > 1:
-            total_mu = [
-                tests_per_run*total_nruns*0.002,
-                tests_per_run*total_nruns*0.0002,
-                tests_per_run*total_nruns*0.00002,
-            ]
+            total_mu = [tests_per_run*total_nruns*2*threshold for threshold in THRESHOLDS]
             total_row = [
                 "Total",
                 str(sum(counts[0] for counts in total_counts.values())),
                 str(sum(counts[1] for counts in total_counts.values())),
                 str(sum(counts[2] for counts in total_counts.values())),
+                str(sum(counts[3] for counts in total_counts.values())),
+                "-",
                 "-",
                 "-",
                 "-",
             ]
             total_expected_row = [
-                "Expected",
+                "Expected total",
                 format_expected(total_nruns, tests_per_run, 1e-3),
                 format_expected(total_nruns, tests_per_run, 1e-4),
                 format_expected(total_nruns, tests_per_run, 1e-5),
+                format_expected(total_nruns, tests_per_run, 1e-6),
+                "-",
                 "-",
                 "-",
                 "-",
@@ -381,12 +434,16 @@ def summarize(values, seeds, show_family_in_min, overdisp):
                 format_ci(total_mu[0], model_sdev[0], total_nruns),
                 format_ci(total_mu[1], model_sdev[1], total_nruns),
                 format_ci(total_mu[2], model_sdev[2], total_nruns),
+                format_ci(total_mu[3], model_sdev[3], total_nruns),
+                "-",
                 "-",
                 "-",
                 "-",
             ]
-            total_rows.extend([total_row, total_expected_row, obs_sdev_row,
-                               exp_sdev_row, overdisp_row, total_ci_row])
+            total_rows.extend([
+                total_row, total_expected_row, obs_mean_row, exp_mean_row,
+                obs_sdev_row, exp_sdev_row, overdisp_row, total_ci_row
+            ])
 
     widths = [len(name) for name in header]
     for row in [*rows, *per_rows, *total_rows]:
@@ -404,43 +461,49 @@ def print_table(header, rows, per_rows, total_rows):
     for row in [header, *rows]:
         pieces = []
         for i, cell in enumerate(row):
-            if i == 0 or i >= 4:
+            if i == 0 or i >= 5:
                 pieces.append(cell.ljust(widths[i]))
             else:
                 pieces.append(cell.rjust(widths[i]))
-        print("  ".join(pieces))
+        print(" ".join(pieces))
     if per_rows:
         print()
-        print("Per family:")
+        print("Per run:")
     for row in per_rows:
         pieces = []
         for i, cell in enumerate(row):
-            if i == 0 or i >= 4:
+            if i == 0 or i >= 5:
                 pieces.append(cell.ljust(widths[i]))
             else:
                 pieces.append(cell.rjust(widths[i]))
-        print("  ".join(pieces))
+        print(" ".join(pieces))
     if total_rows:
         print()
         print("Overall:")
     for row in total_rows:
         pieces = []
         for i, cell in enumerate(row):
-            if i == 0 or i >= 4:
+            if i == 0 or i >= 5:
                 pieces.append(cell.ljust(widths[i]))
             else:
                 pieces.append(cell.rjust(widths[i]))
-        print("  ".join(pieces))
+        print(" ".join(pieces))
 
 
 def main():
     args = sys.argv[1:]
     overdisp = 0
-    if len(args) >= 2 and args[0] == "-o":
-        vals = args[1].split(",")
-        if len(vals) != 3:
-            raise SystemExit("summary.py: -o expects x.xxx,y.yyy,z.zzz")
-        overdisp = [float(v) for v in vals]
+    nlowest = 0
+    while len(args) >= 2 and args[0] in ["-o", "-l"]:
+        if args[0] == "-o":
+            vals = args[1].split(",")
+            if len(vals) != 4:
+                raise SystemExit("summary.py: -o expects w.xxx,x.xxx,y.yyy,z.zzz")
+            overdisp = [float(v) for v in vals]
+        else:
+            nlowest = int(args[1])
+            if nlowest < 0:
+                raise SystemExit("summary.py: -l expects N >= 0")
         args = args[2:]
     folder = args[0] if len(args) >= 1 else ""
     nfam = int(args[1]) if len(args) >= 2 else 0
@@ -493,6 +556,17 @@ def main():
     print(f"Number of tests:   {ntests}")
     print()
     print_table(header, rows, per_rows, total_rows)
+
+    if nlowest > 0:
+        lowest = sorted(
+            (value, engine, family, seed)
+            for engine, engine_values in values.items()
+            for value, family, seed in engine_values
+        )[:nlowest]
+        print()
+        print(f"Lowest {nlowest} q-values:")
+        for i, entry in enumerate(lowest, start=1):
+            print(f"{i:2d}. {format_lowest(entry)}")
 
     if nfam <= 0:
         return

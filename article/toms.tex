@@ -346,7 +346,7 @@ for the engines are that they should
 Two engines have SIMD-accelerated versions that are not listed, 
 xoshiro256++ and sfc64, with short names \texttt{x256++simd} and
 \texttt{sfc64simd}, the former of which has been selected as
-Randompack's default engine.
+Randompack's default engine.}
 
 \label{tab:engines}
 \begin{tabular}{llcclcc}
@@ -707,37 +707,31 @@ instruction chains in parallel through instruction-level parallelism
 and can be realized through loop unrolling and multiple parallel state
 updates.
 
-In Randompack, SIMD support is used in four main places. First, two
-engines have SIMD implementations, xoshiro256++. Several others were explored, but
-these two proved the most amenable to efficient vectorization. Second,
-SIMD is used in shift--scale transformations, e.g. to get $U(a,b)$ and
-general normal samples from $U(0,1)$ and standard normal samples.
-Third, it is used in the integer-to-double conversion functions.
-Fourth, vectorized logarithms and exponentials from the Sleef library
-\cite{sleef_github,shibata2020sleef} are used to speed up the sampling
-of all the supported continuouse distributions except uniform,
-exponential, and normal.
+In Randompack this CPU-level parallelism is used in four main places.
+First, two engines have SIMD implementations, xoshiro256++ and sfc64.
+Second, SIMD instructions are used in shift--scale transformations,
+e.g. to get $U(a,b)$ and general normal samples from $U(0,1)$ and
+standard normal samples. Third, they are used in the integer-to-double
+conversion functions. Fourth, vectorized logarithms and exponentials
+from the Sleef library \cite{sleef_github,shibata2020sleef} are used
+to speed up the sampling of all the supported continuouse
+distributions except uniform, exponential, and normal.
 
-Together these yield substantial speed-ups, with the SIMD engines
-providing the largest part of the gain.
+Together SIMD + ILP yields substantial speed-ups, with the SIMD
+engines providing the largest part of the gain. To achieve the
+necessary independent computations, eight disjoint scalar streams are
+created for each engine. For xoshiro256++ they are obtained by jumping
+a base engine by the values $k2^253, k=1,\ldots,7$ and for sfc64 they
+are obtained by adding $k2^61, k=1,\ldots,7$ to the engine's counter,
+with wraparound if the sums exceed $2^64$. TODO: put a cross-reference
+to further details here.
 
-The SIMD engines are designed by combining several independent scalar
-streams into one vectorized engine. In the AVX-512 version, eight
-independent streams are advanced in parallel; in the AVX2 and NEON
-versions, the corresponding numbers are four and two. The streams are
-separated in the underlying recurrence by large jump distances, namely
-$2^{253}$ and $2^{61}$ steps, so that each lane operates on a distinct
-substream of the original generator. This provides a simple and
-reproducible way to construct vectorized engines from a scalar design.
+\subsection{Exact reproducibility}
+Modern computers all use the 
 
-The SIMD gain is further increased by exploiting instruction-level
-parallelism. On AVX2 and NEON, this is done by loop unrolling, typically
-by factors of 4 and 2, respectively, so that the processor can work on
-multiple independent dependency chains at once. Thus the final speed-up
-comes from two sources: SIMD parallelism across lanes, and ordinary
-instruction-level parallelism across unrolled iterations.
+\subsection{Miscellaneous features}
 
-% 3.4 SIMD and performance-oriented implementation
+
 % 4.	Discussion
 
 %%

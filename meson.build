@@ -34,16 +34,24 @@ if buildtype.startswith('debug')
 endif
 
 cc = meson.get_compiler('c')
-fp_contract_off_args = []
+fp_args = []
 
-if cc.get_id() in ['msvc', 'intel-cl']
-  fp_contract_off_args = cc.get_supported_arguments(['/fp:strict'])
+if cc.get_id() == 'msvc'
+  fp_args += cc.get_supported_arguments(['/fp:precise'])
+elif cc.get_id() == 'intel-cl'
+  fp_args += cc.get_supported_arguments(['/fp:precise'])
+elif cc.get_id() in ['clang', 'appleclang']
+  fp_args += cc.get_supported_arguments(['-ffp-model=precise'])
+  fp_args += cc.get_supported_arguments(['-ffp-contract=off'])
+elif cc.get_id() == 'icx'
+  fp_args += cc.get_supported_arguments(['-fp-model=precise'])
+  fp_args += cc.get_supported_arguments(['-ffp-contract=off'])
 else
-  fp_contract_off_args = cc.get_supported_arguments(['-ffp-contract=off'])
+  fp_args += cc.get_supported_arguments(['-ffp-contract=off'])
 endif
 
-if fp_contract_off_args.length() > 0
-  add_project_arguments(fp_contract_off_args, language: 'c')
+if fp_args.length() > 0
+  add_project_arguments(fp_args, language: 'c')
 endif
 
 perf_opt = get_option('perf')

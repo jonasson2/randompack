@@ -60,22 +60,24 @@ NEVER_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x, uint8_t
       x = norm_tail_draw(rng, rabs, u, w);
       return x;
     }
-    // L = (1ULL << 52) - ki;
-    // R = (1ULL << 52) - rabs;
-    // MUL64_WIDE(Y, L, YL, tmp);  //
-    // (void) tmp;
-    // if (LIKELY(idx > inflection_idx)) {
-    //   if (YL > R) goto next_try;
-    //   if (YL + Dnorm[idx] < R) return x;
-    // }
-    // else if (LIKELY(idx < inflection_idx)) {
-    //   if (YL < R) return x;
-    //   if (YL > R + Dnorm[idx]) goto next_try;
-    // }
-    // else {
-    //   if (YL > R + Dzig52) goto next_try;
-    //   if (YL + Dnorm[idx] < R) return x;
-    // }
+    // The following block of 16 lines (until the blk-end marker) has been checked to be
+    // correct by comparing draws of ~10^14 values with it commented out and commented in.
+    L = (1ULL << 52) - ki;
+    R = (1ULL << 52) - rabs;
+    MUL64_WIDE(Y, L, YL, tmp);  //
+    (void) tmp;
+    if (LIKELY(idx > inflection_idx)) {
+      if (YL > R) goto next_try;
+      if (YL + Dnorm[idx] < R) return x;
+    }
+    else if (LIKELY(idx < inflection_idx)) {
+      if (YL < R) return x;
+      if (YL > R + Dnorm[idx]) goto next_try;
+    }
+    else {
+      if (YL > R + Dzig52) goto next_try;
+      if (YL + Dnorm[idx] < R) return x;
+    } // blk-end
     double u = U64_TO_DOUBLE(Y);
     if (below_normpdf(idx, x, u)) return x;
   next_try:
