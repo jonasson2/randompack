@@ -3,7 +3,6 @@
 set -eu
 
 dir=${1:-test1}
-marker='========= Summary results of BigCrush'
 
 if [ ! -d "$dir" ]
 then
@@ -11,8 +10,11 @@ then
   exit 1
 fi
 
-for file in "$dir"/*_s*.txt
-do
-  [ -e "$file" ] || continue
-  ./extract.sh "$file"
-done
+set -- "$dir"/*_s*.txt
+
+if [ ! -e "$1" ]
+then
+  exit 0
+fi
+
+gawk -f extract.awk "$@"

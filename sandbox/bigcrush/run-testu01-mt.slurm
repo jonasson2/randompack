@@ -53,11 +53,8 @@ fi
 ROOT="$HOME/randompack"
 EXE="$ROOT/release/examples"
 LOGDIR="$OUTDIR/slurm"
-RUNSFILE="$OUTDIR/runs.tsv"
 
 mkdir -p "$OUTDIR" "$LOGDIR"
-
-printf "engine\tseed\tmode\toutfile\terrfile\tjobid\tnode\n" >"$RUNSFILE"
 
 run_one() {
   local seed="$1"
@@ -75,15 +72,6 @@ running=0
 
 for seed in $(seq "$FIRSTSEED" "$((FIRSTSEED+NSEEDS-1))")
 do
-  printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
-    "$ENGINE" \
-    "$seed" \
-    "$MODE" \
-    "${ENGINE}_s${seed}.txt" \
-    "slurm/${ENGINE}_s${seed}.err" \
-    "${SLURM_JOB_ID:-}" \
-    "${SLURMD_NODENAME:-}" >>"$RUNSFILE"
-
   (
     start=$(date +%s)
     run_one "$seed"

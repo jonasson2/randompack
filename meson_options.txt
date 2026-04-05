@@ -51,6 +51,12 @@ option('norm_exp_mod',
   description: 'Use src/norm_exp_mod.inc instead of src/norm_exp.inc'
 )
 
+option('norm_polar',
+  type: 'boolean',
+  value: false,
+  description: 'Use src/norm_polar.inc instead of src/norm_exp.inc'
+)
+
 option('force_no128',
   type: 'boolean',
   value: false,

@@ -26,9 +26,10 @@
   basewidth=0.55em,   % horizontal spacing between characters
   lineskip=-2pt,      % vertical spacing between lines
   aboveskip=1em,
-  frame=single,
-  framerule=0.5pt,
-  framesep=3pt,
+  backgroundcolor=\color{black!8},
+  frame=tlrb,
+  framerule=0pt,
+  framesep=5pt,
   xleftmargin=4em,
   xrightmargin=4em
 }
@@ -154,24 +155,24 @@ The WELL generators \cite{panneton2006well} were intended to (and did)
 improve on the MT statistical quality although they did not obtain
 widespread adoption in software. The oposite can be said of the RNGs
 sometimes called the xor family, pinoeered by Marsaglia in 2003 with
-xorshift and XORWOW \cite{marsaglia2003xorshift}, and further developed,
-primarily by Vigna, in a series of articles
+xorshift and XORWOW \cite{marsaglia2003xorshift}, and further
+developed, primarily by Vigna, in a series of articles
 \citep{panneton2005xorshift,vigna2016experimental,vigna2017further,
-  blackman2021scrambled}. The current flagships are the closely related
-xoshiro256++ and xoshiro256**, that have been adopted as default
-generators by Rust, Julia, C\#, and gfortran
+  blackman2021scrambled}. The current flagships are the closely
+related xoshiro256++ and xoshiro256**, that have been adopted as
+default generators by Rust, Julia, C\#, and gfortran
 (Table~\ref{tab:language-rngs}). All generators in the xor family
 support so-called \emph{jumping}, whereby the state can be advanced
 efficiently by very large amounts, such as $2^{128}$ steps, to create
-independent streams. The aforementioned Practrand suite included an RNG,
-sfc64, that also allows independent streams. Interestingly, sfc64 is
-planned to become the default random number generator in a forthcoming
-release of the Los Alamos MCNP radiation-transport code.
-\cite{josey2023reassessing,gibson2025mcnpnewsletterq1}. 
+independent streams. The aforementioned Practrand suite included an
+RNG, sfc64, that also allows independent streams. Interestingly, sfc64
+is planned to become the default random number generator in a
+forthcoming release of the Los Alamos MCNP radiation-transport code.
+\cite{josey2023reassessing,gibson2025mcnpnewsletterq1}.
 
 Some important pseudorandom number generators (PRNGs) emerged from the
-search for fast software stream ciphers. Such ciphers can also serve as
-cryptographically secure PRNGs (CSPRNGs), notably ChaCha20 (2008)
+search for fast software stream ciphers. Such ciphers can also serve
+as cryptographically secure PRNGs (CSPRNGs), notably ChaCha20 (2008)
 \cite{bernstein2008chacha}. Another important milestone came in 2011
 with the Random123 library by Salmon and Moraes
 \cite{salmon2011parallel}. Its counter-based Threefry and Philox
@@ -428,6 +429,13 @@ with probability $1/2$, and reports empirical results consistent with
 such behaviour. NumPy's seeding is likewise based on O'Neill's
 \texttt{seed\_seq} work.
 
+Randompack’s randomize function obtains (cryptographically secure)
+system entropy from the operating system: it uses
+\texttt{RtlGenRandom} on Windows, \texttt{arc4random\_buf} on macOS
+and OpenBSD, and \texttt{getrandom} on Linux and other Unixes which
+support it, with \texttt{/dev/urandom} as a fallback. If that too is
+unavailable, an emergency fallback mixes in the system clock.
+
 In Randompack the user seed together with a spawn key of arbitrary
 length constitutes the input to the seeding mixer. This creates one
 way of creating an arbitrary number of deterministically seeded
@@ -436,23 +444,50 @@ thread id, task number, etc. For Randompack's engines the probability
 that two such substreams overlap will be vanishingly small, but, if
 the user prefers, Randompack also supports the built-in features of
 the different engines for creating mathematically proven independent
-streams: jumps for ranlux and the xor family, keys for the
-counter-based engines, $(a,b,c)$ state for sfc64, increments for pcg64
-and cwg128, and the nonce for ChaCha20. These stream-selection
-operations would typically be used together with the provided RNG
-duplicate function when setting up parallel simulations.
+streams. Jumps can by used for the xor-family and ranlux, and special
+stream setters for the other engines (Table \ref{tab:stream-select}).
+Randompack allows jumping by by $2^k$ steps, with $k \in
+\{32,64,96,128,192\}$ (the last two are not available for
+\texttt{x128++} and \texttt{xoro++}). For example, repeatedly jumping
+a stream by $2^64$ creates several disjoint substreams of length
+$2^64$.
 
-Randompack’s randomize function obtains (cryptographically secure)
-system entropy from the operating system: it uses
-\texttt{RtlGenRandom} on Windows, \texttt{arc4random\_buf} on macOS
-and OpenBSD, and \texttt{getrandom} on Linux and other Unixes which
-support it, with \texttt{/dev/urandom} as a fallback. If that too is
-unavailable, an emergency fallback mixes in the system clock.
+\begin{table}
+  \caption{State composition and stream selection for engines with
+    split state. The actual stream setter functions include the prefix
+    \texttt{randompack\_}, e.g. \texttt{randompack\_pcg64\_set\_inc}.}
+  \begin{tabular}{llll}
+    \toprule
+    engine   & state layout (64-bit words in parentheses)        & stream selector  & stream setter      \\
+    \midrule
+    pcg64    & state (2) + increment (2)                         & increment        & \texttt{pcg64\_set\_inc}      \\
+    squares  & counter (1) + key (1)                             & key              & \texttt{squares\_set\_key}    \\
+    philox   & counter (4) + key (2)                             & key              & \texttt{philox\_set\_key}     \\
+    sfc64    & state $(a,b,c)$ (3) + counter (1)                 & $(a,b,c)$        & \texttt{sfc64\_set\_abc}      \\
+    cwg128   & state (6) + increment (2)                         & increment        & \texttt{cwg128\_set\_inc}     \\
+    chacha20 & key (4) + nonce ($1\tfrac{1}{2}$) + counter ($\tfrac{1}{2}$) & nonce & \texttt{chacha20\_set\_nonce} \\
+    \bottomrule
+  \end{tabular}
+  \label{tab:stream-select}
+\end{table}
+
+Such stream selection can be combined naturally with seed spreading in
+parallel simulation. First a base generator is created and seeded.
+Then, for subprocess $i$, the generator is duplicated and either
+jumped or changed with a stream setter. In schematic form:
+
+\begin{lstlisting}[style=tightcode,language=,basicstyle=\ttfamily\small]
+create and seed rng[0]
+for each subprocess i=1,2,3,...:
+  rng[i] = duplicate(rng[i-1])
+  set the stream of rng[i] to i (or jump rng[i])
+  simulate with rng[i] within subprocess i
+\end{lstlisting}
 
 \section{Algorithms for distributions}
 All the Randompack random drawing functions have three parameters, a
 buffer to be filled with drawn samples, its length, and the RNG to
-use. 
+use.
 
 In this section...
 \subsection{Continuous distributions}
@@ -468,6 +503,12 @@ float case being analogous.
 
 \begin{table}[t]
 \centering
+\caption{Randompack sampling functions returning double values for
+  continuous distributions. The actual function names include the
+  prefix \texttt{randompack\_}, e.g. \texttt{randompack\_u01}. Float
+  versions of all the functions except \texttt{mvn} are also provided
+  with the suffix \texttt{f}, e.g. \texttt{randompack\_u01f}.}
+\label{tab:continuous}
 \begin{tabular}{lll}
   \toprule
   Function             & Notation                             & Algorithm \\
@@ -490,20 +531,18 @@ float case being analogous.
   \texttt{mvn}         & $N(\mu,\Sigma)$                      & Cholesky factor transform and normal draws                                   \\
   \bottomrule
 \end{tabular}
-\caption{Randompack sampling functions returning double values for
-  continuous distributions. The actual function names include the
-  prefix \texttt{randompack\_}, e.g. \texttt{randompack\_u01}. Float
-  versions of all the functions except \texttt{mvn} are also provided
-  with the suffix \texttt{f}, e.g. \texttt{randompack\_u01f}.}
-\label{tab:continuous}
 \end{table}
 
 \begin{table}[t]
 \centering
+\caption{Randompack sampling functions for discrete distributions. The actual function names include the prefix
+  \texttt{randompack\_}, e.g. \texttt{randompack\_int}. When the \texttt{uint$n$} functions are called with
+  $b = 0$ they generate unbounded integers over the full range $\{0,\ldots,2^n-1\}$.}
+\label{tab:discrete}
 \begin{tabular}{lll}
   \toprule
   Function            & Notation                          & Description                                \\
-  \midrule                                                                                      
+  \midrule
   \texttt{int}        & $\mathrm{Unif}\{m,\ldots,n\}$     & 32 bit integers on an interval, unbiased   \\
   \texttt{long\_long} & $\mathrm{Unif}\{m,\ldots,n\}$     & 64-bit integers on an interval, unbiased   \\
   \texttt{uint8}      & $\mathrm{Unif}\{0,\ldots,b-1\}$   & bounded/unbounded unsigned 8-bit integers  \\
@@ -515,10 +554,6 @@ float case being analogous.
   \texttt{raw}        & bitstream                         & raw unbounded bytes into \texttt{void} buffer \\
   \bottomrule
 \end{tabular}
-\caption{Randompack sampling functions for discrete distributions. The actual function names include the prefix
-  \texttt{randompack\_}, e.g. \texttt{randompack\_int}. When the \texttt{uint$n$} functions are called with
-  $b = 0$ they generate unbounded integers over the full range $\{0,\ldots,2^n-1\}$.}
-\label{tab:discrete}
 \end{table}
 
 \textbf{Uniform distribution.} Let $u$ be a 64-bit word, interpreted
@@ -580,7 +615,7 @@ rectangular.
 
 The 2000-version has a 0.069\% rejection rate for normal sampling and
 1.10\% for exponential sampling (Figure
-~\ref{fig:ziggurat-slow-path}). It requires 15 PDF-evaluations (and
+~\ref{fig:ziggurat}). It requires 15 PDF-evaluations (and
 thus exp evaluations) for 1000 normal samples and 23 for 1000
 exponential samples. In 2016 McFarland \cite{McFarland2016} proposed
 an improved version, where most of these exp evaluations are saved. It
@@ -714,8 +749,8 @@ e.g. to get $U(a,b)$ and general normal samples from $U(0,1)$ and
 standard normal samples. Third, they are used in the integer-to-double
 conversion functions. Fourth, vectorized logarithms and exponentials
 from the Sleef library \cite{sleef_github,shibata2020sleef} are used
-to speed up the sampling of all the supported continuouse
-distributions except uniform, exponential, and normal.
+to speed up the sampling of all the supported continuous distributions
+except uniform, exponential, and normal.
 
 Together SIMD + ILP yields substantial speed-ups, with the SIMD
 engines providing the largest part of the gain. To achieve the
@@ -725,6 +760,7 @@ a base engine by the values $k2^253, k=1,\ldots,7$ and for sfc64 they
 are obtained by adding $k2^61, k=1,\ldots,7$ to the engine's counter,
 with wraparound if the sums exceed $2^64$. TODO: put a cross-reference
 to further details here.
+
 
 \subsection{Exact reproducibility}
 Modern computers all use the 

@@ -60,11 +60,8 @@ fi
 ROOT="$HOME/randompack"
 EXE="$ROOT/release/examples/TestU01Driver"
 LOGDIR="$OUTDIR/slurm"
-RUNSFILE="$OUTDIR/runs.tsv"
 
 mkdir -p "$OUTDIR" "$LOGDIR"
-
-printf "engine\tseed\tmode\toutfile\terrfile\tjobid\tnode\n" >"$RUNSFILE"
 
 run_one() {
   local engine="$1"
@@ -83,15 +80,6 @@ running=0
 
 for engine in "${ENGINES[@]}"; do
   for seed in "${SEEDS[@]}"; do
-    printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
-      "$engine" \
-      "$seed" \
-      "$MODE" \
-      "${engine}_s${seed}.txt" \
-      "slurm/${engine}_s${seed}.err" \
-      "${SLURM_JOB_ID:-}" \
-      "${SLURMD_NODENAME:-}" >>"$RUNSFILE"
-
     (
       start=$(date +%s)
       run_one "$engine" "$seed"

@@ -65,10 +65,10 @@ def format_q(value):
 
 
 def format_min(entry):
-    if entry is None:
-        return "-"
-    value, family, seed = entry
-    return f"{format_q(value)} ({ABBREV[family]},{seed})"
+  if entry is None:
+    return "-"
+  value, family, _seed = entry
+  return f"{format_q(value)} ({ABBREV[family]})"
 
 
 def format_lowest(entry):
@@ -79,6 +79,11 @@ def format_lowest(entry):
 def format_expected(nruns, tests_per_run, threshold):
     expected = nruns*tests_per_run*2*threshold
     return f"{expected:.1f}"
+
+
+def format_expected_int(nruns, tests_per_run, threshold):
+    expected = nruns*tests_per_run*2*threshold
+    return f"{expected:.0f}"
 
 
 def format_sdev(values):
@@ -219,10 +224,10 @@ def summarize(values, seeds, show_family_in_min, overdisp):
         "n(q<1e-4)",
         "n(q<1e-5)",
         "n(q<1e-6)",
+        "exp.",
         "lowest-q",
         "2nd-lowest",
         "3rd-lowest",
-        "4th-lowest",
     ]
 
     rows = []
@@ -267,10 +272,10 @@ def summarize(values, seeds, show_family_in_min, overdisp):
             format_count(counts[1], len(pair_counts[engine][1]), True),
             format_count(counts[2], len(pair_counts[engine][2]), False),
             format_count(counts[3], len(pair_counts[engine][3]), False),
+            format_expected_int(nruns_by_engine[engine], tests_per_run_by_engine[engine], 1e-3),
             mins[0],
             mins[1],
             mins[2],
-            mins[3],
         ]
         rows.append(row)
 
@@ -281,14 +286,7 @@ def summarize(values, seeds, show_family_in_min, overdisp):
     if same_tests_per_run:
         total_nruns = len(run_counts)
         tests_per_run = next(iter(tests_per_run_by_engine.values()))
-        obs_mean_row = ["Obs.mean n"] + [
-            format_mean([counts[i] for counts in run_counts.values()]) for i in range(4)
-        ] + [
-            "-",
-            "-",
-            "-",
-            "-",
-        ]
+        obs_mean_vals = [format_mean([counts[i] for counts in run_counts.values()]) for i in range(4)]
         exp_mean = [tests_per_run*2*threshold for threshold in THRESHOLDS]
         exp_mean_row = [
             "Exp.mean n",
@@ -303,18 +301,22 @@ def summarize(values, seeds, show_family_in_min, overdisp):
         ]
         obs_mean_row = [
             "Obs.mean n",
-            format_mean_cell(obs_mean_row[1], 0),
-            format_mean_cell(obs_mean_row[2], 1),
-            format_mean_cell(obs_mean_row[3], 2),
-            format_mean_cell(obs_mean_row[4], 3),
+            format_mean_cell(obs_mean_vals[0], 0),
+            format_mean_cell(obs_mean_vals[1], 1),
+            format_mean_cell(obs_mean_vals[2], 2),
+            format_mean_cell(obs_mean_vals[3], 3),
             "-",
             "-",
             "-",
             "-",
         ]
-        obs_sdev_row = ["Obs.n-sdev"] + [
-            format_sdev([counts[i] for counts in run_counts.values()]) for i in range(4)
-        ] + [
+        obs_sdev_vals = [format_sdev([counts[i] for counts in run_counts.values()]) for i in range(4)]
+        obs_sdev_row = [
+            "Obs.n-sdev",
+            obs_sdev_vals[0],
+            obs_sdev_vals[1],
+            obs_sdev_vals[2],
+            obs_sdev_vals[3],
             "-",
             "-",
             "-",
@@ -333,12 +335,7 @@ def summarize(values, seeds, show_family_in_min, overdisp):
             "-",
             "-",
         ]
-        obs_sdev = [
-            float(obs_sdev_row[1]),
-            float(obs_sdev_row[2]),
-            float(obs_sdev_row[3]),
-            float(obs_sdev_row[4]),
-        ]
+        obs_sdev = [float(v) for v in obs_sdev_vals]
         used_overdisp = [
             overdisp[0] if overdisp else obs_sdev[0]/exp_sdev[0],
             overdisp[1] if overdisp else obs_sdev[1]/exp_sdev[1],
@@ -407,12 +404,15 @@ def summarize(values, seeds, show_family_in_min, overdisp):
                 per_rows.append(gamma_p_row)
         if len(engines) > 1:
             total_mu = [tests_per_run*total_nruns*2*threshold for threshold in THRESHOLDS]
+            total_counts_sum = [
+                sum(counts[i] for counts in total_counts.values()) for i in range(4)
+            ]
             total_row = [
                 "Total",
-                str(sum(counts[0] for counts in total_counts.values())),
-                str(sum(counts[1] for counts in total_counts.values())),
-                str(sum(counts[2] for counts in total_counts.values())),
-                str(sum(counts[3] for counts in total_counts.values())),
+                str(total_counts_sum[0]),
+                str(total_counts_sum[1]),
+                str(total_counts_sum[2]),
+                str(total_counts_sum[3]),
                 "-",
                 "-",
                 "-",
@@ -440,9 +440,20 @@ def summarize(values, seeds, show_family_in_min, overdisp):
                 "-",
                 "-",
             ]
+            total_gamma_p_row = [
+                "Gamma-p",
+                format_gamma_pvalue(total_counts_sum[0], total_mu[0], model_sdev[0], total_nruns),
+                format_gamma_pvalue(total_counts_sum[1], total_mu[1], model_sdev[1], total_nruns),
+                format_gamma_pvalue(total_counts_sum[2], total_mu[2], model_sdev[2], total_nruns),
+                format_gamma_pvalue(total_counts_sum[3], total_mu[3], model_sdev[3], total_nruns),
+                "-",
+                "-",
+                "-",
+                "-",
+            ]
             total_rows.extend([
                 total_row, total_expected_row, obs_mean_row, exp_mean_row,
-                obs_sdev_row, exp_sdev_row, overdisp_row, total_ci_row
+                obs_sdev_row, exp_sdev_row, overdisp_row, total_ci_row, total_gamma_p_row
             ])
 
     widths = [len(name) for name in header]
@@ -461,7 +472,7 @@ def print_table(header, rows, per_rows, total_rows):
     for row in [header, *rows]:
         pieces = []
         for i, cell in enumerate(row):
-            if i == 0 or i >= 5:
+            if i == 0 or i >= 6:
                 pieces.append(cell.ljust(widths[i]))
             else:
                 pieces.append(cell.rjust(widths[i]))
@@ -472,7 +483,7 @@ def print_table(header, rows, per_rows, total_rows):
     for row in per_rows:
         pieces = []
         for i, cell in enumerate(row):
-            if i == 0 or i >= 5:
+            if i == 0 or i >= 6:
                 pieces.append(cell.ljust(widths[i]))
             else:
                 pieces.append(cell.rjust(widths[i]))
@@ -483,7 +494,7 @@ def print_table(header, rows, per_rows, total_rows):
     for row in total_rows:
         pieces = []
         for i, cell in enumerate(row):
-            if i == 0 or i >= 5:
+            if i == 0 or i >= 6:
                 pieces.append(cell.ljust(widths[i]))
             else:
                 pieces.append(cell.rjust(widths[i]))
@@ -565,8 +576,36 @@ def main():
         )[:nlowest]
         print()
         print(f"Lowest {nlowest} q-values:")
-        for i, entry in enumerate(lowest, start=1):
-            print(f"{i:2d}. {format_lowest(entry)}")
+        low_header = ["#", "q", "engine", "family", "seed"]
+        low_rows = []
+        for i, (value, engine, family, seed) in enumerate(lowest, start=1):
+            low_rows.append([
+                str(i),
+                format_q(value),
+                engine,
+                ABBREV[family],
+                str(seed),
+            ])
+        widths = [len(cell) for cell in low_header]
+        for row in low_rows:
+            for i, cell in enumerate(row):
+                widths[i] = max(widths[i], len(cell))
+        sep = "  "
+        print(sep.join([
+            low_header[0].rjust(widths[0]),
+            low_header[1].rjust(widths[1]),
+            low_header[2].ljust(widths[2]),
+            low_header[3].ljust(widths[3]),
+            low_header[4].rjust(widths[4]),
+        ]))
+        for row in low_rows:
+            print(sep.join([
+                row[0].rjust(widths[0]),
+                row[1].rjust(widths[1]),
+                row[2].ljust(widths[2]),
+                row[3].ljust(widths[3]),
+                row[4].rjust(widths[4]),
+            ]))
 
     if nfam <= 0:
         return
