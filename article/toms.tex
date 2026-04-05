@@ -745,12 +745,13 @@ updates.
 In Randompack this CPU-level parallelism is used in four main places.
 First, two engines have SIMD implementations, xoshiro256++ and sfc64.
 Second, SIMD instructions are used in shift--scale transformations,
-e.g. to get $U(a,b)$ and general normal samples from $U(0,1)$ and
-standard normal samples. Third, they are used in the integer-to-double
-conversion functions. Fourth, vectorized logarithms and exponentials
-from the Sleef library \cite{sleef_github,shibata2020sleef} are used
-to speed up the sampling of all the supported continuous distributions
-except uniform, exponential, and normal.
+e.g. to get $U(a,b)$ from $U(0,1)$m and also to get general normal
+samples from standard normal samples. Third, they are used in the
+integer-to-double conversion functions. Fourth, vectorized logarithms
+and exponentials from the Sleef library
+\cite{sleef_github,shibata2020sleef} are used to speed up the sampling
+of all the supported continuous distributions except uniform,
+exponential, and normal.
 
 Together SIMD + ILP yields substantial speed-ups, with the SIMD
 engines providing the largest part of the gain. To achieve the
@@ -758,7 +759,10 @@ necessary independent computations, eight disjoint scalar streams are
 created for each engine. For xoshiro256++ they are obtained by jumping
 a base engine by the values $k2^253, k=1,\ldots,7$ and for sfc64 they
 are obtained by adding $k2^61, k=1,\ldots,7$ to the engine's counter,
-with wraparound if the sums exceed $2^64$. TODO: put a cross-reference
+with wraparound if the sums exceed $2^64$. This setup does not
+interfere with the jumping and 
+
+TODO: put a cross-reference
 to further details here.
 
 
