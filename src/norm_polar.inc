@@ -12,7 +12,7 @@
 //=============================== NORMAL DISTRIBUTION ==============================
 
 ALWAYS_INLINE double polar_scale(double s) {
-  return sqrt(-2*openlibm_log(s)/s);
+  return sqrt(-2*log(s)/s);
 }
 
 NEVER_INLINE void polar_pair(randompack_rng *rng, int *w, double *x, double *y) {
