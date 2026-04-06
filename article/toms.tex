@@ -408,7 +408,7 @@ mathematical description because all available implementations,
 including Sibidanov's, are GNU-licensed
 \cite{sibidanov2017ranluxpp,hahnfeld2021ranluxpp,jirka2021portable}.
 
-\subsection{State initialization and stream control}
+\subsection{State initialization and stream control}\label{sec:state-init}
 Randompack provides four classes of RNG engine initialization:
 deterministic seeding, explicit stream selection, randomization from
 system entropy, and exact assignment of the full internal state.
@@ -753,21 +753,57 @@ and exponentials from the Sleef library
 of all the supported continuous distributions except uniform,
 exponential, and normal.
 
-Together SIMD + ILP yields substantial speed-ups, with the SIMD
+Together, SIMD and ILP yields substantial speed-ups, with the SIMD
 engines providing the largest part of the gain. To achieve the
 necessary independent computations, eight disjoint scalar streams are
 created for each engine. For xoshiro256++ they are obtained by jumping
-a base engine by the values $k2^253, k=1,\ldots,7$ and for sfc64 they
-are obtained by adding $k2^61, k=1,\ldots,7$ to the engine's counter,
-with wraparound if the sums exceed $2^64$. This setup does not
-interfere with the jumping and 
+a base engine by the values $k2^{253}, k=1,\ldots,7$ and for sfc64
+they are obtained by adding $k2^{61}, k=1,\ldots,7$ to the engine's
+counter, with wraparound if the sums exceed $2^{64}$. In practice,
+this arrangement does not interfere with the jumping and stream
+selection functions discussed in Section \ref{sec:state-init}.
+Repeatedly jumping x256++simd by $2^{192}$ creates disjoint sequences
+of length $2^{61}$. With Randompack on a fast computer, it would take
+more than 20 years to exhaust one such sequence. The sequences
+obtained by setting sfc64simd with different $(a,b,c)$ triplets also
+have minimum length $2^{61}$.
 
-TODO: put a cross-reference
-to further details here.
+\subsection{Exact reproducibility across platforms}
+Nearly all modern computers use the same floating-point representation
+for C floats and doubles. This is set by the IEEE 754 standard, which,
+in addition to the format, specifies rounding rules and mandates
+that the results of the basic arithmetic operations +, –, *, and /, as
+well as square roots and fused multiply-add (fma;
+$\operatorname{fma}(a,b,c)=a*b+c$), shall produce results correctly
+rounded. This holds for Intel and AMD X86-64 as well as ARM and RISC-V
+systems.
 
-
-\subsection{Exact reproducibility}
-Modern computers all use the 
+Randompack's raw bitstreams, being computed by integer and bit
+operations are, inherently platform agnostic, and the same holds for
+doubles and floats derived from them by multiplication and addition.
+As Randompack uses the same algorithms on all platforms, this means
+that the discrete and uniform distributions are all bit-exact across
+platforms. However, the IEEE 754 standard does however not set the
+computation of trigonometric functions, logarithms, and exponentials,
+in stone. To overcome this, Randompack uses the OpenLibm library
+\cite{openlibm,\cite{gladman2025accuracy} to compute logarithms and
+exponentials in the ziggurat code for normal and exponential draws.
+This library is designed to work consistently across compilers and
+operating system. When used together with compiler options that
+disable optimizations that can change the result of floating-point
+calculations (e.g. \texttt{-ffp-contract=off},
+\texttt{-ffp-model=precise} for gcc), it has given bit-exact results
+on Apple, Windows, and several Linux systems with gcc, clang, icx, and
+MSVC. The rejection sampling of the ziggurat and the gamma draws is
+numerically discontinuous: small changes in the computation might give
+completely different samples. However all the other derived
+distributions are numerically continuous, so the use of openlibm in
+the rejection sampling is sufficient to make the generated random
+numbers on different platforms agree to within a few ulp, even if the
+not bit-exact, but faster, sleef logarithms and exponentials are used
+to compute them. Randompack offers a setting, \texttt{bitexact}, that
+makes these derived distributions also bit-identical across platforms
+by using OpenLibm instead of Sleef for all library functions.
 
 \subsection{Miscellaneous features}
 
