@@ -109,7 +109,7 @@ function main()
   d_beta = Beta(2, 5)
   d_t = TDist(10)
   d_f = FDist(5, 10)
-  d_w = Weibull(2, 1)
+  d_w = Weibull(2, 3)
 
   # Warmup: ensure JIT compile and keep CPU "awake" for at least 0.1s
   rand!(buf); consume!(sink, buf)
@@ -243,11 +243,11 @@ function main()
     consume!(sink, buf)
   end)
 
-  run("weibull(2,1)", () -> begin
+  run("weibull(2,3)", () -> begin
     rand!(d_w, buf)
     consume!(sink, buf)
   end, () -> begin
-    random_weibull!(rng, buf; shape=2, scale=1)
+    random_weibull!(rng, buf; shape=2, scale=3)
     consume!(sink, buf)
   end)
 

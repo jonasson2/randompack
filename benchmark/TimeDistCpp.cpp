@@ -147,7 +147,7 @@ int main(int argc, char **argv)
   std::gamma_distribution<double> gamma_2_3(2, 3);
   std::gamma_distribution<double> gamma_0_5_2(0.5, 2);
   std::gamma_distribution<double> chi2_5(2.5, 2);
-  std::weibull_distribution<double> weibull_2_1(2, 1);
+  std::weibull_distribution<double> weibull_2_3(2, 3);
 
   std::printf("C++ RNG library:   standard library <random>\n");
   std::printf("C++ engine:        mt19937_64 (Mersenne Twister)\n");
@@ -335,13 +335,13 @@ int main(int argc, char **argv)
     consume(x[chunk - 1]);
   });
 
-  run("weibull(2,1)", [&]() {
+  run("weibull(2,3)", [&]() {
     for (int i = 0; i < chunk; i++) {
-      x[i] = weibull_2_1(cpp_rng);
+      x[i] = weibull_2_3(cpp_rng);
     }
     consume(x[chunk - 1]);
   }, [&]() {
-    randompack_weibull(x, (size_t)chunk, 2, 1, rng);
+    randompack_weibull(x, (size_t)chunk, 2, 3, rng);
     consume(x[chunk - 1]);
   });
 
