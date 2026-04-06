@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from typing import Callable, List
 
 import numpy as np
+from scipy.stats import skewnorm
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path = [p for p in sys.path if os.path.abspath(p or os.getcwd()) != ROOT]
@@ -68,6 +69,9 @@ def make_dists() -> List[Dist]:
   def np_logn_0_1(rng: np.random.Generator, n: int) -> np.ndarray:
     return rng.lognormal(0.0, 1.0, n)
 
+  def sp_skew_normal_0_1_5(rng: np.random.Generator, n: int) -> np.ndarray:
+    return skewnorm.rvs(5.0, loc=0.0, scale=1.0, size=n, random_state=rng)
+
   def np_gumbel_0_1(rng: np.random.Generator, n: int) -> np.ndarray:
     return rng.gumbel(0.0, 1.0, n)
 
@@ -117,6 +121,9 @@ def make_dists() -> List[Dist]:
   def rp_logn_0_1(rng: rp.Rng, n: int) -> np.ndarray:
     return rng.lognormal(size=n, mu=0, sigma=1)
 
+  def rp_skew_normal_0_1_5(rng: rp.Rng, n: int) -> np.ndarray:
+    return rng.skew_normal(size=n, mu=0, sigma=1, alpha=5)
+
   def rp_gumbel_0_1(rng: rp.Rng, n: int) -> np.ndarray:
     return rng.gumbel(size=n, mu=0, beta=1)
 
@@ -152,6 +159,7 @@ def make_dists() -> List[Dist]:
     Dist("std.exp", np_exp_1, rp_exp_1),
     Dist("exp(2)", np_exp_2, rp_exp_2),
     Dist("lognormal(0,1)", np_logn_0_1, rp_logn_0_1),
+    Dist("skew-normal(0,1,5)", sp_skew_normal_0_1_5, rp_skew_normal_0_1_5),
     Dist("gumbel(0,1)", np_gumbel_0_1, rp_gumbel_0_1),
     Dist("pareto(1,2)", np_pareto_1_2, rp_pareto_1_2),
     Dist("gamma(2,3)", np_gamma_2_3, rp_gamma_2_3),
@@ -195,12 +203,12 @@ def main() -> None:
   print(f"Warmup:    {warm:.3f} s")
   print(f"Time/case: {bench_time:.3f} s\n")
 
-  print(f"{'DISTRIBUTION':<14} {'NUMPY':>10} {'RANDOMPACK':>11} {'FACTOR':>7}")
+  print(f"{'DISTRIBUTION':<18} {'NUMPY':>10} {'RANDOMPACK':>11} {'FACTOR':>7}")
   for d in make_dists():
     np_ns = time_dist(lambda: d.np_fn(np_rng, chunk), chunk, bench_time)
     rp_ns = time_dist(lambda: d.rp_fn(rp_rng, chunk), chunk, bench_time)
     factor = np_ns / rp_ns if rp_ns > 0 else float("nan")
-    print(f"{d.name:<14} {np_ns:10.2f} {rp_ns:11.2f} {factor:7.2f}")
+    print(f"{d.name:<18} {np_ns:10.2f} {rp_ns:11.2f} {factor:7.2f}")
 
 
 if __name__ == "__main__":
