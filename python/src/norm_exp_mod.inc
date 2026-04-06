@@ -23,10 +23,9 @@
 //=============================== NORMAL DISTRIBUTION ==============================
 
 ALWAYS_INLINE double norm_decode(uint64_t r, uint8_t idx, uint64_t *ki, uint64_t *rabs) {
+  int64_t s = ((int64_t)(r << 11)) >> 11; // change sign
   *ki = ki_double[idx];
   *rabs = r & 0x000fffffffffffff;
-  int64_t s = (int64_t)*rabs;
-  if ((r >> 52) & 1) s = -s;
   return (double)s * wi_double[idx];
 }
 
@@ -60,24 +59,22 @@ NEVER_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x, uint8_t
       x = norm_tail_draw(rng, rabs, u, w);
       return x;
     }
-    // The following block of 16 lines (until the blk-end marker) has been checked to be
-    // correct by comparing draws of ~10^14 values with it commented out and commented in.
-    L = (1ULL << 52) - ki;
-    R = (1ULL << 52) - rabs;
-    MUL64_WIDE(Y, L, YL, tmp);  //
-    (void) tmp;
-    if (LIKELY(idx > inflection_idx)) {
-      if (YL > R) goto next_try;
-      if (YL + Dnorm[idx] < R) return x;
-    }
-    else if (LIKELY(idx < inflection_idx)) {
-      if (YL < R) return x;
-      if (YL > R + Dnorm[idx]) goto next_try;
-    }
-    else {
-      if (YL > R + Dzig52) goto next_try;
-      if (YL + Dnorm[idx] < R) return x;
-    } // blk-end
+    // L = (1ULL << 52) - ki;
+    // R = (1ULL << 52) - rabs;
+    // MUL64_WIDE(Y, L, YL, tmp);
+    // (void) tmp;
+    // if (LIKELY(idx > inflection_idx)) {
+    //   if (YL > R) goto next_try;
+    //   if (YL + Dnorm[idx] < R) return x;
+    // }
+    // else if (LIKELY(idx < inflection_idx)) {
+    //   if (YL < R) return x;
+    //   if (YL > R + Dnorm[idx]) goto next_try;
+    // }
+    // else {
+    //   if (YL > R + Dzig52) goto next_try;
+    //   if (YL + Dnorm[idx] < R) return x;
+    // }
     double u = U64_TO_DOUBLE(Y);
     if (below_normpdf(idx, x, u)) return x;
   next_try:
@@ -140,12 +137,12 @@ ALWAYS_INLINE double exp_unlikely(randompack_rng *rng, int *w, double x, uint8_t
   while (true) {
     if (UNLIKELY(idx == 0)) return exp_taildraw(rng, w);
     Y = draw_u64(rng, w);
-    L = (1ULL << 53) - ke;
-    R = (1ULL << 53) - r;
-    MUL64_WIDE(Y, L, YL, tmp);
-    (void)tmp;
-    if (LIKELY(YL > R)) goto next_try;         // above secant
-    if (YL + Dexp[idx] < R) return x;  // below pdf by the gap bound
+    // L = (1ULL << 53) - ke;
+    // R = (1ULL << 53) - r;
+    // MUL64_WIDE(Y, L, YL, tmp);
+    // (void)tmp;
+    // if (LIKELY(YL > R)) goto next_try;         // above secant
+    // if (YL + Dexp[idx] < R) return x;  // below pdf by the gap bound
     y = U64_TO_DOUBLE(Y);
     if (below_exppdf(idx, x, y)) return x; // below curve
   next_try:
@@ -158,7 +155,7 @@ ALWAYS_INLINE double exp_unlikely(randompack_rng *rng, int *w, double x, uint8_t
   }
 }
 
-NEVER_INLINE void rand_exp(double *buf, size_t len, randompack_rng *rng) {
+ALWAYS_INLINE void rand_exp(double *buf, size_t len, randompack_rng *rng) {
   align64(rng);
   draw_raw_copy((uint8_t *)buf, len*sizeof(uint64_t), rng);
   int w = enter_u64_mode(rng);

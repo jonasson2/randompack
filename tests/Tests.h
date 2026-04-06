@@ -33,6 +33,7 @@ void TestBitexactx(char *engine);
 void TestAvx2(void);
 void TestSeed(void);
 void TestSetState(void);
+void TestSerialize(void);
 void TestReference(void);
 void TestX256ppsimd(void);
 void TestSfc64simd(void);

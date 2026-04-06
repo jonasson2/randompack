@@ -51,6 +51,12 @@ _Static_assert(sizeof(long long) == 8, "randompack requires 64-bit long long");
   #define NORMEXP_INLINE static inline
 #endif
 
+#if defined(__clang__) || defined(__GNUC__)
+  #define ALIGN64 __attribute__((aligned(64)))
+#else
+  #define ALIGN64
+#endif
+
 #define TOLOWER(c) (((c) >= 'A' && (c) <= 'Z') ? ((c)-'A'+'a') : (c))
 #define STRSET(dst, src) snprintf((dst), sizeof(dst), "%s", (src) ? (src) : "")
 #define STRSETF(dst, fmt, ...) snprintf((dst), sizeof(dst), (fmt), __VA_ARGS__)

@@ -2,6 +2,14 @@
 #include <stdbool.h>
 #include "BlasGateway.h"
 
+#if defined(_MSC_VER)
+  #define HIDDEN
+#elif defined(__GNUC__) || defined(__clang__)
+  #define HIDDEN __attribute__((visibility("hidden")))
+#else
+  #define HIDDEN
+#endif
+
 // isnan portable stand-in (matches Fortran DISNAN)
 #define disnan(x) isnan(x)
 
@@ -28,8 +36,8 @@
 //   work  - workspace of length 2*n
 //   info  - 0: success; 1: matrix not positive definite (rank < n)
 // ----------------------------------------------------------------------------
-void rp_dpstf2(char *uplo, int n, double *a, int lda, int *piv, int *rank,
-           double tol, double *work, int *info)
+static void rp_dpstf2(char *uplo, int n, double *a, int lda, int *piv,
+  int *rank, double tol, double *work, int *info)
 {
   *info = 0;
   bool upper = (uplo[0] == 'U' || uplo[0] == 'u');
@@ -155,8 +163,8 @@ void rp_dpstf2(char *uplo, int n, double *a, int lda, int *piv, int *rank,
 // Additional workspace: work must be length 2*n.
 // NB is obtained from ilaenv (same query as DPOTRF uses).
 // ----------------------------------------------------------------------------
-void rp_dpstrf(char *uplo, int n, double *a, int lda, int *piv, int *rank,
-           double tol, double *work, int *info)
+HIDDEN void rp_dpstrf(char *uplo, int n, double *a, int lda, int *piv,
+  int *rank, double tol, double *work, int *info)
 {
   *info = 0;
   bool upper = (uplo[0] == 'U' || uplo[0] == 'u');

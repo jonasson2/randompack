@@ -17,7 +17,13 @@ static int LastNonzeroColumn(int m, int n, double A[]) {
 }
 
 //#include "zmgd.inc"   // static zmgd() lives here
+#if defined(NORM_POLAR)
+#include "norm_polar.inc"
+#elif defined(NORM_EXP_MOD)
+#include "norm_exp_mod.inc"
+#else
 #include "norm_exp.inc"
+#endif
 #include "rand_dble.inc"
 
 static void rand_lognormal(double x[], size_t len, double mu, double sigma,
@@ -284,19 +290,19 @@ ALWAYS_INLINE void gen_gamma(double *x, size_t len, double shape, double scale,
     gen_gamma_shape1(x, len, shape, scale, rng);
   }
   else {  // shape < 1
-	 double inv_shape = 1.0/shape;
-	 double t[128];
-	 gen_gamma_shape1(x, len, shape + 1, scale, rng);
-	 size_t i = 0;
-	 while (i < len) {
-		size_t n = len - i < 128 ? len - i : 128;
-		rand_dble(t, n, rng);
-		log_inplace(t, n, rng);
-		for (size_t j = 0; j < n; j++) t[j] *= inv_shape;
-		exp_inplace(t, n, rng);
-		for (size_t j = 0; j < n; j++) x[i + j] *= t[j];
-		i += n;
-	 }
+    double inv_shape = 1/shape;
+    double t[128];
+    gen_gamma_shape1(x, len, shape + 1, scale, rng);
+    size_t i = 0;
+    while (i < len) {
+      size_t n = len - i < 128 ? len - i : 128;
+      rand_dble(t, n, rng);
+      log_inplace(t, n, rng);
+      for (size_t j = 0; j < n; j++) t[j] *= inv_shape;
+      exp_inplace(t, n, rng);
+      for (size_t j = 0; j < n; j++) x[i + j] *= t[j];
+      i += n;
+    }
   }
 }
 

@@ -34,7 +34,7 @@ option('build_tests',
 
 option('test_bufsize',
   type: 'integer',
-  value: 16,
+  value: 8,
   description: 'BUFSIZE for small-buffer tests (multiple of 8, <= 512)'
 )
 

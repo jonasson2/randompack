@@ -8,40 +8,11 @@
 } while (0)
 
 ALWAYS_INLINE float norm_decodef(uint32_t r, uint8_t idx, uint32_t *ki, uint32_t *rabs) {
-  int32_t s = ((int32_t)(r << 8)) >> 8;
   *ki = ki_float[idx];
   *rabs = r & 0x007fffff;
+  int32_t s = (int32_t)*rabs;
+  if ((r >> 23) & 1) s = -s;
   return (float)s * wi_float[idx];
-}
-
-static uint64_t normf_pdf_calls = 0;
-static uint64_t normf_draws = 0;
-static uint64_t normf_slow = 0;
-static uint64_t expf_pdf_calls = 0;
-static uint64_t expf_draws = 0;
-static uint64_t expf_slow = 0;
-
-void randompack_float_counters_reset(void) {
-  normf_pdf_calls = 0;
-  normf_draws = 0;
-  normf_slow = 0;
-  expf_pdf_calls = 0;
-  expf_draws = 0;
-  expf_slow = 0;
-}
-
-void randompack_normf_counters_get(uint64_t *draws, uint64_t *slow,
-  uint64_t *pdf_calls) {
-  if (draws) *draws = normf_draws;
-  if (slow) *slow = normf_slow;
-  if (pdf_calls) *pdf_calls = normf_pdf_calls;
-}
-
-void randompack_expf_counters_get(uint64_t *draws, uint64_t *slow,
-  uint64_t *pdf_calls) {
-  if (draws) *draws = expf_draws;
-  if (slow) *slow = expf_slow;
-  if (pdf_calls) *pdf_calls = expf_pdf_calls;
 }
 
 //=============================== NORMAL DISTRIBUTION ==============================
@@ -194,7 +165,7 @@ ALWAYS_INLINE float expf_unlikely(randompack_rng *rng, int *w, float x, uint8_t 
   }
 }
 
-ALWAYS_INLINE void rand_expf(float *buf, size_t len, randompack_rng *rng) {
+NEVER_INLINE void rand_expf(float *buf, size_t len, randompack_rng *rng) {
   align64(rng);
   draw_raw_copy((uint8_t *)buf, len*sizeof(uint32_t), rng);
   int w = enter_u32_mode(rng);

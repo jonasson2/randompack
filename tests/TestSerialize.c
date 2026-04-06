@@ -6,10 +6,16 @@
 #include <string.h>
 #include "randompack.h"
 #include "randompack_config.h"
+#include "randompack_internal.h"
 #include "test_util.h"
 #include "xCheck.h"
 
-enum { STATE_MIN_NEED_TEST = 56 + 8*BUFSIZE }; // The tests version of STATE_MIN_NEED
+static int state_need_test(void) {
+  return 2*sizeof(uint32_t)
+    + sizeof(randompack_state)
+    + 4*sizeof(uint32_t)
+    + sizeof(((randompack_rng *)0)->buf);
+}
 
 // --- helpers -------------------------------------------------------------
 static engine_table_entry *find_engine_meta(const char *name) {
@@ -124,7 +130,7 @@ static void test_serialize_roundtrip_and_truncation(void) {
     int need = 0;
     ok = randompack_serialize(0, &need, r1);
     check_success(ok, r1);
-    xCheck(need == STATE_MIN_NEED_TEST);
+    xCheck(need == state_need_test());
     uint8_t *buf = serialize_rng(r1, &need);
     uint32_t u32a[23], u32b[23];
     double   za[11],  zb[11];

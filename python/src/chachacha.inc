@@ -28,7 +28,8 @@ static inline uint64_t bswap64(uint64_t x) {
          ((x & 0xFF00000000000000ULL) >> 56);
 }
 
-static inline void fill_chacha(uint64_t *buf, size_t len, randompack_state *state) {
+static inline ALIGN64 void fill_chacha(uint64_t *buf, size_t len,
+  randompack_state *state) {
   uint8_t *dst = (uint8_t *)(buf);
   uint8_t zeros[BUFSIZE*8] = {0};
   size_t nbytes = len*8;

@@ -4,9 +4,13 @@ void vvexp(double *y, const double *x, const int *n);
 void vvlog(double *y, const double *x, const int *n);
 #endif
 
-#if defined(BUILD_AVX2)
+#if defined(BUILD_AVX2) || (defined(__aarch64__) && !defined(__APPLE__))
 void sleef_exp_inplace(double *x, size_t len);
 void sleef_log_inplace(double *x, size_t len);
+#endif
+#if defined(BUILD_AVX512)
+void sleef_exp_inplace_avx512(double *x, size_t len);
+void sleef_log_inplace_avx512(double *x, size_t len);
 #endif
 
 NEVER_INLINE void exp_inplace(double *x, size_t len, randompack_rng *rng) {
@@ -19,7 +23,14 @@ NEVER_INLINE void exp_inplace(double *x, size_t len, randompack_rng *rng) {
       i += chunk;
     }
     return;
-#elif defined(BUILD_AVX2)
+#elif defined(__x86_64__) || defined(_M_X64)
+#if defined(BUILD_AVX512)
+    if (rng->cpu_has_avx512) {
+      sleef_exp_inplace_avx512(x, len);
+      return;
+    }
+#endif
+#if defined(BUILD_AVX2)
     if (rng->cpu_has_avx2) {
       sleef_exp_inplace(x, len);
       return;
@@ -27,6 +38,13 @@ NEVER_INLINE void exp_inplace(double *x, size_t len, randompack_rng *rng) {
 #endif
     for (size_t i = 0; i < len; i++) x[i] = exp(x[i]);
     return;
+// #elif defined(__aarch64__) && !defined(__APPLE__)
+//     sleef_exp_inplace(x, len);
+//     return;
+#else
+    for (size_t i = 0; i < len; i++) x[i] = exp(x[i]);
+    return;
+#endif
   }
   for (size_t i = 0; i < len; i++) x[i] = openlibm_exp(x[i]);
 }
@@ -41,7 +59,14 @@ NEVER_INLINE void log_inplace(double *x, size_t len, randompack_rng *rng) {
       i += chunk;
     }
     return;
-#elif defined(BUILD_AVX2)
+#elif defined(__x86_64__) || defined(_M_X64)
+#if defined(BUILD_AVX512)
+    if (rng->cpu_has_avx512) {
+      sleef_log_inplace_avx512(x, len);
+      return;
+    }
+#endif
+#if defined(BUILD_AVX2)
     if (rng->cpu_has_avx2) {
       sleef_log_inplace(x, len);
       return;
@@ -49,6 +74,13 @@ NEVER_INLINE void log_inplace(double *x, size_t len, randompack_rng *rng) {
 #endif
     for (size_t i = 0; i < len; i++) x[i] = log(x[i]);
     return;
+// #elif defined(__aarch64__) && !defined(__APPLE__)
+//     sleef_log_inplace(x, len);
+//     return;
+#else
+    for (size_t i = 0; i < len; i++) x[i] = log(x[i]);
+    return;
+#endif
   }
   for (size_t i = 0; i < len; i++) x[i] = openlibm_log(x[i]);
 }

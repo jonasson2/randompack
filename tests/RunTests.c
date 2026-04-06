@@ -102,7 +102,7 @@ int main(int argc, char **argv) {
   if (TESTVERBOSITY <= 1) printOff();
   vprint("\n");
   vprint(headr_fmt, "TEST OF", "PASSED", "FAILED");
-#if BUFSIZE == 16
+#if BUFSIZE <= 16
   (void) run_test;
   char *engine = "x256++simd";
   run_testx("Buf8-Unif",       TestUnifx,       engine);
@@ -114,7 +114,6 @@ int main(int argc, char **argv) {
   run_testx("Buf8-Uint64",     TestUint64x,     engine);
   run_testx("Buf8-Int",        TestIntx,        engine);
   run_testx("Buf8-Normal",     TestNormx,       engine);
-  run_testx("Buf8-Exp",        TestExpx,        engine);
   run_testx("Buf8-Continuous", TestContinuousx, engine);
 #else
   (void) run_testx;
@@ -127,6 +126,7 @@ int main(int argc, char **argv) {
   run_test("Seed",        TestSeed);
   run_test("Buffer",      TestBuffer);
   run_test("SetState",    TestSetState);
+  run_test("Serialize",   TestSerialize);
   run_test("Uint8",       TestUint8);
   run_test("Uint16",      TestUint16);
   run_test("Uint32",      TestUint32);

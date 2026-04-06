@@ -273,7 +273,6 @@ static void test_continuous_edge_cases(const char *engine) {
 static void pit_one_case(const char *engine, const dist_spec *spec, double p0,
   double p1, double p2) {
   if (TESTVERBOSITY >= 2) {
-    fprintf(stderr, "PIT %s\n", spec->name);
     fflush(stderr);
   }
   // Run PIT test for a specified engine / distribution / parameter-tuple
@@ -357,10 +356,6 @@ static void test_determinism_and_PIT(const char *engine) {
   }
   for (int i = 0; i < LEN(dist_specs); i++) {
     const dist_spec *spec = &dist_specs[i];
-    if (TESTVERBOSITY >= 2) {
-      fprintf(stderr, "dist %s\n", spec->name);
-      fflush(stderr);
-    }
     double xd[3], yd[3], zd[3];
     float xf[3], yf[3], zf[3];
     int len = LEN(xd);
