@@ -49,6 +49,7 @@ build_avx2_define = build_avx2 ? ['-DBUILD_AVX2'] : []
 build_avx512_define = build_avx512 ? ['-DBUILD_AVX512'] : []
 test_hooks_define = get_option('build_tests') ? ['-DRANDOMPACK_TEST_HOOKS'] : []
 base_c_args = local_dpstrf_args + accel_vv_args + build_avx2_define + build_avx512_define + arm_sleef_c_args
+sleef_warn_c_args = cc.get_supported_arguments(['-Wno-unused-function'])
 test_buf_define = '-DBUFSIZE=' + test_bufsize.to_string()
 buf8_c_args = base_c_args + [test_buf_define]
 
@@ -65,7 +66,7 @@ if build_avx2
       'sleef.c',
     ),
     include_directories: randompack_inc,
-    c_args: avx2_c_args + build_avx2_define + test_hooks_define,
+    c_args: avx2_c_args + build_avx2_define + test_hooks_define + sleef_warn_c_args,
     pic: true,
     install: false,
   )
@@ -79,7 +80,7 @@ if build_avx2
       'sleef.c',
     ),
     include_directories: randompack_inc,
-    c_args: avx2_c_args + build_avx2_define + test_hooks_define + [test_buf_define],
+    c_args: avx2_c_args + build_avx2_define + test_hooks_define + sleef_warn_c_args + [test_buf_define],
     pic: true,
     install: false,
   )
@@ -94,7 +95,7 @@ if build_avx512
       'sleef_avx512.c',
     ),
     include_directories: randompack_inc,
-    c_args: avx512_c_args + build_avx512_define,
+    c_args: avx512_c_args + build_avx512_define + sleef_warn_c_args,
     pic: true,
     install: false,
   )
@@ -107,7 +108,7 @@ if build_avx512
       'sleef_avx512.c',
     ),
     include_directories: randompack_inc,
-    c_args: avx512_c_args + build_avx512_define + [test_buf_define],
+    c_args: avx512_c_args + build_avx512_define + sleef_warn_c_args + [test_buf_define],
     pic: true,
     install: false,
   )
