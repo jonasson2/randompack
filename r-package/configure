@@ -41,6 +41,7 @@ case "$ARCH" in
       BUILD_SIMD_DEFINES="-DBUILD_AVX2"
       if supports_flags "-mavx512f -mavx512dq"; then
         append_word SIMD_OBJECTS "avx512.o"
+        append_word SIMD_OBJECTS "sleef_avx512.o"
         AVX512_CFLAGS="-mavx512f -mavx512dq"
         append_word BUILD_SIMD_DEFINES "-DBUILD_AVX512"
       fi

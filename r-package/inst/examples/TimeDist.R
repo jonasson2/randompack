@@ -14,13 +14,15 @@ args <- commandArgs(trailingOnly = TRUE)
 chunk <- 4096L
 engine <- ""
 bitexact <- FALSE
+bench_time <- 0.2
 
 print_help <- function() {
-  cat("Usage: Rscript TimeDist.R [-h] [-b] [-c chunk] [-e engine] [engine]\n")
+  cat("Usage: Rscript TimeDist.R [-h] [-b] [-c chunk] [-e engine] [-t sec] [engine]\n")
   cat("  -h         Show this help message\n")
   cat("  -b         Enable bitexact mode\n")
   cat("  -c chunk   Set chunk size (default 4096)\n")
   cat("  -e engine  Set RNG engine (default x256++simd)\n")
+  cat("  -t sec     Set time per case in seconds (default 0.2)\n")
 }
 
 i <- 1L
@@ -46,6 +48,15 @@ while (i <= length(args)) {
     }
     i <- i + 1L
     engine <- args[[i]]
+  } else if (arg == "-t") {
+    if (i == length(args)) {
+      stop("Use -t <sec> with a following positive number.")
+    }
+    i <- i + 1L
+    bench_time <- as.numeric(args[[i]])
+    if (is.na(bench_time) || bench_time <= 0) {
+      stop("Time per case must be a positive number.")
+    }
   } else if (startsWith(arg, "-")) {
     stop(sprintf("Unknown option: %s", arg))
   } else if (!nzchar(engine)) {
@@ -62,7 +73,6 @@ if (!nzchar(engine)) {
 
 rng <- randompack::randompack_rng(engine=engine, bitexact=bitexact)
 
-bench_time = 0.2
 reps = max(1, floor(1e6 / chunk))
 
 cat(sprintf("Platform:  %s\n", R.version$platform))

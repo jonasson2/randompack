@@ -10,7 +10,11 @@ from dataclasses import dataclass
 from typing import Callable, List
 
 import numpy as np
-from scipy.stats import skewnorm
+
+try:
+  from scipy.stats import skewnorm
+except ImportError:
+  skewnorm = None
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path = [p for p in sys.path if os.path.abspath(p or os.getcwd()) != ROOT]
@@ -70,6 +74,8 @@ def make_dists() -> List[Dist]:
     return rng.lognormal(0.0, 1.0, n)
 
   def sp_skew_normal_0_1_5(rng: np.random.Generator, n: int) -> np.ndarray:
+    if skewnorm is None:
+      raise RuntimeError("SciPy is required for skew-normal in TimeDist.py")
     return skewnorm.rvs(5.0, loc=0.0, scale=1.0, size=n, random_state=rng)
 
   def np_gumbel_0_1(rng: np.random.Generator, n: int) -> np.ndarray:
@@ -174,7 +180,7 @@ def make_dists() -> List[Dist]:
 
 def main() -> None:
   parser = argparse.ArgumentParser(
-    description="Compare NumPy and randompack distributions (ns/value)")
+    description="Compare NumPy/SciPy and randompack distributions (ns/value)")
   parser.add_argument("engine", nargs="?", default="",
                       help="engine name (default x256++simd)")
   parser.add_argument("-t", type=float, default=0.2, dest="bench_time",
@@ -203,7 +209,7 @@ def main() -> None:
   print(f"Warmup:    {warm:.3f} s")
   print(f"Time/case: {bench_time:.3f} s\n")
 
-  print(f"{'DISTRIBUTION':<18} {'NUMPY':>10} {'RANDOMPACK':>11} {'FACTOR':>7}")
+  print(f"{'DISTRIBUTION':<18} {'NUMPY/SCIPY':>10} {'RANDOMPACK':>11} {'FACTOR':>7}")
   for d in make_dists():
     np_ns = time_dist(lambda: d.np_fn(np_rng, chunk), chunk, bench_time)
     rp_ns = time_dist(lambda: d.rp_fn(rp_rng, chunk), chunk, bench_time)

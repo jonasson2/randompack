@@ -163,19 +163,19 @@ function main()
     consume!(sink, buf)
   end)
 
-  run("std.exp", () -> begin
-    randexp!(buf)
-    consume!(sink, buf)
-  end, () -> begin
-    random_exp!(rng, buf; scale=1)
-    consume!(sink, buf)
-  end)
-
   run("exp(2)", () -> begin
     rand!(d_exp2, buf)
     consume!(sink, buf)
   end, () -> begin
     random_exp!(rng, buf; scale=2)
+    consume!(sink, buf)
+  end)
+
+  run("std.exp", () -> begin
+    randexp!(buf)
+    consume!(sink, buf)
+  end, () -> begin
+    random_exp!(rng, buf; scale=1)
     consume!(sink, buf)
   end)
 
