@@ -38,22 +38,34 @@ make_remote_cmd() {
   cmd=
   case "$mode" in
     c)
-      cmd="$remote_dir/release/benchmark/TimeDistributions -d 3"
+      cmd="release/benchmark/TimeDistributions -d 3"
       ;;
     python)
-      cmd="python $remote_dir/python/examples/TimeDist.py"
+      cmd="python python/examples/TimeDist.py"
       ;;
     julia)
-      cmd="JULIA_PROJECT=$remote_dir/Randompack.jl julia $remote_dir/Randompack.jl/examples/TimeDist.jl"
+      cmd="JULIA_PROJECT=Randompack.jl julia Randompack.jl/examples/TimeDist.jl"
       ;;
     r)
-      cmd="Rscript $remote_dir/r-package/inst/examples/TimeDist.R"
+      cmd="Rscript r-package/inst/examples/TimeDist.R"
       ;;
   esac
   for arg in "$@"; do
     cmd="$cmd $(quote_sh "$arg")"
   done
-  printf "%s" "$cmd"
+  printf "cd %s && %s" "$remote_dir" "$cmd"
+}
+
+run_remote_cmd() {
+  cmd="$1"
+  case "$remote_host" in
+    elja)
+      ssh "$remote_host" "bash -lc $(quote_sh "source ~/.bashrc; $cmd")"
+      ;;
+    *)
+      ssh "$remote_host" "zsh -lc $(quote_sh "source ~/.zshrc; $cmd")"
+      ;;
+  esac
 }
 
 repeats=5
@@ -215,7 +227,7 @@ while [ "$i" -le "$repeats" ]; do
   printf "%d/%d\n" "$i" "$repeats" 1>&2
   if [ -n "$remote_host" ]; then
     remote_cmd=$(make_remote_cmd "$@")
-    ssh "$remote_host" "zsh -lc $(quote_sh "$remote_cmd")" \
+    run_remote_cmd "$remote_cmd" \
       | awk -v mode="$mode" -v field="$field" '
           function trim(s) {
             sub(/^[[:space:]]+/, "", s)
