@@ -20,57 +20,13 @@
 #include "zig_D.h"
 #include "assert.h"
 
-static uint64_t norm_pdf_calls = 0;
-static uint64_t norm_draws = 0;
-static uint64_t norm_slow_tail = 0;
-static uint64_t norm_slow_accept = 0;
-static uint64_t norm_slow_retry = 0;
-static uint64_t norm_slow_pdf_accept = 0;
-static uint64_t norm_slow_pdf_reject = 0;
-static uint64_t exp_pdf_calls = 0;
-static uint64_t exp_draws = 0;
-static uint64_t exp_slow = 0;
-
-void randompack_norm_counters_reset(void) {
-  norm_pdf_calls = 0;
-  norm_draws = 0;
-  norm_slow_tail = 0;
-  norm_slow_accept = 0;
-  norm_slow_retry = 0;
-  norm_slow_pdf_accept = 0;
-  norm_slow_pdf_reject = 0;
-  exp_pdf_calls = 0;
-  exp_draws = 0;
-  exp_slow = 0;
-}
-
-void randompack_norm_counters_get(uint64_t *draws, uint64_t *pdf_calls) {
-  if (draws) *draws = norm_draws;
-  if (pdf_calls) *pdf_calls = norm_pdf_calls;
-}
-
-void randompack_norm_counters_get_slow(uint64_t *tail, uint64_t *accept,
-  uint64_t *retry, uint64_t *pdf_accept, uint64_t *pdf_reject) {
-  if (tail) *tail = norm_slow_tail;
-  if (accept) *accept = norm_slow_accept;
-  if (retry) *retry = norm_slow_retry;
-  if (pdf_accept) *pdf_accept = norm_slow_pdf_accept;
-  if (pdf_reject) *pdf_reject = norm_slow_pdf_reject;
-}
-
-void randompack_exp_counters_get(uint64_t *draws, uint64_t *slow,
-  uint64_t *pdf_calls) {
-  if (draws) *draws = exp_draws;
-  if (slow) *slow = exp_slow;
-  if (pdf_calls) *pdf_calls = exp_pdf_calls;
-}
-
 //=============================== NORMAL DISTRIBUTION ==============================
 
 ALWAYS_INLINE double norm_decode(uint64_t r, uint8_t idx, uint64_t *ki, uint64_t *rabs) {
-  int64_t s = ((int64_t)(r << 11)) >> 11; // change sign
   *ki = ki_double[idx];
   *rabs = r & 0x000fffffffffffff;
+  int64_t s = (int64_t)*rabs;
+  if ((r >> 52) & 1) s = -s;
   return (double)s * wi_double[idx];
 }
 
@@ -106,7 +62,7 @@ NEVER_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x, uint8_t
     }
     L = (1ULL << 52) - ki;
     R = (1ULL << 52) - rabs;
-    MUL64_WIDE(Y, L, YL, tmp);
+    MUL64_WIDE(Y, L, YL, tmp);  //
     (void) tmp;
     if (LIKELY(idx > inflection_idx)) {
       if (YL > R) goto next_try;
@@ -200,7 +156,7 @@ ALWAYS_INLINE double exp_unlikely(randompack_rng *rng, int *w, double x, uint8_t
   }
 }
 
-ALWAYS_INLINE void rand_exp(double *buf, size_t len, randompack_rng *rng) {
+NEVER_INLINE void rand_exp(double *buf, size_t len, randompack_rng *rng) {
   align64(rng);
   draw_raw_copy((uint8_t *)buf, len*sizeof(uint64_t), rng);
   int w = enter_u64_mode(rng);

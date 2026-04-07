@@ -1,6 +1,7 @@
 // -*- C -*-
 
-static inline void fill_xoro128pp(uint64_t *buf, size_t len, randompack_state *state) {
+static inline ALIGN64 void fill_xoro128pp(uint64_t *buf, size_t len,
+  randompack_state *state) {
   uint64_t *out = buf;
   uint64_t s0 = state->u64[0];
   uint64_t s1 = state->u64[1];

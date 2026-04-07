@@ -15,7 +15,7 @@ static inline void mul128_64(uint64_t a_lo, uint64_t a_hi, uint64_t b,
   *out_hi = hi0 + lo1;
 }
 
-static inline void
+static inline ALIGN64 void
 fill_pcg64(uint64_t *buf, size_t len, randompack_state *state) {
   uint64_t *out = buf;
   // State layout: (state_lo, state_hi, inc_lo, inc_hi)

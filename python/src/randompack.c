@@ -16,18 +16,19 @@
 #include "openlibm.inc"
 #include "log_exp.inc"
 #include "crypto_random.inc"
+#include "engines.inc"
+#include "buffer_draw.inc"
+#include "scale_inplace.inc"
 
-typedef struct {
+//============================== INTERNAL TYPES AND TABLES ===============================
+
+typedef struct { // Used in table below
   char *name;
   char *description;
   rng_engine engine;
   int state_words;
   engine_fill fill;
 } rng_entry;
-
-#include "engines.inc"
-#include "buffer_draw.inc"
-#include "scale_inplace.inc"
 
 static rng_entry rng_table[] = {  // x256++simd is default
   {"x256++simd","xoshiro256++, SIMD accelerated (8x4x64)",     FAST,    4,fill_fast     },
@@ -44,48 +45,14 @@ static rng_entry rng_table[] = {  // x256++simd is default
   {"ranlux++", "ranlux++, Sibidanov, 2017 (9x64)",             RANLUXPP,9,fill_ranluxpp },
   {"chacha20", "ChaCha20, Bernstein, 2008 (6x64)",             CHACHA20,6,fill_chacha   },
 };
-// For x256++simd, state.xo stream 0 (4 words) is seeded or initialized directly and
-// then jumped to streams 1..7. For sfc64simd, the base state words are replicated to
-// 8 streams with counters s + k*2^61 for k = 0..7.
-
-static rng_entry *find_entry(rng_engine e) {
-  for (int i = 0; i < LEN(rng_table); i++)
-    if (rng_table[i].engine == e) return &rng_table[i];
-  return 0;
-}
-
-static bool all_zero_state(uint64_t *state, int n) {
-  for (int i = 0; i < n; i++)
-    if (state[i] != 0) return false;
-  return true;
-}
+// For x256++simd, state.xo stream 0 (4 words) is seeded or initialized directly and then
+// jumped by steps of 2^253 to streams 1..7. For sfc64simd, the base state words are
+// replicated to 8 streams with counters s + k*2^61 for k = 0..7.
 
 #include "randutil.inc"
 #include "distributions.inc"
 
-static bool select_engine(const char *s, randompack_rng *rng) {
-  // set rng->{engine,next} according to the engine name s
-  if (!rng) return false;
-  if (!s) {
-    rng->engine = FAST; // default engine
-    rng->fill   = fill_fast;
-    return true;
-  }
-  char t[64];
-  STRSET(t, s);
-  for (int i = 0; t[i]; i++) {
-    t[i] = TOLOWER(t[i]);
-    if (t[i] == '-') t[i] = '_';
-  }
-  for (int i = 0; i < LEN(rng_table); i++) {
-    if (!strcmp(t, rng_table[i].name)) {
-      rng->engine = rng_table[i].engine;
-      rng->fill   = rng_table[i].fill;
-      return true;
-    }
-  }
-  return false;  // unknown engine
-}
+//=============================== CREATION AND SETUP ===============================
 
 randompack_rng *randompack_create(const char *engine) {
   randompack_rng *rng;
@@ -164,27 +131,52 @@ bool randompack_randomize(randompack_rng *rng) {
   return true;
 }
 
-bool randompack_full_mantissa(randompack_rng *rng, bool enable) {
-  if (!rng) return false;
-  if (rng->engine == INVALID) {
-    rng->last_error = "randompack full_mantissa: invalid rng";
-    return false;
+void randompack_free(randompack_rng *rng) {
+  if (!rng) return;
+  FREE(rng);
+}
+
+randompack_rng *randompack_duplicate(randompack_rng *src) {
+  if (!src) return 0;
+  randompack_rng *dst;
+  if (!ALLOC(dst, 1)) return 0;
+  memcpy(dst, src, sizeof(*dst));
+  dst->last_error = 0;
+  return dst;
+}
+
+//============================== ENGINE INFORMATION ==============================
+
+bool randompack_engines(char *engines, char *descriptions, int *nengines,
+  int *eng_maxlen, int *desc_maxlen) {
+  if (!nengines || !eng_maxlen || !desc_maxlen) return false;
+  int n = LEN(rng_table);
+  int emax = 1;
+  int dmax = 1;
+  for (int i = 0; i < n; i++) {
+    int elen = (int)strlen(rng_table[i].name) + 1;
+    int dlen = (int)strlen(rng_table[i].description) + 1;
+    emax = max(emax, elen);
+    dmax = max(dmax, dlen);
   }
-  rng->last_error = 0;
-  rng->usefullmantissa = enable;
+  *nengines = n;
+  *eng_maxlen = emax;
+  *desc_maxlen = dmax;
+  if (!engines) return true;
+  if (!descriptions) return false;
+  for (int i = 0; i < n; i++) {
+    STRSETN(engines + i*emax, emax, rng_table[i].name);
+    STRSETN(descriptions + i*dmax, dmax, rng_table[i].description);
+  }
   return true;
 }
 
-bool randompack_bitexact(randompack_rng *rng, bool enable) {
-  if (!rng) return false;
-  if (rng->engine == INVALID) {
-    rng->last_error = "randompack bitexact: invalid rng";
-    return false;
-  }
-  rng->last_error = 0;
-  rng->bitexact = enable;
-  return true;
+char *randompack_last_error(randompack_rng *rng) {
+  if (!rng) return 0;
+  return rng->last_error;
 }
+
+//============================== STREAM SELECTION ==============================
 
 bool randompack_jump(int p, randompack_rng *rng) {
   if (!rng) return false;
@@ -216,182 +208,14 @@ bool randompack_jump(int p, randompack_rng *rng) {
       return false;
     }
   }
-  if (rng->engine == X256PP || rng->engine == X256SS) {
-    xoshiro256_jump(rng->state.u64, p);
-  }
-  else if (rng->engine == FAST) {
-    x256ppsimd_jump(p, rng);
-  }
-  else if (rng->engine == XORO) {
-    xoroshiro128pp_jump(rng->state.u64, p);
-  }
-  else if (rng->engine == X128P) {
-    xorshift128p_jump(rng->state.u64, p);
-  }
-  else if (rng->engine == RANLUXPP) {
-    ranlux_jump(rng->state.u64, p);
-  }
+  if (rng->engine == X256PP ||
+      rng->engine == X256SS)        xoshiro256_jump     (rng->state.u64, p);
+  else if (rng->engine == XORO)     xoroshiro128pp_jump (rng->state.u64, p);
+  else if (rng->engine == X128P)    xorshift128p_jump   (rng->state.u64, p);
+  else if (rng->engine == RANLUXPP) ranlux_jump         (rng->state.u64, p);
+  else if (rng->engine == FAST)     x256ppsimd_jump     (p, rng);
   rng->buf_word = BUFSIZE;
   rng->buf_byte = 0;
-  return true;
-}
-
-void randompack_free(randompack_rng *rng) {
-  if (!rng) return;
-  FREE(rng);
-}
-
-randompack_rng *randompack_duplicate(randompack_rng *src) {
-  if (!src) return 0;
-  randompack_rng *dst;
-  if (!ALLOC(dst, 1)) return 0;
-  memcpy(dst, src, sizeof(*dst));
-  dst->last_error = 0;
-  return dst;
-}
-
-enum { RNG_STATE_WORDS = sizeof(((randompack_rng *)0)->state)/sizeof(uint64_t) };
-
-typedef struct {
-  uint32_t version;
-  uint32_t engine;
-  uint64_t state_u64[RNG_STATE_WORDS];
-  uint32_t buf_word;
-  uint32_t buf_byte;
-  uint32_t reserved0;
-  uint32_t reserved1;
-  uint64_t buf[BUFSIZE];
-} rng_blob;
-
-enum {
-  STATE_NEED =
-  sizeof(uint32_t)*2
-  + sizeof(((rng_blob *)0)->state_u64)
-  + sizeof(uint32_t)*4
-  + sizeof(((rng_blob *)0)->buf)
-};
-
-//===================================== Setup ============================================
-
-bool randompack_engines(char *engines, char *descriptions, int *nengines,
-  int *eng_maxlen, int *desc_maxlen) {
-  if (!nengines || !eng_maxlen || !desc_maxlen) return false;
-  int n = LEN(rng_table);
-  int emax = 1;
-  int dmax = 1;
-  for (int i = 0; i < n; i++) {
-    int elen = (int)strlen(rng_table[i].name) + 1;
-    int dlen = (int)strlen(rng_table[i].description) + 1;
-    emax = max(emax, elen);
-    dmax = max(dmax, dlen);
-  }
-  *nengines = n;
-  *eng_maxlen = emax;
-  *desc_maxlen = dmax;
-  if (!engines) return true;
-  if (!descriptions) return false;
-  for (int i = 0; i < n; i++) {
-    STRSETN(engines + i*emax, emax, rng_table[i].name);
-    STRSETN(descriptions + i*dmax, dmax, rng_table[i].description);
-  }
-  return true;
-}
-
-char *randompack_last_error(randompack_rng *rng) {
-  if (!rng) return 0;
-  return rng->last_error;
-}
-
-//================================ Serialization =========================================
-
-#include "serializations.inc"
-
-bool randompack_serialize(uint8_t *buf, int *len, randompack_rng *rng) {
-  // Returns the complete internal state of rng as an opaque byte buffer
-  if (!rng) return false;
-  rng->last_error = 0;
-  if (!len) {
-    rng->last_error = "randompack serialize: len is null";
-    return false;
-  }
-  int need = STATE_NEED;
-  if (!buf) { // Report needed buffer size
-    *len = need;
-    return true;
-  }
-  if (*len < need) {
-    rng->last_error = "randompack serialize: buffer too small";
-    return false;
-  }
-  serialize(buf, *len, rng);
-  return true;
-}
-
-bool randompack_deserialize(const uint8_t *buf, int len, randompack_rng *rng) {
-  // Restores the rng state using a buffer obtained with randompack_serialize
-  if (!rng) return false;
-  rng->last_error = 0;
-  if (!buf || len <= 0) {
-    rng->last_error = "randompack deserialize: invalid arguments";
-    return false;
-  }
-  rng_blob blob = {0};
-  memcpy(&blob, buf, min(len, STATE_NEED));
-  rng_entry *ent = find_entry(blob.engine);
-  int need = STATE_NEED;
-  if (blob.version != 1 || !ent || len < need) {
-    rng->last_error = "randompack deserialize: corrupt state buffer";
-    return false;
-  }
-  if (rng->engine != INVALID && rng->engine != blob.engine) {
-    rng->last_error = "randompack deserialize: engine mismatch";
-    return false;
-  }
-  bool ok = deserialize(&blob, ent, rng);
-  if (!ok) {
-    rng->last_error = "randompack deserialize: allocation failed";
-    return false;
-  }
-#if defined(BUILD_AVX2)
-  if (rng->engine == FAST && rng->cpu_has_avx2) rng->fill = fill_fast_avx2;
-  if (rng->engine == SFCSIMD && rng->cpu_has_avx2) rng->fill = fill_sfc64simd_avx2;
-#endif
-#if defined(BUILD_AVX512)
-  if (rng->engine == FAST && rng->cpu_has_avx512) rng->fill = fill_fast_avx512;
-  if (rng->engine == SFCSIMD && rng->cpu_has_avx512) rng->fill = fill_sfc64simd_avx512;
-#endif
-  return true;
-}
-
-//================================ State control =========================================
-
-bool randompack_set_state(uint64_t state[], int nstate, randompack_rng *rng) {
-  if (!rng) return false;
-  rng->last_error = 0;
-  if (!state || nstate < 0) {
-    rng->last_error = "randompack set_state: invalid arguments";
-    return false;
-  }
-  if (rng->engine == INVALID) {
-    rng->last_error = "randompack set_state: invalid rng";
-    return false;
-  }
-  int nwords = get_state_words(rng);
-  if (nwords <= 0)
-    rng->last_error = "randompack set_state: unknown engine";
-  else if (nstate != nwords)
-    rng->last_error = "randompack set_state: wrong nstate for this engine";
-  else if (rng->engine == X256PP || rng->engine == X256SS || rng->engine == FAST ||
-           rng->engine == XORO || rng->engine == X128P || rng->engine == RANLUXPP) {
-    if (all_zero_state(state, nstate))
-      rng->last_error = "randompack set_state: all-zero state is invalid";
-  }
-  else if (rng->engine == CWG128 && (state[0] & 1) == 0)
-    rng->last_error = "randompack set_state: cwg128 increment must be odd";
-  else if (rng->engine == PCG64 && (state[2] & 1) == 0)
-    rng->last_error = "randompack set_state: pcg64 increment must be odd";
-  if (rng->last_error) return false;
-  set_state(state, nstate, rng);
   return true;
 }
 
@@ -469,7 +293,149 @@ bool randompack_sfc64_set_abc(uint64_t abc[3], randompack_rng *rng) {
   return true;
 }
 
-//============================= Raw bitstreams ===========================================
+//================================ CONFIGURATION =================================
+
+bool randompack_full_mantissa(randompack_rng *rng, bool enable) {
+  if (!rng) return false;
+  if (rng->engine == INVALID) {
+    rng->last_error = "randompack full_mantissa: invalid rng";
+    return false;
+  }
+  rng->last_error = 0;
+  rng->usefullmantissa = enable;
+  return true;
+}
+
+bool randompack_bitexact(randompack_rng *rng, bool enable) {
+  if (!rng) return false;
+  if (rng->engine == INVALID) {
+    rng->last_error = "randompack bitexact: invalid rng";
+    return false;
+  }
+  rng->last_error = 0;
+  rng->bitexact = enable;
+  return true;
+}
+
+bool randompack_set_state(uint64_t state[], int nstate, randompack_rng *rng) {
+  if (!rng) return false;
+  rng->last_error = 0;
+  if (!state || nstate < 0) {
+    rng->last_error = "randompack set_state: invalid arguments";
+    return false;
+  }
+  if (rng->engine == INVALID) {
+    rng->last_error = "randompack set_state: invalid rng";
+    return false;
+  }
+  int nwords = get_state_words(rng);
+  if (nwords <= 0)
+    rng->last_error = "randompack set_state: unknown engine";
+  else if (nstate != nwords)
+    rng->last_error = "randompack set_state: wrong nstate for this engine";
+  else if (rng->engine == X256PP || rng->engine == X256SS || rng->engine == FAST ||
+           rng->engine == XORO || rng->engine == X128P || rng->engine == RANLUXPP) {
+    if (all_zero_state(state, nstate))
+      rng->last_error = "randompack set_state: all-zero state is invalid";
+  }
+  else if (rng->engine == CWG128 && (state[0] & 1) == 0)
+    rng->last_error = "randompack set_state: cwg128 increment must be odd";
+  else if (rng->engine == PCG64 && (state[2] & 1) == 0)
+    rng->last_error = "randompack set_state: pcg64 increment must be odd";
+  if (rng->last_error) return false;
+  set_state(state, nstate, rng);
+  return true;
+}
+
+//================================ SERIALIZATION =================================
+
+static rng_entry *find_entry(rng_engine e) {
+  for (int i = 0; i < LEN(rng_table); i++)
+    if (rng_table[i].engine == e) return &rng_table[i];
+  return 0;
+}
+
+enum { RNG_STATE_WORDS = sizeof(((randompack_rng *)0)->state)/sizeof(uint64_t) };
+
+typedef struct {
+  uint32_t version;
+  uint32_t engine;
+  uint64_t state_u64[RNG_STATE_WORDS];
+  uint32_t buf_word;
+  uint32_t buf_byte;
+  uint32_t reserved0;
+  uint32_t reserved1;
+  uint64_t buf[BUFSIZE];
+} rng_blob;
+
+enum {
+  STATE_NEED =
+  sizeof(uint32_t)*2
+  + sizeof(((rng_blob *)0)->state_u64)
+  + sizeof(uint32_t)*4
+  + sizeof(((rng_blob *)0)->buf)
+};
+
+#include "serializations.inc"
+
+bool randompack_serialize(uint8_t *buf, int *len, randompack_rng *rng) {
+  // Returns the complete internal state of rng as an opaque byte buffer
+  if (!rng) return false;
+  rng->last_error = 0;
+  if (!len) {
+    rng->last_error = "randompack serialize: len is null";
+    return false;
+  }
+  int need = STATE_NEED;
+  if (!buf) { // Report needed buffer size
+    *len = need;
+    return true;
+  }
+  if (*len < need) {
+    rng->last_error = "randompack serialize: buffer too small";
+    return false;
+  }
+  serialize(buf, *len, rng);
+  return true;
+}
+
+bool randompack_deserialize(const uint8_t *buf, int len, randompack_rng *rng) {
+  // Restores the rng state using a buffer obtained with randompack_serialize
+  if (!rng) return false;
+  rng->last_error = 0;
+  if (!buf || len <= 0) {
+    rng->last_error = "randompack deserialize: invalid arguments";
+    return false;
+  }
+  rng_blob blob = {0};
+  memcpy(&blob, buf, min(len, STATE_NEED));
+  rng_entry *ent = find_entry(blob.engine);
+  int need = STATE_NEED;
+  if (blob.version != 1 || !ent || len < need) {
+    rng->last_error = "randompack deserialize: corrupt state buffer";
+    return false;
+  }
+  if (rng->engine != INVALID && rng->engine != blob.engine) {
+    rng->last_error = "randompack deserialize: engine mismatch";
+    return false;
+  }
+  bool ok = deserialize(&blob, ent, rng);
+  if (!ok) {
+    rng->last_error = "randompack deserialize: allocation failed";
+    return false;
+  }
+#if defined(BUILD_AVX2)
+  if (rng->engine == FAST && rng->cpu_has_avx2) rng->fill = fill_fast_avx2;
+  if (rng->engine == SFCSIMD && rng->cpu_has_avx2) rng->fill = fill_sfc64simd_avx2;
+#endif
+#if defined(BUILD_AVX512)
+  if (rng->engine == FAST && rng->cpu_has_avx512) rng->fill = fill_fast_avx512;
+  if (rng->engine == SFCSIMD && rng->cpu_has_avx512) rng->fill = fill_sfc64simd_avx512;
+#endif
+  return true;
+}
+
+//=============================== RAW BITSTREAMS ===============================
 
 bool randompack_raw(void *out, size_t nbytes, randompack_rng *rng) {
   if (!rng) return false;
@@ -544,7 +510,7 @@ bool randompack_uint64(uint64_t x[], size_t len, uint64_t bound, randompack_rng 
   return true;
 }
 
-//============================= Discrete distributions ===================================
+//=========================== DISCRETE DISTRIBUTIONS ============================
 
 bool randompack_int(int x[], size_t len, int m, int n, randompack_rng *rng) {
   if (!rng) return false;
@@ -602,8 +568,8 @@ bool randompack_sample(int x[], int len, int k, randompack_rng *rng) {
   if (!rng) return false;
   if (!x || k < 0 || k > len)
     rng->last_error = "invalid arguments to randompack_sample";
-  else if (len > INT_MAX - 1)
-    rng->last_error = "randompack sample: len must be <= 2^31 - 2";	 
+  else if (len > INT_MAX)
+    rng->last_error = "randompack sample: len must be < 2^31";
   else
     rng->last_error = 0;
   if (rng->last_error) return false;
@@ -611,7 +577,7 @@ bool randompack_sample(int x[], int len, int k, randompack_rng *rng) {
   return true;
 }
 
-//========================== Continuous distributions ====================================
+//========================== CONTINUOUS DISTRIBUTIONS ===========================
 
 bool randompack_u01(double x[], size_t len, randompack_rng *rng) {
   if (!rng) return false;
@@ -797,9 +763,7 @@ bool randompack_skew_normal(double x[], size_t len, double mu, double sigma,
   return true;
 }
 
-//========================================================================================
-
-//=========================== Multivariate normal ========================================
+//============================== MULTIVARIATE NORMAL ==============================
 
 bool randompack_mvn(char *transp, double mu[], double Sig[], int d, size_t n, double X[],
                     int ldX, double L[], randompack_rng *rng) {

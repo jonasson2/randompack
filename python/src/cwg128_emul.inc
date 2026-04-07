@@ -47,7 +47,8 @@ typedef struct {
   (out).hi = _hi00 + _lo01 + _lo10;             \
 } while (0)
 
-static inline void fill_cwg128(uint64_t *buf, size_t len, randompack_state *state) {
+static inline ALIGN64 void fill_cwg128(uint64_t *buf, size_t len,
+  randompack_state *state) {
   uint64_t *out = buf;
   // State layout assumed:
   //   state->u64[0:1] : c0 low, c0 high  (must be odd)
