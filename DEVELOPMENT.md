@@ -18,7 +18,9 @@ C-library
 MESON SETUP:
 scripts/meson-setup.sh release                     # optimized (default buildtype)
 scripts/meson-setup.sh debug --buildtype=debug     # debug-enabled
-= these set library "prefix" to ./install
+CC=<C-compiler> scripts/meson-setup.sh <builddir> # optional compiler override
+= these set library "prefix" to install/
+= an existing builddir is removed first
 
 BUILD:
 ninja -C release

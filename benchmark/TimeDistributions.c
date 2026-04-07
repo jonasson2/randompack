@@ -53,6 +53,7 @@ static void print_help(void) {
   printf("  -t seconds    Benchmark time per distribution (default 0.1)\n");
   printf("  -c chunk      Chunk size (values per call, default 4096)\n");
   printf("  -s seed       RNG seed (default 7)\n");
+  printf("  -d digits     Decimal places for ns output (default 2)\n");
   printf("  -b            Use bitexact log/exp implementations\n\n");
   printf("Engines:\n");
   print_engines();
@@ -61,7 +62,8 @@ static void print_help(void) {
 }
 
 static bool get_options(int argc, char **argv, char **engine, double *bench_time,
-                        int *chunk, int *seed, bool *bitexact, bool *help) {
+                        int *chunk, int *seed, int *digits, bool *bitexact,
+                        bool *help) {
   opterr = 0;
   optind = 1;
   int opt;
@@ -69,9 +71,10 @@ static bool get_options(int argc, char **argv, char **engine, double *bench_time
   *bench_time = 0.1;
   *chunk = 4096;
   *seed = 7;
+  *digits = 2;
   *bitexact = false;
   *help = false;
-  while ((opt = getopt(argc, argv, "he:t:c:s:b")) != -1) {
+  while ((opt = getopt(argc, argv, "he:t:c:s:d:b")) != -1) {
     switch (opt) {
       case 'h':
         *help = true;
@@ -91,6 +94,11 @@ static bool get_options(int argc, char **argv, char **engine, double *bench_time
         break;
       case 's':
         *seed = atoi(optarg);
+        break;
+      case 'd':
+        *digits = atoi(optarg);
+        if (*digits < 0)
+          return false;
         break;
       case 'b':
         *bitexact = true;
@@ -184,10 +192,10 @@ static void fill_wrapperf(float out[], int n, float param[], randompack_rng *rng
 int main(int argc, char **argv) {
   char *engine;
   double bench_time;
-  int chunk, seed;
+  int chunk, seed, digits;
   bool bitexact;
   bool help;
-  if (!get_options(argc, argv, &engine, &bench_time, &chunk, &seed,
+  if (!get_options(argc, argv, &engine, &bench_time, &chunk, &seed, &digits,
       &bitexact, &help) || help) {
     print_help();
     return help ? 0 : 1;
@@ -259,7 +267,7 @@ int main(int argc, char **argv) {
     double nsd = time_double(chunk, bench_time, fill_wrapper, par, rngd);
     double nsf = time_float(chunk, bench_time, fill_wrapperf, parf, rngf);
     printf("%-14s", dists[i].name);
-    printf(" %8.2f %8.2f\n", nsd, nsf);
+    printf(" %8.*f %8.*f\n", digits, nsd, digits, nsf);
   }
   randompack_free(rngd);
   randompack_free(rngf);

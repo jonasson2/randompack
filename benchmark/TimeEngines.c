@@ -21,6 +21,7 @@ static void print_help(void) {
   printf("  -w seconds    CPU warmup time before timing (default 0.1)\n");
   printf("  -c chunk      Chunk size (values per fill, default 4096)\n");
   printf("  -s seed       RNG seed (default 7)\n\n");
+  printf("  -d digits     Decimal places for ns output (default 2)\n");
   printf("  -S            Benchmark SIMD engines only\n");
   printf("  -n            Benchmark non-SIMD engines only\n\n");
   printf("Notes:\n");
@@ -28,8 +29,8 @@ static void print_help(void) {
 }
 
 static bool get_options(int argc, char **argv,
-  double *bench_time, double *warmup_time, int *chunk, int *seed, bool *simd_only,
-  bool *nonsimd_only, bool *help) {
+  double *bench_time, double *warmup_time, int *chunk, int *seed, int *digits,
+  bool *simd_only, bool *nonsimd_only, bool *help) {
   opterr = 0;
   optind = 1;
   int opt;
@@ -37,10 +38,11 @@ static bool get_options(int argc, char **argv,
   *warmup_time = 0.1;
   *chunk = 4096;
   *seed = 7;
+  *digits = 2;
   *simd_only = false;
   *nonsimd_only = false;
   *help = false;
-  while ((opt = getopt(argc, argv, "hSt:w:c:s:n")) != -1) {
+  while ((opt = getopt(argc, argv, "hSt:w:c:s:d:n")) != -1) {
     switch (opt) {
       case 'h':
         *help = true;
@@ -65,6 +67,11 @@ static bool get_options(int argc, char **argv,
         break;
       case 's':
         *seed = atoi(optarg);
+        break;
+      case 'd':
+        *digits = atoi(optarg);
+        if (*digits < 0)
+          return false;
         break;
       case 'n':
         *nonsimd_only = true;
@@ -91,10 +98,10 @@ static bool is_simd_engine(const char *name) {
 int main(int argc, char **argv) {
   double bench_time;
   double warmup_time;
-  int chunk, seed;
+  int chunk, seed, digits;
   bool simd_only, nonsimd_only, help;
-  if (!get_options(argc, argv, &bench_time, &warmup_time, &chunk, &seed, &simd_only,
-                   &nonsimd_only, &help) || help) {
+  if (!get_options(argc, argv, &bench_time, &warmup_time, &chunk, &seed, &digits,
+      &simd_only, &nonsimd_only, &help) || help) {
     print_help();
     return help ? 0 : 1;
   }
@@ -153,7 +160,7 @@ int main(int argc, char **argv) {
     double ns64 = time_u64(chunk, bench_time, fill_u64, rng);
     double gb64 = 8/ns64;
     printf("%-18s", name);
-    printf(" %10.2f", ns64);
+    printf(" %10.*f", digits, ns64);
     printf(" %8.2f", gb64);
     printf("\n");
     randompack_free(rng);
