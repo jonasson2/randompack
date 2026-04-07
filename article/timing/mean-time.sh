@@ -53,7 +53,15 @@ make_remote_cmd() {
   for arg in "$@"; do
     cmd="$cmd $(quote_sh "$arg")"
   done
-  printf "cd %s && %s" "$remote_dir" "$cmd"
+  if [ "$mode" = c ]; then
+    fallback="release/benchmark/TimeDistributions"
+    for arg in "$@"; do
+      fallback="$fallback $(quote_sh "$arg")"
+    done
+    printf "cd %s && (%s || %s)" "$remote_dir" "$cmd" "$fallback"
+  else
+    printf "cd %s && %s" "$remote_dir" "$cmd"
+  fi
 }
 
 run_remote_cmd() {
@@ -63,7 +71,7 @@ run_remote_cmd() {
       ssh "$remote_host" "bash -lc $(quote_sh "source ~/.bashrc; $cmd")"
       ;;
     *)
-      ssh "$remote_host" "zsh -lc $(quote_sh "source ~/.zshrc; $cmd")"
+      ssh "$remote_host" "zsh -ic $(quote_sh "$cmd")"
       ;;
   esac
 }
