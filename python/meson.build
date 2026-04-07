@@ -47,6 +47,10 @@ build_avx2 = false
 avx2_c_args = []
 build_avx512 = false
 avx512_c_args = []
+build_arm_sleef = (
+  host_machine.cpu_family() in ['aarch64', 'arm64'] and
+  host_machine.system() != 'darwin'
+)
 
 if host_machine.cpu_family() in ['x86', 'x86_64']
   if cc.get_id() in ['gcc', 'clang', 'appleclang', 'msvc', 'intel-llvm']
@@ -69,6 +73,10 @@ if build_avx512
   build_avx512 = avx512_c_args.length() == 2
 endif
 
+arm_sleef_c_args = build_arm_sleef ? cc.get_supported_arguments(
+  ['-Wno-attributes']
+) : []
+
 math_dep = cc.find_library('m', required: false)
 if math_dep.found()
   deps += [math_dep]
@@ -86,6 +94,7 @@ endif
 if build_avx512
   core_c_args += ['-DBUILD_AVX512']
 endif
+core_c_args += arm_sleef_c_args
 
 conda_option = get_option('conda')
 blas_dep = disabler()
@@ -198,6 +207,21 @@ if build_avx2
     install: false,
   )
   extra_objs += [avx2_lib.extract_all_objects(recursive: false)]
+endif
+
+if build_arm_sleef
+  arm_sleef_lib = static_library(
+    'randompack_arm_sleef',
+    files(
+      'src/inplace_logexp.c',
+      'src/sleef_arm.c',
+    ),
+    include_directories: inc,
+    c_args: arm_sleef_c_args,
+    pic: true,
+    install: false,
+  )
+  extra_objs += [arm_sleef_lib.extract_all_objects(recursive: false)]
 endif
 
 if build_avx512

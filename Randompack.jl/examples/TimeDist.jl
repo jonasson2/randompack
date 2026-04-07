@@ -123,7 +123,6 @@ function main()
   @printf("Engine: %s\n", engine)
   @printf("%-18s %10s %11s %8s\n", "Distribution", "Base", "Randompack",
           "Factor")
-  @printf("Library: %s\n", Randompack._libpath[])
 
   function run(name::String, fill_base!::Function, fill_rp!::Function)
     base_ns = time_dist!(chunk, reps, bench_time, fill_base!, sink)

@@ -65,33 +65,28 @@ Notes:
 
 Python
 ======
+To simplify setup, the Python instructions below assume a conda environment.
+
 FIRST TIME SETUP:
-cd <project-root>                            # enter project root
-scripts/syncpy.sh                            # copy C sources from src to python/src
-python -m venv .venv                         # create a local virtual environment (once)
-source .venv/bin/activate                    # activate it
-pip install meson meson-python ninja cython  # add needed build tools
-pip install numpy pytest                     # add packages
-cd python                                    # enter python library folder
-pip install -e . --no-build-isolation        # install Randompack in editable mode
+cd <project-root>
+conda create -n randompack-dev python
+conda activate randompack-dev
+conda install meson meson-python ninja cython pytest numpy
+scripts/syncpy.sh
+cd python
+pip install -e . --no-build-isolation
+= optionally use clang: "CC=clang pip install -e . --no-build-isolation"
+= optionally specify Python version: "conda create -n randompack-dev python=3.12"
 
 AFTER CHANGE TO C LIBRARY
-scripts/syncpy.sh                            # copy C sources from src to python/src
+cd <project-root>
+scripts/syncpy.sh
 restart python
 
 USE:
 (with Python running in the same environment)
 >>> import randompack
 will automatically rebuild the module after changes to C/Cython sources.
-
-WITH CONDA:
-cd <project-root>
-conda create -n randompack-dev python
-conda activate randompack-dev
-conda install meson meson-python ninja cython pytest numpy
-cd python
-pip install -e . --no-build-isolation
-= optionally specify Python version: "conda create -n randompack-dev python=3.12"
 
 R-library
 =========
