@@ -203,7 +203,10 @@ endif
 if build_avx512
   avx512_lib = static_library(
     'randompack_avx512',
-    files('src/avx512.c'),
+    files(
+      'src/avx512.c',
+      'src/sleef_avx512.c',
+    ),
     include_directories: inc,
     c_args: avx512_c_args + ['-DBUILD_AVX512'],
     pic: true,

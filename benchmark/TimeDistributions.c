@@ -118,6 +118,7 @@ typedef enum {
   NORM,
   NORMAL,
   LOGNORMAL,
+  SKEW_NORMAL,
   GUMBEL,
   PARETO,
   EXP1,
@@ -134,7 +135,7 @@ typedef struct {
   dist_id id;
   char *name;
   int nparam;
-  double param[2];
+  double param[3];
 } dist_spec;
 
 static bool fill_dist(double out[], int n, double param[], randompack_rng *rng) {
@@ -145,6 +146,8 @@ static bool fill_dist(double out[], int n, double param[], randompack_rng *rng) 
     case NORM:      return randompack_norm     (out, len,                     rng);
     case NORMAL:    return randompack_normal   (out, len, param[1], param[2], rng);
     case LOGNORMAL: return randompack_lognormal(out, len, param[1], param[2], rng);
+    case SKEW_NORMAL:
+      return randompack_skew_normal(out, len, param[1], param[2], param[3], rng);
     case GUMBEL:    return randompack_gumbel   (out, len, param[1], param[2], rng);
     case PARETO:    return randompack_pareto   (out, len, param[1], param[2], rng);
     case EXP1:      return randompack_exp      (out, len, param[1],           rng);
@@ -171,6 +174,8 @@ static bool fill_distf(float out[], int n, float param[], randompack_rng *rng) {
     case NORM:      return randompack_normf     (out, len,                     rng);
     case NORMAL:    return randompack_normalf   (out, len, param[1], param[2], rng);
     case LOGNORMAL: return randompack_lognormalf(out, len, param[1], param[2], rng);
+    case SKEW_NORMAL:
+      return randompack_skew_normalf(out, len, param[1], param[2], param[3], rng);
     case GUMBEL:    return randompack_gumbelf   (out, len, param[1], param[2], rng);
     case PARETO:    return randompack_paretof   (out, len, param[1], param[2], rng);
     case EXP1:      return randompack_expf      (out, len, param[1],           rng);
@@ -236,6 +241,7 @@ int main(int argc, char **argv) {
     { EXP1,      "exp(1)",         1, { 1, 0} },
     { EXP2,      "exp(2)",         1, { 2, 0} },
     { LOGNORMAL, "lognormal(0,1)", 2, { 0, 1} },
+    { SKEW_NORMAL, "skew-normal(0,1,5)", 3, { 0, 1, 5 } },
     { GUMBEL,    "gumbel(0,1)",    2, { 0, 1} },
     { PARETO,    "pareto(1,2)",    2, { 1, 2} },
     { GAMMA,     "gamma(2,3)",     2, { 2, 3} },
@@ -250,23 +256,25 @@ int main(int argc, char **argv) {
   printf("time per value:   ns/value\n");
   printf("bench_time:       %.3f s per distribution\n", bench_time);
   printf("chunk:            %d\n\n", chunk);
-  printf("%-14s %8s %8s\n", "Distribution", "double", "float");
+  printf("%-18s %8s %8s\n", "Distribution", "double", "float");
   for (int i = 0; i < LEN(dists); i++) {
-    double par[3];
+    double par[4];
     par[0] = (double)dists[i].id;
     par[1] = dists[i].param[0];
     par[2] = dists[i].param[1];
-    float parf[3];
+    par[3] = dists[i].param[2];
+    float parf[4];
     parf[0] = (float)dists[i].id;
     parf[1] = (float)dists[i].param[0];
     parf[2] = (float)dists[i].param[1];
+    parf[3] = (float)dists[i].param[2];
     double x[4];
     float xf[4];
     fill_dist(x, 4, par, rngd);
     fill_distf(xf, 4, parf, rngf);
     double nsd = time_double(chunk, bench_time, fill_wrapper, par, rngd);
     double nsf = time_float(chunk, bench_time, fill_wrapperf, parf, rngf);
-    printf("%-14s", dists[i].name);
+    printf("%-18s", dists[i].name);
     printf(" %8.*f %8.*f\n", digits, nsd, digits, nsf);
   }
   randompack_free(rngd);
