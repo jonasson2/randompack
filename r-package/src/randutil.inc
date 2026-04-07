@@ -2,9 +2,37 @@
 #include <time.h>
 
 static int get_state_words(randompack_rng *rng) {
-  rng_entry *ent = find_entry(rng->engine);
-  int nwords = ent ? ent->state_words : 1;
-  return nwords > 0 ? nwords : 1;
+  for (int i = 0; i < LEN(rng_table); i++) {
+    if (rng_table[i].engine == rng->engine) {
+      int nwords = rng_table[i].state_words;
+      return nwords > 0 ? nwords : 1;
+    }
+  }
+  return 1;
+}
+
+static bool select_engine(const char *s, randompack_rng *rng) {
+  // set rng->{engine,next} according to the engine name s
+  if (!rng) return false;
+  if (!s) {
+    rng->engine = FAST; // default engine
+    rng->fill   = fill_fast;
+    return true;
+  }
+  char t[64];
+  STRSET(t, s);
+  for (int i = 0; t[i]; i++) {
+    t[i] = TOLOWER(t[i]);
+    if (t[i] == '-') t[i] = '_';
+  }
+  for (int i = 0; i < LEN(rng_table); i++) {
+    if (!strcmp(t, rng_table[i].name)) {
+      rng->engine = rng_table[i].engine;
+      rng->fill   = rng_table[i].fill;
+      return true;
+    }
+  }
+  return false;  // unknown engine
 }
 
 static inline uint64_t rand_splitmix64(uint64_t *x) {
@@ -78,6 +106,12 @@ static inline void setup_sfc64simd_streams(randompack_rng *rng) {
     st->s2[i] = c;
     st->s3[i] = s + (uint64_t)i*delta;
   }
+}
+
+static inline bool all_zero_state(uint64_t *state, int n) {
+  for (int i = 0; i < n; i++)
+    if (state[i] != 0) return false;
+  return true;
 }
 
 static inline void normalize_state(randompack_rng *rng) {

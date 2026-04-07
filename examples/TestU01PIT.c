@@ -49,7 +49,7 @@ static void fill_buffer(void) {
   for (int i = 0; i < n; i++) {
     double x = use_float ? (double)fbuf[i] : buf[i];
     double u;
-    if (use_exp) u = 1 - exp(-x);
+    if (use_exp) u = -expm1(-x);
     else u = 0.5*erfc(-x/sqrt(2));
     if (u <= 0) u = nextafter(0, 1);
     else if (u >= 1) u = nextafter(1, 0);

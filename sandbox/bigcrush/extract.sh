@@ -16,9 +16,4 @@ then
   exit 1
 fi
 
-name=${file##*/}
-engine=${name%_s*}
-seed=${name##*_s}
-seed=${seed%.txt}
-
-gawk -vseed="$seed" -vengine="$engine" -f extract.awk "$file"
+gawk -f extract.awk "$file"

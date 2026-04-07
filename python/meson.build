@@ -53,7 +53,7 @@ build_arm_sleef = (
 )
 
 if host_machine.cpu_family() in ['x86', 'x86_64']
-  if cc.get_id() in ['gcc', 'clang', 'appleclang', 'msvc']
+  if cc.get_id() in ['gcc', 'clang', 'appleclang', 'msvc', 'intel-llvm']
     build_avx2 = true
     build_avx512 = cc.get_id() != 'msvc'
   endif
@@ -227,7 +227,10 @@ endif
 if build_avx512
   avx512_lib = static_library(
     'randompack_avx512',
-    files('src/avx512.c'),
+    files(
+      'src/avx512.c',
+      'src/sleef_avx512.c',
+    ),
     include_directories: inc,
     c_args: avx512_c_args + ['-DBUILD_AVX512'],
     pic: true,

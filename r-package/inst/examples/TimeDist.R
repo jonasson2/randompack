@@ -96,8 +96,8 @@ warmup = function(seconds) {
 warm = warmup(0.1)
 cat(sprintf("Warmup:    %.3f s\n\n", warm))
 
-cat(sprintf("%-14s %10s %10s %11s %8s %8s\n",
-            "DISTRIBUTION", "BASE-R", "DQRNG", "RANDOMPACK", "FACTOR-B",
+cat(sprintf("%-14s %10s %11s %10s %8s %8s\n",
+            "DISTRIBUTION", "BASE-R", "RANDOMPACK", "DQRNG", "FACTOR-B",
             "FACTOR-D"))
 
 old_kind <- RNGkind()
@@ -121,8 +121,8 @@ run_case = function(name, f_base, f_rp, f_dqrng=NULL, use_dqset=FALSE) {
     dqrng_str = sprintf("%10.2f", dqrng_ns)
     factor_d_str = sprintf("%8.2f", dqrng_ns / rp_ns)
   }
-  cat(sprintf("%-14s %10.2f %s %11.2f %8.2f %s\n",
-              name, base_ns, dqrng_str, rp_ns, factor_b, factor_d_str))
+  cat(sprintf("%-14s %10.2f %11.2f %s %8.2f %s\n",
+              name, base_ns, rp_ns, dqrng_str, factor_b, factor_d_str))
 }
 
 run_case("u01",
@@ -181,6 +181,6 @@ run_case("F(5,10)",
          function() rf(chunk, df1=5, df2=10),
          function() rng$f(chunk, 5, 10))
 
-run_case("weibull(2,1)",
-         function() rweibull(chunk, shape=2, scale=1),
-         function() rng$weibull(chunk, 2, 1))
+run_case("weibull(2,3)",
+         function() rweibull(chunk, shape=2, scale=3),
+         function() rng$weibull(chunk, 2, 3))

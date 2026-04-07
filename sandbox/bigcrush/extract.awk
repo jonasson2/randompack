@@ -1,3 +1,17 @@
+BEGINFILE {
+  complete = 0
+  fam = ""
+  nout = 0
+  delete out
+  name = FILENAME
+  sub(/^.*\//, "", name)
+  cur_engine = name
+  sub(/_s[0-9]+\.txt$/, "", cur_engine)
+  cur_seed = name
+  sub(/^.*_s/, "", cur_seed)
+  sub(/\.txt$/, "", cur_seed)
+}
+
 /========= Summary results of BigCrush/ {
   complete = 1
   next
@@ -27,10 +41,10 @@
   qval = pval
   if (1 - pval < qval) qval = 1 - pval
   nout++
-  out[nout] = seed " " engine " " fam " " qval
+  out[nout] = cur_seed " " cur_engine " " fam " " qval
 }
 
-END {
+ENDFILE {
   if (!complete) exit
   for (i = 1; i <= nout; i++) print out[i]
 }

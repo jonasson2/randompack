@@ -29,6 +29,7 @@ test_sources = files(
   'TestDpstrf.c',
   'TestSeed.c',
   'TestSetState.c',
+  'TestSerialize.c',
   'TestHelpers.c',
   'TestFullMantissa.c',
   'TestBitexact.c',
@@ -60,7 +61,7 @@ run_tests = executable(
 test('RunTests', run_tests, args : ['-v'])
 
 run_tests_buf8 = executable(
-  # Small buffer test to stress the buffer draw machinery
+  # Small buffer test to stress the buffer-filling and -drawing machinery
   'RunTestsBuf8',
   test_sources + extra_util + dpstrf_test_src,
   include_directories: [common_inc],

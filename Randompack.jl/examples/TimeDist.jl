@@ -104,12 +104,13 @@ function main()
   d_exp2 = Exponential(2)
   d_gumbel = Gumbel(0, 1)
   d_pareto = Pareto(1, 2)
+  d_skew = SkewNormal(0, 1, 5)
   d_gam = Gamma(2, 3)
   d_chi = Chisq(5)
   d_beta = Beta(2, 5)
   d_t = TDist(10)
   d_f = FDist(5, 10)
-  d_w = Weibull(2, 1)
+  d_w = Weibull(2, 3)
 
   # Warmup: ensure JIT compile and keep CPU "awake" for at least 0.1s
   rand!(buf); consume!(sink, buf)
@@ -120,15 +121,14 @@ function main()
   warmup!(0.1)
 
   @printf("Engine: %s\n", engine)
-  @printf("%-14s %10s %11s %8s\n", "Distribution", "Base", "Randompack",
+  @printf("%-18s %10s %11s %8s\n", "Distribution", "Base", "Randompack",
           "Factor")
-  @printf("Library: %s\n", Randompack._libpath[])
 
   function run(name::String, fill_base!::Function, fill_rp!::Function)
     base_ns = time_dist!(chunk, reps, bench_time, fill_base!, sink)
     rp_ns = time_dist!(chunk, reps, bench_time, fill_rp!, sink)
     factor = base_ns / rp_ns
-    @printf("%-14s %10.2f %11.2f %8.2f\n", name, base_ns, rp_ns, factor)
+    @printf("%-18s %10.2f %11.2f %8.2f\n", name, base_ns, rp_ns, factor)
   end
 
   run("unif(0,1)", () -> begin
@@ -184,6 +184,14 @@ function main()
     consume!(sink, buf)
   end, () -> begin
     random_lognormal!(rng, buf; mu=0, sigma=1)
+    consume!(sink, buf)
+  end)
+
+  run("skew-normal(0,1,5)", () -> begin
+    rand!(d_skew, buf)
+    consume!(sink, buf)
+  end, () -> begin
+    random_skew_normal!(rng, buf; mu=0, sigma=1, alpha=5)
     consume!(sink, buf)
   end)
 
@@ -243,11 +251,11 @@ function main()
     consume!(sink, buf)
   end)
 
-  run("weibull(2,1)", () -> begin
+  run("weibull(2,3)", () -> begin
     rand!(d_w, buf)
     consume!(sink, buf)
   end, () -> begin
-    random_weibull!(rng, buf; shape=2, scale=1)
+    random_weibull!(rng, buf; shape=2, scale=3)
     consume!(sink, buf)
   end)
 

@@ -34,16 +34,23 @@ if buildtype.startswith('debug')
 endif
 
 cc = meson.get_compiler('c')
-fp_contract_off_args = []
+fp_args = []
 
-if cc.get_id() in ['msvc', 'intel-cl']
-  fp_contract_off_args = cc.get_supported_arguments(['/fp:strict'])
+if cc.get_id() == 'msvc'
+  fp_args += cc.get_supported_arguments(['/fp:precise'])
+elif cc.get_id() == 'intel-cl'
+  fp_args += cc.get_supported_arguments(['/fp:precise'])
+elif cc.get_id() in ['clang', 'appleclang']
+  fp_args += cc.get_supported_arguments(['-ffp-model=precise'])
+  fp_args += cc.get_supported_arguments(['-ffp-contract=off'])
+elif cc.get_id() == 'intel-llvm'
+  fp_args += cc.get_supported_arguments(['-fp-model=strict'])
 else
-  fp_contract_off_args = cc.get_supported_arguments(['-ffp-contract=off'])
+  fp_args += cc.get_supported_arguments(['-ffp-contract=off'])
 endif
 
-if fp_contract_off_args.length() > 0
-  add_project_arguments(fp_contract_off_args, language: 'c')
+if fp_args.length() > 0
+  add_project_arguments(fp_args, language: 'c')
 endif
 
 perf_opt = get_option('perf')
@@ -51,6 +58,7 @@ force_no128 = get_option('force_no128')
 force_nosimd = get_option('force_nosimd')
 test_bufsize = get_option('test_bufsize')
 norm_exp_mod = get_option('norm_exp_mod')
+norm_polar = get_option('norm_polar')
 if perf_opt
   add_project_arguments('-DRANDOMPACK_PERF', language: 'c')
   add_project_arguments(
@@ -68,6 +76,14 @@ if norm_exp_mod
   add_project_arguments('-DNORM_EXP_MOD', language: 'c')
 endif
 
+if norm_polar
+  add_project_arguments('-DNORM_POLAR', language: 'c')
+endif
+
+if norm_exp_mod and norm_polar
+  error('norm_exp_mod and norm_polar cannot both be enabled')
+endif
+
 if force_nosimd
   add_project_arguments('-DPRETEND_NOSIMD', language: 'c')
 endif
@@ -82,7 +98,7 @@ build_avx512 = false
 avx512_c_args = []
 
 if host_machine.cpu_family() in ['x86', 'x86_64']
-  if cc.get_id() in ['gcc', 'clang', 'appleclang', 'msvc']
+  if cc.get_id() in ['gcc', 'clang', 'appleclang', 'msvc', 'intel-llvm']
     build_avx2 = true
     build_avx512 = cc.get_id() != 'msvc'
   endif

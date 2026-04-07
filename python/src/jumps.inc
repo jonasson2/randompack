@@ -40,7 +40,7 @@ static inline void xoshiro256_jump(uint64_t s[4], int p) {
     jump253[4] =
     { 0xdfca68648b28c5afULL, 0xb56437fb2b753802ULL,
       0xebb82aacdf6ca80dULL, 0xa170e108788db093ULL};
-  const uint64_t *jump;
+  const uint64_t *jump = 0;
   switch (p) {
   case 32:  jump = jump32;  break;
   case 64:  jump = jump64;  break;
@@ -48,7 +48,7 @@ static inline void xoshiro256_jump(uint64_t s[4], int p) {
   case 128: jump = jump128; break;
   case 192: jump = jump192; break;
   case 253: jump = jump253; break;
-  default:  assert(0); }
+  default:  assert(0); return; }
   uint64_t s0, s1, s2, s3;
   s0 = s1 = s2 = s3 = 0;
   for (int i = 0; i < 4; i++) {
@@ -72,12 +72,12 @@ static inline void xorshift128p_jump(uint64_t s[2], int p) {
   static const uint64_t jump32[2] = {0x55fcb2d81da9d3caULL, 0x43b6c9723b2aa348ULL};
   static const uint64_t jump64[2] = {0x8a5cd789635d2dffULL, 0x121fd2155c472f96ULL};
   static const uint64_t jump96[2] = {0xea61c9f1f13962aeULL, 0xa1fe50ef79cfafb2ULL};
-  const uint64_t *jump;
+  const uint64_t *jump = 0;
   switch (p) {
   case 32:  jump = jump32; break;
   case 64:  jump = jump64; break;
   case 96:  jump = jump96; break;
-  default:  assert(0); }
+  default:  assert(0); return; }
   uint64_t s0 = 0, s1 = 0;
   for (int i = 0; i < 2; i++) {
     for (int b = 0; b < 64; b++) {
@@ -101,12 +101,12 @@ static inline void xoroshiro128pp_jump(uint64_t s[2], int p) {
   static const uint64_t jump32[2] = {0xfcceec21d5c306d9ULL, 0x2e1bcf52f1051044ULL};
   static const uint64_t jump64[2] = {0x2bd7a6a6e99c2ddcULL, 0x0992ccaf6a6fca05ULL};
   static const uint64_t jump96[2] = {0x360fd5f2cf8d5d99ULL, 0x9c6e6877736c46e3ULL};
-  const uint64_t *J;
+  const uint64_t *J = 0;
   switch (p) {
   case 32:  J = jump32; break;
   case 64:  J = jump64; break;
   case 96:  J = jump96; break;
-  default:  assert(0); }
+  default:  assert(0); return; }
   uint64_t s0 = 0, s1 = 0;
   for (int i = 0; i < 2; i++) {
     for (int b = 0; b < 64; b++) {

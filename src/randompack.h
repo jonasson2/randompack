@@ -53,7 +53,7 @@ char *randompack_last_error( // Get last error string, or 0 if none
 //=================================== STREAM SELECTION ===================================
 
 bool randompack_jump( // Jump xor-family or ranlux rng by 2^p steps, false on error
-  int p,               // in      Jump exponent (32/64/96/128/192, or 253 for x256* engines)
+  int p,               // in      Jump exponent (32/64/96/128/192)
   randompack_rng *rng  // in/out  Random number generator
 );
 

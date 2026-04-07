@@ -34,7 +34,7 @@ option('build_tests',
 
 option('test_bufsize',
   type: 'integer',
-  value: 16,
+  value: 8,
   description: 'BUFSIZE for small-buffer tests (multiple of 8, <= 512)'
 )
 
@@ -49,6 +49,12 @@ option('norm_exp_mod',
   type: 'boolean',
   value: false,
   description: 'Use src/norm_exp_mod.inc instead of src/norm_exp.inc'
+)
+
+option('norm_polar',
+  type: 'boolean',
+  value: false,
+  description: 'Use src/norm_polar.inc instead of src/norm_exp.inc'
 )
 
 option('force_no128',
