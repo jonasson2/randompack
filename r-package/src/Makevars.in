@@ -12,6 +12,9 @@ avx2.o: avx2.c
 avx512.o: avx512.c
 	$(CC) $(ALL_CPPFLAGS) $(ALL_CFLAGS) $(AVX512_CFLAGS) -c $< -o $@
 
+sleef_avx512.o: sleef_avx512.c
+	$(CC) $(ALL_CPPFLAGS) $(ALL_CFLAGS) $(AVX512_CFLAGS) -c $< -o $@
+
 inplace_logexp.o: inplace_logexp.c
 	$(CC) $(ALL_CPPFLAGS) $(ALL_CFLAGS) $(AVX2_CFLAGS) -c $< -o $@
 
