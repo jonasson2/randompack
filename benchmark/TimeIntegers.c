@@ -17,18 +17,19 @@ static void print_help(void) {
   printf("  -e engine     RNG engine (default x256++simd)\n");
   printf("  -t seconds    Benchmark time per case (default 0.1)\n");
   printf("  -c chunk      Chunk size (values per call, default 4096)\n");
-  printf("  -s seed       RNG seed (default 7)\n");
+  printf("  -s seed       Fixed RNG seed (default random seed per case)\n");
 }
 
 static bool get_options(int argc, char **argv, char **engine, double *bench_time,
-                        int *chunk, int *seed, bool *help) {
+                        int *chunk, int *seed, bool *have_seed, bool *help) {
   opterr = 0;
   optind = 1;
   int opt;
   *engine = "x256++simd";
   *bench_time = 0.1;
   *chunk = 4096;
-  *seed = 7;
+  *seed = 0;
+  *have_seed = false;
   *help = false;
   while ((opt = getopt(argc, argv, "he:t:c:s:")) != -1) {
     switch (opt) {
@@ -50,6 +51,7 @@ static bool get_options(int argc, char **argv, char **engine, double *bench_time
         break;
       case 's':
         *seed = atoi(optarg);
+        *have_seed = true;
         break;
       default:
         return false;
@@ -58,6 +60,15 @@ static bool get_options(int argc, char **argv, char **engine, double *bench_time
   if (optind < argc)
     return false;
   return true;
+}
+
+static void set_seed(randompack_rng *rng, int seed, bool have_seed) {
+  bool ok;
+  if (have_seed)
+    ok = randompack_seed(seed, 0, 0, rng);
+  else
+    ok = randompack_randomize(rng);
+  ASSERT(ok);
 }
 
 static inline void consume_u64(uint64_t x) {
@@ -217,9 +228,10 @@ int main(int argc, char **argv) {
   char *engine;
   double bench_time;
   int chunk, seed;
+  bool have_seed;
   bool help;
-  if (!get_options(argc, argv, &engine, &bench_time, &chunk, &seed, &help) ||
-      help) {
+  if (!get_options(argc, argv, &engine, &bench_time, &chunk, &seed, &have_seed,
+      &help) || help) {
     print_help();
     return help ? 0 : 1;
   }
@@ -228,11 +240,6 @@ int main(int argc, char **argv) {
   randompack_rng *rng = randompack_create(engine);
   if (!rng) {
     fprintf(stderr, "randompack_create failed: %s\n", engine);
-    return 1;
-  }
-  if (!randompack_seed(seed, 0, 0, rng)) {
-    fprintf(stderr, "randompack_seed failed\n");
-    randompack_free(rng);
     return 1;
   }
   warmup_cpu(0.1);
@@ -272,25 +279,30 @@ int main(int argc, char **argv) {
   printf("chunk:            %d\n", chunk);
   printf("\n%-14s %8s\n", "int range", "ns/value");
   for (int i = 0; i < LEN(int_ranges); i++) {
+    set_seed(rng, seed, have_seed);
     double ns = time_int_range(chunk, bench_time, 1, int_ranges[i].n, rng);
     printf("%-14s %8.2f\n", int_ranges[i].label, ns);
   }
   printf("\n%-14s %8s\n", "long long", "ns/value");
   for (int i = 0; i < LEN(ll_ranges); i++) {
+    set_seed(rng, seed, have_seed);
     double ns = time_long_long_range(chunk, bench_time, 1, ll_ranges[i].n, rng);
     printf("%-14s %8.2f\n", ll_ranges[i].label, ns);
   }
   printf("\n%-14s %8s\n", "uint8", "ns/value");
   for (int i = 0; i < LEN(u8_specs); i++) {
+    set_seed(rng, seed, have_seed);
     double ns = time_uint8_bound(chunk, bench_time, u8_specs[i].bound, rng);
     printf("%-14s %8.2f\n", u8_specs[i].label, ns);
   }
   printf("\n%-14s %8s\n", "uint64", "ns/value");
+  set_seed(rng, seed, have_seed);
   double ns_u64 = time_uint64_bound(chunk, bench_time, u64_bound, rng);
   printf("%-14s %8.2f\n", "UINT64_MAX/3", ns_u64);
   printf("\n%-14s %10s\n", "perm n", "ns/value");
   for (int i = 0; i < LEN(perm_specs); i++) {
     int n = perm_specs[i].n;
+    set_seed(rng, seed, have_seed);
     double ns = time_perm(n, bench_time, rng);
     printf("%-14s %10.2f\n", perm_specs[i].label, ns/n);
   }
@@ -298,6 +310,7 @@ int main(int argc, char **argv) {
   for (int i = 0; i < LEN(sample_specs); i++) {
     int n = sample_specs[i].n;
     int k = sample_specs[i].k;
+    set_seed(rng, seed, have_seed);
     double ns = time_sample(n, k, bench_time, rng);
     printf("%-14s %10.2f\n", sample_specs[i].label, ns/k);
   }

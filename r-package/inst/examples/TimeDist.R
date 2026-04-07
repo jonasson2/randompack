@@ -1,8 +1,6 @@
 # TimeDist.R
 # Compare base R, dqrng, and randompack distributions (ns/value)
 
-set.seed(7)
-
 if (!requireNamespace("randompack", quietly = TRUE)) {
   stop("Package 'randompack' is required. Install it before running.")
 }
@@ -15,14 +13,16 @@ chunk <- 4096L
 engine <- ""
 bitexact <- FALSE
 bench_time <- 0.2
+seed <- NA_integer_
 
 print_help <- function() {
-  cat("Usage: Rscript TimeDist.R [-h] [-b] [-c chunk] [-e engine] [-t sec] [engine]\n")
+  cat("Usage: Rscript TimeDist.R [-h] [-b] [-c chunk] [-e engine] [-t sec] [-s seed] [engine]\n")
   cat("  -h         Show this help message\n")
   cat("  -b         Enable bitexact mode\n")
   cat("  -c chunk   Set chunk size (default 4096)\n")
   cat("  -e engine  Set RNG engine (default x256++simd)\n")
   cat("  -t sec     Set time per case in seconds (default 0.2)\n")
+  cat("  -s seed    Set fixed seed (default random seed per case)\n")
 }
 
 i <- 1L
@@ -56,6 +56,15 @@ while (i <= length(args)) {
     bench_time <- as.numeric(args[[i]])
     if (is.na(bench_time) || bench_time <= 0) {
       stop("Time per case must be a positive number.")
+    }
+  } else if (arg == "-s") {
+    if (i == length(args)) {
+      stop("Use -s <seed> with a following integer.")
+    }
+    i <- i + 1L
+    seed <- as.integer(args[[i]])
+    if (is.na(seed)) {
+      stop("Seed must be an integer.")
     }
   } else if (startsWith(arg, "-")) {
     stop(sprintf("Unknown option: %s", arg))
@@ -111,22 +120,31 @@ cat(sprintf("%-14s %10s %11s %10s %8s %8s\n",
             "FACTOR-D"))
 
 old_kind <- RNGkind()
-restore_rng <- function() {
+draw_seed <- function() {
+  if (!is.na(seed)) {
+    return(seed)
+  }
+  sample.int(.Machine$integer.max, 1L)
+}
+
+restore_rng <- function(case_seed) {
   RNGkind(kind=old_kind[1], normal.kind=old_kind[2], sample.kind=old_kind[3])
-  set.seed(7)
+  set.seed(case_seed)
+  rng$seed(case_seed)
 }
 
 run_case = function(name, f_base, f_rp, f_dqrng=NULL, use_dqset=FALSE) {
-  restore_rng()
+  case_seed = draw_seed()
+  restore_rng(case_seed)
   rp_ns = time_dist(f_rp, chunk, reps, bench_time)
-  restore_rng()
+  restore_rng(case_seed)
   base_ns = time_dist(f_base, chunk, reps, bench_time)
   factor_b = base_ns / rp_ns
   if (is.null(f_dqrng)) {
     dqrng_str = sprintf("%10s", "")
     factor_d_str = sprintf("%8s", "")
   } else {
-    if (use_dqset) dqrng::dqset.seed(123)
+    if (use_dqset) dqrng::dqset.seed(case_seed)
     dqrng_ns = time_dist(f_dqrng, chunk, reps, bench_time)
     dqrng_str = sprintf("%10.2f", dqrng_ns)
     factor_d_str = sprintf("%8.2f", dqrng_ns / rp_ns)

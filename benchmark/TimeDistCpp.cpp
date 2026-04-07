@@ -65,7 +65,7 @@ static void print_help()
   std::printf("  -e engine     RNG engine (default x256++simd)\n");
   std::printf("  -t seconds    Benchmark time per distribution (default 0.2)\n");
   std::printf("  -c chunk      Chunk size (default 4096)\n");
-  std::printf("  -s seed       RNG seed (default 7)\n");
+  std::printf("  -s seed       Fixed RNG seed (default random seed per case)\n");
   std::printf("  -b            Use bitexact log/exp implementations\n");
 }
 
@@ -74,7 +74,8 @@ int main(int argc, char **argv)
   char *engine = (char *)"x256++simd";
   int chunk = 4096;
   double bench_time = 0.2;
-  int seed = 7;
+  int seed = 0;
+  bool have_seed = false;
   bool bitexact = false;
   for (int i = 1; i < argc; i++) {
     if (!std::strcmp(argv[i], "-h")) {
@@ -95,6 +96,7 @@ int main(int argc, char **argv)
     }
     if (!std::strcmp(argv[i], "-s") && i + 1 < argc) {
       seed = std::atoi(argv[++i]);
+      have_seed = true;
       continue;
     }
     if (!std::strcmp(argv[i], "-b")) {
@@ -119,14 +121,9 @@ int main(int argc, char **argv)
     randompack_free(rng);
     return 1;
   }
-  if (!randompack_seed(seed, 0, 0, rng)) {
-    std::fprintf(stderr, "randompack_seed failed\n");
-    randompack_free(rng);
-    return 1;
-  }
-
   int reps = compute_reps(chunk);
-  std::mt19937_64 cpp_rng((uint64_t)seed);
+  std::random_device rd;
+  std::mt19937_64 cpp_rng;
   auto u01 = [&]() {
     return std::generate_canonical<double, 64>(cpp_rng);
   };
@@ -159,7 +156,20 @@ int main(int argc, char **argv)
               "Randompack", "Factor");
 
   auto run = [&](const char *name, auto &&fill_cpp, auto &&fill_rp) {
+    int case_seed = have_seed ? seed : (int)(rd() & 0x7fffffff);
+    cpp_rng.seed((uint64_t)case_seed);
+    if (!randompack_seed(case_seed, 0, 0, rng)) {
+      std::fprintf(stderr, "randompack_seed failed\n");
+      randompack_free(rng);
+      std::exit(1);
+    }
     double cpp_ns = time_dist(chunk, bench_time, reps, fill_cpp);
+    cpp_rng.seed((uint64_t)case_seed);
+    if (!randompack_seed(case_seed, 0, 0, rng)) {
+      std::fprintf(stderr, "randompack_seed failed\n");
+      randompack_free(rng);
+      std::exit(1);
+    }
     double rp_ns = time_dist(chunk, bench_time, reps, fill_rp);
     double factor = cpp_ns/rp_ns;
     std::printf("%-14s %10.2f %11.2f %8.2f\n", name, cpp_ns, rp_ns, factor);

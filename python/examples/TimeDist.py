@@ -4,6 +4,7 @@
 import argparse
 import os
 import platform
+import random
 import sys
 import time
 from dataclasses import dataclass
@@ -189,13 +190,15 @@ def main() -> None:
                       help="chunk size (values per call)")
   parser.add_argument("-b", action="store_true", dest="bitexact",
                       help="use bitexact log/exp in randompack")
+  parser.add_argument("-s", type=int, default=None, dest="seed",
+                      help="fixed seed (default random seed per case)")
   args = parser.parse_args()
 
   engine = args.engine if args.engine else "x256++simd"
   chunk = args.chunk
   bench_time = args.bench_time
 
-  np_rng = np.random.default_rng(7)
+  np_rng = np.random.default_rng()
   rp_rng = rp.Rng(engine, bitexact=args.bitexact)
 
   t0 = time.perf_counter()
@@ -211,6 +214,11 @@ def main() -> None:
 
   print(f"{'DISTRIBUTION':<18} {'NUMPY/SCIPY':>10} {'RANDOMPACK':>11} {'FACTOR':>7}")
   for d in make_dists():
+    case_seed = args.seed
+    if case_seed is None:
+      case_seed = random.randint(0, 2**31 - 1)
+    np_rng = np.random.default_rng(case_seed)
+    rp_rng.seed(case_seed)
     np_ns = time_dist(lambda: d.np_fn(np_rng, chunk), chunk, bench_time)
     rp_ns = time_dist(lambda: d.rp_fn(rp_rng, chunk), chunk, bench_time)
     factor = np_ns / rp_ns if rp_ns > 0 else float("nan")

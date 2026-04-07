@@ -52,7 +52,7 @@ static void print_help(void) {
   printf("  -e engine     RNG engine (default x256++simd)\n");
   printf("  -t seconds    Benchmark time per distribution (default 0.1)\n");
   printf("  -c chunk      Chunk size (values per call, default 4096)\n");
-  printf("  -s seed       RNG seed (default 7)\n");
+  printf("  -s seed       Fixed RNG seed (default random seed per distribution)\n");
   printf("  -d digits     Decimal places for ns output (default 2)\n");
   printf("  -b            Use bitexact log/exp implementations\n\n");
   printf("Engines:\n");
@@ -62,15 +62,16 @@ static void print_help(void) {
 }
 
 static bool get_options(int argc, char **argv, char **engine, double *bench_time,
-                        int *chunk, int *seed, int *digits, bool *bitexact,
-                        bool *help) {
+                        int *chunk, int *seed, bool *have_seed, int *digits,
+                        bool *bitexact, bool *help) {
   opterr = 0;
   optind = 1;
   int opt;
   *engine = "x256++simd";
   *bench_time = 0.1;
   *chunk = 4096;
-  *seed = 7;
+  *seed = 0;
+  *have_seed = false;
   *digits = 2;
   *bitexact = false;
   *help = false;
@@ -94,6 +95,7 @@ static bool get_options(int argc, char **argv, char **engine, double *bench_time
         break;
       case 's':
         *seed = atoi(optarg);
+        *have_seed = true;
         break;
       case 'd':
         *digits = atoi(optarg);
@@ -194,14 +196,24 @@ static void fill_wrapperf(float out[], int n, float param[], randompack_rng *rng
   ASSERT(fill_distf(out, n, param, rng));
 }
 
+static void set_seed(randompack_rng *rng, int seed, bool have_seed) {
+  bool ok;
+  if (have_seed)
+    ok = randompack_seed(seed, 0, 0, rng);
+  else
+    ok = randompack_randomize(rng);
+  ASSERT(ok);
+}
+
 int main(int argc, char **argv) {
   char *engine;
   double bench_time;
   int chunk, seed, digits;
+  bool have_seed;
   bool bitexact;
   bool help;
-  if (!get_options(argc, argv, &engine, &bench_time, &chunk, &seed, &digits,
-      &bitexact, &help) || help) {
+  if (!get_options(argc, argv, &engine, &bench_time, &chunk, &seed, &have_seed,
+      &digits, &bitexact, &help) || help) {
     print_help();
     return help ? 0 : 1;
   }
@@ -225,12 +237,6 @@ int main(int argc, char **argv) {
       randompack_free(rngf);
       return 1;
     }
-  }
-  if (!randompack_seed(seed, 0, 0, rngd) || !randompack_seed(seed, 0, 0, rngf)) {
-    fprintf(stderr, "randompack_seed failed\n");
-    randompack_free(rngd);
-    randompack_free(rngf);
-    return 1;
   }
   warmup_cpu(0.1);
   dist_spec dists[] = {
@@ -270,8 +276,12 @@ int main(int argc, char **argv) {
     parf[3] = (float)dists[i].param[2];
     double x[4];
     float xf[4];
+    set_seed(rngd, seed, have_seed);
+    set_seed(rngf, seed, have_seed);
     fill_dist(x, 4, par, rngd);
     fill_distf(xf, 4, parf, rngf);
+    set_seed(rngd, seed, have_seed);
+    set_seed(rngf, seed, have_seed);
     double nsd = time_double(chunk, bench_time, fill_wrapper, par, rngd);
     double nsf = time_float(chunk, bench_time, fill_wrapperf, parf, rngf);
     printf("%-18s", dists[i].name);

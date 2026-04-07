@@ -59,14 +59,17 @@ function main()
   chunk = 4096
   bench_time = 0.2
   bitexact = false
+  seed = nothing
   i = 1
   while i <= length(ARGS)
     arg = ARGS[i]
     if arg == "-h" || arg == "--help"
-      println("Usage: julia TimeDist.jl [engine] [-c chunk] [-b]")
+      println("Usage: julia TimeDist.jl [engine] [-c chunk] [-t sec] [-b] [-s seed]")
       println("  engine     RNG engine name (default: x256++simd)")
       println("  -c chunk   number of draws per call (default: 4096)")
+      println("  -t sec     time per case in seconds (default: 0.2)")
       println("  -b         use bitexact log/exp in randompack")
+      println("  -s seed    fixed seed (default random seed per case)")
       return
     elseif arg == "-c" || arg == "--chunk"
       if i == length(ARGS)
@@ -77,8 +80,23 @@ function main()
       if chunk <= 0
         error("chunk must be positive")
       end
+    elseif arg == "-t"
+      if i == length(ARGS)
+        error("missing value for -t")
+      end
+      i += 1
+      bench_time = parse(Float64, ARGS[i])
+      if bench_time <= 0
+        error("time per case must be positive")
+      end
     elseif arg == "-b" || arg == "--bitexact"
       bitexact = true
+    elseif arg == "-s"
+      if i == length(ARGS)
+        error("missing value for -s")
+      end
+      i += 1
+      seed = parse(Int, ARGS[i])
     elseif startswith(arg, "-")
       error("unknown argument: " * arg)
     elseif engine == ""
@@ -97,6 +115,7 @@ function main()
   sink = Ref{Float64}(0.0)
 
   rng = rng_create(engine; bitexact=bitexact)
+  base_rng = Xoshiro()
 
   d_logn = LogNormal(0, 1)
   d_unif = Uniform(2, 5)
@@ -113,10 +132,10 @@ function main()
   d_w = Weibull(2, 3)
 
   # Warmup: ensure JIT compile and keep CPU "awake" for at least 0.1s
-  rand!(buf); consume!(sink, buf)
-  randn!(buf); consume!(sink, buf)
-  randexp!(buf); consume!(sink, buf)
-  rand!(d_gam, buf); consume!(sink, buf)
+  rand!(base_rng, buf); consume!(sink, buf)
+  randn!(base_rng, buf); consume!(sink, buf)
+  randexp!(base_rng, buf); consume!(sink, buf)
+  rand!(base_rng, d_gam, buf); consume!(sink, buf)
   random_unif!(rng, buf); consume!(sink, buf)
   warmup!(0.1)
 
@@ -125,14 +144,19 @@ function main()
           "Factor")
 
   function run(name::String, fill_base!::Function, fill_rp!::Function)
+    case_seed = seed === nothing ? rand(RandomDevice(), 1:typemax(Int32)) : seed
+    Random.seed!(base_rng, case_seed)
+    rng_seed!(rng, case_seed)
     base_ns = time_dist!(chunk, reps, bench_time, fill_base!, sink)
+    Random.seed!(base_rng, case_seed)
+    rng_seed!(rng, case_seed)
     rp_ns = time_dist!(chunk, reps, bench_time, fill_rp!, sink)
     factor = base_ns / rp_ns
     @printf("%-18s %10.2f %11.2f %8.2f\n", name, base_ns, rp_ns, factor)
   end
 
   run("unif(0,1)", () -> begin
-    rand!(buf)
+    rand!(base_rng, buf)
     consume!(sink, buf)
   end, () -> begin
     random_unif!(rng, buf)
@@ -140,7 +164,7 @@ function main()
   end)
 
   run("unif(2,5)", () -> begin
-    rand!(d_unif, buf)
+    rand!(base_rng, d_unif, buf)
     consume!(sink, buf)
   end, () -> begin
     random_unif!(rng, buf; a=2, b=5)
@@ -148,7 +172,7 @@ function main()
   end)
 
   run("std.normal", () -> begin
-    randn!(buf)
+    randn!(base_rng, buf)
     consume!(sink, buf)
   end, () -> begin
     random_normal!(rng, buf)
@@ -156,7 +180,7 @@ function main()
   end)
 
   run("normal(2,3)", () -> begin
-    rand!(d_norm, buf)
+    rand!(base_rng, d_norm, buf)
     consume!(sink, buf)
   end, () -> begin
     random_normal!(rng, buf; mu=2, sigma=3)
@@ -164,7 +188,7 @@ function main()
   end)
 
   run("exp(2)", () -> begin
-    rand!(d_exp2, buf)
+    rand!(base_rng, d_exp2, buf)
     consume!(sink, buf)
   end, () -> begin
     random_exp!(rng, buf; scale=2)
@@ -172,7 +196,7 @@ function main()
   end)
 
   run("std.exp", () -> begin
-    randexp!(buf)
+    randexp!(base_rng, buf)
     consume!(sink, buf)
   end, () -> begin
     random_exp!(rng, buf; scale=1)
@@ -180,7 +204,7 @@ function main()
   end)
 
   run("lognormal(0,1)", () -> begin
-    rand!(d_logn, buf)
+    rand!(base_rng, d_logn, buf)
     consume!(sink, buf)
   end, () -> begin
     random_lognormal!(rng, buf; mu=0, sigma=1)
@@ -188,7 +212,7 @@ function main()
   end)
 
   run("skew-normal(0,1,5)", () -> begin
-    rand!(d_skew, buf)
+    rand!(base_rng, d_skew, buf)
     consume!(sink, buf)
   end, () -> begin
     random_skew_normal!(rng, buf; mu=0, sigma=1, alpha=5)
@@ -196,7 +220,7 @@ function main()
   end)
 
   run("gumbel(0,1)", () -> begin
-    rand!(d_gumbel, buf)
+    rand!(base_rng, d_gumbel, buf)
     consume!(sink, buf)
   end, () -> begin
     random_gumbel!(rng, buf; mu=0, beta=1)
@@ -204,7 +228,7 @@ function main()
   end)
 
   run("pareto(1,2)", () -> begin
-    rand!(d_pareto, buf)
+    rand!(base_rng, d_pareto, buf)
     consume!(sink, buf)
   end, () -> begin
     random_pareto!(rng, buf; xm=1, alpha=2)
@@ -212,7 +236,7 @@ function main()
   end)
 
   run("gamma(2,3)", () -> begin
-    rand!(d_gam, buf)
+    rand!(base_rng, d_gam, buf)
     consume!(sink, buf)
   end, () -> begin
     random_gamma!(rng, buf; shape=2, scale=3)
@@ -220,7 +244,7 @@ function main()
   end)
 
   run("chi2(5)", () -> begin
-    rand!(d_chi, buf)
+    rand!(base_rng, d_chi, buf)
     consume!(sink, buf)
   end, () -> begin
     random_chi2!(rng, buf; nu=5)
@@ -228,7 +252,7 @@ function main()
   end)
 
   run("beta(2,5)", () -> begin
-    rand!(d_beta, buf)
+    rand!(base_rng, d_beta, buf)
     consume!(sink, buf)
   end, () -> begin
     random_beta!(rng, buf; a=2, b=5)
@@ -236,7 +260,7 @@ function main()
   end)
 
   run("t(10)", () -> begin
-    rand!(d_t, buf)
+    rand!(base_rng, d_t, buf)
     consume!(sink, buf)
   end, () -> begin
     random_t!(rng, buf; nu=10)
@@ -244,7 +268,7 @@ function main()
   end)
 
   run("F(5,10)", () -> begin
-    rand!(d_f, buf)
+    rand!(base_rng, d_f, buf)
     consume!(sink, buf)
   end, () -> begin
     random_f!(rng, buf; nu1=5, nu2=10)
@@ -252,7 +276,7 @@ function main()
   end)
 
   run("weibull(2,3)", () -> begin
-    rand!(d_w, buf)
+    rand!(base_rng, d_w, buf)
     consume!(sink, buf)
   end, () -> begin
     random_weibull!(rng, buf; shape=2, scale=3)

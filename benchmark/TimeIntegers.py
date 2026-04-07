@@ -2,6 +2,7 @@
 # TimeIntegers.py: time integer draws and permutations (ns/value) in Python.
 
 import argparse
+import random
 import time
 from dataclasses import dataclass
 from typing import Callable, List
@@ -172,11 +173,9 @@ def main() -> None:
                       help="benchmark time per case (seconds)")
   parser.add_argument("-c", type=int, default=4096, dest="chunk",
                       help="chunk size (values per call)")
-  parser.add_argument("-s", type=int, default=7, dest="seed",
-                      help="random seed")
+  parser.add_argument("-s", type=int, default=None, dest="seed",
+                      help="fixed seed (default random seed per case)")
   args = parser.parse_args()
-
-  rng = np.random.default_rng(args.seed)
 
   int_ranges = make_int_ranges()
   u8_specs = [U8Spec(2, "bound 2"), U8Spec(10, "bound 10")]
@@ -213,25 +212,37 @@ def main() -> None:
   print(f"chunk:            {args.chunk}")
   print("\n%-14s %8s" % ("int range", "ns/value"))
   for spec in int_ranges:
+    case_seed = args.seed if args.seed is not None else random.randint(0, 2**31 - 1)
+    rng = np.random.default_rng(case_seed)
     ns = time_int_range(rng, args.chunk, args.bench_time, spec.m, spec.n)
     print("%-14s %8.2f" % (spec.label, ns))
   print("\n%-14s %8s" % ("long long", "ns/value"))
   for spec in ll_ranges:
+    case_seed = args.seed if args.seed is not None else random.randint(0, 2**31 - 1)
+    rng = np.random.default_rng(case_seed)
     ns = time_long_long_range(rng, args.chunk, args.bench_time, spec.m, spec.n)
     print("%-14s %8.2f" % (spec.label, ns))
   print("\n%-14s %8s" % ("uint8", "ns/value"))
   for spec in u8_specs:
+    case_seed = args.seed if args.seed is not None else random.randint(0, 2**31 - 1)
+    rng = np.random.default_rng(case_seed)
     ns = time_uint8_bound(rng, args.chunk, args.bench_time, spec.bound)
     print("%-14s %8.2f" % (spec.label, ns))
   print("\n%-14s %8s" % ("uint64", "ns/value"))
+  case_seed = args.seed if args.seed is not None else random.randint(0, 2**31 - 1)
+  rng = np.random.default_rng(case_seed)
   ns_u64 = time_uint64_bound(rng, args.chunk, args.bench_time, (1 << 64) // 3)
   print("%-14s %8.2f" % ("UINT64_MAX/3", ns_u64))
   print("\n%-14s %10s" % ("perm n", "ns/value"))
   for spec in perm_specs:
+    case_seed = args.seed if args.seed is not None else random.randint(0, 2**31 - 1)
+    rng = np.random.default_rng(case_seed)
     ns = time_perm(rng, args.bench_time, spec.n)
     print("%-14s %10.2f" % (spec.label, ns))
   print("\n%-14s %10s" % ("sample", "ns/value"))
   for spec in sample_specs:
+    case_seed = args.seed if args.seed is not None else random.randint(0, 2**31 - 1)
+    rng = np.random.default_rng(case_seed)
     ns = time_sample(rng, args.bench_time, spec.n, spec.k)
     print("%-14s %10.2f" % (spec.label, ns))
 

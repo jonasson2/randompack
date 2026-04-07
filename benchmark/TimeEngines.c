@@ -20,7 +20,7 @@ static void print_help(void) {
   printf("  -t seconds    Benchmark time per engine (default 0.1)\n");
   printf("  -w seconds    CPU warmup time before timing (default 0.1)\n");
   printf("  -c chunk      Chunk size (values per fill, default 4096)\n");
-  printf("  -s seed       RNG seed (default 7)\n\n");
+  printf("  -s seed       Fixed RNG seed (default random seed per engine)\n\n");
   printf("  -d digits     Decimal places for ns output (default 2)\n");
   printf("  -S            Benchmark SIMD engines only\n");
   printf("  -n            Benchmark non-SIMD engines only\n\n");
@@ -29,15 +29,16 @@ static void print_help(void) {
 }
 
 static bool get_options(int argc, char **argv,
-  double *bench_time, double *warmup_time, int *chunk, int *seed, int *digits,
-  bool *simd_only, bool *nonsimd_only, bool *help) {
+  double *bench_time, double *warmup_time, int *chunk, int *seed, bool *have_seed,
+  int *digits, bool *simd_only, bool *nonsimd_only, bool *help) {
   opterr = 0;
   optind = 1;
   int opt;
   *bench_time = 0.1;
   *warmup_time = 0.1;
   *chunk = 4096;
-  *seed = 7;
+  *seed = 0;
+  *have_seed = false;
   *digits = 2;
   *simd_only = false;
   *nonsimd_only = false;
@@ -67,6 +68,7 @@ static bool get_options(int argc, char **argv,
         break;
       case 's':
         *seed = atoi(optarg);
+        *have_seed = true;
         break;
       case 'd':
         *digits = atoi(optarg);
@@ -99,9 +101,10 @@ int main(int argc, char **argv) {
   double bench_time;
   double warmup_time;
   int chunk, seed, digits;
+  bool have_seed;
   bool simd_only, nonsimd_only, help;
-  if (!get_options(argc, argv, &bench_time, &warmup_time, &chunk, &seed, &digits,
-      &simd_only, &nonsimd_only, &help) || help) {
+  if (!get_options(argc, argv, &bench_time, &warmup_time, &chunk, &seed,
+      &have_seed, &digits, &simd_only, &nonsimd_only, &help) || help) {
     print_help();
     return help ? 0 : 1;
   }
@@ -148,14 +151,14 @@ int main(int argc, char **argv) {
       fprintf(stderr, "randompack_create failed: %s\n", name);
       continue;
     }
-    ok = randompack_seed(seed, 0, 0, rng);
-    if (!ok) {
+    if (have_seed)
+      ok = randompack_seed(seed, 0, 0, rng);
+    else
       ok = randompack_randomize(rng);
-      if (!ok) {
-        fprintf(stderr, "randompack_seed/randomize failed: %s\n", name);
-        randompack_free(rng);
-        continue;
-      }
+    if (!ok) {
+      fprintf(stderr, "randompack_seed/randomize failed: %s\n", name);
+      randompack_free(rng);
+      continue;
     }
     double ns64 = time_u64(chunk, bench_time, fill_u64, rng);
     double gb64 = 8/ns64;
