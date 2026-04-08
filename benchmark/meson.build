@@ -19,6 +19,18 @@ time_dist_c = executable(
   dependencies : [randompack_dep],
 )
 
+time_unif_src = ['TimeUnif.c', 'TimeUtil.c'] + common_util
+if host_machine.cpu_family() == 'x86_64'
+  time_unif_src += ['unif25_x86_64.S']
+endif
+
+time_unif = executable(
+  'TimeUnif',
+  time_unif_src,
+  include_directories : [common_inc],
+  dependencies : [randompack_dep],
+)
+
 time_norm_exp = executable(
   'TimeNormExp',
   ['TimeNormExp.c', 'TimeUtil.c'] + common_util,

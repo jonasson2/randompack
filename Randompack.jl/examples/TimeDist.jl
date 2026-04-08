@@ -172,125 +172,125 @@ function main()
     consume!(sink, buf)
   end)
 
-  run("std.normal", () -> begin
-    randn!(base_rng, buf)
-    consume!(sink, buf)
-  end, () -> begin
-    random_normal!(rng, buf)
-    consume!(sink, buf)
-  end)
+  # run("std.normal", () -> begin
+  #   randn!(base_rng, buf)
+  #   consume!(sink, buf)
+  # end, () -> begin
+  #   random_normal!(rng, buf)
+  #   consume!(sink, buf)
+  # end)
 
-  run("normal(2,3)", () -> begin
-    rand!(base_rng, d_norm, buf)
-    consume!(sink, buf)
-  end, () -> begin
-    random_normal!(rng, buf; mu=2, sigma=3)
-    consume!(sink, buf)
-  end)
+  # run("normal(2,3)", () -> begin
+  #   rand!(base_rng, d_norm, buf)
+  #   consume!(sink, buf)
+  # end, () -> begin
+  #   random_normal!(rng, buf; mu=2, sigma=3)
+  #   consume!(sink, buf)
+  # end)
 
-  run("std.exp", () -> begin
-    randexp!(base_rng, buf)
-    consume!(sink, buf)
-  end, () -> begin
-    random_exp!(rng, buf; scale=1)
-    consume!(sink, buf)
-  end)
+  # run("std.exp", () -> begin
+  #   randexp!(base_rng, buf)
+  #   consume!(sink, buf)
+  # end, () -> begin
+  #   random_exp!(rng, buf; scale=1)
+  #   consume!(sink, buf)
+  # end)
 
-  run("exp(2)", () -> begin
-    rand!(base_rng, d_exp2, buf)
-    consume!(sink, buf)
-  end, () -> begin
-    random_exp!(rng, buf; scale=2)
-    consume!(sink, buf)
-  end)
+  # run("exp(2)", () -> begin
+  #   rand!(base_rng, d_exp2, buf)
+  #   consume!(sink, buf)
+  # end, () -> begin
+  #   random_exp!(rng, buf; scale=2)
+  #   consume!(sink, buf)
+  # end)
 
-  run("lognormal(0,1)", () -> begin
-    rand!(base_rng, d_logn, buf)
-    consume!(sink, buf)
-  end, () -> begin
-    random_lognormal!(rng, buf; mu=0, sigma=1)
-    consume!(sink, buf)
-  end)
+  # run("lognormal(0,1)", () -> begin
+  #   rand!(base_rng, d_logn, buf)
+  #   consume!(sink, buf)
+  # end, () -> begin
+  #   random_lognormal!(rng, buf; mu=0, sigma=1)
+  #   consume!(sink, buf)
+  # end)
 
-  run("skew-normal(0,1,5)", () -> begin
-    rand!(base_rng, d_skew, buf)
-    consume!(sink, buf)
-  end, () -> begin
-    random_skew_normal!(rng, buf; mu=0, sigma=1, alpha=5)
-    consume!(sink, buf)
-  end)
+  # run("skew-normal(0,1,5)", () -> begin
+  #   rand!(base_rng, d_skew, buf)
+  #   consume!(sink, buf)
+  # end, () -> begin
+  #   random_skew_normal!(rng, buf; mu=0, sigma=1, alpha=5)
+  #   consume!(sink, buf)
+  # end)
 
-  run("gumbel(0,1)", () -> begin
-    rand!(base_rng, d_gumbel, buf)
-    consume!(sink, buf)
-  end, () -> begin
-    random_gumbel!(rng, buf; mu=0, beta=1)
-    consume!(sink, buf)
-  end)
+  # run("gumbel(0,1)", () -> begin
+  #   rand!(base_rng, d_gumbel, buf)
+  #   consume!(sink, buf)
+  # end, () -> begin
+  #   random_gumbel!(rng, buf; mu=0, beta=1)
+  #   consume!(sink, buf)
+  # end)
 
-  run("pareto(1,2)", () -> begin
-    rand!(base_rng, d_pareto, buf)
-    consume!(sink, buf)
-  end, () -> begin
-    random_pareto!(rng, buf; xm=1, alpha=2)
-    consume!(sink, buf)
-  end)
+  # run("pareto(1,2)", () -> begin
+  #   rand!(base_rng, d_pareto, buf)
+  #   consume!(sink, buf)
+  # end, () -> begin
+  #   random_pareto!(rng, buf; xm=1, alpha=2)
+  #   consume!(sink, buf)
+  # end)
 
-  run("gamma(2,3)", () -> begin
-    rand!(base_rng, d_gam, buf)
-    consume!(sink, buf)
-  end, () -> begin
-    random_gamma!(rng, buf; shape=2, scale=3)
-    consume!(sink, buf)
-  end)
+  # run("gamma(2,3)", () -> begin
+  #   rand!(base_rng, d_gam, buf)
+  #   consume!(sink, buf)
+  # end, () -> begin
+  #   random_gamma!(rng, buf; shape=2, scale=3)
+  #   consume!(sink, buf)
+  # end)
 
-  run("gamma(0.5,2)", () -> begin
-    rand!(base_rng, d_gam_0_5_2, buf)
-    consume!(sink, buf)
-  end, () -> begin
-    random_gamma!(rng, buf; shape=0.5, scale=2)
-    consume!(sink, buf)
-  end)
+  # run("gamma(0.5,2)", () -> begin
+  #   rand!(base_rng, d_gam_0_5_2, buf)
+  #   consume!(sink, buf)
+  # end, () -> begin
+  #   random_gamma!(rng, buf; shape=0.5, scale=2)
+  #   consume!(sink, buf)
+  # end)
 
-  run("beta(2,5)", () -> begin
-    rand!(base_rng, d_beta, buf)
-    consume!(sink, buf)
-  end, () -> begin
-    random_beta!(rng, buf; a=2, b=5)
-    consume!(sink, buf)
-  end)
+  # run("beta(2,5)", () -> begin
+  #   rand!(base_rng, d_beta, buf)
+  #   consume!(sink, buf)
+  # end, () -> begin
+  #   random_beta!(rng, buf; a=2, b=5)
+  #   consume!(sink, buf)
+  # end)
 
-  run("chi2(5)", () -> begin
-    rand!(base_rng, d_chi, buf)
-    consume!(sink, buf)
-  end, () -> begin
-    random_chi2!(rng, buf; nu=5)
-    consume!(sink, buf)
-  end)
+  # run("chi2(5)", () -> begin
+  #   rand!(base_rng, d_chi, buf)
+  #   consume!(sink, buf)
+  # end, () -> begin
+  #   random_chi2!(rng, buf; nu=5)
+  #   consume!(sink, buf)
+  # end)
 
-  run("t(10)", () -> begin
-    rand!(base_rng, d_t, buf)
-    consume!(sink, buf)
-  end, () -> begin
-    random_t!(rng, buf; nu=10)
-    consume!(sink, buf)
-  end)
+  # run("t(10)", () -> begin
+  #   rand!(base_rng, d_t, buf)
+  #   consume!(sink, buf)
+  # end, () -> begin
+  #   random_t!(rng, buf; nu=10)
+  #   consume!(sink, buf)
+  # end)
 
-  run("F(5,10)", () -> begin
-    rand!(base_rng, d_f, buf)
-    consume!(sink, buf)
-  end, () -> begin
-    random_f!(rng, buf; nu1=5, nu2=10)
-    consume!(sink, buf)
-  end)
+  # run("F(5,10)", () -> begin
+  #   rand!(base_rng, d_f, buf)
+  #   consume!(sink, buf)
+  # end, () -> begin
+  #   random_f!(rng, buf; nu1=5, nu2=10)
+  #   consume!(sink, buf)
+  # end)
 
-  run("weibull(2,3)", () -> begin
-    rand!(base_rng, d_w, buf)
-    consume!(sink, buf)
-  end, () -> begin
-    random_weibull!(rng, buf; shape=2, scale=3)
-    consume!(sink, buf)
-  end)
+  # run("weibull(2,3)", () -> begin
+  #   rand!(base_rng, d_w, buf)
+  #   consume!(sink, buf)
+  # end, () -> begin
+  #   random_weibull!(rng, buf; shape=2, scale=3)
+  #   consume!(sink, buf)
+  # end)
 
   if sink[] == 123456789
     println("sink")
