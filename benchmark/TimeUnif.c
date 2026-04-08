@@ -2,8 +2,6 @@
 // TimeUnif.c: dedicated timing of randompack_u01 and randompack_unif.
 
 #include <stdbool.h>
-#include <stdint.h>
-#include <dlfcn.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "getopt.h"
@@ -12,21 +10,6 @@
 #include "Util.h"
 #include "randompack.h"
 #include "randompack_config.h"
-
-#if defined(__x86_64__)
-bool randompack_unif25_x86_64(double x[], size_t len, randompack_rng *rng);
-#endif
-
-#if defined(__GNUC__) || defined(__clang__)
-#define FUNC_ALIGN64 __attribute__((aligned(64)))
-#define NOINLINE __attribute__((noinline))
-#else
-#define FUNC_ALIGN64
-#define NOINLINE
-#endif
-
-typedef bool (*unif_fn)(double x[], size_t len, double a, double b,
-  randompack_rng *rng);
 
 static void print_help(void) {
   printf("TimeUnif — dedicated timing of uniform doubles\n");
@@ -133,28 +116,6 @@ static double time_unif_direct(int chunk, double bench_time, randompack_rng *rng
   TIME_DOUBLE_CALL(randompack_unif(buf, (size_t)chunk, a, b, rng));
 }
 
-static double time_unif_dlsym(int chunk, double bench_time, randompack_rng *rng,
-  unif_fn fn) {
-  double a = 2;
-  double b = 5;
-  TIME_DOUBLE_CALL(fn(buf, (size_t)chunk, a, b, rng));
-}
-
-#if defined(__x86_64__)
-static double time_unif_asm(int chunk, double bench_time, randompack_rng *rng) {
-  TIME_DOUBLE_CALL(randompack_unif25_x86_64(buf, (size_t)chunk, rng));
-}
-#endif
-
-static NOINLINE FUNC_ALIGN64 bool randompack_unif25_aligned(double x[], size_t len,
-  randompack_rng *rng) {
-  return randompack_unif(x, len, 2, 5, rng);
-}
-
-static double time_unif_aligned(int chunk, double bench_time, randompack_rng *rng) {
-  TIME_DOUBLE_CALL(randompack_unif25_aligned(buf, (size_t)chunk, rng));
-}
-
 static void warm_u01(randompack_rng *rng) {
   double x[4];
   ASSERT(randompack_u01(x, 4, rng));
@@ -183,9 +144,6 @@ int main(int argc, char **argv) {
   bool have_seed;
   bool bitexact;
   bool help;
-  void *sym;
-  char *err;
-  unif_fn unif_ptr;
   if (!get_options(argc, argv, &engine, &bench_time, &chunk, &seed, &have_seed,
       &digits, &bitexact, &help) || help) {
     print_help();
@@ -201,15 +159,6 @@ int main(int argc, char **argv) {
     randompack_free(rng);
     return 1;
   }
-  dlerror();
-  sym = dlsym(RTLD_DEFAULT, "randompack_unif");
-  err = dlerror();
-  if (err || !sym) {
-    fprintf(stderr, "dlsym(randompack_unif) failed: %s\n", err ? err : "null");
-    randompack_free(rng);
-    return 1;
-  }
-  unif_ptr = (unif_fn)sym;
   warmup_cpu(0.1);
   printf("engine:           %s\n", engine);
   printf("time per value:   ns/value\n");
@@ -226,23 +175,6 @@ int main(int argc, char **argv) {
   set_seed(rng, seed, have_seed);
   printf("%-18s %8.*f\n", "unif(2,5)", digits,
     time_unif_direct(chunk, bench_time, rng));
-  set_seed(rng, seed, have_seed);
-  warm_unif(rng);
-  set_seed(rng, seed, have_seed);
-  printf("%-18s %8.*f\n", "unif(2,5)-dlsym", digits,
-    time_unif_dlsym(chunk, bench_time, rng, unif_ptr));
-  set_seed(rng, seed, have_seed);
-  warm_unif(rng);
-  set_seed(rng, seed, have_seed);
-  printf("%-18s %8.*f\n", "unif(2,5)-align", digits,
-    time_unif_aligned(chunk, bench_time, rng));
-#if defined(__x86_64__)
-  set_seed(rng, seed, have_seed);
-  warm_unif(rng);
-  set_seed(rng, seed, have_seed);
-  printf("%-18s %8.*f\n", "unif(2,5)-asm", digits,
-    time_unif_asm(chunk, bench_time, rng));
-#endif
   randompack_free(rng);
   return 0;
 }
