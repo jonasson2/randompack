@@ -13,9 +13,11 @@ Options:
   -o f   Write distribution means to file f
   -H h   Run the benchmark remotely on host h over ssh
   -D d   Remote repo root (default ~/randompack)
+  -C     Run release/benchmark/TimeDistributions
   -p     Run python/examples/TimeDist.py
   -j     Run Randompack.jl/examples/TimeDist.jl
   -R     Run r-package/inst/examples/TimeDist.R
+  -2     Use the second column
   -f     Use the third column instead of the default second column
   -3     Same as -f
   -4     Use the fourth column
@@ -27,6 +29,7 @@ Notes:
   The default benchmark is release/benchmark/TimeDistributions with -d 3.
   All remaining arguments are passed to the selected benchmark unchanged.
   In remote mode, only the timing program runs remotely.
+  Use -H mac for the local machine.
 EOF
 }
 
@@ -127,6 +130,9 @@ while [ $# -gt 0 ]; do
       fi
       remote_dir="$1"
       ;;
+    -C)
+      mode=c
+      ;;
     -p)
       mode=python
       ;;
@@ -138,6 +144,9 @@ while [ $# -gt 0 ]; do
       ;;
     -f)
       field=3
+      ;;
+    -2)
+      field=2
       ;;
     -3)
       field=3
@@ -163,6 +172,10 @@ while [ $# -gt 0 ]; do
   esac
   shift
 done
+
+if [ "$remote_host" = mac ]; then
+  remote_host=
+fi
 
 case "$repeats" in
   ''|*[!0-9]*)
