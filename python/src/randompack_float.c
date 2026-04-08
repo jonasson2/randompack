@@ -58,18 +58,6 @@ bool randompack_normf(float x[], size_t len, randompack_rng *rng) {
   return true;
 }
 
-bool randompack_expf(float x[], size_t len, float scale, randompack_rng *rng) {
-  if (!rng) return false;
-  if (!x || scale <= 0) {
-    rng->last_error = "invalid arguments to randompack_expf";
-    return false;
-  }
-  rng->last_error = 0;
-  rand_expf(x, len, rng);
-  if (scale != 1.0f) scale_float_inplace(x, len, scale, rng);
-  return true;
-}
-
 bool randompack_normalf(float x[], size_t len, float mu, float sigma,
   randompack_rng *rng) {
   if (!rng) return false;
@@ -80,6 +68,18 @@ bool randompack_normalf(float x[], size_t len, float mu, float sigma,
   rng->last_error = 0;
   rand_normf(x, len, rng);
   if (mu != 0 || sigma != 1) shift_scale_float_inplace(x, len, mu, sigma, rng);
+  return true;
+}
+
+bool randompack_expf(float x[], size_t len, float scale, randompack_rng *rng) {
+  if (!rng) return false;
+  if (!x || scale <= 0) {
+    rng->last_error = "invalid arguments to randompack_expf";
+    return false;
+  }
+  rng->last_error = 0;
+  rand_expf(x, len, rng);
+  if (scale != 1.0f) scale_float_inplace(x, len, scale, rng);
   return true;
 }
 

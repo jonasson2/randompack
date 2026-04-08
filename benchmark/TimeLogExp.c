@@ -146,6 +146,13 @@ static inline void consume32(const void *p) {
   sink ^= u;
 }
 
+static inline void consume64(const void *p) {
+  static volatile uint64_t sink;
+  uint64_t u;
+  memcpy(&u, p, sizeof(u));
+  sink ^= u;
+}
+
 typedef double (*exp_fn)(double x);
 typedef float (*expf_fn)(float x);
 typedef void (*arr_d_fn)(double out[], const double in[], int n);
@@ -248,6 +255,30 @@ static void apply_fn_scalar(double out[], const double in[], int n, exp_fn fn) {
 static void apply_fn_scalar_f(float out[], const float in[], int n, expf_fn fn) {
   for (int i = 0; i < n; i++)
     out[i] = fn(in[i]);
+}
+
+static void fill_linspace_d(double out[], int n, double lo, double hi) {
+  if (n <= 0)
+    return;
+  if (n == 1) {
+    out[0] = lo;
+    return;
+  }
+  double step = (hi - lo)/(double)(n - 1);
+  for (int i = 0; i < n; i++)
+    out[i] = lo + step*(double)i;
+}
+
+static void fill_linspace_f(float out[], int n, float lo, float hi) {
+  if (n <= 0)
+    return;
+  if (n == 1) {
+    out[0] = lo;
+    return;
+  }
+  float step = (hi - lo)/(float)(n - 1);
+  for (int i = 0; i < n; i++)
+    out[i] = lo + step*(float)i;
 }
 
 #if defined(BUILD_AVX512)
@@ -358,6 +389,48 @@ static double time_fn_scalar_f(int chunk, double bench_time, expf_fn fn, float i
     t = clock_nsec();
   }
   return (calls > 0) ? total/((double)calls*chunk) : 0;
+}
+
+static double time_single_log_d(const double in[], int n, double bench_time,
+                                exp_fn fn) {
+  int64_t calls = 0;
+  uint64_t total = 0;
+  uint64_t t0 = clock_nsec();
+  uint64_t deadline = t0 + (uint64_t)(bench_time*1e9);
+  uint64_t t = t0;
+  while (t < deadline) {
+    uint64_t t1 = clock_nsec();
+    for (int i = 0; i < n; i++) {
+      double y = fn(in[i]);
+      consume64(&y);
+    }
+    uint64_t t2 = clock_nsec();
+    total += t2 - t1;
+    calls += n;
+    t = clock_nsec();
+  }
+  return (calls > 0) ? total/(double)calls : 0;
+}
+
+static double time_single_log_f(const float in[], int n, double bench_time,
+                                expf_fn fn) {
+  int64_t calls = 0;
+  uint64_t total = 0;
+  uint64_t t0 = clock_nsec();
+  uint64_t deadline = t0 + (uint64_t)(bench_time*1e9);
+  uint64_t t = t0;
+  while (t < deadline) {
+    uint64_t t1 = clock_nsec();
+    for (int i = 0; i < n; i++) {
+      float y = fn(in[i]);
+      consume32(&y);
+    }
+    uint64_t t2 = clock_nsec();
+    total += t2 - t1;
+    calls += n;
+    t = clock_nsec();
+  }
+  return (calls > 0) ? total/(double)calls : 0;
 }
 
 #if defined(USE_ACCEL_VV)
@@ -564,6 +637,9 @@ int main(int argc, char **argv) {
   double *out = 0;
   float *inf = 0;
   float *outf = 0;
+  enum { SINGLE_LOG_N = 4096 };
+  double single_log_in[SINGLE_LOG_N];
+  float single_log_inf[SINGLE_LOG_N];
   if (!ALLOC(in, chunk) || !ALLOC(out, chunk) ||
       !ALLOC(inf, chunk) || !ALLOC(outf, chunk)) {
     fprintf(stderr, "allocation failed\n");
@@ -574,6 +650,8 @@ int main(int argc, char **argv) {
     randompack_free(rng);
     return 1;
   }
+  fill_linspace_d(single_log_in, SINGLE_LOG_N, 0.5, 5.0);
+  fill_linspace_f(single_log_inf, SINGLE_LOG_N, 0.5f, 5.0f);
   exp_spec exps[] = {
     { "openlibm_exp", openlibm_exp },
     { "exp", exp },
@@ -674,6 +752,18 @@ int main(int argc, char **argv) {
   print_inplace_bench_f(chunk, bench_time, inf, outf, rng, inplace_logfs,
     LEN(inplace_logfs));
 #endif
+  printf("\nsingle scalar logs: ns/call\n");
+  printf("grid:             linspace(0.5, 5.0, %d)\n\n", SINGLE_LOG_N);
+  printf("%-22s %10s\n", "Function", "double");
+  ns = time_single_log_d(single_log_in, SINGLE_LOG_N, bench_time, openlibm_log);
+  printf("%-22s %10.2f\n", "openlibm_log", ns);
+  ns = time_single_log_d(single_log_in, SINGLE_LOG_N, bench_time, log);
+  printf("%-22s %10.2f\n", "log", ns);
+  printf("\n%-22s %10s\n", "Function", "float");
+  nsf = time_single_log_f(single_log_inf, SINGLE_LOG_N, bench_time, openlibm_logf);
+  printf("%-22s %10.2f\n", "openlibm_logf", nsf);
+  nsf = time_single_log_f(single_log_inf, SINGLE_LOG_N, bench_time, logf);
+  printf("%-22s %10.2f\n", "logf", nsf);
   FREE(in);
   FREE(out);
   FREE(inf);
