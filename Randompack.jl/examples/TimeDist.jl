@@ -125,6 +125,7 @@ function main()
   d_pareto = Pareto(1, 2)
   d_skew = SkewNormal(0, 1, 5)
   d_gam = Gamma(2, 3)
+  d_gam_0_5_2 = Gamma(0.5, 2)
   d_chi = Chisq(5)
   d_beta = Beta(2, 5)
   d_t = TDist(10)
@@ -187,19 +188,19 @@ function main()
     consume!(sink, buf)
   end)
 
-  run("exp(2)", () -> begin
-    rand!(base_rng, d_exp2, buf)
-    consume!(sink, buf)
-  end, () -> begin
-    random_exp!(rng, buf; scale=2)
-    consume!(sink, buf)
-  end)
-
   run("std.exp", () -> begin
     randexp!(base_rng, buf)
     consume!(sink, buf)
   end, () -> begin
     random_exp!(rng, buf; scale=1)
+    consume!(sink, buf)
+  end)
+
+  run("exp(2)", () -> begin
+    rand!(base_rng, d_exp2, buf)
+    consume!(sink, buf)
+  end, () -> begin
+    random_exp!(rng, buf; scale=2)
     consume!(sink, buf)
   end)
 
@@ -243,11 +244,11 @@ function main()
     consume!(sink, buf)
   end)
 
-  run("chi2(5)", () -> begin
-    rand!(base_rng, d_chi, buf)
+  run("gamma(0.5,2)", () -> begin
+    rand!(base_rng, d_gam_0_5_2, buf)
     consume!(sink, buf)
   end, () -> begin
-    random_chi2!(rng, buf; nu=5)
+    random_gamma!(rng, buf; shape=0.5, scale=2)
     consume!(sink, buf)
   end)
 
@@ -256,6 +257,14 @@ function main()
     consume!(sink, buf)
   end, () -> begin
     random_beta!(rng, buf; a=2, b=5)
+    consume!(sink, buf)
+  end)
+
+  run("chi2(5)", () -> begin
+    rand!(base_rng, d_chi, buf)
+    consume!(sink, buf)
+  end, () -> begin
+    random_chi2!(rng, buf; nu=5)
     consume!(sink, buf)
   end)
 

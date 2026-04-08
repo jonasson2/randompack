@@ -193,13 +193,13 @@ run_case("gamma(2,3)",
          function() rgamma(chunk, shape=2, scale=3),
          function() rng$gamma(chunk, 2, 3))
 
-run_case("chi2(5)",
-         function() rchisq(chunk, df=5),
-         function() rng$chi2(chunk, 5))
-
 run_case("beta(2,5)",
          function() rbeta(chunk, shape1=2, shape2=5),
          function() rng$beta(chunk, 2, 5))
+
+run_case("chi2(5)",
+         function() rchisq(chunk, df=5),
+         function() rng$chi2(chunk, 5))
 
 run_case("t(10)",
          function() rt(chunk, df=10),

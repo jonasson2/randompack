@@ -15,6 +15,7 @@ Outputs:
   rp-python.out
   rp-r.out
   rp-julia.out
+  cpp.out
   numpy.out
   r.out
   julia.out
@@ -46,6 +47,7 @@ if [ ! -x "$mean_time" ]; then
   exit 1
 fi
 
+run_case pluto -2 -c cpp.out
 run_case pluto -2 -p numpy.out
 run_case pluto -2 -R r.out
 run_case pluto -2 -j julia.out

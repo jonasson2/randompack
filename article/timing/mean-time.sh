@@ -14,6 +14,7 @@ Options:
   -H h   Run the benchmark remotely on host h over ssh
   -D d   Remote repo root (default ~/randompack)
   -C     Run release/benchmark/TimeDistributions
+  -c     Run release/benchmark/TimeDistCpp
   -p     Run python/examples/TimeDist.py
   -j     Run Randompack.jl/examples/TimeDist.jl
   -R     Run r-package/inst/examples/TimeDist.R
@@ -42,6 +43,9 @@ make_remote_cmd() {
   case "$mode" in
     c)
       cmd="release/benchmark/TimeDistributions -d 3"
+      ;;
+    cpp)
+      cmd="release/benchmark/TimeDistCpp"
       ;;
     python)
       cmd="python python/examples/TimeDist.py"
@@ -133,6 +137,9 @@ while [ $# -gt 0 ]; do
     -C)
       mode=c
       ;;
+    -c)
+      mode=cpp
+      ;;
     -p)
       mode=python
       ;;
@@ -204,6 +211,7 @@ fi
 script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 repo_root=$(dirname "$(dirname "$script_dir")")
 time_dist="$repo_root/release/benchmark/TimeDistributions"
+time_cpp="$repo_root/release/benchmark/TimeDistCpp"
 python_dist="$repo_root/python/examples/TimeDist.py"
 julia_dist="$repo_root/Randompack.jl/examples/TimeDist.jl"
 r_dist="$repo_root/r-package/inst/examples/TimeDist.R"
@@ -212,6 +220,12 @@ case "$mode" in
   c)
     if [ ! -x "$time_dist" ]; then
       echo "mean-time.sh: missing executable $time_dist" 1>&2
+      exit 1
+    fi
+    ;;
+  cpp)
+    if [ ! -x "$time_cpp" ]; then
+      echo "mean-time.sh: missing executable $time_cpp" 1>&2
       exit 1
     fi
     ;;
@@ -256,6 +270,7 @@ while [ "$i" -le "$repeats" ]; do
             return s
           }
           mode == "c" && /^Distribution[[:space:]]+/ { in_table = 1; next }
+          mode == "cpp" && /^Distribution[[:space:]]+/ { in_table = 1; next }
           mode == "julia" && /^Distribution[[:space:]]+/ { in_table = 1; next }
           mode == "python" && /^DISTRIBUTION[[:space:]]+/ { in_table = 1; next }
           mode != "r" && in_table && NF >= field && $(field) ~ /^[0-9.]+$/ {
@@ -276,6 +291,15 @@ while [ "$i" -le "$repeats" ]; do
     case "$mode" in
       c)
         "$time_dist" -d 3 "$@" \
+          | awk -v field="$field" '
+              /^Distribution[[:space:]]+/ { in_table = 1; next }
+              in_table && NF >= field && $(field) ~ /^[0-9.]+$/ {
+                print $1 "\t" $(field)
+              }
+            ' >> "$tmp"
+        ;;
+      cpp)
+        "$time_cpp" "$@" \
           | awk -v field="$field" '
               /^Distribution[[:space:]]+/ { in_table = 1; next }
               in_table && NF >= field && $(field) ~ /^[0-9.]+$/ {

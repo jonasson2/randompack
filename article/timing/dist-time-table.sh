@@ -11,7 +11,7 @@ combined article table.
 Expected files:
   mac.out        spark.out     xeon.out      i5.out
   rp-python.out  rp-r.out      rp-julia.out
-  numpy.out      r.out         julia.out
+  cpp.out        numpy.out     r.out         julia.out
 
 Each file should contain rows in the format:
   distribution mean
@@ -40,7 +40,7 @@ trap 'rm -rf "$tmpdir"' EXIT HUP INT TERM
 for f in \
   mac.out spark.out xeon.out i5.out \
   rp-python.out rp-r.out rp-julia.out \
-  numpy.out r.out julia.out
+  cpp.out numpy.out r.out julia.out
 do
   if [ -f "$script_dir/$f" ]; then
     cp "$script_dir/$f" "$tmpdir/$f"
@@ -96,9 +96,10 @@ awk '
     file_order[5] = "rp-python.out"
     file_order[6] = "rp-r.out"
     file_order[7] = "rp-julia.out"
-    file_order[8] = "numpy.out"
-    file_order[9] = "r.out"
-    file_order[10] = "julia.out"
+    file_order[8] = "cpp.out"
+    file_order[9] = "numpy.out"
+    file_order[10] = "r.out"
+    file_order[11] = "julia.out"
     col_head[1] = "Mac-M4"
     col_head[2] = "Spark"
     col_head[3] = "Xeon"
@@ -106,9 +107,10 @@ awk '
     col_head[5] = "Python"
     col_head[6] = "R"
     col_head[7] = "Julia"
-    col_head[8] = "NumPy"
-    col_head[9] = "Base-R"
-    col_head[10] = "Julia"
+    col_head[8] = "C++"
+    col_head[9] = "NumPy"
+    col_head[10] = "Base-R"
+    col_head[11] = "Julia"
 
     add_key("u01")
     add_key("unif(2,5)")
@@ -131,7 +133,7 @@ awk '
     file = FILENAME
     sub(/^.*\//, "", file)
     file_idx = 0
-    for (i = 1; i <= 10; i++)
+    for (i = 1; i <= 11; i++)
       if (file_order[i] == file) file_idx = i
     if ($1 == "Distribution")
       next
@@ -142,22 +144,21 @@ awk '
     add_key(key)
   }
   END {
-    printf "%-*s  %29s  %29s  %24s\n", distw, "",
-      "----------------------- Randompack",
-      "--------------------",
-      "---Other libraries--"
-    printf "%-*s  %29s  %29s  %24s\n", distw, "",
+    printf "%-*s  %63s  %36s\n", distw, "",
+      "----------------------- Randompack -----------------------",
+      "-------- Other libraries --------"
+    printf "%-*s  %36s  %27s  %36s\n", distw, "",
       "---------- C version --------",
-      "Interfaces (on Core-i5)",
-      "----(on Core-i5)----"
+      "---- Interfaces (on Core-i5) ----",
+      "------ (on Core-i5) ------"
     printf "%-*s", distw, "Distribution"
-    for (i = 1; i <= 10; i++)
+    for (i = 1; i <= 11; i++)
       printf " %8s", col_head[i]
     printf "\n"
     for (i = 1; i <= nkeys; i++) {
       key = key_order[i]
       printf "%-*s", distw, display_name(key)
-      for (j = 1; j <= 10; j++)
+      for (j = 1; j <= 11; j++)
         printf " %8s", fmt(val[key, j])
       printf "\n"
     }
@@ -170,6 +171,7 @@ awk '
 "$tmpdir/rp-python.out" \
 "$tmpdir/rp-r.out" \
 "$tmpdir/rp-julia.out" \
+"$tmpdir/cpp.out" \
 "$tmpdir/numpy.out" \
 "$tmpdir/r.out" \
 "$tmpdir/julia.out"

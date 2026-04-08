@@ -141,6 +141,8 @@ int main(int argc, char **argv)
   std::lognormal_distribution<double> logn_0_1(0, 1);
   std::exponential_distribution<double> exp_1(1);
   std::exponential_distribution<double> exp_2(0.5);
+  std::normal_distribution<double> skew_z0(0, 1);
+  std::normal_distribution<double> skew_z1(0, 1);
   std::gamma_distribution<double> gamma_2_3(2, 3);
   std::gamma_distribution<double> gamma_0_5_2(0.5, 2);
   std::gamma_distribution<double> chi2_5(2.5, 2);
@@ -215,6 +217,26 @@ int main(int argc, char **argv)
     consume(x[chunk - 1]);
   });
 
+  run("exp(1)", [&]() {
+    for (int i = 0; i < chunk; i++) {
+      x[i] = exp_1(cpp_rng);
+    }
+    consume(x[chunk - 1]);
+  }, [&]() {
+    randompack_exp(x, (size_t)chunk, 1, rng);
+    consume(x[chunk - 1]);
+  });
+
+  run("exp(2)", [&]() {
+    for (int i = 0; i < chunk; i++) {
+      x[i] = exp_2(cpp_rng);
+    }
+    consume(x[chunk - 1]);
+  }, [&]() {
+    randompack_exp(x, (size_t)chunk, 2, rng);
+    consume(x[chunk - 1]);
+  });
+
   run("lognormal(0,1)", [&]() {
     for (int i = 0; i < chunk; i++) {
       x[i] = logn_0_1(cpp_rng);
@@ -222,6 +244,20 @@ int main(int argc, char **argv)
     consume(x[chunk - 1]);
   }, [&]() {
     randompack_lognormal(x, (size_t)chunk, 0, 1, rng);
+    consume(x[chunk - 1]);
+  });
+
+  run("skew-normal(0,1,5)", [&]() {
+    double delta = 5/std::sqrt(1 + 5*5);
+    double omega = std::sqrt(1 - delta*delta);
+    for (int i = 0; i < chunk; i++) {
+      double z0 = skew_z0(cpp_rng);
+      double z1 = skew_z1(cpp_rng);
+      x[i] = delta*std::abs(z0) + omega*z1;
+    }
+    consume(x[chunk - 1]);
+  }, [&]() {
+    randompack_skew_normal(x, (size_t)chunk, 0, 1, 5, rng);
     consume(x[chunk - 1]);
   });
 
@@ -253,26 +289,6 @@ int main(int argc, char **argv)
     consume(x[chunk - 1]);
   });
 
-  run("exp(1)", [&]() {
-    for (int i = 0; i < chunk; i++) {
-      x[i] = exp_1(cpp_rng);
-    }
-    consume(x[chunk - 1]);
-  }, [&]() {
-    randompack_exp(x, (size_t)chunk, 1, rng);
-    consume(x[chunk - 1]);
-  });
-
-  run("exp(2)", [&]() {
-    for (int i = 0; i < chunk; i++) {
-      x[i] = exp_2(cpp_rng);
-    }
-    consume(x[chunk - 1]);
-  }, [&]() {
-    randompack_exp(x, (size_t)chunk, 2, rng);
-    consume(x[chunk - 1]);
-  });
-
   run("gamma(2,3)", [&]() {
     for (int i = 0; i < chunk; i++) {
       x[i] = gamma_2_3(cpp_rng);
@@ -293,16 +309,6 @@ int main(int argc, char **argv)
     consume(x[chunk - 1]);
   });
 
-  run("chi2(5)", [&]() {
-    for (int i = 0; i < chunk; i++) {
-      x[i] = chi2_5(cpp_rng);
-    }
-    consume(x[chunk - 1]);
-  }, [&]() {
-    randompack_chi2(x, (size_t)chunk, 5, rng);
-    consume(x[chunk - 1]);
-  });
-
   run("beta(2,5)", [&]() {
     std::gamma_distribution<double> g1(2, 1);
     std::gamma_distribution<double> g2(5, 1);
@@ -314,6 +320,16 @@ int main(int argc, char **argv)
     consume(x[chunk - 1]);
   }, [&]() {
     randompack_beta(x, (size_t)chunk, 2, 5, rng);
+    consume(x[chunk - 1]);
+  });
+
+  run("chi2(5)", [&]() {
+    for (int i = 0; i < chunk; i++) {
+      x[i] = chi2_5(cpp_rng);
+    }
+    consume(x[chunk - 1]);
+  }, [&]() {
+    randompack_chi2(x, (size_t)chunk, 5, rng);
     consume(x[chunk - 1]);
   });
 
