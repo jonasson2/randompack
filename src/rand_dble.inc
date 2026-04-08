@@ -60,6 +60,37 @@ ALWAYS_INLINE void rand_dble_4x52(double x[], size_t len, uint64_t u64[]) {
   }
 }
 
+ALWAYS_INLINE void rand_unif_4x52(double x[], size_t len, uint64_t u64[],
+  double a, double b) {
+  double shift = a - b;
+  size_t i = 0;
+#if HAVE_NEON
+  uint64x2_t expo = vdupq_n_u64(0x3ff0000000000000ULL);
+  float64x2_t s = vdupq_n_f64(b);
+  float64x2_t c = vdupq_n_f64(shift);
+  for (; i + 3 < len; i += 4) {
+    uint64x2_t r0 = vld1q_u64(u64 + i);
+    uint64x2_t r1 = vld1q_u64(u64 + i + 2);
+    r0 = vshrq_n_u64(r0, 12);
+    r1 = vshrq_n_u64(r1, 12);
+    r0 = vorrq_u64(r0, expo);
+    r1 = vorrq_u64(r1, expo);
+    float64x2_t d0 = vreinterpretq_f64_u64(r0);
+    float64x2_t d1 = vreinterpretq_f64_u64(r1);
+    d0 = vfmaq_f64(c, d0, s);
+    d1 = vfmaq_f64(c, d1, s);
+    vst1q_f64(x + i, d0);
+    vst1q_f64(x + i + 2, d1);
+  }
+#endif
+  for (; i < len; i++) {
+    uint64_t bits = (u64[i] >> 12) | 0x3ff0000000000000ULL;
+    double d;
+    memcpy(&d, &bits, sizeof(d));
+    x[i] = shift + b*d;
+  }
+}
+
 ALWAYS_INLINE void rand_dble_4x53(double x[], size_t len, uint64_t u64[]) {
   size_t j = 0;
 #if HAVE_NEON
@@ -106,6 +137,22 @@ ALWAYS_INLINE void rand_dble(double x[], size_t len, randompack_rng *rng) {
     else {
       rand_dble_4x52(x + i, take, rng->buf.u64 + (size_t)w);
     }
+    w += (int)take;
+    i += take;
+  }
+  exit_u64_mode(rng, w);
+}
+
+ALWAYS_INLINE void rand_unif_neon(double x[], size_t len, double a, double b,
+  randompack_rng *rng) {
+  int w = enter_u64_mode(rng);
+  size_t i = 0;
+  while (i < len) {
+    fill_if_empty(rng, &w);
+    size_t remain = len - i;
+    size_t avail = BUFSIZE - (size_t)w;
+    size_t take = remain < avail ? remain : avail;
+    rand_unif_4x52(x + i, take, rng->buf.u64 + (size_t)w, a, b);
     w += (int)take;
     i += take;
   }

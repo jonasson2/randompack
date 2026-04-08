@@ -587,19 +587,41 @@ bool randompack_u01(double x[], size_t len, randompack_rng *rng) {
 
 bool randompack_unif(double x[], size_t len, double a, double b,
   randompack_rng *rng) {
+  double w;
   if (!rng) return false;
   if (!x || a >= b) {
     rng->last_error = "invalid arguments to randompack_unif";
     return false;
   }
   rng->last_error = 0;
-  rand_dble(x, len, rng); // x in [0,1)
-  if (a==0 && b==1) return true;
+  if (a==0 && b==1) {
+    rand_dble(x, len, rng); // x in [0,1)
+    return true;
+  }
 #if defined(FP_FAST_FMA) // guarantee output <= b when input < 1
-  double w = nextafter(b - a, 0.0);
+  w = nextafter(b - a, 0.0);
 #else 
-  double w = b - a;
+  w = b - a;
 #endif
+  if (!rng->bitexact && !rng->usefullmantissa) {
+#if defined(BUILD_AVX512)
+    if (rng->cpu_has_avx512) {
+      rand_unif_avx512(x, len, a, w, rng);
+      return true;
+    }
+#endif
+#if defined(BUILD_AVX2)
+    if (rng->cpu_has_avx2) {
+      rand_unif_avx2(x, len, a, w, rng);
+      return true;
+    }
+#endif
+#if HAVE_NEON && defined(__aarch64__)
+    rand_unif_neon(x, len, a, w, rng);
+    return true;
+#endif
+  }
+  rand_dble(x, len, rng); // x in [0,1)
   shift_scale_double_inplace(x, len, a, w, rng);
   return true;
 }

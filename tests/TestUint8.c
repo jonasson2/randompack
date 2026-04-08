@@ -56,7 +56,7 @@ static void test_unbounded_determinism(char *engine) {
   draw_randoms(engine, a, LEN(a), 0, 42);
   draw_randoms(engine, b, LEN(b), 0, 42);
   draw_randoms(engine, c, LEN(c), 0, 43);
-  two_part_draw(engine, d, 3, 8, 42);
+  two_part_draw(engine, d, 3, 7, 42);
   three_part_draw(engine, e, 2, 5, 3, 42);
   CHECK_EQUALV_MSG(a, b, LEN(a), engine);
   CHECK_EQUALV_MSG(a, d, LEN(a), engine);
