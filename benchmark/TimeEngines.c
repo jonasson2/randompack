@@ -17,7 +17,7 @@ static void print_help(void) {
   printf("Usage: TimeEngines [options]\n\n");
   printf("Options:\n");
   printf("  -h            Show this help message\n");
-  printf("  -t seconds    Benchmark time per engine (default 0.1)\n");
+  printf("  -t seconds    Benchmark time per engine (default 0.2)\n");
   printf("  -w seconds    CPU warmup time before timing (default 0.1)\n");
   printf("  -c chunk      Chunk size (values per fill, default 4096)\n");
   printf("  -s seed       Fixed RNG seed (default random seed per engine)\n\n");
@@ -34,7 +34,7 @@ static bool get_options(int argc, char **argv,
   opterr = 0;
   optind = 1;
   int opt;
-  *bench_time = 0.1;
+  *bench_time = 0.2;
   *warmup_time = 0.1;
   *chunk = 4096;
   *seed = 0;

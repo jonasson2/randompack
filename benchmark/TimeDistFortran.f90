@@ -76,7 +76,7 @@ contains
     write(*,'(A)') "Options:"
     write(*,'(A)') "  -h            Show this help message"
     write(*,'(A)') "  -e engine     RNG engine (default x256++simd)"
-    write(*,'(A)') "  -t seconds    Benchmark time per distribution (default 0.1)"
+    write(*,'(A)') "  -t seconds    Benchmark time per distribution (default 0.2)"
     write(*,'(A)') "  -c chunk      Chunk size (values per call, default 4096)"
     write(*,'(A)') "  -s seed       RNG seed (default 7)"
     write(*,'(A)') "  -b            Use bitexact log/exp implementations"
@@ -91,7 +91,7 @@ contains
     character(len=128) :: arg
     character(len=128) :: val
     engine = "x256++simd"
-    bench_time = 0.1d0
+    bench_time = 0.2d0
     chunk = 4096
     seed = 7
     bitexact = .false.

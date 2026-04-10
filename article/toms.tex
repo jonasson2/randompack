@@ -263,7 +263,9 @@ engine most commonly used in the official documentation and examples.
 
 
 \section{Design and interface}
+%
 \subsection{Design goals}
+% =====================================================================
 Randompack is intended to fill a gap in the random-number-generation
 support available in programming languages and libraries by providing
 a C library with a selection of modern, high quality, and efficient
@@ -299,13 +301,16 @@ above, support for independent substreams, and bit-level
 reproducibility across platforms.
 
 \subsection{User interface}
+% =====================================================================
 The primary entry points are the constructor function
 \texttt{randompack\_create}, several sampling functions (one for each
 supported distribution), and several seeding, setup, and state control
 functions. The constructor returns a handle to an opaque structure
 representing a random number generator (RNG). This object contains the
 underlying engine, its state, and other internal information needed by
-the library.
+the library. Most library functions return a boolean success value.
+When an operation fails, the user can retrieve a diagnostic string
+from the RNG object with \texttt{randompack_last_error}.
 
 The following minimal example creates an RNG with the default engine,
 obtained by passing \texttt{0} to \texttt{randompack\_create}. Then five
@@ -324,12 +329,15 @@ int main(void) {
 }
 \end{lstlisting}
 
-A specific engine can be selected by name, e.g. 
-\texttt{randompack\_create(\"ranlbux++\")}. To seed the RNG after
-creation use for example \texttt{randompack\_seed(42, 0, rng)}. The
-second argument is a spawn key (0 means none is specified).
+A specific engine can be selected by name, e.g.
+\texttt{randompack\_create(\"ranlbux++\")}. The RNG created by the
+constructor is automatically randomized but it can also be manually
+seeded after creation, for example with \texttt{randompack\_seed(42,
+0, rng)}. The second argument is a spawn key (0 means none is
+specified; see Section \ref{sec:state-init})
 
 \subsection{Implemented engines}
+% =====================================================================
 Randompack implements 11 different PRNG random generators or engines.
 All these date from the last 20 years. The primary inclusion criteria
 for the engines are that they should
@@ -351,7 +359,7 @@ Two engines have SIMD-accelerated versions that are not listed,
 xoshiro256++ and sfc64, with short names \texttt{x256++simd} and
 \texttt{sfc64simd}, the former of which has been selected as
 Randompack's default engine.}
-
+%
 \label{tab:engines}
 \begin{tabular}{llcclcc}
 \toprule
@@ -381,7 +389,7 @@ each key (out of $2^{128}$ and $2^{64}$, respectively, and for
 ChaCha20 it is for each nonce, (out of $2^{96}$).
 \end{minipage}
 \end{table}
-
+%
 Table \ref{tab:engines} lists the selected engines. Most of them have
 already been mentioned in the Introduction, the exceptions being the
 recent squares64, a fast counter-based RNG and, cwg128, also recent,
@@ -411,7 +419,9 @@ mathematical description because all available implementations,
 including Sibidanov's, are GNU-licensed
 \cite{sibidanov2017ranluxpp,hahnfeld2021ranluxpp,jirka2021portable}.
 
-\subsection{State initialization and stream control}\label{sec:state-init}
+\subsection{State initialization and stream control}
+\label{sec:state-init}
+%=====================================================================
 Randompack provides four classes of RNG engine initialization:
 deterministic seeding, explicit stream selection, randomization from
 system entropy, and exact assignment of the full internal state.
@@ -454,7 +464,7 @@ Randompack allows jumping by by $2^k$ steps, with $k \in
 \texttt{x128++} and \texttt{xoro++}). For example, repeatedly jumping
 a stream by $2^64$ creates several disjoint substreams of length
 $2^64$.
-
+%
 \begin{table}
   \caption{State composition and stream selection for engines with
     split state. The actual stream setter functions include the prefix
@@ -473,12 +483,13 @@ $2^64$.
   \end{tabular}
   \label{tab:stream-select}
 \end{table}
-
+%
 Such stream selection can be combined naturally with seed spreading in
 parallel simulation. First a base generator is created and seeded.
-Then, for subprocess $i$, the generator is duplicated and either
-jumped or changed with a stream setter. In schematic form:
-
+Then, for subprocess $i$, the generator is duplicated (with the
+provided \texttt{randompack_duplicate} function) and either jumped or
+changed with a stream setter. In schematic form:
+%
 \begin{lstlisting}[style=tightcode,language=,basicstyle=\ttfamily\small]
 create and seed rng[0]
 for each subprocess i=1,2,3,...:
@@ -487,13 +498,18 @@ for each subprocess i=1,2,3,...:
   simulate with rng[i] within subprocess i
 \end{lstlisting}
 
+The fourth way of initializing an RNG mentioned at the beginning of
+this subsection, exact assignment of the full state, may be carried out
+with \texttt{randompack_set_state}.
+
 \section{Algorithms for distributions}
 All the Randompack random drawing functions have three parameters, a
 buffer to be filled with drawn samples, its length, and the RNG to
 use.
 
-In this section...
 \subsection{Continuous distributions}
+% =====================================================================
+%In this section...
 Randompack supports the computation of 14 continuous distributions
 (Table \ref{tab:continuous}). Uniformly distributed samples in $[0,1)$
 are provided by \texttt{randompack\_u01} and general intervals are
@@ -501,9 +517,7 @@ supported by \texttt{randompack\_unif}. The randompack engines all
 compute a stream of bits that can be interpreted as either 64-bit or
 32-bit words. In the following $U(0,1)$-doubles are considered, the
 float case being analogous.
-
-% -*- no-auto-fill -*-
-
+%
 \begin{table}[t]
 \centering
 \caption{Randompack sampling functions returning double values for
@@ -535,7 +549,7 @@ float case being analogous.
   \bottomrule
 \end{tabular}
 \end{table}
-
+%
 \begin{table}[t]
 \centering
 \caption{Randompack sampling functions for discrete distributions. The actual function names include the prefix
@@ -558,7 +572,7 @@ float case being analogous.
   \bottomrule
 \end{tabular}
 \end{table}
-
+%
 \textbf{Uniform distribution.} Let $u$ be a 64-bit word, interpreted
 as an integer in $[0,2^{64})$. Two common methods exist to convert $u$
 to a double $x$ in $[0, 1)$:
@@ -581,7 +595,7 @@ x -= 1;
 %
 Randompack offers a full-mantissa function to select between the two
 resolutions.
-
+%
 \textbf{Normal and exponential distributions.} The ziggurat method
 since 2000 \cite{marsaglia2000ziggurat,doornik2005improved}, discussed
 above, has become quite widespread in recent software: NumPy, Julia,
@@ -589,7 +603,7 @@ Matlab, Octave, GSL, Boost, Rust, Go, and Java all implement some
 version of it. Randompack uses the same geometry as most of these
 libraries with 256 equal-area strips, all but the base strip
 rectangular.
-
+%
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.7\textwidth]{fig1.pdf}
@@ -615,7 +629,7 @@ rectangular.
   is compared with a freshly computed $f(x)$.}
 \label{fig:ziggurat}
 \end{figure}
-
+%
 The 2000-version has a 0.069\% rejection rate for normal sampling and
 1.10\% for exponential sampling (Figure
 ~\ref{fig:ziggurat}). It requires 15 PDF-evaluations (and
@@ -696,7 +710,7 @@ LZ$ or $\mu + AZ$. For convenience randompack also allows $X$ to be
 $n\times d$.
 
 \subsection{Discrete distributions}
-
+% =====================================================================
 \textbf{Uniform bounded integers.} Randompack provides functions for
 sampling various integer data types from specified intervals (Table
 \ref{tab:discrete}) On almost all current systems int and long long
@@ -733,7 +747,7 @@ the b argument to the \texttt{uint}$n$ functions to 0. In addition
 random bits.
 
 \subsection{SIMD acceleration}
-
+% =====================================================================
 Randompack makes substantial use of vector SIMD instructions on modern
 CPUs. There are three main SIMD architectures in use: NEON (on ARM
 processors), AVX2 and AVX-512 (on X86-64 processors). The provided
@@ -772,23 +786,26 @@ obtained by setting sfc64simd with different $(a,b,c)$ triplets also
 have minimum length $2^{61}$.
 
 \subsection{Exact reproducibility across platforms}
+% =====================================================================
 Nearly all modern computers use the same floating-point representation
 for C floats and doubles. This is set by the IEEE 754 standard, which,
-in addition to the format, specifies rounding rules and mandates
-that the results of the basic arithmetic operations +, –, *, and /, as
-well as square roots and fused multiply-add (fma;
+in addition to the format, specifies rounding rules and mandates that
+the results of the basic arithmetic operations +, –, *, and /, as well
+as square roots and fused multiply-add (fma;
 $\operatorname{fma}(a,b,c)=a*b+c$), shall produce results correctly
 rounded. This holds for Intel and AMD X86-64 as well as ARM and RISC-V
-systems.
+systems. It also carries over to other programming languages that
+offer 32-bit and 64-bit floating point numbers, such as C++, Fortran,
+Python, Julia and R.
 
 Randompack's raw bitstreams, being computed by integer and bit
 operations are, inherently platform agnostic, and the same holds for
 doubles and floats derived from them by multiplication and addition.
 As Randompack uses the same algorithms on all platforms, this means
 that the discrete and uniform distributions are all bit-exact across
-platforms. However, the IEEE 754 standard does however not set the
-computation of trigonometric functions, logarithms, and exponentials,
-in stone. To overcome this, Randompack uses the OpenLibm library
+platforms. However, the IEEE 754 standard does not set the computation
+of trigonometric functions, logarithms, and exponentials, in stone. To
+overcome this, Randompack uses the OpenLibm library
 \cite{openlibm,gladman2025accuracy} to compute logarithms and
 exponentials in the ziggurat code for normal and exponential draws.
 This library is designed to work consistently across compilers and
@@ -809,7 +826,7 @@ makes these derived distributions also bit-identical across platforms
 by using OpenLibm instead of Sleef for all library functions.
 
 \subsection{Miscellaneous features}
-
+% =====================================================================
 % 4.	Discussion
 
 %%
@@ -827,67 +844,13 @@ by using OpenLibm instead of Sleef for all library functions.
 \begin{table*}[t]
 \centering
 \caption{Timing for selected continuous distributions in nanoseconds
-  per draw. Randompack C/C++/Fortran versions were benchmarked on
-  four systems; interface and comparison libraries were benchmarked on
-  Core-i5. Lower is better.}
-\label{tab:dist-bench}
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{
-  l
-  S[table-format=1.2]
-  S[table-format=1.2]
-  S[table-format=2.2]
-  S[table-format=2.2]
-  c
-  *{3}{S[table-format=2.2]}
-  c
-  *{4}{S[table-format=2.2]}
-}
-\toprule
-& \multicolumn{8}{c}{R a n d o m p a c k}
-& \multicolumn{5}{c}{} \\
-\cmidrule(lr){2-9}
-& \multicolumn{4}{c}{C/C++/Fortran versions}
-& & \multicolumn{3}{c}{Interfaces (on Core-i5)}
-& & \multicolumn{4}{c}{Other libraries (on Core-i5)} \\
-\cmidrule(lr){2-5}\cmidrule(lr){7-9}\cmidrule(lr){11-14}
-Distribution & {Mac-M4} & {Spark}
-& {Xeon} & {Core-i5}
-& 
-& {Python} & {R}
-& {Julia} & 
-& {NumPy}
-& {Base-R} & {Julia}
-& {C++} \\
-\midrule
-$U(0,1)$         & 0.33 & 0.44 & 0.34 & 0.43 & & 0.60 & 1.80 & 0.41 & & 1.83 & 6.76 & 0.70 & 7.90 \\
-$U(2,5)$         & 0.33 & 0.47 & 0.36 & 0.42 & & 0.68 & 1.69 & 0.42 & & 2.75 & 6.79 & 0.76 & 6.62 \\
-Standard normal  & 0.89 & 1.18 & 1.83 & 1.46 & & 1.65 & 2.73 & 1.45 & & 8.95 & 21.68 & 1.39 & 14.51 \\
-Normal$(2,3)$    & 0.97 & 1.29 & 2.02 & 1.48 & & 1.68 & 2.71 & 1.44 & & 9.70 & 21.63 & 1.44 & 14.48 \\
-Exp              & 0.90 & 1.06 & 1.50 & 1.31 & & 1.53 & 2.67 & 1.31 & & 4.29 & 23.68 & 1.36 & 10.72 \\
-Log-normal       & 1.73 & 2.57 & 2.96 & 2.55 & & 2.73 & 3.83 & 2.52 & & 13.97 & 29.10 & 3.98 & 19.19 \\
-skew-normal      & 2.01 & 2.65 & 4.41 & 3.28 & & 3.47 & \NA & 3.27 & & 28.23 & \NA & 8.20 & 29.44 \\
-Gumbel           & 2.46 & 4.81 & 3.62 & 3.69 & & 3.80 & \NA & 3.55 & & 13.35 & \NA & 8.45 & 16.57 \\
-Pareto           & 1.93 & 2.80 & 3.25 & 2.98 & & 3.09 & \NA & 2.86 & & 17.58 & \NA & 4.45 & 16.56 \\
-Gamma$(2,3)$     & 3.52 & 3.95 & 9.92 & 5.45 & & 5.62 & 6.99 & 5.40 & & 15.89 & 53.93 & 8.86 & 28.04 \\
-Beta$(2,5)$      & 7.08 & 8.12 & 20.62 & 11.28 & & 11.36 & 13.61 & 11.14 & & 31.69 & 56.80 & 20.09 & 56.45 \\
-Chi-square$(5)$  & 3.43 & 3.88 & 9.95 & 5.39 & & 5.47 & 7.03 & 5.34 & & 15.92 & 54.13 & 8.76 & 27.82 \\
-$t(10)$          & 4.64 & 5.80 & 15.08 & 9.71 & & 9.71 & 11.14 & 9.56 & & 25.55 & 60.79 & 15.67 & 42.72 \\
-$F(5,10)$        & 6.92 & 7.95 & 20.04 & 11.17 & & 11.10 & 13.36 & 11.03 & & 32.85 & 99.16 & 26.05 & 56.29 \\
-Weibull$(2,3)$   & 2.90 & 4.68 & 4.48 & 4.18 & & 4.28 & 5.67 & 4.03 & & 14.27 & 24.50 & 31.39 & 23.56 \\
-\bottomrule
-\end{tabular}
-\end{table*}
-
-\begin{table*}[t]
-\centering
-\caption{Timing for selected continuous distributions in nanoseconds
   per draw, with the Python--C++ columns rounded to one decimal
   place. Randompack C/C++/Fortran versions were benchmarked on four
   systems; interface and comparison libraries were benchmarked on
   Core-i5. Lower is better.}
 \label{tab:dist-bench-1dec}
-\setlength{\tabcolsep}{4pt}
+\setlength{\tabcolsep}{3pt}
+\setlength{\cmidrulewidth}{\lightrulewidth}
 \begin{tabular}{
   l
   S[table-format=1.2]
@@ -895,42 +858,41 @@ Weibull$(2,3)$   & 2.90 & 4.68 & 4.48 & 4.18 & & 4.28 & 5.67 & 4.03 & & 14.27 & 
   S[table-format=2.2]
   S[table-format=2.2]
   c
-  *{3}{S[table-format=2.1]}
+  *{2}{S[table-format=2.1]}
+  c
+  *{2}{S[table-format=2.1]}
   c
   *{4}{S[table-format=2.1]}
 }
 \toprule
-& \multicolumn{8}{c}{R a n d o m p a c k}
-& \multicolumn{5}{c}{} \\
-\cmidrule(lr){2-9}
-& \multicolumn{4}{c}{C/C++/Fortran versions}
-& & \multicolumn{3}{c}{Interfaces (on Core-i5)}
-& & \multicolumn{4}{c}{Other libraries (on Core-i5)} \\
-\cmidrule(lr){2-5}\cmidrule(lr){7-9}\cmidrule(lr){11-14}
-Distribution & {Mac-M4} & {Spark}
-& {Xeon} & {Core-i5}
-& 
-& {Python} & {R}
-& {Julia} & 
-& {NumPy}
-& {Base-R} & {Julia}
-& {C++} \\
+& \multicolumn{10}{c}{R a n d o m p a c k} & \multicolumn{5}{c}{} \\
+\cmidrule(lr){2-11}
+& \multicolumn{4}{c}{C, C++, Julia, Fortran} && \multicolumn{2}{c}{Python} && \multicolumn{2}{c}{R}
+&& \multicolumn{4}{c}{Other libraries (on Core-i5)} \\
+\cmidrule(lr){2-5}
+\cmidrule(lr){7-8}
+\cmidrule(lr){10-11}
+\cmidrule(lr){13-16}
+Distribution & {Spark} & {Xeon} & {Mac} & {Core-i5}
+&& {Mac} & {Core-i5} && {Mac} & {Core-i5}
+&& {NumPy} & {Base-R} & {Julia} & {C++} \\
 \midrule
-$U(0,1)$         & 0.33 & 0.44 & 0.34 & 0.43 & & 0.6 & 1.8 & 0.4 & & 1.8 & 6.8 & 0.7 & 7.9 \\
-$U(2,5)$         & 0.33 & 0.47 & 0.36 & 0.42 & & 0.7 & 1.7 & 0.4 & & 2.8 & 6.8 & 0.8 & 6.6 \\
-Standard normal  & 0.89 & 1.18 & 1.83 & 1.46 & & 1.7 & 2.7 & 1.5 & & 9.0 & 21.7 & 1.4 & 14.5 \\
-Normal$(2,3)$    & 0.97 & 1.29 & 2.02 & 1.48 & & 1.7 & 2.7 & 1.4 & & 9.7 & 21.6 & 1.4 & 14.5 \\
-Exp              & 0.90 & 1.06 & 1.50 & 1.31 & & 1.5 & 2.7 & 1.3 & & 4.3 & 23.7 & 1.4 & 10.7 \\
-Log-normal       & 1.73 & 2.57 & 2.96 & 2.55 & & 2.7 & 3.8 & 2.5 & & 14.0 & 29.1 & 4.0 & 19.2 \\
-skew-normal      & 2.01 & 2.65 & 4.41 & 3.28 & & 3.5 & \NA & 3.3 & & 28.2 & \NA & 8.2 & 29.4 \\
-Gumbel           & 2.46 & 4.81 & 3.62 & 3.69 & & 3.8 & \NA & 3.5 & & 13.4 & \NA & 8.5 & 16.6 \\
-Pareto           & 1.93 & 2.80 & 3.25 & 2.98 & & 3.1 & \NA & 2.9 & & 17.6 & \NA & 4.5 & 16.6 \\
-Gamma$(2,3)$     & 3.52 & 3.95 & 9.92 & 5.45 & & 5.6 & 7.0 & 5.4 & & 15.9 & 53.9 & 8.9 & 28.0 \\
-Beta$(2,5)$      & 7.08 & 8.12 & 20.62 & 11.28 & & 11.4 & 13.6 & 11.1 & & 31.7 & 56.8 & 20.1 & 56.5 \\
-Chi-square$(5)$  & 3.43 & 3.88 & 9.95 & 5.39 & & 5.5 & 7.0 & 5.3 & & 15.9 & 54.1 & 8.8 & 27.8 \\
-$t(10)$          & 4.64 & 5.80 & 15.08 & 9.71 & & 9.7 & 11.1 & 9.6 & & 25.6 & 60.8 & 15.7 & 42.7 \\
-$F(5,10)$        & 6.92 & 7.95 & 20.04 & 11.17 & & 11.1 & 13.4 & 11.0 & & 32.9 & 99.2 & 26.1 & 56.3 \\
-Weibull$(2,3)$   & 2.90 & 4.68 & 4.48 & 4.18 & & 4.3 & 5.7 & 4.0 & & 14.3 & 24.5 & 31.4 & 23.6 \\
+%% .out files: spark & xeon & Mac & i5 && rp-py-mac & rp-py-i5 && rp-r-mac & rp-r-i5 && numpy & r & julia & cpp
+$U(0,1)$        & 0.44 &  0.34 & 0.33 &  0.45 && 0.5 &  0.6 &&  2.1 &  1.8 &&  1.8 &  6.8 &  0.7 &  7.9 \\
+$U(2,5)$        & 0.47 &  0.36 & 0.33 &  0.42 && 0.5 &  0.7 &&  2.2 &  1.7 &&  2.8 &  6.8 &  0.8 &  6.6 \\
+Standard normal & 1.18 &  1.83 & 0.89 &  1.46 && 1.0 &  1.6 &&  2.7 &  2.7 &&  8.9 & 21.7 &  1.4 & 14.5 \\
+Normal$(2,3)$   & 1.29 &  2.02 & 0.97 &  1.48 && 1.1 &  1.7 &&  2.7 &  2.7 &&  9.7 & 21.6 &  1.4 & 14.5 \\
+Exp             & 1.06 &  1.50 & 0.90 &  1.31 && 1.1 &  1.5 &&  2.8 &  2.7 &&  4.3 & 23.7 &  1.4 & 10.7 \\
+Log-normal      & 2.57 &  2.96 & 1.73 &  2.55 && 2.0 &  2.7 &&  7.2 &  3.8 && 14.0 & 29.1 &  4.0 & 19.2 \\
+skew-normal     & 2.65 &  4.41 & 2.01 &  3.28 && 2.2 &  3.5 &&  \NA &  \NA && 28.2 &  \NA &  8.2 & 29.4 \\
+Gumbel          & 4.81 &  3.62 & 2.46 &  3.69 && 2.7 &  3.8 &&  \NA &  \NA && 13.3 &  \NA &  8.4 & 16.6 \\
+Pareto          & 2.80 &  3.25 & 1.93 &  2.98 && 2.2 &  3.1 &&  \NA &  \NA && 17.6 &  \NA &  4.4 & 16.6 \\
+Gamma$(2,3)$    & 3.95 &  9.92 & 3.52 &  5.45 && 3.7 &  5.6 &&  5.7 &  7.0 && 15.9 & 53.9 &  8.9 & 28.0 \\
+Beta$(2,5)$     & 8.12 & 20.62 & 7.08 & 11.28 && 7.3 & 11.4 &&  9.3 & 13.6 && 31.7 & 56.8 & 20.1 & 56.5 \\
+Chi-square$(5)$ & 3.88 &  9.95 & 3.43 &  5.39 && 3.6 &  5.5 &&  5.4 &  7.0 && 15.9 & 54.1 &  8.8 & 27.8 \\
+$t(10)$         & 5.80 & 15.08 & 4.64 &  9.71 && 4.9 &  9.7 &&  6.5 & 11.1 && 25.6 & 60.8 & 15.7 & 42.7 \\
+$F(5,10)$       & 7.95 & 20.04 & 6.92 & 11.17 && 7.2 & 11.1 &&  8.8 & 13.4 && 32.9 & 99.2 & 26.0 & 56.3 \\
+Weibull$(2,3)$  & 4.68 &  4.48 & 2.90 &  4.18 && 3.2 &  4.3 && 10.3 &  5.7 && 14.3 & 24.5 & 31.4 & 23.6 \\
 \bottomrule
 \end{tabular}
 \end{table*}

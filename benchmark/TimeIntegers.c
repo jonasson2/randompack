@@ -15,7 +15,7 @@ static void print_help(void) {
   printf("Options:\n");
   printf("  -h            Show this help message\n");
   printf("  -e engine     RNG engine (default x256++simd)\n");
-  printf("  -t seconds    Benchmark time per case (default 0.1)\n");
+  printf("  -t seconds    Benchmark time per case (default 0.2)\n");
   printf("  -c chunk      Chunk size (values per call, default 4096)\n");
   printf("  -s seed       Fixed RNG seed (default random seed per case)\n");
 }
@@ -26,7 +26,7 @@ static bool get_options(int argc, char **argv, char **engine, double *bench_time
   optind = 1;
   int opt;
   *engine = "x256++simd";
-  *bench_time = 0.1;
+  *bench_time = 0.2;
   *chunk = 4096;
   *seed = 0;
   *have_seed = false;

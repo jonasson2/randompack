@@ -181,7 +181,7 @@ def warmup(seconds: float) -> float:
 def main() -> None:
   parser = argparse.ArgumentParser(
     description="Time integer draws and permutations (ns/value)")
-  parser.add_argument("-t", type=float, default=0.1, dest="bench_time",
+  parser.add_argument("-t", type=float, default=0.2, dest="bench_time",
                       help="benchmark time per case (seconds)")
   parser.add_argument("-c", type=int, default=4096, dest="chunk",
                       help="chunk size (values per call)")

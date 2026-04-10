@@ -12,6 +12,8 @@ Outputs:
   spark.out
   xeon.out
   i5.out
+  rp-py-mac.out
+  rp-r-mac.out
   rp-python.out
   rp-r.out
   rp-julia.out
@@ -51,6 +53,8 @@ run_case pluto -2 -c cpp.out
 run_case pluto -2 -p numpy.out
 run_case pluto -2 -R r.out
 run_case pluto -2 -j julia.out
+run_case mac -3 -p rp-py-mac.out
+run_case mac -3 -R rp-r-mac.out
 run_case pluto -3 -p rp-python.out
 run_case pluto -3 -R rp-r.out
 run_case pluto -3 -j rp-julia.out
