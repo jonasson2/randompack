@@ -84,6 +84,7 @@ sandbox/*
 sandbox/bigcrush/*
 !sandbox/bigcrush/*.sh
 !sandbox/bigcrush/*.py
+!sandbox/bigcrush/*.jl
 !sandbox/bigcrush/*.awk
 !sandbox/bigcrush/*.cpp
 !sandbox/bigcrush/*.slurm
