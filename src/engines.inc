@@ -6,6 +6,7 @@
 #include "xoroshiro128pp.inc"
 #include "simd_macros.inc"
 #include "x256pp_neon_scalar.inc"
+#include "x256ss_neon_scalar.inc"
 #include "sfc64_neon_scalar.inc"
 #include "chachacha.inc"
 #include "squares64.inc"

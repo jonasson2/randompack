@@ -94,7 +94,8 @@ static void fill_u64(uint64_t out[], int n, randompack_rng *rng) {
 }
 
 static bool is_simd_engine(const char *name) {
-  return !strcmp(name, "x256++simd") || !strcmp(name, "sfc64simd");
+  return !strcmp(name, "x256++simd") || !strcmp(name, "x256**simd") ||
+    !strcmp(name, "sfc64simd");
 }
 
 int main(int argc, char **argv) {

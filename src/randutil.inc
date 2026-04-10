@@ -84,7 +84,11 @@ static inline void scatter_to_stream0(randompack_rng *rng) {
   st->s3[0] = u64[3];
 }
 
-static inline void x256ppsimd_jump(int p, randompack_rng *rng) {
+static inline bool is_x256simd_engine(randompack_rng *rng) {
+  return rng->engine == FAST || rng->engine == X256SSSIMD;
+}
+
+static inline void x256simd_jump(int p, randompack_rng *rng) {
   for (int i=0; i<8; i++) {
     uint64_t stream_state[4];
     get_stream(stream_state, i, rng);
@@ -120,6 +124,7 @@ static inline void normalize_state(randompack_rng *rng) {
   switch (rng->engine) {
   case X256PP:
   case X256SS:
+  case X256SSSIMD:
   case FAST:
   case XORO:
   case X128P:
@@ -180,7 +185,7 @@ static void rand_randomize(randompack_rng *rng) {
     int nwords = get_state_words(rng);
     fill_entropy(rng->state.u64, nwords*sizeof(uint64_t));
     normalize_state(rng);
-    if (rng->engine == FAST) {
+    if (is_x256simd_engine(rng)) {
       scatter_to_stream0(rng);
       fill_stream_states_with_jump(rng);
     }
@@ -228,7 +233,7 @@ static void set_state(uint64_t *state, int nstate, randompack_rng *rng) {
   }
   else {
     copy64(rng->state.u64, state, nstate);
-    if (rng->engine == FAST) {
+    if (is_x256simd_engine(rng)) {
       scatter_to_stream0(rng);
       fill_stream_states_with_jump(rng);
     }

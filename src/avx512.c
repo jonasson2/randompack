@@ -14,6 +14,12 @@ void fill_fast_avx512(uint64_t *buf, size_t len, randompack_state *state) {
   (void)state;
 }
 
+void fill_x256sssimd_avx512(uint64_t *buf, size_t len, randompack_state *state) {
+  (void)buf;
+  (void)len;
+  (void)state;
+}
+
 void fill_sfc64simd_avx512(uint64_t *buf, size_t len, randompack_state *state) {
   (void)buf;
   (void)len;
@@ -128,6 +134,47 @@ HIDDEN void fill_fast_avx512(uint64_t *buf, size_t len,
       _mm512_or_si512(_mm512_slli_epi64(sum1, 23), _mm512_srli_epi64(sum1, 41)),
       s0
     );
+    __m512i t1 = _mm512_slli_epi64(s1, 17);
+    s2 = _mm512_xor_si512(s2, s0);
+    s3 = _mm512_xor_si512(s3, s1);
+    s1 = _mm512_xor_si512(s1, s2);
+    s0 = _mm512_xor_si512(s0, s3);
+    s2 = _mm512_xor_si512(s2, t1);
+    s3 = _mm512_or_si512(_mm512_slli_epi64(s3, 45), _mm512_srli_epi64(s3, 19));
+
+    _mm512_storeu_si512((void *)(out + i), r0);
+    _mm512_storeu_si512((void *)(out + i + 8), r1);
+  }
+  _mm512_storeu_si512((void *)&st->s0[0], s0);
+  _mm512_storeu_si512((void *)&st->s1[0], s1);
+  _mm512_storeu_si512((void *)&st->s2[0], s2);
+  _mm512_storeu_si512((void *)&st->s3[0], s3);
+}
+
+HIDDEN void fill_x256sssimd_avx512(uint64_t *buf, size_t len,
+  randompack_state *state) {
+  uint64_t *out = buf;
+  xo256 *st = &state->xo;
+  __m512i s0 = _mm512_loadu_si512((const void *)&st->s0[0]);
+  __m512i s1 = _mm512_loadu_si512((const void *)&st->s1[0]);
+  __m512i s2 = _mm512_loadu_si512((const void *)&st->s2[0]);
+  __m512i s3 = _mm512_loadu_si512((const void *)&st->s3[0]);
+  size_t i = 0;
+  for (; i < len; i += 16) {
+    __m512i r0 = _mm512_add_epi64(_mm512_slli_epi64(s1, 2), s1);
+    r0 = _mm512_or_si512(_mm512_slli_epi64(r0, 7), _mm512_srli_epi64(r0, 57));
+    r0 = _mm512_add_epi64(_mm512_slli_epi64(r0, 3), r0);
+    __m512i t0 = _mm512_slli_epi64(s1, 17);
+    s2 = _mm512_xor_si512(s2, s0);
+    s3 = _mm512_xor_si512(s3, s1);
+    s1 = _mm512_xor_si512(s1, s2);
+    s0 = _mm512_xor_si512(s0, s3);
+    s2 = _mm512_xor_si512(s2, t0);
+    s3 = _mm512_or_si512(_mm512_slli_epi64(s3, 45), _mm512_srli_epi64(s3, 19));
+
+    __m512i r1 = _mm512_add_epi64(_mm512_slli_epi64(s1, 2), s1);
+    r1 = _mm512_or_si512(_mm512_slli_epi64(r1, 7), _mm512_srli_epi64(r1, 57));
+    r1 = _mm512_add_epi64(_mm512_slli_epi64(r1, 3), r1);
     __m512i t1 = _mm512_slli_epi64(s1, 17);
     s2 = _mm512_xor_si512(s2, s0);
     s3 = _mm512_xor_si512(s3, s1);

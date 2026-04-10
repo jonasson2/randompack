@@ -10,7 +10,7 @@ combined article table.
 
 Expected files:
   mac.out        spark.out     xeon.out      i5.out
-  rp-python.out  rp-r.out      rp-julia.out
+  rp-py-i5.out  rp-r-i5.out      rp-julia.out
   cpp.out        numpy.out     r.out         julia.out
 
 Each file should contain rows in the format:
@@ -39,7 +39,7 @@ trap 'rm -rf "$tmpdir"' EXIT HUP INT TERM
 
 for f in \
   mac.out spark.out xeon.out i5.out \
-  rp-python.out rp-r.out rp-julia.out \
+  rp-py-i5.out rp-r-i5.out rp-julia.out \
   cpp.out numpy.out r.out julia.out
 do
   if [ -f "$script_dir/$f" ]; then
@@ -60,6 +60,7 @@ awk '
     if (key == "u01") return "U(0,1)"
     if (key == "unif(2,5)") return "U(2,5)"
     if (key == "norm") return "Standard normal"
+    if (key == "normal(2,3)") return "Normal(2,3)"
     if (key == "exp(1)") return "Exp"
     if (key == "lognormal(0,1)") return "Log-normal"
     if (key == "skew-normal(0,1,5)") return "skew-normal"
@@ -77,6 +78,7 @@ awk '
     return key == "u01" ||
            key == "unif(2,5)" ||
            key == "norm" ||
+           key == "normal(2,3)" ||
            key == "exp(1)" ||
            key == "lognormal(0,1)" ||
            key == "skew-normal(0,1,5)" ||
@@ -109,8 +111,8 @@ awk '
     file_order[2] = "spark.out"
     file_order[3] = "xeon.out"
     file_order[4] = "i5.out"
-    file_order[5] = "rp-python.out"
-    file_order[6] = "rp-r.out"
+    file_order[5] = "rp-py-i5.out"
+    file_order[6] = "rp-r-i5.out"
     file_order[7] = "rp-julia.out"
     file_order[8] = "numpy.out"
     file_order[9] = "r.out"
@@ -131,6 +133,7 @@ awk '
     add_key("u01")
     add_key("unif(2,5)")
     add_key("norm")
+    add_key("normal(2,3)")
     add_key("exp(1)")
     add_key("lognormal(0,1)")
     add_key("skew-normal(0,1,5)")
@@ -203,8 +206,8 @@ awk '
 "$tmpdir/spark.out" \
 "$tmpdir/xeon.out" \
 "$tmpdir/i5.out" \
-"$tmpdir/rp-python.out" \
-"$tmpdir/rp-r.out" \
+"$tmpdir/rp-py-i5.out" \
+"$tmpdir/rp-r-i5.out" \
 "$tmpdir/rp-julia.out" \
 "$tmpdir/numpy.out" \
 "$tmpdir/r.out" \

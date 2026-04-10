@@ -166,6 +166,18 @@ def make_int_ranges() -> List[IntRangeSpec]:
   ]
 
 
+def warmup(seconds: float) -> float:
+  rng = np.random.default_rng(123)
+  t0 = time.perf_counter()
+  while time.perf_counter() - t0 < seconds:
+    rng.integers(1, 1000, size=1024, dtype=np.int32)
+    rng.integers(1, 1000000, size=1024, dtype=np.int64)
+    rng.integers(0, 10, size=1024, dtype=np.uint8)
+    rng.choice(1000, size=100, replace=False)
+    rng.permutation(1000)
+  return time.perf_counter() - t0
+
+
 def main() -> None:
   parser = argparse.ArgumentParser(
     description="Time integer draws and permutations (ns/value)")
@@ -194,21 +206,11 @@ def main() -> None:
     IntRangeSpec(1, 1000000000000000000, "1-1e18"),
   ]
 
-  # Warm up.
-  for spec in int_ranges:
-    rng.integers(spec.m, spec.n + 1, size=16, dtype=np.int32)
-  for spec in ll_ranges:
-    rng.integers(spec.m, spec.n + 1, size=16, dtype=np.int64)
-  for spec in u8_specs:
-    rng.integers(0, spec.bound, size=16, dtype=np.uint8)
-  rng.integers(0, (1 << 64) // 3, size=16, dtype=np.uint64)
-  for spec in perm_specs:
-    rng.permutation(spec.n)
-  for spec in sample_specs:
-    rng.choice(spec.n, size=spec.k, replace=False)
+  warm = warmup(0.1)
 
   print("time per value:   ns/value")
   print(f"bench_time:       {args.bench_time:.3f} s per case")
+  print(f"warmup:           {warm:.3f} s")
   print(f"chunk:            {args.chunk}")
   print("\n%-14s %8s" % ("int range", "ns/value"))
   for spec in int_ranges:

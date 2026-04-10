@@ -22,6 +22,7 @@ typedef enum {
   XORO,
   X256SS,
   X256PP,
+  X256SSSIMD,
   RANLUXPP,
   SQUARES,
   SFC64,
@@ -41,7 +42,7 @@ typedef union {
   uint8_t u8[48];   // 6 words, used by chacha20
   uint32_t u32[18]; // 9 words, used when seeding and by chacha20
   uint64_t u64[9];  // used by most engines
-  xo256 xo;         // 32 words, all used by 8-lane x256++simd and sfc64simd
+  xo256 xo;         // 32 words, all used by 8-lane x256++simd/x256**simd/sfc64simd
   pcg64_t pcg;      // 4 words
   #if HAVE128
   uint128_t u128[4];
@@ -72,6 +73,7 @@ struct randompack_rng {
 #if defined(BUILD_AVX512)
 bool cpu_has_avx512(void);
 void fill_fast_avx512(uint64_t *buf, size_t len, randompack_state *state);
+void fill_x256sssimd_avx512(uint64_t *buf, size_t len, randompack_state *state);
 void fill_sfc64simd_avx512(uint64_t *buf, size_t len, randompack_state *state);
 void rand_dble_avx512(double x[], size_t len, randompack_rng *rng);
 void rand_unif_avx512(double x[], size_t len, double a, double b,
@@ -88,6 +90,7 @@ void shift_scale_float_avx512(float x[], size_t len, float shift, float scale);
 #if defined(BUILD_AVX2)
 bool cpu_has_avx2(void);
 void fill_fast_avx2(uint64_t *buf, size_t len, randompack_state *state);
+void fill_x256sssimd_avx2(uint64_t *buf, size_t len, randompack_state *state);
 void fill_sfc64simd_avx2(uint64_t *buf, size_t len, randompack_state *state);
 void rand_dble_avx2(double x[], size_t len, randompack_rng *rng);
 void rand_unif_avx2(double x[], size_t len, double a, double b,

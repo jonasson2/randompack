@@ -35,6 +35,23 @@ static int compute_reps(int chunk)
   return reps > 0 ? reps : 1;
 }
 
+static double warmup_cpu(double seconds)
+{
+  double t0 = now_sec();
+  double t = t0;
+  volatile double x = 0;
+  while (t - t0 < seconds) {
+    for (int i = 0; i < 1024; i++) {
+      x += i;
+    }
+    t = now_sec();
+  }
+  if (x < 0) {
+    std::printf("warmup\n");
+  }
+  return t - t0;
+}
+
 template <class F>
 static double time_dist(int chunk, double bench_time, int reps, F &&fill)
 {
@@ -128,11 +145,7 @@ int main(int argc, char **argv)
     return std::generate_canonical<double, 64>(cpp_rng);
   };
 
-  for (int i = 0; i < 10000; i++) {
-    double u = u01();
-    double z = std::normal_distribution<double>(0, 1)(cpp_rng);
-    consume(u + z);
-  }
+  double warm = warmup_cpu(0.1);
   double *x = new double[chunk];
 
   std::uniform_real_distribution<double> unif_2_5(2, 5);
@@ -153,8 +166,9 @@ int main(int argc, char **argv)
   std::printf("Randompack engine: x256++simd (xoshiro256++, SIMD accelerated)\n");
   std::printf("Chunk size:        %d\n", chunk);
   std::printf("Engine key:        %s\n", engine);
+  std::printf("Warmup:            %.3f s\n", warm);
   std::printf("\n");
-  std::printf("%-14s %10s %11s %8s\n", "Distribution", "C++",
+  std::printf("%-18s %10s %11s %8s\n", "Distribution", "C++",
               "Randompack", "Factor");
 
   auto run = [&](const char *name, auto &&fill_cpp, auto &&fill_rp) {
@@ -174,7 +188,7 @@ int main(int argc, char **argv)
     }
     double rp_ns = time_dist(chunk, bench_time, reps, fill_rp);
     double factor = cpp_ns/rp_ns;
-    std::printf("%-14s %10.2f %11.2f %8.2f\n", name, cpp_ns, rp_ns, factor);
+    std::printf("%-18s %10.2f %11.2f %8.2f\n", name, cpp_ns, rp_ns, factor);
   };
 
   run("u01", [&]() {

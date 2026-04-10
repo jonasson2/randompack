@@ -14,6 +14,12 @@ void fill_fast_avx2(uint64_t *buf, size_t len, randompack_state *state) {
   (void)state;
 }
 
+void fill_x256sssimd_avx2(uint64_t *buf, size_t len, randompack_state *state) {
+  (void)buf;
+  (void)len;
+  (void)state;
+}
+
 void fill_sfc64simd_avx2(uint64_t *buf, size_t len, randompack_state *state) {
   (void)buf;
   (void)len;
@@ -181,6 +187,35 @@ HIDDEN void fill_fast_avx2(uint64_t *buf, size_t len, randompack_state *state) {
     VEC_T r0, r1;
     FAST_STEP_VEC(s00, s10, s20, s30, r0);
     FAST_STEP_VEC(s01, s11, s21, s31, r1);
+    VEC_STORE(out + i, r0);
+    VEC_STORE(out + i + 4, r1);
+  }
+  VEC_STORE(&st->s0[0], s00);
+  VEC_STORE(&st->s1[0], s10);
+  VEC_STORE(&st->s2[0], s20);
+  VEC_STORE(&st->s3[0], s30);
+  VEC_STORE(&st->s0[4], s01);
+  VEC_STORE(&st->s1[4], s11);
+  VEC_STORE(&st->s2[4], s21);
+  VEC_STORE(&st->s3[4], s31);
+}
+
+HIDDEN void fill_x256sssimd_avx2(uint64_t *buf, size_t len,
+  randompack_state *state) {
+  uint64_t *out = buf;
+  xo256 *st = &state->xo;
+  VEC_T s00 = VEC_LOAD(&st->s0[0]);
+  VEC_T s10 = VEC_LOAD(&st->s1[0]);
+  VEC_T s20 = VEC_LOAD(&st->s2[0]);
+  VEC_T s30 = VEC_LOAD(&st->s3[0]);
+  VEC_T s01 = VEC_LOAD(&st->s0[4]);
+  VEC_T s11 = VEC_LOAD(&st->s1[4]);
+  VEC_T s21 = VEC_LOAD(&st->s2[4]);
+  VEC_T s31 = VEC_LOAD(&st->s3[4]);
+  for (size_t i = 0; i < len; i += 8) {
+    VEC_T r0, r1;
+    FAST_STEP_VEC_SS(s00, s10, s20, s30, r0);
+    FAST_STEP_VEC_SS(s01, s11, s21, s31, r1);
     VEC_STORE(out + i, r0);
     VEC_STORE(out + i + 4, r1);
   }
