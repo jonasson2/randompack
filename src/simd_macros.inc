@@ -27,7 +27,6 @@ static inline VEC_T vec_mul9_asm(VEC_T x) {
 #else
 #define VEC_MUL9(x) VEC_ADD(vshlq_n_u64((x), 3), (x))
 #endif
-#define VEC_ROTL19(x) vorrq_u64(vshlq_n_u64((x), 19), vshrq_n_u64((x), 45))
 #define VEC_ROTL23(x) vorrq_u64(vshlq_n_u64((x), 23), vshrq_n_u64((x), 41))
 #define VEC_ROTL24(x) vorrq_u64(vshlq_n_u64((x), 24), vshrq_n_u64((x), 40))
 #define VEC_ROTL45(x) vorrq_u64(vshlq_n_u64((x), 45), vshrq_n_u64((x), 19))

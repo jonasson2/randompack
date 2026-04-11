@@ -132,8 +132,6 @@ HIDDEN bool cpu_has_avx2(void) {
 #define VEC_ROTL45(x) _mm256_or_si256( \
   _mm256_slli_epi64((x),45), _mm256_srli_epi64((x),64-45))
 
-#define VEC_ROTL19(x) _mm256_or_si256( \
-  _mm256_slli_epi64((x),19), _mm256_srli_epi64((x),64-19))
 #define VEC_ROTL23(x) _mm256_or_si256( \
   _mm256_slli_epi64((x),23), _mm256_srli_epi64((x),64-23))
 #define VEC_ROTL24(x) _mm256_or_si256( \
@@ -142,7 +140,7 @@ HIDDEN bool cpu_has_avx2(void) {
 #define FAST_STEP_VEC(s0,s1,s2,s3,outv) do { \
   VEC_T r_; \
   VEC_T t_; \
-  r_ = VEC_ROTL23(VEC_ADD(VEC_ROTL23(VEC_ADD((s0),(s3))),(s0)));  \
+  r_ = VEC_ADD(VEC_ROTL23(VEC_ADD((s0),(s3))),(s0)); \
   t_ = VEC_SHL17((s1)); \
   (s2) = VEC_XOR((s2),(s0)); \
   (s3) = VEC_XOR((s3),(s1)); \

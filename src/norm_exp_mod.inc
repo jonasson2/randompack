@@ -22,10 +22,12 @@
 
 //=============================== NORMAL DISTRIBUTION ==============================
 
-ALWAYS_INLINE double norm_decode(uint64_t r, uint8_t idx, uint64_t *ki, uint64_t *rabs) {
-  int64_t s = ((int64_t)(r << 11)) >> 11; // change sign
+ALWAYS_INLINE double norm_decode_lowidx(uint64_t r, uint8_t idx, uint64_t *ki,
+  uint64_t *rabs) {
   *ki = ki_double[idx];
-  *rabs = r & 0x000fffffffffffff;
+  *rabs = r >> 12;
+  int64_t s = (int64_t)*rabs;
+  if ((r >> 11) & 1) s = -s;
   return (double)s * wi_double[idx];
 }
 
@@ -35,7 +37,7 @@ NEVER_INLINE bool below_normpdf(uint8_t idx, double x, double y) {
   return f1 + y*(f0 - f1) < openlibm_exp(-x*x/2);
 }
 
-NEVER_INLINE double norm_tail_draw(randompack_rng *rng, uint64_t rabs, double y, int *w){
+NEVER_INLINE double norm_tail_draw(randompack_rng *rng, bool neg, double y, int *w) {
   double xx, yy, x;
   for (;;) {
     /* Switch to 1.0 - U to avoid log(0.0), see GH 13361 */
@@ -43,20 +45,20 @@ NEVER_INLINE double norm_tail_draw(randompack_rng *rng, uint64_t rabs, double y,
     xx = -ziggurat_nor_inv_r * openlibm_log1p(-x);
     yy = -openlibm_log1p(-y);
     if (LIKELY(yy + yy > xx * xx))
-      return ((rabs >> 8) & 0x1) ? -(ziggurat_nor_r + xx) : ziggurat_nor_r + xx;
+      return neg ? -(ziggurat_nor_r + xx) : ziggurat_nor_r + xx;
     y = draw_u01(rng, w);
   }
 }
 
 NEVER_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x, uint8_t idx,
-                                  uint64_t rabs, uint64_t ki) {
+  uint64_t rabs, uint64_t ki, bool neg) {
   uint64_t ru, tmp, L, R, Y, YL;
   const int inflection_idx = 52;
   for (;;) {
     Y = draw_u64(rng, w);
     if (UNLIKELY(idx == 0)) {
       double u = U64_TO_DOUBLE(Y);
-      x = norm_tail_draw(rng, rabs, u, w);
+      x = norm_tail_draw(rng, neg, u, w);
       return x;
     }
     // L = (1ULL << 52) - ki;
@@ -79,8 +81,9 @@ NEVER_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x, uint8_t
     if (below_normpdf(idx, x, u)) return x;
   next_try:
     ru = draw_u64(rng, w);
-    idx = ru >> 56;
-    x = norm_decode(ru, idx, &ki, &rabs);
+    idx = ru & 0xff;
+    neg = ((ru >> 11) & 1) != 0;
+    x = norm_decode_lowidx(ru, idx, &ki, &rabs);
     if (LIKELY(rabs < ki)) return x;
   }
 }
@@ -89,11 +92,13 @@ ALWAYS_INLINE double draw_norm(randompack_rng *rng, int *w) {
   uint64_t rabs, ki, r;
   double x;
   uint8_t idx;
+  bool neg;
   r = draw_u64(rng, w);
-  idx = r >> 56;
-  x = norm_decode(r, idx, &ki, &rabs);
+  idx = r & 0xff;
+  neg = ((r >> 11) & 1) != 0;
+  x = norm_decode_lowidx(r, idx, &ki, &rabs);
   if (LIKELY(rabs < ki)) return x;
-  x = norm_unlikely(rng, w, x, idx, rabs, ki);
+  x = norm_unlikely(rng, w, x, idx, rabs, ki, neg);
   return x;
 }
 
@@ -104,12 +109,14 @@ NEVER_INLINE void rand_norm(double *buf, size_t len, randompack_rng *rng) {
   uint8_t idx;
   uint64_t r, rabs, ki;
   double x;
+  bool neg;
   for (size_t i = len; i-- > 0;) {
     uint8_t *bufpi = (uint8_t*)(buf + i);
     memcpy(&r, bufpi, sizeof(r));
-    memcpy(&idx, bufpi + 7, 1);
-    x = norm_decode(r, idx, &ki, &rabs);
-    buf[i] = LIKELY(rabs < ki) ? x : norm_unlikely(rng, &w, x, idx, rabs, ki);
+    idx = r & 0xff;
+    neg = ((r >> 11) & 1) != 0;
+    x = norm_decode_lowidx(r, idx, &ki, &rabs);
+    buf[i] = LIKELY(rabs < ki) ? x : norm_unlikely(rng, &w, x, idx, rabs, ki, neg);
   }
   exit_u64_mode(rng, w);
 }

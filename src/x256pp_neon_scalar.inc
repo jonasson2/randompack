@@ -4,7 +4,7 @@
 #define FAST_STEP_VEC(s0,s1,s2,s3,outv) do { \
   VEC_T r_; \
   VEC_T t_; \
-  r_ = VEC_ROTL19(VEC_ADD(VEC_ROTL23(VEC_ADD((s0),(s3))),(s0)));	\
+  r_ = VEC_ADD(VEC_ROTL23(VEC_ADD((s0),(s3))),(s0)); \
   t_ = VEC_SHL17((s1)); \
   (s2) = VEC_XOR((s2),(s0)); \
   (s3) = VEC_XOR((s3),(s1)); \
