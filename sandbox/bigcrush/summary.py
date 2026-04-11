@@ -76,13 +76,13 @@ def format_lowest(entry):
     return f"{format_q(value)} [{engine},{ABBREV[family]},{seed}]"
 
 
-def format_expected(nruns, tests_per_run, threshold):
-    expected = nruns*tests_per_run*2*threshold
+def format_expected(ntests, threshold):
+    expected = ntests*2*threshold
     return f"{expected:.1f}"
 
 
-def format_expected_int(nruns, tests_per_run, threshold):
-    expected = nruns*tests_per_run*2*threshold
+def format_expected_int(ntests, threshold):
+    expected = ntests*2*threshold
     return f"{expected:.0f}"
 
 
@@ -201,7 +201,7 @@ def format_count(total, npairs, show_pairs):
     return str(total)
 
 
-def summarize(values, seeds, show_family_in_min, overdisp):
+def summarize(values, seeds, show_family_in_min, overdisp, partial):
     seen_engines = []
     run_counts = {}
     pair_counts = {}
@@ -238,21 +238,31 @@ def summarize(values, seeds, show_family_in_min, overdisp):
             engines.append(engine)
     nruns_by_engine = {}
     tests_per_run_by_engine = {}
+    ntests_by_engine = {}
     tests_per_run = 0
     for engine in engines:
         nruns = len({seed for _, _, seed in values[engine]})
         nvals = len(values[engine])
-        if nruns <= 0 or nvals % nruns != 0:
+        if nruns <= 0:
+            raise SystemExit(
+                f"engine {engine} has no observed runs"
+            )
+        if not partial and nvals % nruns != 0:
             raise SystemExit(
                 f"engine {engine} has {nvals} values, not divisible by {nruns} seeds"
             )
-        nper = nvals // nruns
         nruns_by_engine[engine] = nruns
-        tests_per_run_by_engine[engine] = nper
-        if tests_per_run == 0:
-            tests_per_run = nper
-        elif nper != tests_per_run:
+        ntests_by_engine[engine] = nvals
+        if partial:
+            tests_per_run_by_engine[engine] = 0
             tests_per_run = -1
+        else:
+            nper = nvals // nruns
+            tests_per_run_by_engine[engine] = nper
+            if tests_per_run == 0:
+                tests_per_run = nper
+            elif nper != tests_per_run:
+                tests_per_run = -1
     for engine in engines:
         engine_values = sorted(values[engine], key=lambda item: (item[0], item[1], item[2]))
         counts = [sum(1 for value, _, _ in engine_values if value < threshold)
@@ -272,12 +282,19 @@ def summarize(values, seeds, show_family_in_min, overdisp):
             format_count(counts[1], len(pair_counts[engine][1]), True),
             format_count(counts[2], len(pair_counts[engine][2]), False),
             format_count(counts[3], len(pair_counts[engine][3]), False),
-            format_expected_int(nruns_by_engine[engine], tests_per_run_by_engine[engine], 1e-3),
+            format_expected_int(ntests_by_engine[engine], 1e-3),
             mins[0],
             mins[1],
             mins[2],
         ]
         rows.append(row)
+
+    if partial:
+        widths = [len(name) for name in header]
+        for row in rows:
+            for i, cell in enumerate(row):
+                widths[i] = max(widths[i], len(cell))
+        return engines, header, rows, [], [], -1, len(run_counts)
 
     same_nruns = len(set(nruns_by_engine.values())) == 1
     same_tests_per_run = len(set(tests_per_run_by_engine.values())) == 1
@@ -364,10 +381,10 @@ def summarize(values, seeds, show_family_in_min, overdisp):
             mu = [tests_per_run*nruns*2*threshold for threshold in THRESHOLDS]
             expected_row = [
                 "Expected total",
-                format_expected(nruns, tests_per_run, 1e-3),
-                format_expected(nruns, tests_per_run, 1e-4),
-                format_expected(nruns, tests_per_run, 1e-5),
-                format_expected(nruns, tests_per_run, 1e-6),
+                format_expected(nruns*tests_per_run, 1e-3),
+                format_expected(nruns*tests_per_run, 1e-4),
+                format_expected(nruns*tests_per_run, 1e-5),
+                format_expected(nruns*tests_per_run, 1e-6),
                 "-",
                 "-",
                 "-",
@@ -420,10 +437,10 @@ def summarize(values, seeds, show_family_in_min, overdisp):
             ]
             total_expected_row = [
                 "Expected total",
-                format_expected(total_nruns, tests_per_run, 1e-3),
-                format_expected(total_nruns, tests_per_run, 1e-4),
-                format_expected(total_nruns, tests_per_run, 1e-5),
-                format_expected(total_nruns, tests_per_run, 1e-6),
+                format_expected(total_nruns*tests_per_run, 1e-3),
+                format_expected(total_nruns*tests_per_run, 1e-4),
+                format_expected(total_nruns*tests_per_run, 1e-5),
+                format_expected(total_nruns*tests_per_run, 1e-6),
                 "-",
                 "-",
                 "-",
@@ -505,17 +522,26 @@ def main():
     args = sys.argv[1:]
     overdisp = 0
     nlowest = 0
-    while len(args) >= 2 and args[0] in ["-o", "-l"]:
+    partial = False
+    while args and args[0] in ["-o", "-l", "-p"]:
         if args[0] == "-o":
+            if len(args) < 2:
+                raise SystemExit("summary.py: -o expects w.xxx,x.xxx,y.yyy,z.zzz")
             vals = args[1].split(",")
             if len(vals) != 4:
                 raise SystemExit("summary.py: -o expects w.xxx,x.xxx,y.yyy,z.zzz")
             overdisp = [float(v) for v in vals]
-        else:
+            args = args[2:]
+        elif args[0] == "-l":
+            if len(args) < 2:
+                raise SystemExit("summary.py: -l expects N >= 0")
             nlowest = int(args[1])
             if nlowest < 0:
                 raise SystemExit("summary.py: -l expects N >= 0")
-        args = args[2:]
+            args = args[2:]
+        else:
+            partial = True
+            args = args[1:]
     folder = args[0] if len(args) >= 1 else ""
     nfam = int(args[1]) if len(args) >= 2 else 0
     exclude_family = args[2] if len(args) >= 3 else ""
@@ -542,14 +568,18 @@ def main():
         family_counts[family] = family_counts.get(family, 0) + 1
 
     engines, header, rows, per_rows, total_rows, tests_per_run, nruns_total = summarize(
-      values, seeds, True, overdisp
+      values, seeds, True, overdisp, partial
     )
     nengines = len(engines)
     expected_ntests = 0
     for engine, engine_values in values.items():
         nruns = len({seed for _, _, seed in engine_values})
         nvals = len(engine_values)
-        if nruns <= 0 or nvals % nruns != 0:
+        if nruns <= 0:
+            raise SystemExit(
+                f"engine {engine} has no observed runs"
+            )
+        if not partial and nvals % nruns != 0:
             raise SystemExit(
                 f"engine {engine} has {nvals} values, not divisible by {nruns} seeds"
             )
@@ -565,6 +595,8 @@ def main():
     print(f"Number of engines: {nengines}")
     print(f"Number of runs:    {nruns_total}")
     print(f"Number of tests:   {ntests}")
+    if partial:
+        print("Partial mode:      yes")
     print()
     print_table(header, rows, per_rows, total_rows)
 
@@ -623,7 +655,7 @@ def main():
             if fam_engine_values:
                 fam_values[engine] = fam_engine_values
         _, fam_header, fam_rows, fam_per_rows, fam_total_rows, _, _ = summarize(
-            fam_values, seeds, False, overdisp
+            fam_values, seeds, False, overdisp, partial
         )
         print_table(fam_header, fam_rows, fam_per_rows, fam_total_rows)
 

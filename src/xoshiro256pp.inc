@@ -12,7 +12,7 @@ static inline ALIGN64 void fill_x256pp(uint64_t *buf, size_t len,
   uint64_t s3 = state->u64[3];
   uint64_t result, t;
   for (size_t i = 0; i < n; i++) {
-    result = ROTL(s0 + s3, 23) + s0;
+    result = ROTL(ROTL(s0 + s3, 23) + s0, 19);
     t = s1 << 17;
     s2 ^= s0;
     s3 ^= s1;

@@ -4,6 +4,7 @@ set -eu
 
 overdisp=
 nlowest=
+partial=0
 pos=
 while [ $# -gt 0 ]
 do
@@ -32,8 +33,11 @@ do
     -l*)
       nlowest=${1#-l}
       ;;
+    -p)
+      partial=1
+      ;;
     -*)
-      echo "usage: $0 [-o w.xxx,x.xxx,y.yyy,z.zzz] [-l N] DIR [NFAM] [EXCLUDE_FAMILY]" >&2
+      echo "usage: $0 [-o w.xxx,x.xxx,y.yyy,z.zzz] [-l N] [-p] DIR [NFAM] [EXCLUDE_FAMILY]" >&2
       exit 1
       ;;
     *)
@@ -48,7 +52,7 @@ set -- $(printf '%s\n' "$pos")
 
 if [ $# -lt 1 ] || [ $# -gt 3 ]
 then
-  echo "usage: $0 [-o w.xxx,x.xxx,y.yyy,z.zzz] [-l N] DIR [NFAM] [EXCLUDE_FAMILY]" >&2
+  echo "usage: $0 [-o w.xxx,x.xxx,y.yyy,z.zzz] [-l N] [-p] DIR [NFAM] [EXCLUDE_FAMILY]" >&2
   exit 1
 fi
 
@@ -65,5 +69,14 @@ if [ -n "$nlowest" ]
 then
   set -- "$@" -l "$nlowest"
 fi
+if [ "$partial" -eq 1 ]
+then
+  set -- "$@" -p
+fi
 set -- "$@" "$dir" "$nfam" "$exclude_family"
-./extract-dir.sh "$dir" | "$@"
+if [ "$partial" -eq 1 ]
+then
+  ./extract-dir.sh -p "$dir" | "$@"
+else
+  ./extract-dir.sh "$dir" | "$@"
+fi

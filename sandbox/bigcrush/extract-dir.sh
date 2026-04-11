@@ -2,6 +2,13 @@
 
 set -eu
 
+allow_partial=0
+if [ "${1-}" = "-p" ]
+then
+  allow_partial=1
+  shift
+fi
+
 dir=${1:-test1}
 
 if [ ! -d "$dir" ]
@@ -17,4 +24,9 @@ then
   exit 0
 fi
 
-gawk -f extract.awk "$@"
+if [ "$allow_partial" -eq 1 ]
+then
+  gawk -vallow_partial=1 -f extract.awk "$@"
+else
+  gawk -f extract.awk "$@"
+fi

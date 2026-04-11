@@ -27,11 +27,12 @@ engines and reference implementations.
 
 Randompack is designed for high-performance bulk generation. It uses buffering
 and inlining in tight, low-overhead inner loops, minimizing per-sample overhead
-when drawing large numbers of variates (using a fixed 2 KB buffer chosen for
-performance). The library is thread-safe, released under the MIT licence, and
-built using the Meson build system with Ninja as the default backend. The C11
-core is intended to build cleanly on all major platforms and to serve both as a
-reliable standalone library and as a common foundation for language bindings.
+when drawing large numbers of variates (currently using an internal buffer of
+144 64-bit words, i.e. 1152 bytes). The library is thread-safe, released under
+the MIT licence, and built using the Meson build system with Ninja as the
+default backend. The C11 core is intended to build cleanly on all major
+platforms and to serve both as a reliable standalone library and as a common
+foundation for language bindings.
 
 The public header file `randompack.h` serves as a compact reference for the C
 API: all user-facing functions are declared there, with comments describing the

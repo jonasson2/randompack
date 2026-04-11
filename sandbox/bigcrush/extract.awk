@@ -45,6 +45,7 @@ BEGINFILE {
 }
 
 ENDFILE {
-  if (!complete) exit
+  if (!complete && !allow_partial) exit
+  if (nout <= 0) exit
   for (i = 1; i <= nout; i++) print out[i]
 }
