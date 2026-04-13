@@ -56,12 +56,9 @@ if testu01_prefix != ''
   testu01_inc = include_directories(join_paths(testu01_prefix, 'include'))
   testu01_libdir = join_paths(testu01_prefix, 'lib')
   testu01_libs = [
-    cc.find_library('testu01', dirs: testu01_libdir, required: true,
-      static: true),
-    cc.find_library('probdist', dirs: testu01_libdir, required: true,
-      static: true),
-    cc.find_library('mylib', dirs: testu01_libdir, required: true,
-      static: true),
+    cc.find_library('testu01', dirs: testu01_libdir, required: true),
+    cc.find_library('probdist', dirs: testu01_libdir, required: true),
+    cc.find_library('mylib', dirs: testu01_libdir, required: true),
   ]
   testu01_driver = executable(
     'TestU01Driver',
