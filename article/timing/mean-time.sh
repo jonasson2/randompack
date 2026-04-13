@@ -73,14 +73,7 @@ make_remote_cmd() {
 
 run_remote_cmd() {
   cmd="$1"
-  case "$remote_host" in
-    elja)
-      ssh "$remote_host" "bash -lc $(quote_sh "source ~/.bashrc; $cmd")"
-      ;;
-    *)
-      ssh "$remote_host" "zsh -ic $(quote_sh "$cmd")"
-      ;;
-  esac
+  ssh "$remote_host" "zsh -lc $(quote_sh "$cmd")"
 }
 
 repeats=5

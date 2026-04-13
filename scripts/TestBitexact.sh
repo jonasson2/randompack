@@ -119,7 +119,7 @@ if [ -n "$remote_host" ] || [ "$cmp_build" != "$builddir" ]; then
     fi
   fi
   if [ -n "$remote_host" ]; then
-    ssh "$remote_host" "bash -lc $(quote_sh "$remote_cmd")"
+    ssh "$remote_host" "zsh -lc $(quote_sh "$remote_cmd")"
   else
     "$@"
   fi
