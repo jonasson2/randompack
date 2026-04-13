@@ -137,7 +137,7 @@ ALWAYS_INLINE double exp_taildraw(randompack_rng *rng, int *w) {
   return x;
 }
 
-ALWAYS_INLINE double exp_unlikely(randompack_rng *rng, int *w, double x, uint8_t idx,
+NEVER_INLINE double exp_unlikely(randompack_rng *rng, int *w, double x, uint8_t idx,
   uint64_t r) {
   double y;
   uint64_t Y, YL, R, L, tmp, ke = ke_double[idx];
