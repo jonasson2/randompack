@@ -167,15 +167,14 @@ NEVER_INLINE void rand_exp(double *buf, size_t len, randompack_rng *rng) {
   draw_raw_copy((uint8_t *)buf, len*sizeof(uint64_t), rng);
   int w = enter_u64_mode(rng);
   uint8_t idx;
-  uint64_t r;
+  uint64_t rraw, r;
   double x;
-  for (size_t i = len; i-- > 0;) {
-    uint8_t *bufpi = (uint8_t*)(buf + i);
-    memcpy(&r, bufpi, sizeof(r));
-    idx = r & 0xff;
-    r = (r >> 8) & 0x1FFFFFFFFFFFFF;
+  for (double *p = buf + len; p-- > buf; ) {
+    memcpy(&rraw, p, sizeof(rraw));
+    idx = rraw & 0xff;
+    r = (rraw >> 8) & 0x1FFFFFFFFFFFFF;
     x = r*we_double[idx];
-    buf[i] = LIKELY(r < ke_double[idx]) ? x : exp_unlikely(rng, &w, x, idx, r);
+    *p = LIKELY(r < ke_double[idx]) ? x : exp_unlikely(rng, &w, x, idx, r);
   }
   exit_u64_mode(rng, w);
 }

@@ -186,6 +186,7 @@ typedef struct {
 
 static engine_table_entry engine_table[] = {
   {"x256++simd",    4},
+  {"x256**simd",    4},
   {"sfc64simd",     4},
   {"x256++",        4},
   {"x256**",        4},

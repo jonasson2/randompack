@@ -21,7 +21,9 @@ static void draw_randoms(char *engine, uint64_t *x, int n, uint64_t seed) {
 }
 
 static bool is_excluded_engine(const char *engine) {
-  return strcmp(engine, "x256++simd") == 0 || strcmp(engine, "sfc64simd") == 0;
+  return strcmp(engine, "x256++simd") == 0 ||
+    strcmp(engine, "x256**simd") == 0 ||
+    strcmp(engine, "sfc64simd") == 0;
 }
 
 // Check that identical engines agree and different engines differ.
