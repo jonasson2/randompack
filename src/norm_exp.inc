@@ -22,12 +22,17 @@
 
 //=============================== NORMAL DISTRIBUTION ==============================
 
+ALWAYS_INLINE bool norm_neg_lowidx(uint64_t r) {
+  return ((r >> 11) & 1) != 0;
+}
+
 ALWAYS_INLINE double norm_decode_lowidx(uint64_t r, uint8_t idx, uint64_t *ki,
-  uint64_t *rabs) {
+  uint64_t *rabs, bool *neg) {
   *ki = ki_double[idx];
   *rabs = r >> 12;
+  *neg = norm_neg_lowidx(r);
   int64_t s = (int64_t)*rabs;
-  if ((r >> 11) & 1) s = -s;
+  if (*neg) s = -s;
   return (double)s * wi_double[idx];
 }
 
@@ -84,8 +89,7 @@ NEVER_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x, uint8_t
   next_try:
     ru = draw_u64(rng, w);
     idx = ru & 0xff;
-    neg = ((ru >> 11) & 1) != 0;
-    x = norm_decode_lowidx(ru, idx, &ki, &rabs);
+    x = norm_decode_lowidx(ru, idx, &ki, &rabs, &neg);
     if (LIKELY(rabs < ki)) return x;
   }
 }
@@ -97,8 +101,7 @@ ALWAYS_INLINE double draw_norm(randompack_rng *rng, int *w) {
   bool neg;
   r = draw_u64(rng, w);
   idx = r & 0xff;
-  neg = ((r >> 11) & 1) != 0;
-  x = norm_decode_lowidx(r, idx, &ki, &rabs);
+  x = norm_decode_lowidx(r, idx, &ki, &rabs, &neg);
   if (LIKELY(rabs < ki)) return x;
   x = norm_unlikely(rng, w, x, idx, rabs, ki, neg);
   return x;
@@ -116,8 +119,7 @@ NEVER_INLINE void rand_norm(double *buf, size_t len, randompack_rng *rng) {
     uint8_t *bufpi = (uint8_t*)(buf + i);
     memcpy(&r, bufpi, sizeof(r));
     idx = r & 0xff;
-    neg = ((r >> 11) & 1) != 0;
-    x = norm_decode_lowidx(r, idx, &ki, &rabs);
+    x = norm_decode_lowidx(r, idx, &ki, &rabs, &neg);
     buf[i] = LIKELY(rabs < ki) ? x : norm_unlikely(rng, &w, x, idx, rabs, ki, neg);
   }
   exit_u64_mode(rng, w);

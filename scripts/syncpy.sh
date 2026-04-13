@@ -9,7 +9,6 @@ echo "Syncing C sources to python/src..."
 rsync -av --delete \
   --exclude='.DS_Store' \
   --exclude='meson.build' \
-  --exclude='norm_exp_mod.inc' \
   --exclude='norm_polar.inc' \
   --exclude='printX.c' \
   src/ \

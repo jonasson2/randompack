@@ -29,36 +29,29 @@ raise SystemExit(1)
 ensure_build_dir()
 {
   build_dir=$1
-  want_norm_exp_mod=$2
 
   if [ ! -d "$build_dir" ]; then
-    meson setup "$build_dir" -Dbuildtype=release -Dnorm_exp_mod="$want_norm_exp_mod"
+    meson setup "$build_dir" -Dbuildtype=release
     return
   fi
 
   buildtype=$(get_build_option "$build_dir" buildtype)
-  norm_exp_mod=$(get_build_option "$build_dir" norm_exp_mod)
-  if [ "$buildtype" != "release" ] || [ "$norm_exp_mod" != "$want_norm_exp_mod" ]; then
-    meson setup --reconfigure "$build_dir" -Dbuildtype=release \
-      -Dnorm_exp_mod="$want_norm_exp_mod"
+  if [ "$buildtype" != "release" ]; then
+    meson setup --reconfigure "$build_dir" -Dbuildtype=release
   fi
 }
 
-if [ ! -f "$root_dir/src/norm_exp_mod.inc" ]; then
-  cp "$root_dir/src/norm_exp.inc" "$root_dir/src/norm_exp_mod.inc"
-fi
-
-ensure_build_dir "$release_dir" false
-ensure_build_dir "$modified_dir" true
+ensure_build_dir "$release_dir"
+ensure_build_dir "$modified_dir"
 
 ninja -C "$release_dir" benchmark/TimeNormExp
 ninja -C "$modified_dir" benchmark/TimeNormExp
 
-printf "\n=== modified (norm_exp_mod.inc) ===\n"
+printf "\n=== modified ===\n"
 modified_out=$("$modified_dir/benchmark/TimeNormExp" "$@")
 printf "%s\n" "$modified_out"
 
-printf "\n=== release (norm_exp.inc) ===\n"
+printf "\n=== release ===\n"
 release_out=$("$release_dir/benchmark/TimeNormExp" "$@")
 printf "%s\n" "$release_out"
 

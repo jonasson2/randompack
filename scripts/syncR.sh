@@ -22,7 +22,6 @@ rsync -av --delete \
   --exclude='.DS_Store' \
   --exclude='meson.build' \
   --exclude='blas.f' \
-  --exclude='norm_exp_mod.inc' \
   --exclude='norm_polar.inc' \
   --exclude='printX.c' \
   --exclude='randompack_float.c' \

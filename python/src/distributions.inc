@@ -19,8 +19,6 @@ static int LastNonzeroColumn(int m, int n, double A[]) {
 //#include "zmgd.inc"   // static zmgd() lives here
 #if defined(NORM_POLAR)
 #include "norm_polar.inc"
-#elif defined(NORM_EXP_MOD)
-#include "norm_exp_mod.inc"
 #else
 #include "norm_exp.inc"
 #endif
