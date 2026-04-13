@@ -7,11 +7,13 @@
   (hi) = (uint32_t)(_p >> 32);                                 \
 } while (0)
 
-ALWAYS_INLINE float norm_decodef(uint32_t r, uint8_t idx, uint32_t *ki, uint32_t *rabs) {
+ALWAYS_INLINE float norm_decode(uint32_t r, uint8_t idx, uint32_t *ki,
+  uint32_t *rabs, bool *sign) {
   *ki = ki_float[idx];
-  *rabs = r & 0x007fffff;
+  *rabs = r >> 9;
+  *sign = ((r >> 8) & 1) != 0;
   int32_t s = (int32_t)*rabs;
-  if ((r >> 23) & 1) s = -s;
+  if (*sign) s = -s;
   return (float)s * wi_float[idx];
 }
 
@@ -23,7 +25,7 @@ NEVER_INLINE bool below_normpdf_f(uint8_t idx, float x, float y) {
   return f1 + y*(f0 - f1) < openlibm_expf(-x*x/2);
 }
 
-NEVER_INLINE float norm_tail_draw_f(randompack_rng *rng, uint32_t rabs, float y,
+NEVER_INLINE float norm_tail_draw_f(randompack_rng *rng, bool sign, float y,
   int *w) {
   float xx, yy, x;
   for (;;) {
@@ -32,35 +34,35 @@ NEVER_INLINE float norm_tail_draw_f(randompack_rng *rng, uint32_t rabs, float y,
     xx = -ziggurat_nor_inv_r_f * openlibm_log1pf(-x);
     yy = -openlibm_log1pf(-y);
     if (LIKELY(yy + yy > xx * xx))
-      return ((rabs >> 8) & 0x1) ? -(ziggurat_nor_r_f + xx) : ziggurat_nor_r_f + xx;
+      return sign ? -(ziggurat_nor_r_f + xx) : ziggurat_nor_r_f + xx;
     y = draw_u01f(rng, w);
   }
 }
 
 NEVER_INLINE float avx512_unlikely(randompack_rng *rng, int *w, float x,
-                                    uint8_t idx, uint32_t rabs, uint32_t ki) {
+  uint8_t idx, uint32_t rabs, uint32_t ki, bool sign) {
   for (;;) {
     float u = draw_u01f(rng, w);
     if (UNLIKELY(idx == 0)) 
-      return norm_tail_draw_f(rng, rabs, u, w);
+      return norm_tail_draw_f(rng, sign, u, w);
     else if (below_normpdf_f(idx, x, u))
       return x;
     uint32_t ru = draw_u32(rng, w);
-    idx = ru >> 24;
-    x = norm_decodef(ru, idx, &ki, &rabs);
+    idx = ru & 0xff;
+    x = norm_decode(ru, idx, &ki, &rabs, &sign);
     if (LIKELY(rabs < ki)) return x;
   }
 }
 
 NEVER_INLINE float normf_unlikely(randompack_rng *rng, int *w, float x,
-  uint8_t idx, uint32_t rabs, uint32_t ki) {
+  uint8_t idx, uint32_t rabs, uint32_t ki, bool sign) {
   uint32_t ru, tmp, L, R, Y, YL;
   const int inflection_idx = 52;
   for (;;) {
     Y = draw_u32(rng, w);
     if (UNLIKELY(idx == 0)) {
 		float u = U32_TO_FLOAT(Y);
-      x = norm_tail_draw_f(rng, rabs, u, w);
+      x = norm_tail_draw_f(rng, sign, u, w);
       return x;
     }
     if (!rng->cpu_has_avx512) {
@@ -85,8 +87,8 @@ NEVER_INLINE float normf_unlikely(randompack_rng *rng, int *w, float x,
     if (below_normpdf_f(idx, x, u)) return x;
   next_try:
     ru = draw_u32(rng, w);
-    idx = ru >> 24;
-    x = norm_decodef(ru, idx, &ki, &rabs);
+    idx = ru & 0xff;
+    x = norm_decode(ru, idx, &ki, &rabs, &sign);
     if (LIKELY(rabs < ki)) return x;
   }
 }
@@ -95,12 +97,13 @@ ALWAYS_INLINE float draw_normf(randompack_rng *rng, int *w) {
   uint32_t rabs, ki, r;
   float x;
   uint8_t idx;
+  bool sign;
   r = draw_u32(rng, w);
-  idx = r >> 24;
-  x = norm_decodef(r, idx, &ki, &rabs);
+  idx = r & 0xff;
+  x = norm_decode(r, idx, &ki, &rabs, &sign);
   if (LIKELY(rabs < ki)) return x;
-  if (rng->cpu_has_avx512) x = avx512_unlikely(rng, w, x, idx, rabs, ki);
-  else                     x = normf_unlikely(rng, w, x, idx, rabs, ki);
+  if (rng->cpu_has_avx512) x = avx512_unlikely(rng, w, x, idx, rabs, ki, sign);
+  else                     x = normf_unlikely(rng, w, x, idx, rabs, ki, sign);
   return x;
 }
 
@@ -110,14 +113,15 @@ NEVER_INLINE void rand_normf(float *buf, size_t len, randompack_rng *rng) {
   uint8_t idx;
   uint32_t r, rabs, ki;
   float x;
+  bool sign;
   for (size_t i = len; i-- > 0;) {
     uint8_t *bufpi = (uint8_t*)(buf + i);
     memcpy(&r, bufpi, sizeof(r));
-    memcpy(&idx, (uint8_t*)(buf + i) + 3, 1);  // measured slightly faster than >> 24
-    x = norm_decodef(r, idx, &ki, &rabs);
+    idx = r & 0xff;
+    x = norm_decode(r, idx, &ki, &rabs, &sign);
     if (UNLIKELY(rabs > ki)) {
-      if (rng->cpu_has_avx512) x = avx512_unlikely(rng, &w, x, idx, rabs, ki);
-      else                     x = normf_unlikely(rng, &w, x, idx, rabs, ki);
+      if (rng->cpu_has_avx512) x = avx512_unlikely(rng, &w, x, idx, rabs, ki, sign);
+      else                     x = normf_unlikely(rng, &w, x, idx, rabs, ki, sign);
     }
     buf[i] = x;
   }

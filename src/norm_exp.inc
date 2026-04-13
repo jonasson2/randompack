@@ -172,7 +172,7 @@ NEVER_INLINE void rand_exp(double *buf, size_t len, randompack_rng *rng) {
   for (size_t i = len; i-- > 0;) {
     uint8_t *bufpi = (uint8_t*)(buf + i);
     memcpy(&r, bufpi, sizeof(r));
-    memcpy(&idx, (uint8_t*)(buf + i) + 7, 1);  // measured slightly faster than >> 56
+    idx = r >> 56;
     r &= 0x1FFFFFFFFFFFFF;
     x = r*we_double[idx];
     buf[i] = LIKELY(r < ke_double[idx]) ? x : exp_unlikely(rng, &w, x, idx, r);
