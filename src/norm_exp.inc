@@ -154,9 +154,8 @@ ALWAYS_INLINE double exp_unlikely(randompack_rng *rng, int *w, double x, uint8_t
     if (below_exppdf(idx, x, y)) return x; // below curve
   next_try:
     r = draw_u64(rng, w);
-    r >>= 3;
     idx = r & 0xff;
-    r >>= 8;
+    r = (r >> 8) & 0x1FFFFFFFFFFFFF;
     ke = ke_double[idx];
     x = r*we_double[idx];
     if (LIKELY(r < ke)) return x;
@@ -173,9 +172,8 @@ NEVER_INLINE void rand_exp(double *buf, size_t len, randompack_rng *rng) {
   for (size_t i = len; i-- > 0;) {
     uint8_t *bufpi = (uint8_t*)(buf + i);
     memcpy(&r, bufpi, sizeof(r));
-    r >>= 3;
     idx = r & 0xff;
-    r >>= 8;
+    r = (r >> 8) & 0x1FFFFFFFFFFFFF;
     x = r*we_double[idx];
     buf[i] = LIKELY(r < ke_double[idx]) ? x : exp_unlikely(rng, &w, x, idx, r);
   }
