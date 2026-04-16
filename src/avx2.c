@@ -71,7 +71,7 @@ typedef __m256i __m256i_u;
 #include <string.h>
 #include "buffer_draw.inc"
 
-#if defined(_MSC_VER)
+#if defined(_WIN32)
 #define HIDDEN
 #elif defined(__GNUC__) || defined(__clang__)
 #define HIDDEN __attribute__((visibility("hidden")))
@@ -80,7 +80,7 @@ typedef __m256i __m256i_u;
 #endif
 
 #if defined(RANDOMPACK_TEST_HOOKS)
-#if defined(__GNUC__) || defined(__clang__)
+#if !defined(_WIN32) && (defined(__GNUC__) || defined(__clang__))
 #define TEST_HOOK __attribute__((visibility("default")))
 #else
 #define TEST_HOOK

@@ -32,6 +32,8 @@ typedef struct { // Used in table below
 
 static rng_entry rng_table[] = {  // x256++simd is default
   {"x256++simd","xoshiro256++, SIMD accelerated (8x4x64)",     FAST,    4,fill_fast     },
+  {"x256**simd","xoshiro256**, SIMD accelerated (8x4x64)",     X256SSSIMD,4,
+    fill_x256sssimd},
   {"sfc64simd","sfc64, SIMD accelerated (8x4x64)",             SFCSIMD, 4,fill_sfc64simd},
   {"x256++",   "xoshiro256++, Vigna & Blackman, 2019 (4x64)",  X256PP,  4,fill_x256pp   },
   {"x256**",   "xoshiro256**, Vigna & Blackman, 2019 (4x64)",  X256SS,  4,fill_x256ss   },
@@ -45,9 +47,9 @@ static rng_entry rng_table[] = {  // x256++simd is default
   {"ranlux++", "ranlux++, Sibidanov, 2017 (9x64)",             RANLUXPP,9,fill_ranluxpp },
   {"chacha20", "ChaCha20, Bernstein, 2008 (6x64)",             CHACHA20,6,fill_chacha   },
 };
-// For x256++simd, state.xo stream 0 (4 words) is seeded or initialized directly and then
-// jumped by steps of 2^253 to streams 1..7. For sfc64simd, the base state words are
-// replicated to 8 streams with counters s + k*2^61 for k = 0..7.
+// For x256++simd and x256**simd, state.xo stream 0 (4 words) is seeded or initialized
+// directly and then jumped by steps of 2^253 to streams 1..7. For sfc64simd, the base
+// state words are replicated to 8 streams with counters s + k*2^61 for k = 0..7.
 
 #include "randutil.inc"
 #include "distributions.inc"
@@ -71,10 +73,12 @@ randompack_rng *randompack_create(const char *engine) {
 #if defined(BUILD_AVX2)
   rng->cpu_has_avx2 = cpu_has_avx2();
   if (rng->engine == FAST && rng->cpu_has_avx2) rng->fill = fill_fast_avx2;
+  if (rng->engine == X256SSSIMD && rng->cpu_has_avx2) rng->fill = fill_x256sssimd_avx2;
   if (rng->engine == SFCSIMD && rng->cpu_has_avx2) rng->fill = fill_sfc64simd_avx2;
 #endif
 #if defined(BUILD_AVX512)
   if (rng->engine == FAST && rng->cpu_has_avx512) rng->fill = fill_fast_avx512;
+  if (rng->engine == X256SSSIMD && rng->cpu_has_avx512) rng->fill = fill_x256sssimd_avx512;
   if (rng->engine == SFCSIMD && rng->cpu_has_avx512) rng->fill = fill_sfc64simd_avx512;
 #endif
   rand_randomize(rng);
@@ -109,7 +113,7 @@ bool randompack_seed(int seed, uint32_t *spawn_key, int nkey, randompack_rng *rn
   }
   copy32(rng->state.u32, w, nwords32);
   FREE(w);
-  if (rng->engine == FAST) {
+  if (is_x256simd_engine(rng)) {
     scatter_to_stream0(rng);
     fill_stream_states_with_jump(rng);
   }
@@ -187,13 +191,23 @@ bool randompack_jump(int p, randompack_rng *rng) {
     return false;
   }
   rng->last_error = 0;
-  if (rng->engine != X256PP && rng->engine != X256SS && rng->engine != FAST &&
-      rng->engine != XORO && rng->engine != X128P && rng->engine != RANLUXPP) {
-    rng->last_error = "randompack_jump: Only supported for xor-family engines and ranlux++";
+  if (rng->engine != X256PP && rng->engine != X256SS &&
+      rng->engine != X256SSSIMD && rng->engine != FAST &&
+      rng->engine != XORO && rng->engine != X128P &&
+      rng->engine != PCG64 &&
+      rng->engine != RANLUXPP) {
+    rng->last_error =
+      "randompack_jump: only supported for pcg64, xor-family engines and ranlux++";
     return false;
   }
   short_jumps = (rng->engine == XORO || rng->engine == X128P);
-  if (short_jumps) {
+  if (rng->engine == PCG64) {
+    if (p < 0 || p > 127) {
+      rng->last_error = "unsupported jump exponent (must be in [0,127])";
+      return false;
+    }
+  }
+  else if (short_jumps) {
     if (p != 32 && p != 64 && p != 96) {
       rng->last_error = "unsupported jump exponent (must be 32/64/96)";
       return false;
@@ -205,10 +219,33 @@ bool randompack_jump(int p, randompack_rng *rng) {
   }
   if (rng->engine == X256PP ||
       rng->engine == X256SS)        xoshiro256_jump     (rng->state.u64, p);
+  else if (rng->engine == X256SSSIMD) x256simd_jump     (p, rng);
   else if (rng->engine == XORO)     xoroshiro128pp_jump (rng->state.u64, p);
   else if (rng->engine == X128P)    xorshift128p_jump   (rng->state.u64, p);
   else if (rng->engine == RANLUXPP) ranlux_jump         (rng->state.u64, p);
-  else if (rng->engine == FAST)     x256ppsimd_jump     (p, rng);
+  else if (rng->engine == FAST)     x256simd_jump       (p, rng);
+  else if (rng->engine == PCG64)    pcg_jump            (p, rng);
+  rng->buf_word = BUFSIZE;
+  rng->buf_byte = 0;
+  return true;
+}
+
+bool randompack_pcg64_advance(uint64_t delta[2], randompack_rng *rng) {
+  if (!rng) return false;
+  if (rng->engine == INVALID) {
+    rng->last_error = "randompack_pcg64_advance: invalid rng";
+    return false;
+  }
+  rng->last_error = 0;
+  if (!delta) {
+    rng->last_error = "randompack_pcg64_advance: delta is null";
+    return false;
+  }
+  if (rng->engine != PCG64) {
+    rng->last_error = "randompack_pcg64_advance: only supported for pcg64";
+    return false;
+  }
+  pcg_advance(delta, rng);
   rng->buf_word = BUFSIZE;
   rng->buf_byte = 0;
   return true;
@@ -229,26 +266,26 @@ bool randompack_pcg64_set_inc(uint64_t inc[2], randompack_rng *rng) {
   return true;
 }
 
-bool randompack_cwg128_set_inc(uint64_t inc[2], randompack_rng *rng) {
+bool randompack_cwg128_set_weyl(uint64_t weyl[2], randompack_rng *rng) {
   if (!rng) return false;
   rng->last_error = 0;
   if (rng->engine != CWG128) {
-    rng->last_error = "randompack cwg128_set_inc: engine is not cwg128";
+    rng->last_error = "randompack cwg128_set_weyl: engine is not cwg128";
     return false;
   }
-  if ((inc[0] & 1) == 0) {
-    rng->last_error = "randompack cwg128_set_inc: increment must be odd";
+  if ((weyl[0] & 1) == 0) {
+    rng->last_error = "randompack cwg128_set_weyl: Weyl increment must be odd";
     return false;
   }
-  cwg128_set_inc(inc, rng);
+  cwg128_set_weyl(weyl, rng);
   return true;
 }
 
-bool randompack_set_chacha_nonce(uint32_t nonce[3], randompack_rng *rng) {
+bool randompack_chacha_set_nonce(uint32_t nonce[3], randompack_rng *rng) {
   if (!rng) return false;
   rng->last_error = 0;
   if (rng->engine != CHACHA20) {
-    rng->last_error = "randompack set_chacha_nonce: engine is not chacha20";
+    rng->last_error = "randompack chacha_set_nonce: engine is not chacha20";
     return false;
   }
   chacha_set_nonce(nonce, rng);
@@ -328,8 +365,10 @@ bool randompack_set_state(uint64_t state[], int nstate, randompack_rng *rng) {
     rng->last_error = "randompack set_state: unknown engine";
   else if (nstate != nwords)
     rng->last_error = "randompack set_state: wrong nstate for this engine";
-  else if (rng->engine == X256PP || rng->engine == X256SS || rng->engine == FAST ||
-           rng->engine == XORO || rng->engine == X128P || rng->engine == RANLUXPP) {
+  else if (rng->engine == X256PP || rng->engine == X256SS ||
+           rng->engine == X256SSSIMD || rng->engine == FAST ||
+           rng->engine == XORO || rng->engine == X128P ||
+           rng->engine == RANLUXPP) {
     if (all_zero_state(state, nstate))
       rng->last_error = "randompack set_state: all-zero state is invalid";
   }
@@ -421,10 +460,12 @@ bool randompack_deserialize(const uint8_t *buf, int len, randompack_rng *rng) {
   }
 #if defined(BUILD_AVX2)
   if (rng->engine == FAST && rng->cpu_has_avx2) rng->fill = fill_fast_avx2;
+  if (rng->engine == X256SSSIMD && rng->cpu_has_avx2) rng->fill = fill_x256sssimd_avx2;
   if (rng->engine == SFCSIMD && rng->cpu_has_avx2) rng->fill = fill_sfc64simd_avx2;
 #endif
 #if defined(BUILD_AVX512)
   if (rng->engine == FAST && rng->cpu_has_avx512) rng->fill = fill_fast_avx512;
+  if (rng->engine == X256SSSIMD && rng->cpu_has_avx512) rng->fill = fill_x256sssimd_avx512;
   if (rng->engine == SFCSIMD && rng->cpu_has_avx512) rng->fill = fill_sfc64simd_avx512;
 #endif
   return true;
@@ -587,19 +628,41 @@ bool randompack_u01(double x[], size_t len, randompack_rng *rng) {
 
 bool randompack_unif(double x[], size_t len, double a, double b,
   randompack_rng *rng) {
+  double w;
   if (!rng) return false;
   if (!x || a >= b) {
     rng->last_error = "invalid arguments to randompack_unif";
     return false;
   }
   rng->last_error = 0;
-  rand_dble(x, len, rng); // x in [0,1)
-  if (a==0 && b==1) return true;
+  if (a==0 && b==1) {
+    rand_dble(x, len, rng); // x in [0,1)
+    return true;
+  }
 #if defined(FP_FAST_FMA) // guarantee output <= b when input < 1
-  double w = nextafter(b - a, 0.0);
+  w = nextafter(b - a, 0.0);
 #else 
-  double w = b - a;
+  w = b - a;
 #endif
+  if (!rng->bitexact && !rng->usefullmantissa) {
+#if defined(BUILD_AVX512)
+    if (rng->cpu_has_avx512) {
+      rand_unif_avx512(x, len, a, w, rng);
+      return true;
+    }
+#endif
+#if defined(BUILD_AVX2)
+    if (rng->cpu_has_avx2) {
+      rand_unif_avx2(x, len, a, w, rng);
+      return true;
+    }
+#endif
+#if HAVE_NEON && defined(__aarch64__)
+    rand_unif_neon(x, len, a, w, rng);
+    return true;
+#endif
+  }
+  rand_dble(x, len, rng); // x in [0,1)
   shift_scale_double_inplace(x, len, a, w, rng);
   return true;
 }

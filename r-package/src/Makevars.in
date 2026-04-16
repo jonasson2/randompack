@@ -1,6 +1,7 @@
 all: $(SHLIB)
 
-OBJECTS = randompack.o randompack_R.o $(SIMD_OBJECTS) init.o rp_dpstrf.o
+OBJECTS = randompack.o pcg_advance.o randompack_R.o $(SIMD_OBJECTS) init.o \
+  rp_dpstrf.o
 
 SIMD_OBJECTS = @SIMD_OBJECTS@
 AVX2_CFLAGS = @AVX2_CFLAGS@

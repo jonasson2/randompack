@@ -151,8 +151,8 @@ CONST vdouble Sleef_logd4_u10avx2(vdouble d) {
   vdouble2 x;
   vdouble t, m, x2;
   vopmask o = vlt_vo_vd_vd(d, vcast_vd_d(0x1p-1022));
-  d = vsel_vd_vo_vd_vd(o, vmul_vd_vd_vd(d, vcast_vd_d((double)(1L << 32)*
-      (double)(1L << 32))), d);
+  d = vsel_vd_vo_vd_vd(o, vmul_vd_vd_vd(d,
+      vcast_vd_d(4294967296.0 * 4294967296.0)), d);
   vint e = vilogb2k_vi_vd(vmul_vd_vd_vd(d, vcast_vd_d(1.0/0.75)));
   m = vldexp3_vd_vd_vi(d, vneg_vi_vi(e));
   e = vsel_vi_vo_vi_vi(vcast_vo32_vo64(o), vsub_vi_vi_vi(e, vcast_vi_i(64)),

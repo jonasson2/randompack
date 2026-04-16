@@ -39,6 +39,13 @@ executable(
 )
 
 executable(
+  'ref_ranlux_hahnmon',
+  'ref_ranlux_hahnmon.cpp',
+  '../../third-party/ranluxpp-hahnmon/RanluxppEngine.cpp',
+  include_directories : ['../../third-party/ranluxpp-hahnmon'],
+)
+
+executable(
   'TimeRanluxHahnfeld',
   [
     'TimeRanluxHahnfeld.cpp',
@@ -52,4 +59,25 @@ executable(
     '../../third-party/ranluxpp-hahnmon',
   ],
   dependencies : [randompack_dep],
+)
+
+executable(
+  'verify_agreement',
+  [
+    'verify_agreement.cpp',
+    '../../third-party/ranluxpp-portable/ranluxpp.c',
+    '../../third-party/ranluxpp-hahnmon/RanluxppEngine.cpp',
+  ],
+  include_directories : [
+    '../../third-party/ranluxpp-portable',
+    '../../third-party/ranluxpp-hahnmon',
+  ],
+)
+
+executable(
+  'extract_hahnmon_lcg',
+  'extract_hahnmon_lcg.cpp',
+  include_directories : [
+    '../../third-party/ranluxpp-hahnmon',
+  ],
 )

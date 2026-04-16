@@ -14,6 +14,12 @@ void fill_fast_avx512(uint64_t *buf, size_t len, randompack_state *state) {
   (void)state;
 }
 
+void fill_x256sssimd_avx512(uint64_t *buf, size_t len, randompack_state *state) {
+  (void)buf;
+  (void)len;
+  (void)state;
+}
+
 void fill_sfc64simd_avx512(uint64_t *buf, size_t len, randompack_state *state) {
   (void)buf;
   (void)len;
@@ -145,6 +151,47 @@ HIDDEN void fill_fast_avx512(uint64_t *buf, size_t len,
   _mm512_storeu_si512((void *)&st->s3[0], s3);
 }
 
+HIDDEN void fill_x256sssimd_avx512(uint64_t *buf, size_t len,
+  randompack_state *state) {
+  uint64_t *out = buf;
+  xo256 *st = &state->xo;
+  __m512i s0 = _mm512_loadu_si512((const void *)&st->s0[0]);
+  __m512i s1 = _mm512_loadu_si512((const void *)&st->s1[0]);
+  __m512i s2 = _mm512_loadu_si512((const void *)&st->s2[0]);
+  __m512i s3 = _mm512_loadu_si512((const void *)&st->s3[0]);
+  size_t i = 0;
+  for (; i < len; i += 16) {
+    __m512i r0 = _mm512_add_epi64(_mm512_slli_epi64(s1, 2), s1);
+    r0 = _mm512_or_si512(_mm512_slli_epi64(r0, 7), _mm512_srli_epi64(r0, 57));
+    r0 = _mm512_add_epi64(_mm512_slli_epi64(r0, 3), r0);
+    __m512i t0 = _mm512_slli_epi64(s1, 17);
+    s2 = _mm512_xor_si512(s2, s0);
+    s3 = _mm512_xor_si512(s3, s1);
+    s1 = _mm512_xor_si512(s1, s2);
+    s0 = _mm512_xor_si512(s0, s3);
+    s2 = _mm512_xor_si512(s2, t0);
+    s3 = _mm512_or_si512(_mm512_slli_epi64(s3, 45), _mm512_srli_epi64(s3, 19));
+
+    __m512i r1 = _mm512_add_epi64(_mm512_slli_epi64(s1, 2), s1);
+    r1 = _mm512_or_si512(_mm512_slli_epi64(r1, 7), _mm512_srli_epi64(r1, 57));
+    r1 = _mm512_add_epi64(_mm512_slli_epi64(r1, 3), r1);
+    __m512i t1 = _mm512_slli_epi64(s1, 17);
+    s2 = _mm512_xor_si512(s2, s0);
+    s3 = _mm512_xor_si512(s3, s1);
+    s1 = _mm512_xor_si512(s1, s2);
+    s0 = _mm512_xor_si512(s0, s3);
+    s2 = _mm512_xor_si512(s2, t1);
+    s3 = _mm512_or_si512(_mm512_slli_epi64(s3, 45), _mm512_srli_epi64(s3, 19));
+
+    _mm512_storeu_si512((void *)(out + i), r0);
+    _mm512_storeu_si512((void *)(out + i + 8), r1);
+  }
+  _mm512_storeu_si512((void *)&st->s0[0], s0);
+  _mm512_storeu_si512((void *)&st->s1[0], s1);
+  _mm512_storeu_si512((void *)&st->s2[0], s2);
+  _mm512_storeu_si512((void *)&st->s3[0], s3);
+}
+
 HIDDEN void fill_sfc64simd_avx512(uint64_t *buf, size_t len,
   randompack_state *state) {
   uint64_t *out = buf;
@@ -235,27 +282,6 @@ HIDDEN void shift_scale_double_avx512(double x[], size_t len, double shift,
   size_t i = 0;
   __m512d s = _mm512_set1_pd(scale);
   __m512d b = _mm512_set1_pd(shift);
-  for (; i + 32 <= len; i += 32) {
-    __m512d v0 = _mm512_loadu_pd(x + i);
-    __m512d v1 = _mm512_loadu_pd(x + i + 8);
-    __m512d v2 = _mm512_loadu_pd(x + i + 16);
-    __m512d v3 = _mm512_loadu_pd(x + i + 24);
-#if defined(__FMA__)
-    v0 = _mm512_fmadd_pd(v0, s, b);
-    v1 = _mm512_fmadd_pd(v1, s, b);
-    v2 = _mm512_fmadd_pd(v2, s, b);
-    v3 = _mm512_fmadd_pd(v3, s, b);
-#else
-    v0 = _mm512_add_pd(_mm512_mul_pd(v0, s), b);
-    v1 = _mm512_add_pd(_mm512_mul_pd(v1, s), b);
-    v2 = _mm512_add_pd(_mm512_mul_pd(v2, s), b);
-    v3 = _mm512_add_pd(_mm512_mul_pd(v3, s), b);
-#endif
-    _mm512_storeu_pd(x + i, v0);
-    _mm512_storeu_pd(x + i + 8, v1);
-    _mm512_storeu_pd(x + i + 16, v2);
-    _mm512_storeu_pd(x + i + 24, v3);
-  }
   for (; i + 8 <= len; i += 8) {
     __m512d v = _mm512_loadu_pd(x + i);
 #if defined(__FMA__)
@@ -318,27 +344,6 @@ HIDDEN void shift_scale_float_avx512(float x[], size_t len, float shift,
   size_t i = 0;
   __m512 s = _mm512_set1_ps(scale);
   __m512 b = _mm512_set1_ps(shift);
-  for (; i + 64 <= len; i += 64) {
-    __m512 v0 = _mm512_loadu_ps(x + i);
-    __m512 v1 = _mm512_loadu_ps(x + i + 16);
-    __m512 v2 = _mm512_loadu_ps(x + i + 32);
-    __m512 v3 = _mm512_loadu_ps(x + i + 48);
-#if defined(__FMA__)
-    v0 = _mm512_fmadd_ps(v0, s, b);
-    v1 = _mm512_fmadd_ps(v1, s, b);
-    v2 = _mm512_fmadd_ps(v2, s, b);
-    v3 = _mm512_fmadd_ps(v3, s, b);
-#else
-    v0 = _mm512_add_ps(_mm512_mul_ps(v0, s), b);
-    v1 = _mm512_add_ps(_mm512_mul_ps(v1, s), b);
-    v2 = _mm512_add_ps(_mm512_mul_ps(v2, s), b);
-    v3 = _mm512_add_ps(_mm512_mul_ps(v3, s), b);
-#endif
-    _mm512_storeu_ps(x + i, v0);
-    _mm512_storeu_ps(x + i + 16, v1);
-    _mm512_storeu_ps(x + i + 32, v2);
-    _mm512_storeu_ps(x + i + 48, v3);
-  }
   for (; i + 16 <= len; i += 16) {
     __m512 v = _mm512_loadu_ps(x + i);
 #if defined(__FMA__)
@@ -389,6 +394,46 @@ HIDDEN void rand_dble_avx512(double x[], size_t len, randompack_rng *rng) {
         memcpy(&d, &bits, sizeof(d));
         x[i + j] = d - 1;
       }
+    }
+    w += (int)take;
+    i += take;
+  }
+  exit_u64_mode(rng, w);
+}
+
+HIDDEN void rand_unif_avx512(double x[], size_t len, double a, double b,
+  randompack_rng *rng) {
+  int w = enter_u64_mode(rng);
+  double scale = b;
+  double shift = a - b;
+  size_t i = 0;
+  while (i < len) {
+    fill_if_empty(rng, &w);
+    size_t remain = len - i;
+    size_t avail = BUFSIZE - (size_t)w;
+    size_t take = remain < avail ? remain : avail;
+    uint64_t *u64 = rng->buf.u64 + (size_t)w;
+    size_t j = 0;
+    __m512i expo = _mm512_set1_epi64(0x3ff0000000000000ULL);
+    __m512d s = _mm512_set1_pd(scale);
+    __m512d c = _mm512_set1_pd(shift);
+    for (; j + 7 < take; j += 8) {
+      __m512i r = _mm512_loadu_si512((const void *)(u64 + j));
+      r = _mm512_srli_epi64(r, 12);
+      r = _mm512_or_si512(r, expo);
+      __m512d d = _mm512_castsi512_pd(r);
+#if defined(__FMA__)
+      d = _mm512_fmadd_pd(d, s, c);
+#else
+      d = _mm512_add_pd(_mm512_mul_pd(d, s), c);
+#endif
+      _mm512_storeu_pd(x + i + j, d);
+    }
+    for (; j < take; j++) {
+      uint64_t bits = (u64[j] >> 12) | 0x3ff0000000000000ULL;
+      double d;
+      memcpy(&d, &bits, sizeof(d));
+      x[i + j] = shift + scale*d;
     }
     w += (int)take;
     i += take;

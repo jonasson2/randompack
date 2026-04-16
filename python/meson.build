@@ -38,6 +38,7 @@ wrap_sources = [custom_target(
 core_sources = files(
   'src/randompack.c',
   'src/randompack_float.c',
+  'src/pcg_advance.c',
 )
 
 deps = [py_dep]

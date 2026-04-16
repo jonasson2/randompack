@@ -182,30 +182,129 @@ static void test_pcg_set_increment(void) {
   randompack_free(rng);
 }
 
-static void test_cwg_set_increment(void) {
+static void test_pcg_advance(void) {
+  // NumPy reference data from numpy 2.4.2 using PCG64DXSM(seed=123),
+  // with bg.advance(delta) applied before drawing uint64 values.
+  uint64_t state[4] = {
+    0x5bee00f1ac1e7b4dULL,
+    0x786df8ae32b3fe64ULL,
+    0x26dbcfc7823f9c3bULL,
+    0x0d4e48fee886333aULL
+  };
+  uint64_t delta0[2] = {0, 0};
+  uint64_t delta10[2] = {10, 0};
+  uint64_t delta_big[2] = {12345, 1ULL << 16};
+  uint64_t want0[2] = {
+    12966207907714485482ULL,
+    18052762201172092891ULL
+  };
+  uint64_t want10[2] = {
+    13162977403878328813ULL,
+    5472256356109215838ULL
+  };
+  uint64_t want_big[2] = {
+    3063417807134769416ULL,
+    1784144657329376969ULL
+  };
+  randompack_rng *rng = make_rng("pcg64");
+  bool ok = randompack_set_state(state, LEN(state), rng);
+  check_success(ok, rng);
+  ok = randompack_pcg64_advance(delta0, rng);
+  check_success(ok, rng);
+  uint64_t got[2];
+  ok = randompack_uint64(got, LEN(got), 0, rng);
+  check_success(ok, rng);
+  CHECK_EQUALV(got, want0, LEN(got));
+  ok = randompack_set_state(state, LEN(state), rng);
+  check_success(ok, rng);
+  ok = randompack_pcg64_advance(delta10, rng);
+  check_success(ok, rng);
+  ok = randompack_uint64(got, LEN(got), 0, rng);
+  check_success(ok, rng);
+  CHECK_EQUALV(got, want10, LEN(got));
+  ok = randompack_set_state(state, LEN(state), rng);
+  check_success(ok, rng);
+  ok = randompack_pcg64_advance(delta_big, rng);
+  check_success(ok, rng);
+  ok = randompack_uint64(got, LEN(got), 0, rng);
+  check_success(ok, rng);
+  CHECK_EQUALV(got, want_big, LEN(got));
+  xCheck(!randompack_pcg64_advance(0, rng));
+  randompack_free(rng);
+  rng = make_rng("squares");
+  ok = randompack_pcg64_advance(delta10, rng);
+  check_failure(ok, rng);
+  randompack_free(rng);
+}
+
+static void test_pcg_jump(void) {
+  uint64_t state[4] = {
+    0x5bee00f1ac1e7b4dULL,
+    0x786df8ae32b3fe64ULL,
+    0x26dbcfc7823f9c3bULL,
+    0x0d4e48fee886333aULL
+  };
+  int pvals[] = {0, 10, 80, 127};
+  for (int i = 0; i < LEN(pvals); i++) {
+    uint64_t delta[2] = {0, 0};
+    uint64_t a[4], b[4];
+    int p = pvals[i];
+    randompack_rng *rng0 = make_rng("pcg64");
+    randompack_rng *rng1 = make_rng("pcg64");
+    bool ok = randompack_set_state(state, LEN(state), rng0);
+    check_success(ok, rng0);
+    ok = randompack_set_state(state, LEN(state), rng1);
+    check_success(ok, rng1);
+    if (p < 64) delta[0] = 1ULL << p;
+    else delta[1] = 1ULL << (p - 64);
+    ok = randompack_jump(p, rng0);
+    check_success(ok, rng0);
+    ok = randompack_pcg64_advance(delta, rng1);
+    check_success(ok, rng1);
+    ok = randompack_uint64(a, LEN(a), 0, rng0);
+    check_success(ok, rng0);
+    ok = randompack_uint64(b, LEN(b), 0, rng1);
+    check_success(ok, rng1);
+    CHECK_EQUALV(a, b, LEN(a));
+    randompack_free(rng0);
+    randompack_free(rng1);
+  }
+  randompack_rng *rng = make_rng("pcg64");
+  bool ok = randompack_set_state(state, LEN(state), rng);
+  check_success(ok, rng);
+  xCheck(!randompack_jump(-1, rng));
+  xCheck(!randompack_jump(128, rng));
+  randompack_free(rng);
+  rng = make_rng("squares");
+  ok = randompack_jump(10, rng);
+  check_failure(ok, rng);
+  randompack_free(rng);
+}
+
+static void test_cwg_set_weyl(void) {
   uint64_t state[8] = {1, 0, 7, 0, 11, 0, 13, 0};
-  uint64_t inc[2] = {3, 5};
-  uint64_t inc_even[2] = {2, 5};
+  uint64_t weyl[2] = {3, 5};
+  uint64_t weyl_even[2] = {2, 5};
   randompack_rng *rng = make_rng("cwg128");
   bool ok = randompack_set_state(state, LEN(state), rng);
   check_success(ok, rng);
-  ok = randompack_cwg128_set_inc(inc, rng);
+  ok = randompack_cwg128_set_weyl(weyl, rng);
   check_success(ok, rng);
   uint64_t a[4], b[4];
   ok = randompack_uint64(a, LEN(a), 0, rng);
   check_success(ok, rng);
   ok = randompack_set_state(state, LEN(state), rng);
   check_success(ok, rng);
-  ok = randompack_cwg128_set_inc(inc, rng);
+  ok = randompack_cwg128_set_weyl(weyl, rng);
   check_success(ok, rng);
   ok = randompack_uint64(b, LEN(b), 0, rng);
   check_success(ok, rng);
   CHECK_EQUALV(a, b, LEN(a));
-  ok = randompack_cwg128_set_inc(inc_even, rng);
+  ok = randompack_cwg128_set_weyl(weyl_even, rng);
   check_failure(ok, rng);
   randompack_free(rng);
   rng = make_rng("pcg64");
-  ok = randompack_cwg128_set_inc(inc, rng);
+  ok = randompack_cwg128_set_weyl(weyl, rng);
   check_failure(ok, rng);
   randompack_free(rng);
 }
@@ -217,7 +316,7 @@ static void test_chacha_set_nonce(void) {
   randompack_rng *rng = make_rng("chacha20");
   bool ok = randompack_set_state(state0, LEN(state0), rng);
   check_success(ok, rng);
-  ok = randompack_set_chacha_nonce(nonce, rng);
+  ok = randompack_chacha_set_nonce(nonce, rng);
   check_success(ok, rng);
   uint64_t a[4], b[4];
   ok = randompack_uint64(a, LEN(a), 0, rng);
@@ -231,7 +330,7 @@ static void test_chacha_set_nonce(void) {
   CHECK_EQUALV(a, b, LEN(a));
   randompack_free(rng);
   rng = make_rng("pcg64");
-  ok = randompack_set_chacha_nonce(nonce, rng);
+  ok = randompack_chacha_set_nonce(nonce, rng);
   check_failure(ok, rng);
   randompack_free(rng);
 }
@@ -264,29 +363,28 @@ static void test_squares_set_key(void) {
 static void test_sfc64_set_abc(void) {
   uint64_t abc[3] = {7, 11, 13};
   uint64_t state[4] = {1, 2, 3, 17};
-  randompack_rng *rng = make_rng("sfc64");
-  bool ok = randompack_set_state(state, LEN(state), rng);
-  check_success(ok, rng);
+  randompack_rng *rng0 = make_rng("sfc64");
+  randompack_rng *rng1 = make_rng("sfc64");
+  bool ok = randompack_set_state(state, LEN(state), rng0);
+  check_success(ok, rng0);
+  ok = randompack_set_state(state, LEN(state), rng1);
+  check_success(ok, rng1);
   uint64_t a[4], b[4];
-  ok = randompack_sfc64_set_abc(abc, rng);
-  check_success(ok, rng);
-  ok = randompack_uint64(a, LEN(a), 0, rng);
-  check_success(ok, rng);
-  randompack_free(rng);
-  rng = make_rng("sfc64");
-  state[0] = abc[0];
-  state[1] = abc[1];
-  state[2] = abc[2];
-  ok = randompack_set_state(state, LEN(state), rng);
-  check_success(ok, rng);
-  ok = randompack_uint64(b, LEN(b), 0, rng);
-  check_success(ok, rng);
+  ok = randompack_sfc64_set_abc(abc, rng0);
+  check_success(ok, rng0);
+  ok = randompack_sfc64_set_abc(abc, rng1);
+  check_success(ok, rng1);
+  ok = randompack_uint64(a, LEN(a), 0, rng0);
+  check_success(ok, rng0);
+  ok = randompack_uint64(b, LEN(b), 0, rng1);
+  check_success(ok, rng1);
   CHECK_EQUALV(a, b, LEN(a));
-  randompack_free(rng);
-  rng = make_rng("philox");
-  ok = randompack_sfc64_set_abc(abc, rng);
-  check_failure(ok, rng);
-  randompack_free(rng);
+  randompack_free(rng0);
+  randompack_free(rng1);
+  rng0 = make_rng("philox");
+  ok = randompack_sfc64_set_abc(abc, rng0);
+  check_failure(ok, rng0);
+  randompack_free(rng0);
 }
 
 void TestSetState(void) {
@@ -298,6 +396,8 @@ void TestSetState(void) {
   test_squares_set_key();
   test_sfc64_set_abc();
   test_pcg_set_increment();
-  test_cwg_set_increment();
+  test_pcg_advance();
+  test_pcg_jump();
+  test_cwg_set_weyl();
   test_chacha_set_nonce();
 }

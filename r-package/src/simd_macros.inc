@@ -18,7 +18,7 @@ static inline VEC_T vec_mul9_asm(VEC_T x) {
   __asm__(
     "shl %0.2d, %1.2d, #3\n\t"
     "add %0.2d, %0.2d, %1.2d"
-    : "=w"(res)
+    : "=&w"(res)
     : "w"(x)
   );
   return res;

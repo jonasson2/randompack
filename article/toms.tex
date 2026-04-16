@@ -17,7 +17,6 @@
 %% Packages
 \usepackage{listings}
 \usepackage{siunitx}
-\usepackage[T1]{fontenc}
 
 
 \lstdefinestyle{tightcode}{
@@ -85,33 +84,34 @@ The computer generation of pseudo-random numbers has a history dating
 back to the first computers, with von Neumann's middle-square idea
 (1946) \cite{vonneumann1951rejection,lecuyer2017history} and Lehmer's
 linear congruential generator (LCG, 1949)
-\cite{lehmer1951mathematical,lecuyer2017history}. The first generators
-were aimed at generating random integers (typically in $[0, 2^k)$) and
-uniformly distributed reals in $[0,1]$ (through division by $2^k$), but
-soon other distributions followed. In fact von Neumann's paper
+\cite{lehmer1951mathematical,lecuyer2017history}. These first random
+number generators (RNGs) were aimed at generating random integers
+(typically in $[0, 2^k)$) and uniformly distributed reals in $[0,1]$
+(through division by $2^k$). Other important 20th century milestones
+of this type are the Tausworthe RNGs (1965)
+\cite{tausworthe1965linear}, the Wichmann-Hill RNG (1982)
+\cite{wichmann1982efficient}, the Park-Miller LCG (1988)
+\cite{park1988random}, RANLUX (1994) \cite{luscher1994portable},
+adopted in the CERN ROOT framework, the Mersenne Twister (1998)
+\cite{matsumoto1998mersenne} with its extremely long period,
+$2^{19937}-1$, and, in 1999, MRG32k3a \cite{lecuyer1999good} to be
+discussed further below.  
+
+Parallel to the uniform generator development methods for generating
+non-uniform variates were developed. Von Neumann's 1951 paper
 \cite{vonneumann1951rejection} had a clever algorithm for drawing
 exponentially distributed samples, also obtainable by taking the
-logarithm of uniform samples. An early and seminal method for random
-normals is given by Box and Muller \cite{box1958normal}. Other important
-20th century milestones are the Tausworthe random number generators
-(RNGs, 1965) \cite{tausworthe1965linear}, the Wichmann-Hill RNG (1982)
-\cite{wichmann1982efficient}, the Park-Miller LCG (1988)
-\cite{park1988random}, RANLUX (1994) \cite{luscher1994portable}, adopted
-in the CERN ROOT framework, and the Mersenne Twister (1998)
-\cite{matsumoto1998mersenne} with its extremely long period,
-$2^{19937}-1$.
-
-Parallel to the uniform generator development new methods for
-generating non-uniform variates were developed. The normal
-distribution plays an important role, and other important ones are the
-exponential and the gamma distributions. Random sampling from several
-other distributions can be done by combining samples from these three
-(see Section xxx). The Box-Muller method (1958) requires the
-evaluation of a square root, a logarithm, a sine, and a cosine for
-each pair of samples, but a few years later Marsaglia and Bray
-proposed the polar method where the two trigonometrict functions were
-replaced by rejection sampling with acceptance rate $\pi/4$. Rejection
-sampling had already been used by von Neuman in his exponential method
+logarithm of uniform samples. A seminal method for random normals was
+given by Box and Muller in 1958, \cite{box1958normal}. The normal and
+the exponential distributions play an important role, and another one
+is the gamma distributions. Random sampling from several other
+distributions can be done by combining samples from these three (see
+Section xxx). The Box-Muller method requires the evaluation of a
+square root, a logarithm, a sine, and a cosine for each pair of
+samples, but a few years later Marsaglia and Bray proposed the polar
+method where the two trigonometrict functions were replaced by
+rejection sampling with acceptance rate $\pi/4$. Rejection sampling
+had already been used by von Neuman in his exponential method
 \cite{vonneumann1951rejection}. It also plays a central role in the
 ratio of uniforms method (1977) \cite{kinderman1977ratio,leva1992fast}
 which has an acceptance rate of 73\% and needs two uniform samples but
@@ -151,9 +151,10 @@ the Atlantic developed methods for testing cryptographic RNGs
 
 We proceed with the summary of RNG development where we left off with
 the widely used Mersenne Twister (MT; Table~\ref{tab:language-rngs}).
-One of the first RNG to offer independent streams, paving the road for
-the subsequent advances was MRG32k3a
-\cite{lecuyer1999good,lecuyer2002streams}, with a period of $2^{191}$.
+One of the first RNGs to offer independent streams, paving the way for
+the subsequent advances was the aforementioned MRG32k3a, with a period
+of $2^{191}$, introduced by L'Ecuyer in \cite{lecuyer1999good} and
+further developed for parallel use in 2002 \cite{lecuyer2002streams}.
 The WELL generators \cite{panneton2006well} were intended to (and did)
 improve on the MT statistical quality although they did not obtain
 widespread adoption in software. The oposite can be said of the RNGs
@@ -168,9 +169,10 @@ default generators by Rust, Julia, C\#, and gfortran
 support so-called \emph{jumping}, whereby the state can be advanced
 efficiently by very large amounts, such as $2^{128}$ steps, to create
 independent streams. The aforementioned Practrand suite included an
-RNG, sfc64, that also allows independent streams. Interestingly, sfc64
-is planned to become the default random number generator in a
-forthcoming release of the Los Alamos MCNP radiation-transport code.
+RNG, sfc64 (\emph{small-fast-counting}), that also allows independent
+streams. Interestingly, sfc64 is planned to become the default random
+number generator in a forthcoming release of the Los Alamos MCNP
+radiation-transport code.
 \cite{josey2023reassessing,gibson2025mcnpnewsletterq1}.
 
 Some important pseudorandom number generators (PRNGs) emerged from the
@@ -198,10 +200,15 @@ independent generators. Java's default RNG is from the LXM family,
 while SplitMix has primarily found application in spreading an initial
 seed across the state of other generators.
 
-Finally it is worth noting that in 2017 L'Ecuyer wrote a comprehensive
-history of uniform pseudo-random number generators
-\cite{lecuyer2017history}. The earlier article by James (1990)
-\cite{james1990review}, as well as the TestU01 article
+In 2017 L'Ecuyer published a comprehensive history of uniform
+pseudo-random number generators \cite{lecuyer2017history}, which gives
+a fuller treatment of the generators discussed above. He also covers
+several ones not included here: RANDU, RANNO (both notoriously bad),
+lagged Fibonacci, generalized feedback shift register (GFSR),
+add-with-carry, subtract-with-borrow (which underlies RANLUX), and
+block-cipher-based counter generators. The last category includes
+AES-CTR, which helped pave the way for Random123. The earlier article
+by James (1990) \cite{james1990review}, as well as the TestU01 article
 \cite{lecuyer2007testu01}, also provide useful historical overviews.
 More recent, though in both cases limited, reports on RNG testing are
 given by \cite{bhattacharjee2022search} and
@@ -310,7 +317,7 @@ representing a random number generator (RNG). This object contains the
 underlying engine, its state, and other internal information needed by
 the library. Most library functions return a boolean success value.
 When an operation fails, the user can retrieve a diagnostic string
-from the RNG object with \texttt{randompack_last_error}.
+from the RNG object with \texttt{randompack\_last\_error}.
 
 The following minimal example creates an RNG with the default engine,
 obtained by passing \texttt{0} to \texttt{randompack\_create}. Then five
@@ -355,10 +362,10 @@ for the engines are that they should
 
 \begin{table}
 \caption{Random number generators (engines) implemented in Randompack.
-Two engines have SIMD-accelerated versions that are not listed, 
-xoshiro256++ and sfc64, with short names \texttt{x256++simd} and
-\texttt{sfc64simd}, the former of which has been selected as
-Randompack's default engine.}
+Three engines have SIMD-accelerated versions that are not listed,
+xoshiro256++, xoshiro256**, and sfc64, with short names
+\texttt{x256++simd}, \texttt{x256**simd}, and \texttt{sfc64simd}, the
+first of which has been selected as Randompack's default engine.}
 %
 \label{tab:engines}
 \begin{tabular}{llcclcc}
@@ -462,13 +469,23 @@ stream setters for the other engines (Table \ref{tab:stream-select}).
 Randompack allows jumping by by $2^k$ steps, with $k \in
 \{32,64,96,128,192\}$ (the last two are not available for
 \texttt{x128++} and \texttt{xoro++}). For example, repeatedly jumping
-a stream by $2^64$ creates several disjoint substreams of length
-$2^64$.
+a stream by $2^{64}$ creates several disjoint substreams of length
+$2^{64}$. PCG64 is special in that in addition to setting its odd
+incrementx explicitly, it also allows jumping, or
+\emph{advancing}, its state by an arbitrary number of steps, $\delta$,
+with \texttt{randompack\_pcg64\_advance} (or with
+\texttt{randompack\_jump} when $\delta = 2^k$).
+
 %
 \begin{table}
   \caption{State composition and stream selection for engines with
     split state. The actual stream setter functions include the prefix
-    \texttt{randompack\_}, e.g. \texttt{randompack\_pcg64\_set\_inc}.}
+    \texttt{randompack\_}, e.g. \texttt{randompack\_pcg64\_set\_inc}.
+    The setters for cwg128 and sfc64 also apply a mixing warmup after
+    setting the stream selector: cwg128 advances by 96 states and
+    sfc64 by 18, in line with published guidance on stream
+    initialization for the respective generators.}
+  \label{tab:stream-select}
   \begin{tabular}{llll}
     \toprule
     engine   & state layout (64-bit words in parentheses)        & stream selector  & stream setter      \\
@@ -477,17 +494,16 @@ $2^64$.
     squares  & counter (1) + key (1)                             & key              & \texttt{squares\_set\_key}    \\
     philox   & counter (4) + key (2)                             & key              & \texttt{philox\_set\_key}     \\
     sfc64    & state $(a,b,c)$ (3) + counter (1)                 & $(a,b,c)$        & \texttt{sfc64\_set\_abc}      \\
-    cwg128   & state (6) + increment (2)                         & increment        & \texttt{cwg128\_set\_inc}     \\
+    cwg128   & state (6) + Weil increment (2)                    & Weil increment   & \texttt{cwg128\_set\_weil}    \\
     chacha20 & key (4) + nonce ($1\tfrac{1}{2}$) + counter ($\tfrac{1}{2}$) & nonce & \texttt{chacha20\_set\_nonce} \\
     \bottomrule
   \end{tabular}
-  \label{tab:stream-select}
 \end{table}
 %
 Such stream selection can be combined naturally with seed spreading in
 parallel simulation. First a base generator is created and seeded.
 Then, for subprocess $i$, the generator is duplicated (with the
-provided \texttt{randompack_duplicate} function) and either jumped or
+provided \texttt{randompack\_duplicate} function) and either jumped or
 changed with a stream setter. In schematic form:
 %
 \begin{lstlisting}[style=tightcode,language=,basicstyle=\ttfamily\small]
@@ -500,24 +516,8 @@ for each subprocess i=1,2,3,...:
 
 The fourth way of initializing an RNG mentioned at the beginning of
 this subsection, exact assignment of the full state, may be carried out
-with \texttt{randompack_set_state}.
+with \texttt{randompack\_set\_state}.
 
-\section{Algorithms for distributions}
-All the Randompack random drawing functions have three parameters, a
-buffer to be filled with drawn samples, its length, and the RNG to
-use.
-
-\subsection{Continuous distributions}
-% =====================================================================
-%In this section...
-Randompack supports the computation of 14 continuous distributions
-(Table \ref{tab:continuous}). Uniformly distributed samples in $[0,1)$
-are provided by \texttt{randompack\_u01} and general intervals are
-supported by \texttt{randompack\_unif}. The randompack engines all
-compute a stream of bits that can be interpreted as either 64-bit or
-32-bit words. In the following $U(0,1)$-doubles are considered, the
-float case being analogous.
-%
 \begin{table}[t]
 \centering
 \caption{Randompack sampling functions returning double values for
@@ -549,7 +549,7 @@ float case being analogous.
   \bottomrule
 \end{tabular}
 \end{table}
-%
+
 \begin{table}[t]
 \centering
 \caption{Randompack sampling functions for discrete distributions. The actual function names include the prefix
@@ -572,15 +572,64 @@ float case being analogous.
   \bottomrule
 \end{tabular}
 \end{table}
+
+\subsection{Distributions}
+% ========================
+Randompack supports the computation of 14 continuous distributions as
+well as a few basic discrete distributions (Tables
+\ref{tab:continuous}, \ref{tab:discrete}). Uniformly distributed
+samples in $[0,1)$ are provided by \texttt{randompack\_u01} and
+general intervals are supported by \texttt{randompack\_unif}. There
+are also two functions for the normal distributions,
+\texttt{randompack\_norm} for standard normals and
+\texttt{randompack\_normal} for general normals, but the other
+distributions all have one function each.
+
+All the sampling functions have a name \texttt{randompack\_<dist>}, in
+almost all cases with parameters:
 %
-\textbf{Uniform distribution.} Let $u$ be a 64-bit word, interpreted
-as an integer in $[0,2^{64})$. Two common methods exist to convert $u$
-to a double $x$ in $[0, 1)$:
-\begin{itemize}
+\begin{samepage}
+\begin{enumerate}
+\item an array (or buffer) to be filled with generated samples,
+\item the number of values to generate,
+\item the parameters of the distribution (if any),
+\item a handle to an RNG created with \texttt{randompack\_create}.
+\end{enumerate}
+\end{samepage}
+%
+The only exception is \texttt{randompack\_mvn}, for multivariate
+normal sampling, that has a more complex parameter list. The function
+names and distribution parameters are given in Tables
+\ref{tab:continuous} and \ref{tab:discrete}. Use e.g.
+\texttt{randompack\_normal(x, 100, 3, 5, rng)} to fill \texttt{x} with
+100 $N(3,5)$ samples and \texttt{randompack\_int(100,1,6)} to simulate
+100 throws of a dice.
+
+More details of the individual distributions are given in the next
+section, which also discusses the underlying algorithms.
+
+\section{Algorithms for distributions}
+This section discusses briefly how the sampling of different
+distributions is implemented in Randompack.
+
+The first subsection discusses continuous distributions,
+
+\subsection{Continuous distributions}
+% =====================================================================
+\textbf{Uniform distribution.} The randompack engines all compute a
+stream of bits that can be interpreted as either 64-bit or 32-bit
+words. In the following $U(0,1)$-doubles are considered, the float
+case being analogous. Let $u$ be a 64-bit word, interpreted as an
+integer in $[0,2^{64})$. Two common methods exist to convert $u$ to a
+double $x$ in $[0, 1)$:
+%
+\begin{samepage}
+\begin{enumerate}
 \item Let $x = \left\lfloor u/2^{11} \right\rfloor 2^{-53}$.
 \item Put $\lfloor u/2^{12}\rfloor$ in the fraction field of $x$, and 1023
 in its exponent field, giving $x \in [1,2)$. Then subtract 1.
-\end{itemize}
+\end{enumerate}
+\end{samepage}
 %
 The first method corresponds to \texttt{x = (u >> 11) * 0x1.0p-53} and
 gives a 53-bit resolution floating-point number. The second method,
@@ -595,14 +644,19 @@ x -= 1;
 %
 Randompack offers a full-mantissa function to select between the two
 resolutions.
-%
+
 \textbf{Normal and exponential distributions.} The ziggurat method
 since 2000 \cite{marsaglia2000ziggurat,doornik2005improved}, discussed
 above, has become quite widespread in recent software: NumPy, Julia,
 Matlab, Octave, GSL, Boost, Rust, Go, and Java all implement some
 version of it. Randompack uses the same geometry as most of these
 libraries with 256 equal-area strips, all but the base strip
-rectangular.
+rectangular. Following NumPy, each normal and exponential draw begins
+with drawing a 64-bit word. Its low byte is used to select the strip
+number; for normals bit 8 is used to select the sign of a candidate
+sampled $x$ and bits 9--60 determine its magnitude; for exponentials
+bits 8--60 determine the magnitude of $x$. In both cases the high 3
+bits are unused.
 %
 \begin{figure}[t]
 \centering
@@ -630,18 +684,18 @@ rectangular.
 \label{fig:ziggurat}
 \end{figure}
 %
-The 2000-version has a 0.069\% rejection rate for normal sampling and
-1.10\% for exponential sampling (Figure
-~\ref{fig:ziggurat}). It requires 15 PDF-evaluations (and
-thus exp evaluations) for 1000 normal samples and 23 for 1000
-exponential samples. In 2016 McFarland \cite{McFarland2016} proposed
-an improved version, where most of these exp evaluations are saved. It
-has been adopted by the Java standard library. The method employs
-trapezoidal strips with much lower rejection rate. Figure
-~\ref{fig:ziggurat} illustrates an interval with convex PDF; for the
-concave part of the normal PDF the situation is similar, except that
-there the tangent is above the secant, and in the interval containing
-$x=1$ (the inflection point of the normal PDF) there are two tangents.
+The 2000 ziggurat algorithm has a 0.069\% rejection rate for normal
+sampling and 1.10\% for exponential sampling (Figure
+~\ref{fig:ziggurat}). It requires 15 PDF-evaluations (and thus exp
+evaluations) for 1000 normal samples and 23 for 1000 exponential
+samples. In 2016 McFarland \cite{McFarland2016} proposed an improved
+version, where most of these exp evaluations are saved. It has been
+adopted by the Java standard library. The method employs trapezoidal
+strips with much lower rejection rate. Figure ~\ref{fig:ziggurat}
+illustrates an interval with convex PDF; for the concave part of the
+normal PDF the situation is similar, except that there the tangent is
+above the secant, and in the interval containing $x=1$ (the inflection
+point of the normal PDF) there are two tangents.
 
 The triangle sampling of \cite{McFarland2016} is somewhat costly, and
 therefore Randompack uses the original strip definitions but
@@ -713,7 +767,7 @@ $n\times d$.
 % =====================================================================
 \textbf{Uniform bounded integers.} Randompack provides functions for
 sampling various integer data types from specified intervals (Table
-\ref{tab:discrete}) On almost all current systems int and long long
+\ref{tab:discrete}). On almost all current systems int and long long
 correspond to 32-bit and 64-bit integers, respectively, and Randompack
 only supports such systems. With no loss of generality sampling from
 $\{0,1,\ldots,b-1\}$ can be considered. When $b$ is not a power of 2
@@ -746,11 +800,13 @@ the b argument to the \texttt{uint}$n$ functions to 0. In addition
 \texttt{randompack\_raw} can be used to fill a buffer of any type with
 random bits.
 
+\section{Implementation details}
+
 \subsection{SIMD acceleration}
 % =====================================================================
 Randompack makes substantial use of vector SIMD instructions on modern
 CPUs. There are three main SIMD architectures in use: NEON (on ARM
-processors), AVX2 and AVX-512 (on X86-64 processors). The provided
+processors), and AVX2 and AVX-512 (on X86-64 processors). The provided
 SIMD instructions allow operating in parallel on 32 bit or 64 bit
 words, with two 64-bit lanes for NEON, four for AVX2 and eight for
 AVX-512. In addition, modern CPUs can often execute several
@@ -760,30 +816,30 @@ and can be realized through loop unrolling and multiple parallel state
 updates.
 
 In Randompack this CPU-level parallelism is used in four main places.
-First, two engines have SIMD implementations, xoshiro256++ and sfc64.
-Second, SIMD instructions are used in shift--scale transformations,
-e.g. to get $U(a,b)$ from $U(0,1)$m and also to get general normal
-samples from standard normal samples. Third, they are used in the
-integer-to-double conversion functions. Fourth, vectorized logarithms
-and exponentials from the Sleef library
-\cite{sleef_github,shibata2020sleef} are used to speed up the sampling
-of all the supported continuous distributions except uniform,
-exponential, and normal.
+First, three engines have SIMD implementations, xoshiro256++,
+xoshiro256**, and sfc64 (Table \ref{tab:bench-engines}). Second, SIMD
+instructions are used in shift--scale transformations, e.g. to get
+$U(a,b)$ from $U(0,1)$, and also to get general normal samples from
+standard normal samples. Third, they are used in the integer-to-double
+conversion functions. Fourth, vectorized logarithms and exponentials
+from the Sleef library \cite{sleef_github,shibata2020sleef} are used
+to speed up the sampling of all the supported continuous distributions
+except uniform, exponential, and normal.
 
 Together, SIMD and ILP yields substantial speed-ups, with the SIMD
 engines providing the largest part of the gain. To achieve the
 necessary independent computations, eight disjoint scalar streams are
-created for each engine. For xoshiro256++ they are obtained by jumping
-a base engine by the values $k2^{253}, k=1,\ldots,7$ and for sfc64
-they are obtained by adding $k2^{61}, k=1,\ldots,7$ to the engine's
-counter, with wraparound if the sums exceed $2^{64}$. In practice,
-this arrangement does not interfere with the jumping and stream
-selection functions discussed in Section \ref{sec:state-init}.
-Repeatedly jumping x256++simd by $2^{192}$ creates disjoint sequences
-of length $2^{61}$. With Randompack on a fast computer, it would take
-more than 20 years to exhaust one such sequence. The sequences
-obtained by setting sfc64simd with different $(a,b,c)$ triplets also
-have minimum length $2^{61}$.
+created for each engine. For xoshiro256++ and xoshiro256** they are
+obtained by jumping a base engine by the values $k2^{253},
+k=1,\ldots,7$ and for sfc64 they are obtained by adding $k2^{61},
+k=1,\ldots,7$ to the engine's counter, with wraparound if the sums
+exceed $2^{64}$. In practice, this arrangement does not interfere with
+the jumping and stream selection functions discussed in Section
+\ref{sec:state-init}. Repeatedly jumping x256++simd by $2^{192}$
+creates disjoint sequences of length $2^{61}$. With Randompack on a
+fast computer, it would take more than 20 years to exhaust one such
+sequence. The sequences obtained by setting sfc64simd with different
+$(a,b,c)$ triplets also have minimum length $2^{61}$.
 
 \subsection{Exact reproducibility across platforms}
 % =====================================================================
@@ -823,24 +879,105 @@ numbers on different platforms agree to within a few ulp, even if the
 not bit-exact, but faster, sleef logarithms and exponentials are used
 to compute them. Randompack offers a setting, \texttt{bitexact}, that
 makes these derived distributions also bit-identical across platforms
-by using OpenLibm instead of Sleef for all library functions.
+by using OpenLibm instead of Sleef for all library function calls.
 
 \subsection{Miscellaneous features}
 % =====================================================================
 
+\section{Validation and performance}
+% ==================================
+The quality of random number generators can be measured with
+several different yardsticks: their implementation must be error-free,
+both the algorithms and their implementation should be efficient,
+and they must satisfy stringent statistical quality criteria,
+
+This section discusses how Randompack meets these requirements, in
+some cases using a belt-and-suspenders approach because errors in
+random number generation can have serious consequences while being
+hard to infer from simulation output alone.
+
+Randompack has been 
+
+\subsection{Test suite} 
+% =====================
+\label{subsec:testing}
+Randompack includes a comprehensive test suite with contents that fall into
+three categories:
+\begin{itemize}
+\item Tests of correct API behaviour
+\item Validation of sample series, internal and external
+\item Checking of statistical quality
+\end{itemize}
+The API testing includes testing expected error reporting, testing
+edge cases (e.g. zero and maximum lengths should work, clean failure
+on null buffer and rng pointers), correct default engine behaviour and
+rejection of incorrect engine names, etc. The basic functionality of
+all user-facing functions is exercised through one or more calls. In
+short, this testing covers aspects of the API other than the
+correctness of the drawn samples.
+
+The internal sample validation checks that same seeds give same sample
+streams and different seeds give different streams. It checks that the
+SIMD-engines agree with their scalar counterparts. It also checks that
+serialization followed by deserialization gives an RNG that matches
+the original one, and the same applies to a duplicated RNG. The
+exteranal validation compares the following engines' raw output:
+%
+\begin{enumerate}
+\item pcg64 against NumPy,
+\item chacha20 against the RFC8439 published test vector,
+\item philox against Random123 reference output,
+\item x256++ against Rust,
+\item x256** against Rust,
+\item ranlux++ against \cite{jirka2021portable} and \cite{hahnfeld2021ranluxpp}.
+\end{enumerate}
+%
+The actual testprograms contain more details of these comparisons in
+comments. In addition the tests compare the output of
+\texttt{seed\_seq\_fe128}, which Randompack uses for seeding, with the
+original \cite{oneill2015seedseq}, bit for bit (see Section
+\ref{sec:state-init}). Also, the OpenLibm logarithm and exponential
+functions are compared with the system library counterparts.
+
+Several tests assess the statistical quality of sampled sequences. The
+tests in the suite look at the draws in isolation, ignoring possible
+correlation between successsive draws which is however covered by the
+BigCrush tests discussed below. Uniform sequences are checked for
+histogram balance via binning, and they are transformed to normal with
+the probit function and the mean, variance, skewness and kurtosis
+checked against theory. There is also a min/max check based on the
+order statistics of $U(0,1)$. For all the other continuous
+distributions probability integral transform (PIT) is used to
+transform the sequences to be uniform, and the results are tested in
+the same way.
+
+The discrete distributions are compared similarly for support (no
+draws outside specified result intervals), balanced counts of each
+possible outcome, bit balance for draws in $[0,2^k)$, and
+combinatorial validity for \texttt{randompack_perm} and
+\texttt{randompack_sample}.
+
+\subsection{Statistical quality}
+% ==============================
+The engines selected for Randompack all pass the BigCrush tests of
+TestU01 when their raw bit output is piped directly into BigCrush in
+bit-stream mode, according to the original publications describing the
+engines. This was also confirmed in the author's own tests. However,
+when the bits are reversed before feeding them to BigCrush, one engine
+fails, \texttt{xorshift128+}, confirming previously published results
+\cite{lemire2019xorshiftfails}. Since the ziggurat algorithm is partly
+new, separate probability integral transform (PIT) tests
+\cite{diebold1998evaluating} of normal and exponential samples from
+Randompack were also carried out by feeding the transformed samples to
+BigCrush in U(0,1) mode, with fail-free results. Both the raw-bit
+tests and the PIT tests were done by checking that in 100 BigCrush
+runs the total numbers of p-values below 0.001, 0.0001, and 0.00001
+were no greater than expected by chance.
+
+\section{Performance}
+% ===================
 
 
-%%
-%% Bibliography
-%%
-\bibliography{randompack}
-
-%%
-%% Appendix (optional)
-%%
-\appendix
-
-\section{Additional Performance Data}
 
 \begin{table*}[t]
 \centering
@@ -849,7 +986,7 @@ by using OpenLibm instead of Sleef for all library functions.
   place. Randompack C/C++/Fortran versions were benchmarked on four
   systems; interface and comparison libraries were benchmarked on
   Core-i5. Lower is better.}
-\label{tab:dist-bench-1dec}
+\label{tab:bench-distributions}
 \setlength{\tabcolsep}{3pt}
 \setlength{\cmidrulewidth}{\lightrulewidth}
 \begin{tabular}{
@@ -858,42 +995,43 @@ by using OpenLibm instead of Sleef for all library functions.
   S[table-format=1.2]
   S[table-format=2.2]
   S[table-format=2.2]
-  c
+  c@{\quad}
   *{2}{S[table-format=2.1]}
-  c
+  c@{\quad}
   *{2}{S[table-format=2.1]}
-  c
-  *{4}{S[table-format=2.1]}
+  c@{\quad}
+  *{3}{S[table-format=2.1]}@{\quad}
+  S[table-format=2.1]
 }
 \toprule
 & \multicolumn{10}{c}{R a n d o m p a c k} & \multicolumn{5}{c}{} \\
-\cmidrule(lr){2-11}
+\cmidrule(r){2-11}
 & \multicolumn{4}{c}{C, C++, Julia, Fortran} && \multicolumn{2}{c}{Python} && \multicolumn{2}{c}{R}
 && \multicolumn{4}{c}{Other libraries (on Core-i5)} \\
-\cmidrule(lr){2-5}
-\cmidrule(lr){7-8}
-\cmidrule(lr){10-11}
-\cmidrule(lr){13-16}
+\cmidrule(r){2-5}
+\cmidrule(r){7-8}
+\cmidrule(r){10-11}
+\cmidrule{13-16}
 Distribution & {Spark} & {Xeon} & {Mac} & {Core-i5}
 && {Mac} & {Core-i5} && {Mac} & {Core-i5}
 && {NumPy} & {Base-R} & {Julia} & {C++} \\
 \midrule
 %% .out files: spark & xeon & Mac & i5 && rp-py-mac & rp-py-i5 && rp-r-mac & rp-r-i5 && numpy & r & julia & cpp
-$U(0,1)$        & 0.44 &  0.34 & 0.33 &  0.45 && 0.5 &  0.6 &&  2.1 &  1.8 &&  1.8 &  6.8 &  0.7 &  7.9 \\
-$U(2,5)$        & 0.47 &  0.36 & 0.33 &  0.42 && 0.5 &  0.7 &&  2.2 &  1.7 &&  2.8 &  6.8 &  0.8 &  6.6 \\
-Standard normal & 1.18 &  1.83 & 0.89 &  1.46 && 1.0 &  1.6 &&  2.7 &  2.7 &&  8.9 & 21.7 &  1.4 & 14.5 \\
-Normal$(2,3)$   & 1.29 &  2.02 & 0.97 &  1.48 && 1.1 &  1.7 &&  2.7 &  2.7 &&  9.7 & 21.6 &  1.4 & 14.5 \\
-Exp             & 1.06 &  1.50 & 0.90 &  1.31 && 1.1 &  1.5 &&  2.8 &  2.7 &&  4.3 & 23.7 &  1.4 & 10.7 \\
-Log-normal      & 2.57 &  2.96 & 1.73 &  2.55 && 2.0 &  2.7 &&  7.2 &  3.8 && 14.0 & 29.1 &  4.0 & 19.2 \\
-skew-normal     & 2.65 &  4.41 & 2.01 &  3.28 && 2.2 &  3.5 &&  \NA &  \NA && 28.2 &  \NA &  8.2 & 29.4 \\
-Gumbel          & 4.81 &  3.62 & 2.46 &  3.69 && 2.7 &  3.8 &&  \NA &  \NA && 13.3 &  \NA &  8.4 & 16.6 \\
-Pareto          & 2.80 &  3.25 & 1.93 &  2.98 && 2.2 &  3.1 &&  \NA &  \NA && 17.6 &  \NA &  4.4 & 16.6 \\
-Gamma$(2,3)$    & 3.95 &  9.92 & 3.52 &  5.45 && 3.7 &  5.6 &&  5.7 &  7.0 && 15.9 & 53.9 &  8.9 & 28.0 \\
-Beta$(2,5)$     & 8.12 & 20.62 & 7.08 & 11.28 && 7.3 & 11.4 &&  9.3 & 13.6 && 31.7 & 56.8 & 20.1 & 56.5 \\
-Chi-square$(5)$ & 3.88 &  9.95 & 3.43 &  5.39 && 3.6 &  5.5 &&  5.4 &  7.0 && 15.9 & 54.1 &  8.8 & 27.8 \\
-$t(10)$         & 5.80 & 15.08 & 4.64 &  9.71 && 4.9 &  9.7 &&  6.5 & 11.1 && 25.6 & 60.8 & 15.7 & 42.7 \\
-$F(5,10)$       & 7.95 & 20.04 & 6.92 & 11.17 && 7.2 & 11.1 &&  8.8 & 13.4 && 32.9 & 99.2 & 26.0 & 56.3 \\
-Weibull$(2,3)$  & 4.68 &  4.48 & 2.90 &  4.18 && 3.2 &  4.3 && 10.3 &  5.7 && 14.3 & 24.5 & 31.4 & 23.6 \\
+$U(0,1)$        & 0.44 &  0.29 & 0.34 &  0.42 && 0.4 &  0.6 && 2.1 &  1.8 &&  1.8 &  6.7 &  0.7 &  6.3 \\
+$U(2,5)$        & 0.47 &  0.30 & 0.34 &  0.41 && 0.5 &  0.7 && 2.1 &  1.7 &&  2.7 &  6.7 &  0.8 &  6.4 \\
+Standard normal & 1.18 &  1.84 & 0.90 &  1.43 && 1.0 &  1.6 && 2.8 &  2.7 &&  8.9 & 21.4 &  1.4 & 14.3 \\
+Normal$(2,3)$   & 1.28 &  2.00 & 0.98 &  1.46 && 1.1 &  1.7 && 2.7 &  2.7 &&  9.6 & 21.4 &  1.4 & 14.3 \\
+Exponential     & 1.19 &  1.67 & 1.00 &  1.33 && 1.1 &  1.5 && 2.7 &  2.7 &&  4.2 & 23.5 &  1.4 & 10.6 \\
+Log-normal      & 2.57 &  2.92 & 1.79 &  2.52 && 1.9 &  2.7 && 7.1 &  3.8 && 13.9 & 28.7 &  4.0 & 18.9 \\
+Skew-normal     & 2.64 &  4.45 & 2.06 &  3.23 && 2.2 &  3.5 && \NA &  \NA && 27.9 &  \NA &  8.2 & 28.9 \\
+Gumbel          & 4.81 &  3.23 & 2.59 &  3.67 && 2.6 &  3.8 && \NA &  \NA && 13.3 &  \NA &  8.4 & 16.3 \\
+Pareto          & 2.94 &  3.41 & 2.06 &  2.95 && 2.1 &  3.1 && \NA &  \NA && 17.5 &  \NA &  4.4 & 16.3 \\
+Gamma$(2,3)$    & 3.95 &  9.71 & 3.61 &  5.41 && 3.6 &  5.6 && 5.6 &  7.0 && 15.7 & 53.4 &  8.8 & 27.5 \\
+Beta$(2,5)$     & 8.12 & 19.72 & 7.29 & 11.02 && 7.2 & 11.4 && 9.2 & 13.6 && 31.3 & 56.2 & 20.0 & 55.3 \\
+Chi-square$(5)$ & 3.84 &  9.08 & 3.54 &  5.29 && 3.5 &  5.5 && 5.3 &  7.0 && 15.7 & 53.4 &  8.7 & 27.2 \\
+$t(10)$         & 5.84 & 15.46 & 4.78 &  9.62 && 4.8 &  9.7 && 6.4 & 11.1 && 25.3 & 60.2 & 15.4 & 42.2 \\
+$F(5,10)$       & 7.92 & 19.24 & 7.21 & 10.97 && 7.0 & 11.1 && 9.0 & 13.4 && 32.5 & 98.2 & 25.7 & 55.5 \\
+Weibull$(2,3)$  & 4.83 &  4.33 & 3.04 &  4.15 && 3.1 &  4.3 && 9.9 &  5.7 && 14.1 & 24.2 & 31.4 & 23.1 \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -902,7 +1040,7 @@ Weibull$(2,3)$  & 4.68 &  4.48 & 2.90 &  4.18 && 3.2 &  4.3 && 10.3 &  5.7 && 14
 \centering
 \caption{Engine throughput timings in nanoseconds per 64 output bits.
   Lower is better.}
-\label{tab:engine-bench}
+\label{tab:bench-engines}
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{
   ll
@@ -916,21 +1054,38 @@ Engine & Short name & {Mac-M4}
 & {Spark} & {Xeon}
 & {Core-i5} \\
 \midrule
-xoshiro256++, SIMD accelerated & \texttt{x256++simd} & 0.29 & 0.41 & 0.33 & 0.45 \\
-sfc64, SIMD accelerated        & \texttt{sfc64simd}  & 0.31 & 0.34 & 0.30 & 0.33 \\
-xoshiro256++                   & \texttt{x256++}     & 0.72 & 0.82 & 1.06 & 0.88 \\
-xoshiro256**                   & \texttt{x256**}     & 0.74 & 0.80 & 1.04 & 0.84 \\
-xorshift128+                   & \texttt{x128+}      & 0.74 & 0.88 & 1.42 & 0.92 \\
-xoroshiro128++                 & \texttt{xoro++}     & 0.98 & 0.83 & 1.19 & 1.17 \\
-PCG64-DXSM                     & \texttt{pcg64}      & 1.14 & 1.57 & 1.91 & 1.25 \\
-sfc64                          & \texttt{sfc64}      & 0.70 & 0.71 & 0.91 & 0.91 \\
-squares64                      & \texttt{squares}    & 0.80 & 1.00 & 1.78 & 1.24 \\
-Philox-4x64                    & \texttt{philox}     & 1.06 & 1.78 & 3.71 & 1.51 \\
-cwg128                         & \texttt{cwg128}     & 0.90 & 1.26 & 1.68 & 1.22 \\
-ranlux++                       & \texttt{ranlux++}   & 2.60 & 4.23 & 14.83 & 4.73 \\
-ChaCha20                       & \texttt{chacha20}   & 7.14 & 8.23 & 13.20 & 9.72 \\
+xoshiro256++, SIMD accelerated & \texttt{x256++simd} & 0.30 & 0.41 & 0.30 & 0.44 \\
+xoshiro256**, SIMD accelerated & \texttt{x256**simd} & 0.40 & 0.54 & 0.33 & 0.47 \\
+sfc64, SIMD accelerated        & \texttt{sfc64simd}  & 0.32 & 0.34 & 0.30 & 0.33 \\
+xoshiro256++                   & \texttt{x256++}     & 0.73 & 0.81 & 1.07 & 0.88 \\
+xoshiro256**                   & \texttt{x256**}     & 0.76 & 0.80 & 1.15 & 0.83 \\
+xorshift128+                   & \texttt{x128+}      & 0.76 & 0.88 & 1.14 & 0.91 \\
+xoroshiro128++                 & \texttt{xoro++}     & 0.99 & 0.82 & 1.36 & 1.16 \\
+PCG64-DXSM                     & \texttt{pcg64}      & 1.17 & 1.56 & 1.73 & 1.26 \\
+sfc64                          & \texttt{sfc64}      & 0.72 & 0.70 & 1.04 & 0.91 \\
+squares64                      & \texttt{squares}    & 0.82 & 0.99 & 1.99 & 1.25 \\
+Philox-4x64                    & \texttt{philox}     & 1.07 & 1.77 & 2.75 & 1.51 \\
+cwg128                         & \texttt{cwg128}     & 0.91 & 1.25 & 1.55 & 1.22 \\
+ranlux++                       & \texttt{ranlux++}   & 2.69 & 4.23 & 8.12 & 4.79 \\
+ChaCha20                       & \texttt{chacha20}   & 7.39 & 8.20 & 13.10 & 9.76 \\
 \bottomrule
 \end{tabular}
 \end{table*}
+
+Selecting (a,b,c), selecting increment in PCG, Jumping or selecting
+key a for Philox is better.
+
+Errors in the Ranlux++ programs
+
+\section{Discussion}
+
+%%
+%% Bibliography
+%%
+\bibliography{toms}
+
+%%
+%% Appendix (optional)
+%%
 
 \end{document}

@@ -83,13 +83,16 @@ Y <- rng$mvn(50, Sigma, mu=c(1.0, 2.0))        # specified mean
 ``` r
 rngx <- randompack_rng("x256**")
 rngq <- randompack_rng("pcg64")
+rngw <- randompack_rng("cwg128")
 rngs <- randompack_rng("sfc64")
 rngp <- randompack_rng("philox")
 rngc <- randompack_rng("chacha20")
 rngz <- randompack_rng("squares")
 rngr <- randompack_rng("ranlux++")
 rngx$set_state(c(1, 2, 3, 4))                  # general state setter
+rngq$pcg64_advance(c(1024, 0))                 # advance pcg64 by 1024 steps
 rngq$pcg64_set_inc(c(3, 0, 5, 0))              # change PCG stream increment
+rngw$cwg128_set_weyl(c(3, 0, 5, 0))            # change CWG128 Weyl increment
 rngs$set_state(c(1, 0, 2, 0, 3, 0, 17, 0))     # set full sfc64 state
 rngs$sfc64_set_abc(c(7, 0, 11, 0, 13, 0))      # update only a, b, c
 rngc$chacha_set_nonce(c(7, 11, 13))            # change ChaCha20 nonce

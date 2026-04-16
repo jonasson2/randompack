@@ -14,6 +14,12 @@ void fill_fast_avx2(uint64_t *buf, size_t len, randompack_state *state) {
   (void)state;
 }
 
+void fill_x256sssimd_avx2(uint64_t *buf, size_t len, randompack_state *state) {
+  (void)buf;
+  (void)len;
+  (void)state;
+}
+
 void fill_sfc64simd_avx2(uint64_t *buf, size_t len, randompack_state *state) {
   (void)buf;
   (void)len;
@@ -194,6 +200,35 @@ HIDDEN void fill_fast_avx2(uint64_t *buf, size_t len, randompack_state *state) {
   VEC_STORE(&st->s3[4], s31);
 }
 
+HIDDEN void fill_x256sssimd_avx2(uint64_t *buf, size_t len,
+  randompack_state *state) {
+  uint64_t *out = buf;
+  xo256 *st = &state->xo;
+  VEC_T s00 = VEC_LOAD(&st->s0[0]);
+  VEC_T s10 = VEC_LOAD(&st->s1[0]);
+  VEC_T s20 = VEC_LOAD(&st->s2[0]);
+  VEC_T s30 = VEC_LOAD(&st->s3[0]);
+  VEC_T s01 = VEC_LOAD(&st->s0[4]);
+  VEC_T s11 = VEC_LOAD(&st->s1[4]);
+  VEC_T s21 = VEC_LOAD(&st->s2[4]);
+  VEC_T s31 = VEC_LOAD(&st->s3[4]);
+  for (size_t i = 0; i < len; i += 8) {
+    VEC_T r0, r1;
+    FAST_STEP_VEC_SS(s00, s10, s20, s30, r0);
+    FAST_STEP_VEC_SS(s01, s11, s21, s31, r1);
+    VEC_STORE(out + i, r0);
+    VEC_STORE(out + i + 4, r1);
+  }
+  VEC_STORE(&st->s0[0], s00);
+  VEC_STORE(&st->s1[0], s10);
+  VEC_STORE(&st->s2[0], s20);
+  VEC_STORE(&st->s3[0], s30);
+  VEC_STORE(&st->s0[4], s01);
+  VEC_STORE(&st->s1[4], s11);
+  VEC_STORE(&st->s2[4], s21);
+  VEC_STORE(&st->s3[4], s31);
+}
+
 #define SFC64_STEP_VEC(a,b,c,ctr,one,outv) do { \
   VEC_T t_; \
   (outv) = VEC_ADD(VEC_ADD((a),(b)),(ctr)); \
@@ -273,6 +308,46 @@ HIDDEN void rand_dble_avx2(double x[], size_t len, randompack_rng *rng) {
   exit_u64_mode(rng, w);
 }
 
+HIDDEN void rand_unif_avx2(double x[], size_t len, double a, double b,
+  randompack_rng *rng) {
+  int w = enter_u64_mode(rng);
+  double scale = b;
+  double shift = a - b;
+  size_t i = 0;
+  while (i < len) {
+    fill_if_empty(rng, &w);
+    size_t remain = len - i;
+    size_t avail = BUFSIZE - (size_t)w;
+    size_t take = remain < avail ? remain : avail;
+    uint64_t *u64 = rng->buf.u64 + (size_t)w;
+    size_t j = 0;
+    __m256i expo = _mm256_set1_epi64x(0x3ff0000000000000LL);
+    __m256d s = _mm256_set1_pd(scale);
+    __m256d c = _mm256_set1_pd(shift);
+    for (; j + 3 < take; j += 4) {
+      __m256i r = _mm256_loadu_si256((const __m256i_u *)(u64 + j));
+      r = _mm256_srli_epi64(r, 12);
+      r = _mm256_or_si256(r, expo);
+      __m256d d = _mm256_castsi256_pd(r);
+#if defined(__FMA__)
+      d = _mm256_fmadd_pd(d, s, c);
+#else
+      d = _mm256_add_pd(_mm256_mul_pd(d, s), c);
+#endif
+      _mm256_storeu_pd(x + i + j, d);
+    }
+    for (; j < take; j++) {
+      uint64_t bits = (u64[j] >> 12) | 0x3ff0000000000000ULL;
+      double d;
+      memcpy(&d, &bits, sizeof(d));
+      x[i + j] = shift + scale*d;
+    }
+    w += (int)take;
+    i += take;
+  }
+  exit_u64_mode(rng, w);
+}
+
 HIDDEN void rand_float_avx2(float x[], size_t len, randompack_rng *rng) {
   int w = enter_u32_mode(rng);
   size_t i = 0;
@@ -324,27 +399,6 @@ HIDDEN void shift_scale_double_avx2(double x[], size_t len, double shift,
   size_t i = 0;
   __m256d s = _mm256_set1_pd(scale);
   __m256d b = _mm256_set1_pd(shift);
-  for (; i + 16 <= len; i += 16) {
-    __m256d v0 = _mm256_loadu_pd(x + i);
-    __m256d v1 = _mm256_loadu_pd(x + i + 4);
-    __m256d v2 = _mm256_loadu_pd(x + i + 8);
-    __m256d v3 = _mm256_loadu_pd(x + i + 12);
-#if defined(__FMA__)
-    v0 = _mm256_fmadd_pd(v0, s, b);
-    v1 = _mm256_fmadd_pd(v1, s, b);
-    v2 = _mm256_fmadd_pd(v2, s, b);
-    v3 = _mm256_fmadd_pd(v3, s, b);
-#else
-    v0 = _mm256_add_pd(_mm256_mul_pd(v0, s), b);
-    v1 = _mm256_add_pd(_mm256_mul_pd(v1, s), b);
-    v2 = _mm256_add_pd(_mm256_mul_pd(v2, s), b);
-    v3 = _mm256_add_pd(_mm256_mul_pd(v3, s), b);
-#endif
-    _mm256_storeu_pd(x + i, v0);
-    _mm256_storeu_pd(x + i + 4, v1);
-    _mm256_storeu_pd(x + i + 8, v2);
-    _mm256_storeu_pd(x + i + 12, v3);
-  }
   for (; i + 4 <= len; i += 4) {
     __m256d v = _mm256_loadu_pd(x + i);
 #if defined(__FMA__)
@@ -424,27 +478,6 @@ HIDDEN void shift_scale_float_avx2(float x[], size_t len, float shift,
   size_t i = 0;
   __m256 s = _mm256_set1_ps(scale);
   __m256 b = _mm256_set1_ps(shift);
-  for (; i + 32 <= len; i += 32) {
-    __m256 v0 = _mm256_loadu_ps(x + i);
-    __m256 v1 = _mm256_loadu_ps(x + i + 8);
-    __m256 v2 = _mm256_loadu_ps(x + i + 16);
-    __m256 v3 = _mm256_loadu_ps(x + i + 24);
-#if defined(__FMA__)
-    v0 = _mm256_fmadd_ps(v0, s, b);
-    v1 = _mm256_fmadd_ps(v1, s, b);
-    v2 = _mm256_fmadd_ps(v2, s, b);
-    v3 = _mm256_fmadd_ps(v3, s, b);
-#else
-    v0 = _mm256_add_ps(_mm256_mul_ps(v0, s), b);
-    v1 = _mm256_add_ps(_mm256_mul_ps(v1, s), b);
-    v2 = _mm256_add_ps(_mm256_mul_ps(v2, s), b);
-    v3 = _mm256_add_ps(_mm256_mul_ps(v3, s), b);
-#endif
-    _mm256_storeu_ps(x + i, v0);
-    _mm256_storeu_ps(x + i + 8, v1);
-    _mm256_storeu_ps(x + i + 16, v2);
-    _mm256_storeu_ps(x + i + 24, v3);
-  }
   for (; i + 8 <= len; i += 8) {
     __m256 v = _mm256_loadu_ps(x + i);
 #if defined(__FMA__)

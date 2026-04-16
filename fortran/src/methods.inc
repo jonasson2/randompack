@@ -1065,7 +1065,7 @@ subroutine rp_chacha_set_nonce(self, nonce)
   integer(c_int32_t), intent(in) :: nonce(3)
   logical(c_bool) :: c_ok
   if (.not. c_associated(self%p)) error stop rp_error_message(self, "chacha_set_nonce")
-  c_ok = crp_set_chacha_nonce(nonce, self%p)
+  c_ok = crp_chacha_set_nonce(nonce, self%p)
   if (.not. c_ok) error stop rp_error_message(self, "chacha_set_nonce")
 end subroutine
 

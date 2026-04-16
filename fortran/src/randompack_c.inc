@@ -392,7 +392,7 @@ interface
     type(c_ptr), value :: rngp
   end function
 
-  logical(c_bool) function crp_set_chacha_nonce(nonce, rngp) bind(C, name="randompack_set_chacha_nonce")
+  logical(c_bool) function crp_chacha_set_nonce(nonce, rngp) bind(C, name="randompack_chacha_set_nonce")
     import :: c_ptr, c_bool, c_int32_t
     integer(c_int32_t), intent(in) :: nonce(3)
     type(c_ptr), value :: rngp

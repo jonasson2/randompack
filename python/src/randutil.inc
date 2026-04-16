@@ -84,7 +84,11 @@ static inline void scatter_to_stream0(randompack_rng *rng) {
   st->s3[0] = u64[3];
 }
 
-static inline void x256ppsimd_jump(int p, randompack_rng *rng) {
+static inline bool is_x256simd_engine(randompack_rng *rng) {
+  return rng->engine == FAST || rng->engine == X256SSSIMD;
+}
+
+static inline void x256simd_jump(int p, randompack_rng *rng) {
   for (int i=0; i<8; i++) {
     uint64_t stream_state[4];
     get_stream(stream_state, i, rng);
@@ -92,6 +96,16 @@ static inline void x256ppsimd_jump(int p, randompack_rng *rng) {
     set_stream(i, stream_state, rng);
   }
 }
+
+// › Add, as a convenience, a function pcg_jump implementing this:
+//   void pcg_jump(uint128_t *state, uint128_t m, uint128_t inc, int p) {
+//     // advance by 2^p steps
+//     for (int i = 0; i < p; i++) {
+//       inc = (m + 1) * inc;
+//       m *= m;
+//     }
+//     *state = m * (*state) + inc;
+//   }
 
 static inline void setup_sfc64simd_streams(randompack_rng *rng) {
   xo256 *st = &rng->state.xo;
@@ -120,6 +134,7 @@ static inline void normalize_state(randompack_rng *rng) {
   switch (rng->engine) {
   case X256PP:
   case X256SS:
+  case X256SSSIMD:
   case FAST:
   case XORO:
   case X128P:
@@ -180,7 +195,7 @@ static void rand_randomize(randompack_rng *rng) {
     int nwords = get_state_words(rng);
     fill_entropy(rng->state.u64, nwords*sizeof(uint64_t));
     normalize_state(rng);
-    if (rng->engine == FAST) {
+    if (is_x256simd_engine(rng)) {
       scatter_to_stream0(rng);
       fill_stream_states_with_jump(rng);
     }
@@ -228,7 +243,7 @@ static void set_state(uint64_t *state, int nstate, randompack_rng *rng) {
   }
   else {
     copy64(rng->state.u64, state, nstate);
-    if (rng->engine == FAST) {
+    if (is_x256simd_engine(rng)) {
       scatter_to_stream0(rng);
       fill_stream_states_with_jump(rng);
     }
@@ -250,10 +265,16 @@ static void squares_set_key(uint64_t key, randompack_rng *rng) {
   rand_init(rng);
 }
 
+static void sfc64_skip_18_states(randompack_rng *rng) {
+  uint64_t discard[18];
+  fill_sfc64(discard, LEN(discard), &rng->state);
+}
+
 static void sfc64_set_abc(uint64_t abc[3], randompack_rng *rng) {
   rng->state.u64[0] = abc[0];
   rng->state.u64[1] = abc[1];
   rng->state.u64[2] = abc[2];
+  sfc64_skip_18_states(rng);
   rand_init(rng);
 }
 
@@ -263,9 +284,15 @@ static void pcg64_set_inc(uint64_t inc[2], randompack_rng *rng) {
   rand_init(rng);
 }
 
-static void cwg128_set_inc(uint64_t inc[2], randompack_rng *rng) {
-  rng->state.u64[0] = inc[0];
-  rng->state.u64[1] = inc[1];
+static void cwg_skip_96_states(randompack_rng *rng) {
+  uint64_t discard[192];
+  fill_cwg128(discard, LEN(discard), &rng->state);
+}
+
+static void cwg128_set_weyl(uint64_t weyl[2], randompack_rng *rng) {
+  rng->state.u64[0] = weyl[0];
+  rng->state.u64[1] = weyl[1];
+  cwg_skip_96_states(rng); // As recommended by Dziala's report
   rand_init(rng);
 }
 

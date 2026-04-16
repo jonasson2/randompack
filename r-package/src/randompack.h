@@ -52,9 +52,14 @@ char *randompack_last_error( // Get last error string, or 0 if none
 
 //=================================== STREAM SELECTION ===================================
 
-bool randompack_jump( // Jump xor-family or ranlux rng by 2^p steps, false on error
-  int p,               // in      Jump exponent (32/64/96/128/192)
+bool randompack_jump( // Jump pcg64 / ranlux / xor-family rng by 2^p steps, false on error
+  int p,               // in      Jump exponent, ≤128 for pcg, otherwise 32/64/96/128/192
   randompack_rng *rng  // in/out  Random number generator
+);
+
+bool randompack_pcg64_advance( // Advance pcg64 by arbitrary 128-bit delta
+  uint64_t delta[2],          // in      128-bit advance delta {low, high}
+  randompack_rng *rng         // in/out  Random number generator
 );
 
 bool randompack_pcg64_set_inc( // Set PCG increment (state unchanged)
@@ -62,12 +67,12 @@ bool randompack_pcg64_set_inc( // Set PCG increment (state unchanged)
   randompack_rng *rng  // in/out  target RNG
 );
 
-bool randompack_cwg128_set_inc( // Set CWG128 increment (state unchanged)
-  uint64_t inc[2],     // in      128-bit increment {low, high}; low must be odd
+bool randompack_cwg128_set_weyl( // Set CWG128 Weyl increment and skip 96 states
+  uint64_t weyl[2],    // in      128-bit Weyl increment {low, high}; low must be odd
   randompack_rng *rng  // in/out  target RNG
 );
 
-bool randompack_set_chacha_nonce( // Set ChaCha20 nonce (state otherwise unchanged)
+bool randompack_chacha_set_nonce( // Set ChaCha20 nonce (state otherwise unchanged)
   uint32_t nonce[3],   // in      96-bit nonce {w0, w1, w2}
   randompack_rng *rng  // in/out  target RNG
 );
@@ -82,7 +87,7 @@ bool randompack_squares_set_key( // Set squares64 key state directly
   randompack_rng *rng  // in/out  target RNG
 );
 
-bool randompack_sfc64_set_abc( // Set the sfc64 a,b,c state words directly
+bool randompack_sfc64_set_abc( // Set the sfc64 a,b,c state words and warm up
   uint64_t abc[3],     // in      state words a, b, c
   randompack_rng *rng  // in/out  target RNG
 );

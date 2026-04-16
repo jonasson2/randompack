@@ -48,7 +48,7 @@ make_remote_cmd() {
       cmd="release/benchmark/TimeDistCpp"
       ;;
     python)
-      cmd="python python/examples/TimeDist.py"
+      cmd="python3 python/examples/TimeDist.py"
       ;;
     julia)
       cmd="JULIA_PROJECT=Randompack.jl julia Randompack.jl/examples/TimeDist.jl"
@@ -301,7 +301,7 @@ while [ "$i" -le "$repeats" ]; do
             ' >> "$tmp"
         ;;
       python)
-        python "$python_dist" "$@" \
+        python3 "$python_dist" "$@" \
           | awk -v field="$field" '
               /^DISTRIBUTION[[:space:]]+/ { in_table = 1; next }
               in_table && NF >= field && $(field) ~ /^[0-9.]+$/ {
@@ -345,6 +345,11 @@ while [ "$i" -le "$repeats" ]; do
   fi
   i=$((i + 1))
 done
+
+if [ ! -s "$tmp" ]; then
+  echo "mean-time.sh: no timing data collected" 1>&2
+  exit 1
+fi
 
 awk '
   BEGIN {

@@ -2,7 +2,7 @@
 #include <stdbool.h>
 #include "BlasGateway.h"
 
-#if defined(_MSC_VER)
+#if defined(_WIN32)
   #define HIDDEN
 #elif defined(__GNUC__) || defined(__clang__)
   #define HIDDEN __attribute__((visibility("hidden")))

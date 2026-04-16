@@ -166,6 +166,34 @@ SEXP randompack_jump_R(SEXP ext, SEXP p_){
   return R_NilValue;
 }
 
+SEXP randompack_pcg64_advance_R(SEXP ext, SEXP delta_){
+  randompack_rng *rng = (randompack_rng *)R_ExternalPtrAddr(ext);
+  if (!rng) Rf_error("RNG pointer is NULL");
+  if (!Rf_isNumeric(delta_))
+    Rf_error("delta must be a numeric vector");
+  R_xlen_t n = XLENGTH(delta_);
+  if (n <= 0 || n > 4)
+    Rf_error("delta must have length between 1 and 4");
+  uint64_t delta[2] = {0, 0};
+  for (R_xlen_t i = 0; i < n; i++) {
+    uint32_t w = read_u32_num(delta_, i, "delta");
+    if (i < 2) {
+      if (i & 1) delta[0] |= ((uint64_t)w << 32);
+      else delta[0] |= w;
+    }
+    else {
+      if (i & 1) delta[1] |= ((uint64_t)w << 32);
+      else delta[1] |= w;
+    }
+  }
+  bool ok = randompack_pcg64_advance(delta, rng);
+  if (!ok) {
+    char *err = randompack_last_error(rng);
+    Rf_error("%s", err ? err : "randompack_pcg64_advance failed");
+  }
+  return R_NilValue;
+}
+
 
 SEXP randompack_set_state_R(SEXP ext, SEXP state_){
   randompack_rng *rng = (randompack_rng *)R_ExternalPtrAddr(ext);
@@ -221,6 +249,34 @@ SEXP randompack_pcg64_set_inc_R(SEXP ext, SEXP inc_){
   return R_NilValue;
 }
 
+SEXP randompack_cwg128_set_weyl_R(SEXP ext, SEXP weyl_){
+  randompack_rng *rng = (randompack_rng *)R_ExternalPtrAddr(ext);
+  if (!rng) Rf_error("RNG pointer is NULL");
+  if (!Rf_isNumeric(weyl_))
+    Rf_error("weyl must be a numeric vector");
+  R_xlen_t n = XLENGTH(weyl_);
+  if (n <= 0 || n > 4)
+    Rf_error("weyl must have length between 1 and 4");
+  uint64_t weyl[2] = {0, 0};
+  for (R_xlen_t i = 0; i < n; i++) {
+    uint32_t w = read_u32_num(weyl_, i, "weyl");
+    if (i < 2) {
+      if (i & 1) weyl[0] |= ((uint64_t)w << 32);
+      else weyl[0] |= w;
+    }
+    else {
+      if (i & 1) weyl[1] |= ((uint64_t)w << 32);
+      else weyl[1] |= w;
+    }
+  }
+  bool ok = randompack_cwg128_set_weyl(weyl, rng);
+  if (!ok) {
+    char *err = randompack_last_error(rng);
+    Rf_error("%s", err ? err : "randompack_cwg128_set_weyl failed");
+  }
+  return R_NilValue;
+}
+
 SEXP randompack_sfc64_set_abc_R(SEXP ext, SEXP abc_){
   randompack_rng *rng = (randompack_rng *)R_ExternalPtrAddr(ext);
   if (!rng) Rf_error("RNG pointer is NULL");
@@ -244,7 +300,7 @@ SEXP randompack_sfc64_set_abc_R(SEXP ext, SEXP abc_){
   return R_NilValue;
 }
 
-SEXP randompack_set_chacha_nonce_R(SEXP ext, SEXP nonce_){
+SEXP randompack_chacha_set_nonce_R(SEXP ext, SEXP nonce_){
   randompack_rng *rng = (randompack_rng *)R_ExternalPtrAddr(ext);
   if (!rng) Rf_error("RNG pointer is NULL");
   if (!Rf_isNumeric(nonce_))
@@ -255,10 +311,10 @@ SEXP randompack_set_chacha_nonce_R(SEXP ext, SEXP nonce_){
   uint32_t nonce[3] = {0, 0, 0};
   for (R_xlen_t i = 0; i < n; i++)
     nonce[i] = read_u32_num(nonce_, i, "nonce");
-  bool ok = randompack_set_chacha_nonce(nonce, rng);
+  bool ok = randompack_chacha_set_nonce(nonce, rng);
   if (!ok) {
     char *err = randompack_last_error(rng);
-    Rf_error("%s", err ? err : "randompack_set_chacha_nonce failed");
+    Rf_error("%s", err ? err : "randompack_chacha_set_nonce failed");
   }
   return R_NilValue;
 }

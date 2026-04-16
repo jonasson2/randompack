@@ -78,6 +78,7 @@ random_mvn!(rng, Z, Sigma)                       # Sigma must be 2×2
 rngx = rng_create("x256**")
 rngp = rng_create("philox")
 rngq = rng_create("pcg64")
+rngw = rng_create("cwg128")
 rngs = rng_create("sfc64")
 rngc = rng_create("chacha20")
 rngz = rng_create("squares")
@@ -86,7 +87,9 @@ Randompack.set_state!(rngx; state=[1,2,3,4])                  # general state se
 Randompack.set_state!(rngp; state=[1,2,3,4,0,0])              # set full Philox state
 Randompack.philox_set_key!(rngp; key=[4,6])                   # set Philox key
 Randompack.jump!(rngx, 128)                                   # jump state by 2^128 steps
+Randompack.pcg64_advance!(rngq; delta=[1024, 0])              # advance pcg64 by 1024 steps
 Randompack.pcg64_set_inc!(rngq; inc=[3, 5])                   # change PCG increment
+Randompack.cwg128_set_weyl!(rngw; weyl=[3,5])                # change CWG128 Weyl increment
 Randompack.set_state!(rngs; state=[1,2,3,17])                # set full sfc64 state
 Randompack.sfc64_set_abc!(rngs; abc=[7,11,13])               # update only a, b, c
 Randompack.chacha_set_nonce!(rngc; nonce=[7,11,13])          # change ChaCha20 nonce

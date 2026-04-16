@@ -109,6 +109,24 @@ def test_pcg64_set_inc():
         rng1.pcg64_set_inc([2, 5])
 
 
+def test_cwg128_set_weyl():
+    engs = rp.engines()
+    if "cwg128" not in engs:
+        return
+    rng1 = rp.Rng("cwg128")
+    rng2 = rp.Rng("cwg128")
+    state = [1, 0, 7, 0, 11, 0, 13, 0]
+    rng1.set_state(state)
+    rng2.set_state(state)
+    rng1.cwg128_set_weyl([3, 5])
+    rng2.cwg128_set_weyl([3, 5])
+    x = rng1.unif(100)
+    y = rng2.unif(100)
+    assert np.array_equal(x, y)
+    with pytest.raises(Exception):
+        rng1.cwg128_set_weyl([2, 5])
+
+
 def test_sfc64_set_abc():
     engs = rp.engines()
     if "sfc64" not in engs:
@@ -152,3 +170,26 @@ def test_jump():
         rng1.jump(129)
     with pytest.raises(Exception):
         rng1.jump(254)
+
+
+def test_pcg64_advance():
+    engs = rp.engines()
+    if "pcg64" not in engs:
+        return
+    state = [
+        0x5bee00f1ac1e7b4d,
+        0x786df8ae32b3fe64,
+        0x26dbcfc7823f9c3b,
+        0x0d4e48fee886333a,
+    ]
+    rng1 = rp.Rng("pcg64")
+    rng2 = rp.Rng("pcg64")
+    rng1.set_state(state)
+    rng2.set_state(state)
+    rng1.pcg64_advance([0, 1 << 16])
+    rng2.jump(80)
+    assert rng1.unif() == rng2.unif()
+    with pytest.raises(Exception):
+        rng1.pcg64_advance([1])
+    with pytest.raises(Exception):
+        rp.Rng("squares").pcg64_advance([1, 0])

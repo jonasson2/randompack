@@ -111,6 +111,10 @@ NULL
 #'     `x256++`, `x256**`, `x256++simd`, and `ranlux++` also support
 #'     `p = 128` and `p = 192`.
 #'   }
+#'   \item{`rng$pcg64_advance(delta)`}{
+#'     Advance the `pcg64` engine by an arbitrary 128-bit delta. `delta` may
+#'     have length up to 4 and shorter vectors are zero-padded.
+#'   }
 #'   \item{`rng$duplicate()`}{Duplicate the RNG, preserving its state.}
 #'   \item{`rng$serialize()`}{Serialize the current RNG state as a raw vector.}
 #'   \item{`rng$deserialize(raw_state)`}{Restore state from a raw vector created
@@ -118,6 +122,10 @@ NULL
 #'   \item{`rng$set_state(state)`}{Set the engine state directly (advanced use).}
 #'   \item{`rng$pcg64_set_inc(inc)`}{
 #'     Set the increment of the PCG64 engine. The increment may have length up
+#'     to 4 and shorter vectors are zero-padded.
+#'   }
+#'   \item{`rng$cwg128_set_weyl(weyl)`}{
+#'     Set the Weyl increment of the cwg128 engine. `weyl` may have length up
 #'     to 4 and shorter vectors are zero-padded.
 #'   }
 #'   \item{`rng$sfc64_set_abc(abc)`}{

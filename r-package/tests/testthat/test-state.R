@@ -25,6 +25,24 @@ test_that("set_state accepts numeric state words", {
   expect_identical(rng1$unif(5), rng2$unif(5))
 })
 
+test_that("advance matches jump for pcg64", {
+  rng1 <- randompack_rng("pcg64")
+  rng2 <- randompack_rng("pcg64")
+  state <- c(
+    2887678797, 1542324465,
+    850656868, 2020473006,
+    2185206843, 651939783,
+    3901109050, 223234302
+  )
+  rng1$set_state(state)
+  rng2$set_state(state)
+  rng1$pcg64_advance(c(0, 0, 65536, 0))
+  rng2$jump(80)
+  expect_identical(rng1$unif(5), rng2$unif(5))
+  expect_error(rng1$pcg64_advance(c(1, 2, 3, 4, 5)))
+  expect_error(randompack_rng("squares")$pcg64_advance(c(1, 0)))
+})
+
 test_that("pcg64_set_inc makes draws repeatable", {
   rng1 <- randompack_rng("pcg64")
   rng2 <- randompack_rng("pcg64")
@@ -36,6 +54,19 @@ test_that("pcg64_set_inc makes draws repeatable", {
   rng2$pcg64_set_inc(inc)
   expect_identical(rng1$unif(5), rng2$unif(5))
   expect_error(rng1$pcg64_set_inc(c(2, 0, 5, 0)))
+})
+
+test_that("cwg128_set_weyl makes draws repeatable", {
+  skip_if_not("cwg128" %in% randompack_engines()$engine)
+  rng1 <- randompack_rng("cwg128")
+  rng2 <- randompack_rng("cwg128")
+  state <- c(1, 0, 0, 0, 7, 0, 0, 0, 11, 0, 0, 0, 13, 0, 0, 0)
+  rng1$set_state(state)
+  rng2$set_state(state)
+  rng1$cwg128_set_weyl(c(3, 0, 5, 0))
+  rng2$cwg128_set_weyl(c(3, 0, 5, 0))
+  expect_equal(rng1$raw(100), rng2$raw(100))
+  expect_error(rng1$cwg128_set_weyl(c(2, 0, 5, 0)))
 })
 
 test_that("sfc64_set_abc makes draws repeatable", {

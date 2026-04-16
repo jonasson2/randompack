@@ -122,6 +122,11 @@ if host_system == 'linux'
   c_deps += rt_dep.found() ? [rt_dep] : []
 endif
 
+if host_system == 'windows'
+  advapi32_dep = cc.find_library('advapi32', required: false)
+  c_deps += advapi32_dep.found() ? [advapi32_dep] : []
+endif
+
 blas_dep = disabler()
 blas_found = 'none'
 using_builtin_blas = false

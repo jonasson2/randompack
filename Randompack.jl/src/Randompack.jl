@@ -33,10 +33,12 @@ Advanced / state-control
 - Randompack.randomize!
 - Randompack.full_mantissa!
 - Randompack.jump!
+- Randompack.pcg64_advance!
 - Randompack.set_state!
 - Randompack.philox_set_key!
 - Randompack.squares_set_key!
 - Randompack.pcg64_set_inc!
+- Randompack.cwg128_set_weyl!
 - Randompack.sfc64_set_abc!
 - Randompack.chacha_set_nonce!
 - Randompack.serialize
@@ -72,8 +74,10 @@ include("interface_advanced.jl")
 
 @static if VERSION >= v"1.11"
   Base.eval(@__MODULE__, Expr(:public,
-    :engines, :duplicate, :randomize!, :full_mantissa!, :set_state!,
-    :jump!, :philox_set_key!, :squares_set_key!, :pcg64_set_inc!,
+    :engines, :duplicate, :randomize!, :full_mantissa!, :pcg64_advance!,
+    :set_state!, :jump!, :philox_set_key!, :squares_set_key!,
+    :pcg64_set_inc!,
+    :cwg128_set_weyl!,
     :sfc64_set_abc!, :chacha_set_nonce!,
     :serialize, :deserialize!
   ))

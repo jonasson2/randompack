@@ -126,6 +126,10 @@ Jump an xor-family or \code{ranlux++} engine ahead by \eqn{2^p} steps. The
 \code{x256++}, \code{x256**}, \code{x256++simd}, and \code{ranlux++} also
 support \code{p = 128} and \code{p = 192}.
 }
+\item{\code{rng$pcg64_advance(delta)}}{
+Advance the \code{pcg64} engine by an arbitrary 128-bit delta. \code{delta}
+may have length up to 4 and shorter vectors are zero-padded.
+}
 \item{\code{rng$duplicate()}}{Duplicate the RNG, preserving its state.}
 \item{\code{rng$serialize()}}{Serialize the current RNG state as a raw vector.}
 \item{\code{rng$deserialize(raw_state)}}{Restore state from a raw vector created
@@ -134,6 +138,10 @@ by \code{serialize()}.}
 \item{\code{rng$pcg64_set_inc(inc)}}{
 Set the increment of the PCG64 engine. The increment may have length up to 4
 and shorter vectors are zero-padded.
+}
+\item{\code{rng$cwg128_set_weyl(weyl)}}{
+Set the Weyl increment of the cwg128 engine. \code{weyl} may have length up to
+4 and shorter vectors are zero-padded.
 }
 \item{\code{rng$sfc64_set_abc(abc)}}{
 Set the \code{a}, \code{b}, \code{c} state words of the sfc64 engine.

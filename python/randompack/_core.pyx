@@ -38,7 +38,9 @@ from ._core cimport (
     randompack_skew_normalf, randompack_serialize,
     randompack_deserialize, randompack_philox_set_key,
     randompack_sfc64_set_abc, randompack_squares_set_key,
-    randompack_pcg64_set_inc, randompack_set_chacha_nonce,
+    randompack_jump, randompack_pcg64_advance,
+    randompack_pcg64_set_inc, randompack_cwg128_set_weyl,
+    randompack_chacha_set_nonce,
     randompack_set_state, )
 
 np.import_array()
@@ -318,6 +320,37 @@ cdef class Rng:
         if not ok:
             _raise_last_error(self.ptr)
 
+    def pcg64_advance(self, delta):
+        """
+        Advance a `pcg64` engine by an arbitrary 128-bit delta.
+
+        Parameters
+        ----------
+        delta : sequence of int
+            Two 64-bit words `[low, high]` in [0, 2^64-1].
+
+        Returns
+        -------
+        None
+        """
+
+        cdef uint64_t c_delta[2]
+        cdef object vals
+        cdef object val
+        cdef int i
+        if self.ptr == NULL:
+            raise RuntimeError("RNG pointer is NULL")
+        vals = list(delta)
+        if len(vals) != 2:
+            raise ValueError("delta must have length 2")
+        for i in range(2):
+            val = int(vals[i])
+            if val < 0 or val > U64_MAX:
+                raise ValueError("delta entries must be in [0, 2^64-1]")
+            c_delta[i] = <uint64_t>val
+        if not randompack_pcg64_advance(c_delta, self.ptr):
+            _raise_last_error(self.ptr)
+
     def duplicate(self):
         """
         Duplicate the random number generator, preserving its state.
@@ -466,6 +499,7 @@ cdef class Rng:
         --------
         squares_set_key
         philox_set_key
+        advance
         set_state
         """
         cdef uint64_t c_inc[2]
@@ -483,6 +517,42 @@ cdef class Rng:
                 raise ValueError("inc entries must be in [0, 2^64-1]")
             c_inc[i] = <uint64_t>val
         if not randompack_pcg64_set_inc(c_inc, self.ptr):
+            _raise_last_error(self.ptr)
+
+    def cwg128_set_weyl(self, weyl):
+        """
+        Set the 128-bit CWG128 Weyl increment.
+
+        Parameters
+        ----------
+        weyl : sequence of int
+            Two 64-bit words `[low, high]` in [0, 2^64-1]. The low word must
+            be odd.
+
+        Returns
+        -------
+        None
+
+        See Also
+        --------
+        set_state
+        pcg64_set_inc
+        """
+        cdef uint64_t c_weyl[2]
+        cdef object vals
+        cdef object val
+        cdef int i
+        if self.ptr == NULL:
+            raise RuntimeError("RNG pointer is NULL")
+        vals = list(weyl)
+        if len(vals) != 2:
+            raise ValueError("weyl must have length 2")
+        for i in range(2):
+            val = int(vals[i])
+            if val < 0 or val > U64_MAX:
+                raise ValueError("weyl entries must be in [0, 2^64-1]")
+            c_weyl[i] = <uint64_t>val
+        if not randompack_cwg128_set_weyl(c_weyl, self.ptr):
             _raise_last_error(self.ptr)
 
     def sfc64_set_abc(self, abc):
@@ -551,7 +621,7 @@ cdef class Rng:
             if val < 0 or val > U32_MAX:
                 raise ValueError("nonce entries must be in [0, 2^32-1]")
             c_nonce[i] = <uint32_t>val
-        if not randompack_set_chacha_nonce(c_nonce, self.ptr):
+        if not randompack_chacha_set_nonce(c_nonce, self.ptr):
             _raise_last_error(self.ptr)
 
     def set_state(self, state):
@@ -571,9 +641,11 @@ cdef class Rng:
         --------
         seed
         randomize
+        advance
         squares_set_key
         philox_set_key
         pcg64_set_inc
+        cwg128_set_weyl
         chacha_set_nonce
         """
         cdef list vals

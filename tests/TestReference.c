@@ -315,6 +315,8 @@ static void TestRanluxppAgainstJirka(void) {
   // Reference values can be reproduced with misc/ranlux-work/ref_ranlux_portable.c.
   // That program sets x = {1..9}, advances 100 states in ranluxpp-portable,
   // xors the 900 output words, and records the last word.
+  // Jirka's implementation has been independently verified against Hahnfeld-Moneta
+  // (see misc/ranlux-work/extract_hahnmon_lcg.cpp for verification).
   uint64_t xorsum = 0xfe4bac4d5cedb127ULL, lastval = 0xee4ef07d92e6614dULL;
   uint64_t init[9] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
   uint64_t x[900];

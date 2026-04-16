@@ -32,7 +32,7 @@ static const uint64_t jump192[9] = {
 };
 
 static inline void ranlux_jump(uint64_t s[9], int p) {
-  const uint64_t *jump;
+  const uint64_t *jump = 0;
   uint64_t z[18];
   switch (p) {
     case 32:  jump = jump32;  break;
@@ -40,7 +40,7 @@ static inline void ranlux_jump(uint64_t s[9], int p) {
     case 96:  jump = jump96;  break;
     case 128: jump = jump128; break;
     case 192: jump = jump192; break;
-    default:  assert(0); }
+    default:  assert(0); return; }
   mul9x9(z, jump, s);
   mod9x9(s, z);
 }

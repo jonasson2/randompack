@@ -13,6 +13,7 @@ cdef extern from "randompack.h":
     bint randompack_full_mantissa(randompack_rng *rng, bint enable)
     bint randompack_bitexact(randompack_rng *rng, bint enable)
     bint randompack_jump(int p, randompack_rng *rng)
+    bint randompack_pcg64_advance(uint64_t delta[2], randompack_rng *rng)
     bint randompack_engines(char *engines, char *descriptions, int *nengines,
                             int *eng_maxlen, int *desc_maxlen)
 
@@ -90,7 +91,8 @@ cdef extern from "randompack.h":
     bint randompack_deserialize(const uint8_t *buf, int len,
                                 randompack_rng *rng)
     bint randompack_pcg64_set_inc(uint64_t inc[2], randompack_rng *rng)
-    bint randompack_set_chacha_nonce(uint32_t nonce[3], randompack_rng *rng)
+    bint randompack_cwg128_set_weyl(uint64_t weyl[2], randompack_rng *rng)
+    bint randompack_chacha_set_nonce(uint32_t nonce[3], randompack_rng *rng)
     bint randompack_philox_set_key(uint64_t key[2], randompack_rng *rng)
     bint randompack_sfc64_set_abc(uint64_t abc[3], randompack_rng *rng)
     bint randompack_squares_set_key(uint64_t key, randompack_rng *rng)

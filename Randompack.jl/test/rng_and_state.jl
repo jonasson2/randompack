@@ -102,6 +102,31 @@ end
   @test_throws ErrorException Randompack.jump!(rng1, 254)
 end
 
+@testset "pcg64_advance!" begin
+  has_pcg = true
+  try
+    rng_create("pcg64")
+  catch
+    has_pcg = false
+  end
+  if has_pcg
+    rng1 = rng_create("pcg64")
+    rng2 = rng_create("pcg64")
+    state = [0x5bee00f1ac1e7b4d, 0x786df8ae32b3fe64,
+             0x26dbcfc7823f9c3b, 0x0d4e48fee886333a]
+    Randompack.set_state!(rng1; state=state)
+    Randompack.set_state!(rng2; state=state)
+    Randompack.pcg64_advance!(rng1; delta=[0, 1 << 16])
+    Randompack.jump!(rng2, 80)
+    @test random_unif(rng1) == random_unif(rng2)
+    @test_throws ArgumentError Randompack.pcg64_advance!(rng1; delta=[1])
+    rng3 = rng_create("squares")
+    @test_throws ErrorException Randompack.pcg64_advance!(rng3; delta=[1, 0])
+  else
+    @test true
+  end
+end
+
 @testset "engines" begin
   out = Randompack.engines()
   @test haskey(out, :engine)
@@ -176,6 +201,19 @@ end
   else
     @test true
   end
+end
+
+@testset "cwg128_set_weyl!" begin
+  rng1 = rng_create("cwg128")
+  rng2 = rng_create("cwg128")
+  Randompack.set_state!(rng1; state=[1, 0, 7, 0, 11, 0, 13, 0])
+  Randompack.set_state!(rng2; state=[1, 0, 7, 0, 11, 0, 13, 0])
+  Randompack.cwg128_set_weyl!(rng1; weyl=[3, 5])
+  Randompack.cwg128_set_weyl!(rng2; weyl=[3, 5])
+  x1 = random_unif(rng1)
+  x2 = random_unif(rng2)
+  @test x1 == x2
+  @test_throws ErrorException Randompack.cwg128_set_weyl!(rng1; weyl=[2, 5])
 end
 
 @testset "sfc64_set_abc!" begin

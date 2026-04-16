@@ -194,12 +194,20 @@ bool randompack_jump(int p, randompack_rng *rng) {
   if (rng->engine != X256PP && rng->engine != X256SS &&
       rng->engine != X256SSSIMD && rng->engine != FAST &&
       rng->engine != XORO && rng->engine != X128P &&
+      rng->engine != PCG64 &&
       rng->engine != RANLUXPP) {
-    rng->last_error = "randompack_jump: Only supported for xor-family engines and ranlux++";
+    rng->last_error =
+      "randompack_jump: only supported for pcg64, xor-family engines and ranlux++";
     return false;
   }
   short_jumps = (rng->engine == XORO || rng->engine == X128P);
-  if (short_jumps) {
+  if (rng->engine == PCG64) {
+    if (p < 0 || p > 127) {
+      rng->last_error = "unsupported jump exponent (must be in [0,127])";
+      return false;
+    }
+  }
+  else if (short_jumps) {
     if (p != 32 && p != 64 && p != 96) {
       rng->last_error = "unsupported jump exponent (must be 32/64/96)";
       return false;
@@ -216,6 +224,28 @@ bool randompack_jump(int p, randompack_rng *rng) {
   else if (rng->engine == X128P)    xorshift128p_jump   (rng->state.u64, p);
   else if (rng->engine == RANLUXPP) ranlux_jump         (rng->state.u64, p);
   else if (rng->engine == FAST)     x256simd_jump       (p, rng);
+  else if (rng->engine == PCG64)    pcg_jump            (p, rng);
+  rng->buf_word = BUFSIZE;
+  rng->buf_byte = 0;
+  return true;
+}
+
+bool randompack_pcg64_advance(uint64_t delta[2], randompack_rng *rng) {
+  if (!rng) return false;
+  if (rng->engine == INVALID) {
+    rng->last_error = "randompack_pcg64_advance: invalid rng";
+    return false;
+  }
+  rng->last_error = 0;
+  if (!delta) {
+    rng->last_error = "randompack_pcg64_advance: delta is null";
+    return false;
+  }
+  if (rng->engine != PCG64) {
+    rng->last_error = "randompack_pcg64_advance: only supported for pcg64";
+    return false;
+  }
+  pcg_advance(delta, rng);
   rng->buf_word = BUFSIZE;
   rng->buf_byte = 0;
   return true;
@@ -236,26 +266,26 @@ bool randompack_pcg64_set_inc(uint64_t inc[2], randompack_rng *rng) {
   return true;
 }
 
-bool randompack_cwg128_set_inc(uint64_t inc[2], randompack_rng *rng) {
+bool randompack_cwg128_set_weyl(uint64_t weyl[2], randompack_rng *rng) {
   if (!rng) return false;
   rng->last_error = 0;
   if (rng->engine != CWG128) {
-    rng->last_error = "randompack cwg128_set_inc: engine is not cwg128";
+    rng->last_error = "randompack cwg128_set_weyl: engine is not cwg128";
     return false;
   }
-  if ((inc[0] & 1) == 0) {
-    rng->last_error = "randompack cwg128_set_inc: increment must be odd";
+  if ((weyl[0] & 1) == 0) {
+    rng->last_error = "randompack cwg128_set_weyl: Weyl increment must be odd";
     return false;
   }
-  cwg128_set_inc(inc, rng);
+  cwg128_set_weyl(weyl, rng);
   return true;
 }
 
-bool randompack_set_chacha_nonce(uint32_t nonce[3], randompack_rng *rng) {
+bool randompack_chacha_set_nonce(uint32_t nonce[3], randompack_rng *rng) {
   if (!rng) return false;
   rng->last_error = 0;
   if (rng->engine != CHACHA20) {
-    rng->last_error = "randompack set_chacha_nonce: engine is not chacha20";
+    rng->last_error = "randompack chacha_set_nonce: engine is not chacha20";
     return false;
   }
   chacha_set_nonce(nonce, rng);

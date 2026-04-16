@@ -6,7 +6,7 @@
 #include "randompack_internal.h"
 #include "openlibm.inc"
 
-static bool near(double a, double b, double tol) {
+static bool is_near(double a, double b, double tol) {
   double diff = fabs(a - b);
   double scale = fmax(1, fmax(fabs(a), fabs(b)));
   return diff <= tol*scale;
@@ -18,7 +18,7 @@ static void test_exp(void) {
   for (int i = 0; i < LEN(x); i++) {
     double a = openlibm_exp(x[i]);
     double b = exp(x[i]);
-    xCheck(near(a, b, tol));
+    xCheck(is_near(a, b, tol));
   }
 }
 
@@ -37,7 +37,7 @@ static void test_log(void) {
   for (int i = 0; i < LEN(x); i++) {
     double a = openlibm_log(x[i]);
     double b = log(x[i]);
-    xCheck(near(a, b, tol));
+    xCheck(is_near(a, b, tol));
   }
 }
 
@@ -56,7 +56,7 @@ static void test_log1p(void) {
   for (int i = 0; i < LEN(x); i++) {
     double a = openlibm_log1p(-x[i]);
     double b = log(1 - x[i]);
-    xCheck(near(a, b, tol));
+    xCheck(is_near(a, b, tol));
   }
 }
 

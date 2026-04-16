@@ -51,6 +51,9 @@ typedef union {
 
 typedef void (*engine_fill)(uint64_t *buf, size_t len, randompack_state *state);
 
+void pcg_advance(uint64_t delta[2], randompack_rng *rng);
+void pcg_jump(int p, randompack_rng *rng);
+
 struct randompack_rng {
   randompack_state state;
   rng_engine engine;

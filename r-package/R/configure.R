@@ -55,6 +55,13 @@ methods_configure <- list(
     invisible(self)
   },
 
+  pcg64_advance = function(delta) {
+    if (is.null(self$ptr)) stop("RNG is not initialized")
+    delta <- as_u32_vec(delta, "delta", max_len = 4L)
+    .Call("randompack_pcg64_advance_R", self$ptr, delta, PACKAGE = "randompack")
+    invisible(self)
+  },
+
 
   set_state = function(state) {
     if (is.null(self$ptr)) stop("RNG is not initialized")
@@ -70,6 +77,13 @@ methods_configure <- list(
     invisible(self)
   },
 
+  cwg128_set_weyl = function(weyl) {
+    if (is.null(self$ptr)) stop("RNG is not initialized")
+    weyl <- as_u32_vec(weyl, "weyl", max_len = 4L)
+    .Call("randompack_cwg128_set_weyl_R", self$ptr, weyl, PACKAGE = "randompack")
+    invisible(self)
+  },
+
   sfc64_set_abc = function(abc) {
     if (is.null(self$ptr)) stop("RNG is not initialized")
     abc <- as_u32_vec(abc, "abc", max_len = 6L)
@@ -80,7 +94,7 @@ methods_configure <- list(
   chacha_set_nonce = function(nonce) {
     if (is.null(self$ptr)) stop("RNG is not initialized")
     nonce <- as_u32_vec(nonce, "nonce", max_len = 3L)
-    .Call("randompack_set_chacha_nonce_R", self$ptr, nonce, PACKAGE = "randompack")
+    .Call("randompack_chacha_set_nonce_R", self$ptr, nonce, PACKAGE = "randompack")
     invisible(self)
   },
 

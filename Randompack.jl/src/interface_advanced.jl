@@ -163,6 +163,30 @@ function jump!(rng::RNG, p::Integer)
   return nothing
 end
 
+"""
+    Randompack.pcg64_advance!(rng::RNG; delta)
+
+Advance a `pcg64` engine by an arbitrary 128-bit delta.
+
+Values are range-checked and converted to `UInt64` before calling the C
+library. `delta` must be a length-2 vector `[low, high]`.
+
+# Examples
+```julia
+Randompack.pcg64_advance!(rng; delta=[1024, 0])
+```
+
+"""
+function pcg64_advance!(rng::RNG; delta)
+  rng.ptr == C_NULL && throw(ErrorException("RNG pointer is NULL"))
+  length(delta) == 2 || throw(ArgumentError("delta must have length 2"))
+  c_delta = _u64_vec_from_ints(delta)
+  ok = ccall(_sym(:randompack_pcg64_advance), Bool,
+             (Ptr{UInt64}, RNGPtr), c_delta, rng.ptr)
+  _check_ok(ok, rng.ptr, "randompack_pcg64_advance failed")
+  return nothing
+end
+
 # -----------------------------------------------------------------------------
 # State setting
 # -----------------------------------------------------------------------------
@@ -270,6 +294,31 @@ function pcg64_set_inc!(rng::RNG; inc)
 end
 
 """
+    Randompack.cwg128_set_weyl!(rng::RNG; weyl)
+
+Set the 128-bit CWG128 Weyl increment.
+
+Values are range-checked and converted to `UInt64` before calling the C
+library. `weyl` must be a length-2 vector `[low, high]` and the low word must
+be odd.
+
+# Examples
+```julia
+Randompack.cwg128_set_weyl!(rng; weyl=[3, 5])
+```
+
+"""
+function cwg128_set_weyl!(rng::RNG; weyl)
+  rng.ptr == C_NULL && throw(ErrorException("RNG pointer is NULL"))
+  length(weyl) == 2 || throw(ArgumentError("weyl must have length 2"))
+  c_weyl = _u64_vec_from_ints(weyl)
+  ok = ccall(_sym(:randompack_cwg128_set_weyl), Bool,
+             (Ptr{UInt64}, RNGPtr), c_weyl, rng.ptr)
+  _check_ok(ok, rng.ptr, "randompack_cwg128_set_weyl failed")
+  return nothing
+end
+
+"""
     Randompack.sfc64_set_abc!(rng::RNG; abc)
 
 Set the `sfc64` `a`, `b`, `c` state words directly, leaving the counter
@@ -312,9 +361,9 @@ function chacha_set_nonce!(rng::RNG; nonce)
   rng.ptr == C_NULL && throw(ErrorException("RNG pointer is NULL"))
   length(nonce) == 3 || throw(ArgumentError("nonce must have length 3"))
   c_nonce = _u32_vec_from_ints(nonce)
-  ok = ccall(_sym(:randompack_set_chacha_nonce), Bool,
+  ok = ccall(_sym(:randompack_chacha_set_nonce), Bool,
              (Ptr{UInt32}, RNGPtr), c_nonce, rng.ptr)
-  _check_ok(ok, rng.ptr, "randompack_set_chacha_nonce failed")
+  _check_ok(ok, rng.ptr, "randompack_chacha_set_nonce failed")
   return nothing
 end
 

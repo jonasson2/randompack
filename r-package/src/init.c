@@ -11,10 +11,12 @@ SEXP randompack_randomize_R(SEXP ptr);
 SEXP randompack_duplicate_R(SEXP ptr);
 SEXP randompack_full_mantissa_R(SEXP ptr, SEXP enable);
 SEXP randompack_jump_R(SEXP ptr, SEXP p);
+SEXP randompack_pcg64_advance_R(SEXP ptr, SEXP delta);
 SEXP randompack_set_state_R(SEXP ptr, SEXP state);
 SEXP randompack_pcg64_set_inc_R(SEXP ptr, SEXP inc);
+SEXP randompack_cwg128_set_weyl_R(SEXP ptr, SEXP weyl);
 SEXP randompack_sfc64_set_abc_R(SEXP ptr, SEXP abc);
-SEXP randompack_set_chacha_nonce_R(SEXP ptr, SEXP nonce);
+SEXP randompack_chacha_set_nonce_R(SEXP ptr, SEXP nonce);
 SEXP randompack_philox_set_key_R(SEXP ptr, SEXP key);
 SEXP randompack_squares_set_key_R(SEXP ptr, SEXP key);
 SEXP randompack_unif_R(SEXP ptr, SEXP n, SEXP a, SEXP b);
@@ -47,10 +49,12 @@ static const R_CallMethodDef CallEntries[] = {
   {"randompack_duplicate_R",  (DL_FUNC)&randompack_duplicate_R,  1},
   {"randompack_full_mantissa_R",(DL_FUNC)&randompack_full_mantissa_R, 2},
   {"randompack_jump_R",       (DL_FUNC)&randompack_jump_R,       2},
+  {"randompack_pcg64_advance_R", (DL_FUNC)&randompack_pcg64_advance_R, 2},
   {"randompack_set_state_R",   (DL_FUNC)&randompack_set_state_R,   2},
   {"randompack_pcg64_set_inc_R", (DL_FUNC)&randompack_pcg64_set_inc_R, 2},
+  {"randompack_cwg128_set_weyl_R", (DL_FUNC)&randompack_cwg128_set_weyl_R, 2},
   {"randompack_sfc64_set_abc_R", (DL_FUNC)&randompack_sfc64_set_abc_R, 2},
-  {"randompack_set_chacha_nonce_R", (DL_FUNC)&randompack_set_chacha_nonce_R, 2},
+  {"randompack_chacha_set_nonce_R", (DL_FUNC)&randompack_chacha_set_nonce_R, 2},
   {"randompack_philox_set_key_R", (DL_FUNC)&randompack_philox_set_key_R, 2},
   {"randompack_squares_set_key_R", (DL_FUNC)&randompack_squares_set_key_R, 2},
   {"randompack_unif_R",        (DL_FUNC)&randompack_unif_R,        4},

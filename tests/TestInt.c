@@ -83,6 +83,22 @@ static void test_balanced_bits(char *engine) {
   FREE(x);
 }
 
+static void test_balanced_counts_small_range(char *engine) {
+  enum { A = -3, B = 3, M = B - A + 1 };
+  int N = N_BAL_CNTS;
+  int *x;
+  int counts[M] = {0};
+  TEST_ALLOC(x, N);
+  randompack_rng *rng = create_seeded_rng(engine, 45);
+  check_rng_clean(rng);
+  bool ok = randompack_int(x, N, A, B, rng);
+  check_success(ok, rng);
+  for (int i = 0; i < N; i++) counts[x[i] - A]++;
+  xCheckMsg(check_balanced_counts(counts, M), engine);
+  randompack_free(rng);
+  FREE(x);
+}
+
 void TestInt(void) {
   test_int_simple();
   int n = 0;
@@ -92,6 +108,7 @@ void TestInt(void) {
     test_edge_cases(e, INT_MAX);
     test_seed_changes_output(e);
     test_balanced_bits(e);
+    test_balanced_counts_small_range(e);
   }
   free_engines(engines, n);
 }
@@ -102,4 +119,5 @@ void TestIntx(char *engine) {
   test_edge_cases(e, INT_MAX);
   test_seed_changes_output(e);
   test_balanced_bits(e);
+  test_balanced_counts_small_range(e);
 }
