@@ -83,7 +83,7 @@ static inline void consume_double(const double *buf, int chunk) {
 
 static int compute_reps(int chunk) {
   int reps = (int)(1000000/chunk);
-  return max(1, reps);
+  return maxi(1, reps);
 }
 
 #define TIME_DOUBLE_CALL(expr) do { \

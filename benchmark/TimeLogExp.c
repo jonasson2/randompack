@@ -320,7 +320,7 @@ static void apply_fn_vv_f(float out[], const float in[], int n, vvexpf_fn fn) {
 #if defined(BUILD_AVX512)
 static double time_fn_arr_d(int chunk, double bench_time, arr_d_fn fn, double out[],
                             randompack_rng *rng) {
-  int reps = max(1, 1000000/chunk);
+  int reps = maxi(1, 1000000/chunk);
   int64_t calls = 0;
   uint64_t total = 0;
   size_t len = (size_t)chunk;
@@ -345,7 +345,7 @@ static double time_fn_arr_d(int chunk, double bench_time, arr_d_fn fn, double ou
 
 static double time_fn_scalar(int chunk, double bench_time, exp_fn fn, double in[],
                              double out[], randompack_rng *rng) {
-  int reps = max(1, 1000000/chunk);
+  int reps = maxi(1, 1000000/chunk);
   int64_t calls = 0;
   uint64_t total = 0;
   size_t len = (size_t)chunk;
@@ -369,7 +369,7 @@ static double time_fn_scalar(int chunk, double bench_time, exp_fn fn, double in[
 
 static double time_fn_scalar_f(int chunk, double bench_time, expf_fn fn, float in[],
                                float out[], randompack_rng *rng) {
-  int reps = max(1, 1000000/chunk);
+  int reps = maxi(1, 1000000/chunk);
   int64_t calls = 0;
   uint64_t total = 0;
   size_t len = (size_t)chunk;
@@ -436,7 +436,7 @@ static double time_single_log_f(const float in[], int n, double bench_time,
 #if defined(USE_ACCEL_VV)
 static double time_fn_vv_d(int chunk, double bench_time, vvexp_fn fn, double in[],
                            double out[], randompack_rng *rng) {
-  int reps = max(1, 1000000/chunk);
+  int reps = maxi(1, 1000000/chunk);
   int64_t calls = 0;
   uint64_t total = 0;
   size_t len = (size_t)chunk;
@@ -460,7 +460,7 @@ static double time_fn_vv_d(int chunk, double bench_time, vvexp_fn fn, double in[
 
 static double time_fn_vv_f(int chunk, double bench_time, vvexpf_fn fn, float in[],
                            float out[], randompack_rng *rng) {
-  int reps = max(1, 1000000/chunk);
+  int reps = maxi(1, 1000000/chunk);
   int64_t calls = 0;
   uint64_t total = 0;
   size_t len = (size_t)chunk;
@@ -486,7 +486,7 @@ static double time_fn_vv_f(int chunk, double bench_time, vvexpf_fn fn, float in[
 #if defined(BUILD_AVX2) || (defined(__aarch64__) || defined(_M_ARM64)) && !defined(__APPLE__)
 static double time_fn_inplace_d(int chunk, double bench_time, inplace_d_fn fn,
                                 double in[], double out[], randompack_rng *rng) {
-  int reps = max(1, 1000000/chunk);
+  int reps = maxi(1, 1000000/chunk);
   int64_t calls = 0;
   uint64_t total = 0;
   size_t len = (size_t)chunk;
@@ -511,7 +511,7 @@ static double time_fn_inplace_d(int chunk, double bench_time, inplace_d_fn fn,
 
 static double time_fn_inplace_f(int chunk, double bench_time, inplace_f_fn fn,
                                 float in[], float out[], randompack_rng *rng) {
-  int reps = max(1, 1000000/chunk);
+  int reps = maxi(1, 1000000/chunk);
   int64_t calls = 0;
   uint64_t total = 0;
   size_t len = (size_t)chunk;

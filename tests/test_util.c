@@ -327,7 +327,7 @@ uint64_t max64(uint64_t a, uint64_t b) {
 
 int maxv(int *x, int n) {
   int m = INT_MIN;
-  for (int i = 0; i < n; i++) m = max(m, x[i]);
+  for (int i = 0; i < n; i++) m = maxi(m, x[i]);
   return m;
 }
 
@@ -363,7 +363,7 @@ double maxvd(double *x, int n) {
 
 int minv(int *x, int n) {
   int m = INT_MAX;
-  for (int i = 0; i < n; i++) m = min(m, x[i]);
+  for (int i = 0; i < n; i++) m = mini(m, x[i]);
   return m;
 }
 
@@ -528,7 +528,7 @@ static void check_u01_distribution_df(double *u, int n, char *dist, char *engine
   char tag[64];
   snprintf(tag, sizeof(tag), "%s:%s", dist, precision);
   xCheckMsg2(check_u01_endpoints(k0, k1, n, p), engine, tag);
-  int nbins = min(500, max(20, sqrt(nnz)));
+  int nbins = mini(500, maxi(20, sqrt(nnz)));
   ASSERT(nnz/nbins >= 20);
   int *counts;
   TEST_ALLOC(counts, nbins);
@@ -538,7 +538,7 @@ static void check_u01_distribution_df(double *u, int n, char *dist, char *engine
   if (!strcmp(precision, "double"))  // this test is too shaky for float
 	 xCheckMsg2(check_u01_minmax(u, nnz), engine, tag);
   for (int i = 0; i < nnz; i++) {
-    int b = min(nbins - 1, nbins*u[i]);
+    int b = mini(nbins - 1, nbins*u[i]);
     counts[b]++;
   }
   xCheckMsg2(check_balanced_counts(counts, nbins), engine, tag);

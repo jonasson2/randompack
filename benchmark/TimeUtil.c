@@ -59,7 +59,7 @@ void warmup_cpu(double seconds) {
 double time_u64(int chunk, double bench_time, fill_u64_fn fill, randompack_rng *rng) {
   uint64_t *buf;
   TEST_ALLOC(buf, chunk);
-  int reps = max(1, M/chunk);
+  int reps = maxi(1, M/chunk);
   int64_t calls = 0;
   uint64_t t0 = clock_nsec();
   uint64_t deadline = t0 + (uint64_t)(bench_time*1e9);
@@ -79,7 +79,7 @@ double time_u64(int chunk, double bench_time, fill_u64_fn fill, randompack_rng *
 double time_u32(int chunk, double bench_time, fill_u32_fn fill, randompack_rng *rng) {
   uint32_t *buf;
   TEST_ALLOC(buf, chunk);
-  int reps = max(1, M/chunk);
+  int reps = maxi(1, M/chunk);
   int64_t calls = 0;
   uint64_t t0 = clock_nsec();
   uint64_t deadline = t0 + (uint64_t)(bench_time*1e9);
@@ -100,7 +100,7 @@ double time_double(int chunk, double bench_time, fill_double_fn fill, double par
                    randompack_rng *rng) {
   double *buf;
   TEST_ALLOC(buf, chunk);
-  int reps = max(1, M/chunk);
+  int reps = maxi(1, M/chunk);
   int64_t calls = 0;
   uint64_t t0 = clock_nsec();
   uint64_t deadline = t0 + (uint64_t)(bench_time*1e9);
@@ -121,7 +121,7 @@ double time_float(int chunk, double bench_time, fill_float_fn fill, float param[
                   randompack_rng *rng) {
   float *buf;
   TEST_ALLOC(buf, chunk);
-  int reps = max(1, M/chunk);
+  int reps = maxi(1, M/chunk);
   int64_t calls = 0;
   uint64_t t0 = clock_nsec();
   uint64_t deadline = t0 + (uint64_t)(bench_time*1e9);

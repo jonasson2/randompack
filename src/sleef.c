@@ -21,15 +21,27 @@
 #define STATINLINE static __forceinline // MinGW crashes on the out-of-line AVX2 vector helper form.
 #define STATINLINECONST static __forceinline
 #define CONST
+#define SLEEF_INF HUGE_VAL
+#define SLEEF_INFF INFINITY
+#define SLEEF_NAN NAN
+#define SLEEF_NANF NAN
 #elif defined(__GNUC__) || defined(__clang__)
 #define ALWAYS_INLINE __attribute__((always_inline)) // MinGW crashes on the out-of-line AVX2 vector helper form.
 #define STATINLINE static inline ALWAYS_INLINE
 #define STATINLINECONST static inline ALWAYS_INLINE __attribute__((const))
 #define CONST __attribute__((const))
+#define SLEEF_INF __builtin_inf()
+#define SLEEF_INFF __builtin_inff()
+#define SLEEF_NAN __builtin_nan("")
+#define SLEEF_NANF __builtin_nanf("")
 #else
 #define STATINLINE static inline
 #define STATINLINECONST static inline
 #define CONST
+#define SLEEF_INF HUGE_VAL
+#define SLEEF_INFF INFINITY
+#define SLEEF_NAN NAN
+#define SLEEF_NANF NAN
 #endif
 
 typedef __m256i vmask;
@@ -96,7 +108,7 @@ STATINLINECONST vdouble Sleef_expd4_u10avx2(vdouble d) {
   u = vfma_vd_vd_vd_vd(u, s, vcast_vd_d(+0.1000000000000000000e+1));
   u = vldexp2_vd_vd_vi(u, q);
   vopmask o = vgt_vo_vd_vd(d, vcast_vd_d(0x1.62e42fefa39efp+9));
-  u = vsel_vd_vo_vd_vd(o, vcast_vd_d(__builtin_inf()), u);
+  u = vsel_vd_vo_vd_vd(o, vcast_vd_d(SLEEF_INF), u);
   u = vreinterpret_vd_vm(vandnot_vm_vo64_vm(vlt_vo_vd_vd(d, vcast_vd_d(-1000)), vreinterpret_vm_vd(u)));
   return u;
 }
@@ -147,7 +159,7 @@ STATINLINECONST vfloat Sleef_expf8_u10avx2(vfloat d) {
   u = vadd_vf_vf_vf_sp(vcast_vf_f_sp(1.0f), vmla_vf_vf_vf_vf_sp(vmul_vf_vf_vf_sp(s, s), u, s));
   u = vldexp2_vf_vf_vi2_sp(u, q);
   u = vreinterpret_vf_vm_sp(vandnot_vm_vo32_vm_sp(vlt_vo_vf_vf_sp(d, vcast_vf_f_sp(-104)), vreinterpret_vm_vf_sp(u)));
-  u = vsel_vf_vo_vf_vf_sp(vlt_vo_vf_vf_sp(vcast_vf_f_sp(100), d), vcast_vf_f_sp(__builtin_inff()), u);
+  u = vsel_vf_vo_vf_vf_sp(vlt_vo_vf_vf_sp(vcast_vf_f_sp(100), d), vcast_vf_f_sp(SLEEF_INFF), u);
   return u;
 }
 
@@ -176,7 +188,7 @@ STATINLINE vint vand_vi_vi_vi(vint x, vint y) { return _mm_and_si128(x, y); }
 STATINLINE vint vsrl_vi_vi_i(vint x, int c) { return _mm_srli_epi32(x, c); }
 STATINLINE vint vsel_vi_vo_vi_vi(vopmask m, vint x, vint y) { return _mm_blendv_epi8(y, x, _mm256_castsi256_si128(m)); }
 STATINLINE vopmask vispinf_vo_vd(vdouble d) {
-  return vreinterpret_vm_vd(_mm256_cmp_pd(d, _mm256_set1_pd(__builtin_inf()), 0x00));
+  return vreinterpret_vm_vd(_mm256_cmp_pd(d, _mm256_set1_pd(SLEEF_INF), 0x00));
 }
 STATINLINE vopmask visnan_vo_vd(vdouble d) {
   return vreinterpret_vm_vd(_mm256_cmp_pd(d, d, 0x04));
@@ -263,9 +275,9 @@ STATINLINECONST vdouble Sleef_logd4_u35avx2(vdouble d) {
     (vcast_vd_d(0.6666666666667778740063)))))));
   x = vmla_vd_vd_vd_vd(x, vcast_vd_d(2), vmul_vd_vd_vd(vcast_vd_d(0.693147180559945286226764), vcast_vd_vi(e)));
   x = vmla_vd_vd_vd_vd(x3, t, x);
-  x = vsel_vd_vo_vd_vd(vispinf_vo_vd(d), vcast_vd_d(__builtin_inf()), x);
-  x = vsel_vd_vo_vd_vd(vor_vo_vo_vo(vlt_vo_vd_vd(d, vcast_vd_d(0)), visnan_vo_vd(d)), vcast_vd_d(__builtin_nan("")), x);
-  x = vsel_vd_vo_vd_vd(veq_vo_vd_vd(d, vcast_vd_d(0)), vcast_vd_d(-__builtin_inf()), x);
+  x = vsel_vd_vo_vd_vd(vispinf_vo_vd(d), vcast_vd_d(SLEEF_INF), x);
+  x = vsel_vd_vo_vd_vd(vor_vo_vo_vo(vlt_vo_vd_vd(d, vcast_vd_d(0)), visnan_vo_vd(d)), vcast_vd_d(SLEEF_NAN), x);
+  x = vsel_vd_vo_vd_vd(veq_vo_vd_vd(d, vcast_vd_d(0)), vcast_vd_d(-SLEEF_INF), x);
   return x;
 }
 
@@ -289,7 +301,7 @@ STATINLINE vint2 vsrl_vi2_vi2_i_sp(vint2 x, int c) { return _mm256_srli_epi32(x,
 STATINLINE vint2 vsel_vi2_vo_vi2_vi2_sp(vopmask m, vint2 x, vint2 y) {
   return _mm256_blendv_epi8(y, x, m);
 }
-STATINLINE vopmask vispinf_vo_vf_sp(vfloat d) { return veq_vo_vf_vf_sp(d, vcast_vf_f_sp(__builtin_inff())); }
+STATINLINE vopmask vispinf_vo_vf_sp(vfloat d) { return veq_vo_vf_vf_sp(d, vcast_vf_f_sp(SLEEF_INFF)); }
 STATINLINE vopmask visnan_vo_vf_sp(vfloat d) { return vneq_vo_vf_vf_sp(d, d); }
 STATINLINE CONST vfloat vf2getx_vf_vf2_sp(vfloat2 v) { return v.x; }
 STATINLINE CONST vfloat vf2gety_vf_vf2_sp(vfloat2 v) { return v.y; }
@@ -362,9 +374,9 @@ STATINLINECONST vfloat Sleef_logf8_u10avx2(vfloat d) {
   s = dfadd_vf2_vf2_vf2_sp(s, dfscale_vf2_vf2_vf_sp(x, vcast_vf_f_sp(2)));
   s = dfadd_vf2_vf2_vf_sp(s, vmul_vf_vf_vf_sp(vmul_vf_vf_vf_sp(x2, vf2getx_vf_vf2_sp(x)), t));
   vfloat r = vadd_vf_vf_vf_sp(vf2getx_vf_vf2_sp(s), vf2gety_vf_vf2_sp(s));
-  r = vsel_vf_vo_vf_vf_sp(vispinf_vo_vf_sp(d), vcast_vf_f_sp(__builtin_inff()), r);
-  r = vsel_vf_vo_vf_vf_sp(vor_vo_vo_vo_sp(vlt_vo_vf_vf_sp(d, vcast_vf_f_sp(0)), visnan_vo_vf_sp(d)), vcast_vf_f_sp(__builtin_nanf("")), r);
-  r = vsel_vf_vo_vf_vf_sp(veq_vo_vf_vf_sp(d, vcast_vf_f_sp(0)), vcast_vf_f_sp(-__builtin_inff()), r);
+  r = vsel_vf_vo_vf_vf_sp(vispinf_vo_vf_sp(d), vcast_vf_f_sp(SLEEF_INFF), r);
+  r = vsel_vf_vo_vf_vf_sp(vor_vo_vo_vo_sp(vlt_vo_vf_vf_sp(d, vcast_vf_f_sp(0)), visnan_vo_vf_sp(d)), vcast_vf_f_sp(SLEEF_NANF), r);
+  r = vsel_vf_vo_vf_vf_sp(veq_vo_vf_vf_sp(d, vcast_vf_f_sp(0)), vcast_vf_f_sp(-SLEEF_INFF), r);
   return r;
 }
 
