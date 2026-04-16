@@ -21,6 +21,7 @@ static void print_help(void) {
   puts("Usage: RunTests [options]\n"
        "Options:\n"
        "  -h       Show this help message\n"
+       "  -F       Fast debug run (all sample counts set to default/20)\n"
        "  -v       Verbose tests\n"
        "  -vv      More verbosity\n"
        "  -vvv     Even moren verbosity\n"
@@ -59,6 +60,13 @@ static int parse_posint(const char *s) {
   return (int)v;
 }
 
+static void set_fast_debug_sizes(void) {
+  N_STAT_FAST = N_STAT_FAST_DEFAULT/20;
+  N_STAT_SLOW = N_STAT_SLOW_DEFAULT/20;
+  N_BAL_CNTS = N_BAL_CNTS_DEFAULT/20;
+  N_BAL_BITS = N_BAL_BITS_DEFAULT/20;
+}
+
 static void run_test(char *name, void (*fn)(void)) {
   int ntotal, nfail;
   xCheckInit();
@@ -82,11 +90,12 @@ static void run_testx(char *name, void (*fn)(char *), char *engine) {
 }
 
 int main(int argc, char **argv) {
-  char *optstring = ":vhf:s:c:b:d";
+  char *optstring = ":vFhf:s:c:b:d";
   int c;
   while ((c = getopt(argc, argv, optstring)) != -1) {
     switch (c) {
       case 'h': print_help(); return 0;
+      case 'F': set_fast_debug_sizes(); break;
       case 'v': TESTVERBOSITY++; break;
       case 'd': TESTFLOAT = 0; break;
       case 'f': N_STAT_FAST = parse_posint(optarg); break;

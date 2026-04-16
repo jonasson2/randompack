@@ -73,8 +73,8 @@ _Static_assert(sizeof(long long) == 8, "randompack requires 64-bit long long");
      snprintf((dst), (size_t)(maxlen), "%s", (src) ? (src) : "");    \
  } while (0)
 
-static inline int min(int m, int n) { return m < n ? m : n; }
-static inline int max(int m, int n) { return m > n ? m : n; }
+static inline int mini(int m, int n) { return m < n ? m : n; }
+static inline int maxi(int m, int n) { return m > n ? m : n; }
 
 static inline bool is_little_endian(void) {
   uint32_t one = 1;

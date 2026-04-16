@@ -20,17 +20,12 @@ NEVER_INLINE void expf_inplace(float *x, size_t len, randompack_rng *rng) {
     }
     return;
 #elif defined(BUILD_AVX2)
-#if defined(_WIN32)
-    for (size_t i = 0; i < len; i++) x[i] = expf(x[i]);
-    return;
-#else
     if (rng->cpu_has_avx2) {
       sleef_expf_inplace(x, len);
       return;
     }
     for (size_t i = 0; i < len; i++) x[i] = expf(x[i]);
     return;
-#endif
 #elif defined(__aarch64__) && !defined(__APPLE__)
     sleef_expf_inplace(x, len);
     return;
@@ -53,17 +48,12 @@ NEVER_INLINE void logf_inplace(float *x, size_t len, randompack_rng *rng) {
     }
     return;
 #elif defined(BUILD_AVX2)
-#if defined(_WIN32)
-    for (size_t i = 0; i < len; i++) x[i] = logf(x[i]);
-    return;
-#else
     if (rng->cpu_has_avx2) {
       sleef_logf_inplace(x, len);
       return;
     }
     for (size_t i = 0; i < len; i++) x[i] = logf(x[i]);
     return;
-#endif
 // #elif defined(__aarch64__) && !defined(__APPLE__)
 //     sleef_logf_inplace(x, len);
 //     return;

@@ -1,5 +1,4 @@
 // -*- c -*-
-#include <stdio.h>
 #if defined(USE_ACCEL_VV)
 void vvexp(double *y, const double *x, const int *n);
 void vvlog(double *y, const double *x, const int *n);
@@ -15,12 +14,6 @@ void sleef_log_inplace_avx512(double *x, size_t len);
 #endif
 
 NEVER_INLINE void exp_inplace(double *x, size_t len, randompack_rng *rng) {
-#if defined(_WIN32)
-  fprintf(stderr, "exp_inplace: begin len=%zu bitexact=%d avx2=%d avx512=%d"
-    " x0=%.17g x1=%.17g\n", len, (int)rng->bitexact, (int)rng->cpu_has_avx2,
-    (int)rng->cpu_has_avx512, x[0], x[1]);
-  fflush(stderr);
-#endif
   if (!rng->bitexact) {
 #if defined(USE_ACCEL_VV)
     for (size_t i = 0; i < len; ) {
@@ -33,27 +26,15 @@ NEVER_INLINE void exp_inplace(double *x, size_t len, randompack_rng *rng) {
 #elif defined(__x86_64__) || defined(_M_X64)
 #if defined(BUILD_AVX512)
     if (rng->cpu_has_avx512) {
-#if defined(_WIN32)
-      fprintf(stderr, "exp_inplace: using avx512\n");
-      fflush(stderr);
-#endif
       sleef_exp_inplace_avx512(x, len);
       return;
     }
 #endif
 #if defined(BUILD_AVX2)
     if (rng->cpu_has_avx2) {
-#if defined(_WIN32)
-      fprintf(stderr, "exp_inplace: using avx2\n");
-      fflush(stderr);
-#endif
       sleef_exp_inplace(x, len);
       return;
     }
-#endif
-#if defined(_WIN32)
-    fprintf(stderr, "exp_inplace: using scalar libm\n");
-    fflush(stderr);
 #endif
     for (size_t i = 0; i < len; i++) x[i] = exp(x[i]);
     return;

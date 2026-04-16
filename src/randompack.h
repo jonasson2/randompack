@@ -42,8 +42,8 @@ bool randompack_engines( // Return supported RNG engine names and their descript
   char *engines,      // out     n×eng_maxlen buffer of engine names (0 → query mode)
   char *descriptions, // out     n×desc_maxlen buffer of descriptions (or 0 in query mode)
   int *nengines,      // in/out  number of engines (= n, query → fill, non-query → check)
-  int *eng_maxlen,    // in/out  max engine-name length including trailing 0
-  int *desc_maxlen    // in/out  max description length including trailing 0
+  int *eng_maxlen,    // in/out  maxi engine-name length including trailing 0
+  int *desc_maxlen    // in/out  maxi description length including trailing 0
 );
 
 char *randompack_last_error( // Get last error string, or 0 if none

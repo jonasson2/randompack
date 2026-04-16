@@ -32,7 +32,7 @@
 //   lda   - leading dimension of a (>= n)
 //   piv   - pivot indices (1-indexed): column/row j was interchanged with piv[j]-1
 //   rank  - estimated rank of A on output
-//   tol   - user tolerance; if < 0 use n*eps*max(diag(A))
+//   tol   - user tolerance; if < 0 use n*eps*maxi(diag(A))
 //   work  - workspace of length 2*n
 //   info  - 0: success; 1: matrix not positive definite (rank < n)
 // ----------------------------------------------------------------------------

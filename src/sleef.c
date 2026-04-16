@@ -8,7 +8,6 @@
 #include <immintrin.h>
 #include <math.h>
 #include <stddef.h>
-#include <stdio.h>
 
 #if defined(_WIN32)
   #define HIDDEN
@@ -18,9 +17,20 @@
   #define HIDDEN
 #endif
 
-#define STATINLINE static inline __attribute__((always_inline))
-#define STATINLINECONST static inline __attribute__((always_inline)) __attribute__((const))
+#if defined(_MSC_VER)
+#define STATINLINE static __forceinline // MinGW crashes on the out-of-line AVX2 vector helper form.
+#define STATINLINECONST static __forceinline
+#define CONST
+#elif defined(__GNUC__) || defined(__clang__)
+#define ALWAYS_INLINE __attribute__((always_inline)) // MinGW crashes on the out-of-line AVX2 vector helper form.
+#define STATINLINE static inline ALWAYS_INLINE
+#define STATINLINECONST static inline ALWAYS_INLINE __attribute__((const))
 #define CONST __attribute__((const))
+#else
+#define STATINLINE static inline
+#define STATINLINECONST static inline
+#define CONST
+#endif
 
 typedef __m256i vmask;
 typedef __m256i vopmask;
@@ -34,25 +44,6 @@ typedef struct {
 typedef struct {
   vfloat x, y;
 } vfloat2;
-
-#if defined(_WIN32)
-static int debug_expd4_calls = 0;
-static int debug_expd4_chunks = 0;
-#define DEBUG_PRINT_VDOUBLE(label, x) do { \
-  double a_[4]; \
-  _mm256_storeu_pd(a_, (x)); \
-  fprintf(stderr, "%s %.17g %.17g %.17g %.17g\n", \
-    (label), a_[0], a_[1], a_[2], a_[3]); \
-  fflush(stderr); \
-} while (0)
-#define DEBUG_PRINT_VINT(label, x) do { \
-  int a_[4]; \
-  _mm_storeu_si128((__m128i *)a_, (x)); \
-  fprintf(stderr, "%s %d %d %d %d\n", \
-    (label), a_[0], a_[1], a_[2], a_[3]); \
-  fflush(stderr); \
-} while (0)
-#endif
 
 STATINLINE vdouble vcast_vd_d(double d) { return _mm256_set1_pd(d); }
 STATINLINE vmask vreinterpret_vm_vd(vdouble vd) { return _mm256_castpd_si256(vd); }
@@ -86,27 +77,10 @@ STATINLINE CONST vdouble vldexp2_vd_vd_vi(vdouble d, vint e) {
 }
 
 STATINLINECONST vdouble Sleef_expd4_u10avx2(vdouble d) {
-#if defined(_WIN32)
-  int dbg = debug_expd4_calls++;
-  if (dbg < 8) {
-    fprintf(stderr, "Sleef_expd4_u10avx2: enter call=%d\n", dbg);
-    fflush(stderr);
-    DEBUG_PRINT_VDOUBLE("  input", d);
-  }
-#endif
   vdouble u = vrint_vd_vd(vmul_vd_vd_vd(d, vcast_vd_d(1.442695040888963407359924681001892137426645954152985934135449406931))), s;
-#if defined(_WIN32)
-  if (dbg < 8) DEBUG_PRINT_VDOUBLE("  u_after_round", u);
-#endif
   vint q = vrint_vi_vd(u);
-#if defined(_WIN32)
-  if (dbg < 8) DEBUG_PRINT_VINT("  q", q);
-#endif
   s = vmla_vd_vd_vd_vd(u, vcast_vd_d(-.69314718055966295651160180568695068359375), d);
   s = vmla_vd_vd_vd_vd(u, vcast_vd_d(-.28235290563031577122588448175013436025525412068e-12), s);
-#if defined(_WIN32)
-  if (dbg < 8) DEBUG_PRINT_VDOUBLE("  s", s);
-#endif
   vdouble s2 = vmul_vd_vd_vd(s, s), s4 = vmul_vd_vd_vd(s2, s2), s8 = vmul_vd_vd_vd(s4, s4);
     u = vmla_vd_vd_vd_vd((s8), (vmla_vd_vd_vd_vd((s),
     (vcast_vd_d(+0.2081276378237164457e-8)), (vcast_vd_d(+0.2511210703042288022e-7)))),
@@ -117,25 +91,13 @@ STATINLINECONST vdouble Sleef_expd4_u10avx2(vdouble d) {
     (vmla_vd_vd_vd_vd((s), (vcast_vd_d(+0.1388888888914497797e-2)),
     (vcast_vd_d(+0.8333333333314938210e-2)))), (vmla_vd_vd_vd_vd((s),
     (vcast_vd_d(+0.4166666666666602598e-1)), (vcast_vd_d(+0.1666666666666669072e+0)))))))));
-#if defined(_WIN32)
-  if (dbg < 8) DEBUG_PRINT_VDOUBLE("  poly", u);
-#endif
   u = vfma_vd_vd_vd_vd(u, s, vcast_vd_d(+0.5000000000000000000e+0));
   u = vfma_vd_vd_vd_vd(u, s, vcast_vd_d(+0.1000000000000000000e+1));
   u = vfma_vd_vd_vd_vd(u, s, vcast_vd_d(+0.1000000000000000000e+1));
-#if defined(_WIN32)
-  if (dbg < 8) DEBUG_PRINT_VDOUBLE("  after_fma", u);
-#endif
   u = vldexp2_vd_vd_vi(u, q);
-#if defined(_WIN32)
-  if (dbg < 8) DEBUG_PRINT_VDOUBLE("  after_ldexp", u);
-#endif
   vopmask o = vgt_vo_vd_vd(d, vcast_vd_d(0x1.62e42fefa39efp+9));
   u = vsel_vd_vo_vd_vd(o, vcast_vd_d(__builtin_inf()), u);
   u = vreinterpret_vd_vm(vandnot_vm_vo64_vm(vlt_vo_vd_vd(d, vcast_vd_d(-1000)), vreinterpret_vm_vd(u)));
-#if defined(_WIN32)
-  if (dbg < 8) DEBUG_PRINT_VDOUBLE("  output", u);
-#endif
   return u;
 }
 
@@ -407,43 +369,13 @@ STATINLINECONST vfloat Sleef_logf8_u10avx2(vfloat d) {
 }
 
 HIDDEN void sleef_expd4_u10avx2_array(double *x, size_t len) {
-#if defined(_WIN32)
-  fprintf(stderr, "sleef_expd4_u10avx2_array: begin len=%zu\n", len);
-  fflush(stderr);
-#endif
   size_t i = 0;
   for (; i + 4 <= len; i += 4) {
-#if defined(_WIN32)
-    if (debug_expd4_chunks < 8) {
-      fprintf(stderr, "sleef_expd4_u10avx2_array: chunk=%d i=%zu before"
-        " %.17g %.17g %.17g %.17g\n", debug_expd4_chunks, i,
-        x[i], x[i + 1], x[i + 2], x[i + 3]);
-      fflush(stderr);
-    }
-#endif
     __m256d d = _mm256_loadu_pd(x + i);
     d = Sleef_expd4_u10avx2(d);
-#if defined(_WIN32)
-    if (debug_expd4_chunks < 8) {
-      DEBUG_PRINT_VDOUBLE("sleef_expd4_u10avx2_array: after_kernel", d);
-    }
-#endif
     _mm256_storeu_pd(x + i, d);
-#if defined(_WIN32)
-    if (debug_expd4_chunks < 8) {
-      fprintf(stderr, "sleef_expd4_u10avx2_array: chunk=%d i=%zu after"
-        " %.17g %.17g %.17g %.17g\n", debug_expd4_chunks, i,
-        x[i], x[i + 1], x[i + 2], x[i + 3]);
-      fflush(stderr);
-    }
-    debug_expd4_chunks++;
-#endif
   }
   for (; i < len; i++) x[i] = exp(x[i]);
-#if defined(_WIN32)
-  fprintf(stderr, "sleef_expd4_u10avx2_array: end i=%zu\n", i);
-  fflush(stderr);
-#endif
 }
 
 HIDDEN void sleef_logd4_u35avx2_array(double *x, size_t len) {

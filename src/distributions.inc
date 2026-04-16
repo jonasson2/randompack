@@ -1,6 +1,5 @@
 // -*- mode: c; -*-
 #include <float.h>
-#include <stdio.h>
 #if defined(USE_ACCEL_VV)
 void vvexp(double *y, const double *x, const int *n);
 void vvlog(double *y, const double *x, const int *n);
@@ -27,29 +26,9 @@ static int LastNonzeroColumn(int m, int n, double A[]) {
 
 static void rand_lognormal(double x[], size_t len, double mu, double sigma,
   randompack_rng *rng) {
-#if defined(_WIN32)
-  fprintf(stderr, "rand_lognormal: begin len=%zu mu=%.17g sigma=%.17g\n",
-    len, mu, sigma);
-  fflush(stderr);
-#endif
   rand_norm(x, len, rng); // N(0,1)
-#if defined(_WIN32)
-  fprintf(stderr, "rand_lognormal: after rand_norm x0=%.17g x1=%.17g\n",
-    x[0], x[1]);
-  fflush(stderr);
-#endif
   if (mu != 0 || sigma != 1) shift_scale_double_inplace(x, len, mu, sigma, rng);
-#if defined(_WIN32)
-  fprintf(stderr, "rand_lognormal: after shift_scale x0=%.17g x1=%.17g\n",
-    x[0], x[1]);
-  fflush(stderr);
-#endif
   exp_inplace(x, len, rng);
-#if defined(_WIN32)
-  fprintf(stderr, "rand_lognormal: after exp_inplace x0=%.17g x1=%.17g\n",
-    x[0], x[1]);
-  fflush(stderr);
-#endif
 }
 
 // All the rand_uintXX, rand_int and rand_long_long are strict-aliasing-safe
@@ -332,7 +311,7 @@ ALWAYS_INLINE void gen_beta(double *x, size_t len, double a, double b, randompac
   double gb[128];
   size_t i = 0;
   while (i < len) {
-    int n = min(128, len - i);
+    int n = mini(128, len - i);
     gen_gamma(gb, n, b, 1.0, rng);
     double hi = 1.0 - DBL_EPSILON;
     for (int j = 0; j < n; j++) { // force the beta-draws to (0, 1)
@@ -353,7 +332,7 @@ ALWAYS_INLINE void gen_t(double *x, size_t len, double nu, randompack_rng *rng) 
   rand_norm(x, len, rng);
   size_t i = 0;
   while (i < len) {
-    int n = min(128, len - i);
+    int n = mini(128, len - i);
     gen_gamma(u, n, 0.5*nu, 2.0, rng);
     for (int j = 0; j < n; j++)
       x[i + j] /= sqrt(u[j]/nu);
@@ -369,7 +348,7 @@ ALWAYS_INLINE void gen_f(double *x, size_t len, double nu1, double nu2,
   gen_gamma(x, len, nu1/2.0, 1.0, rng);
   size_t i = 0;
   while (i < len) {
-    int n = min(len - i, 128);
+    int n = mini(len - i, 128);
     gen_gamma(x2, n, nu2/2.0, 1.0, rng);
     for (int j = 0; j < n; j++)
       x[i + j] = (x[i + j]*nu2)/(x2[j]*nu1);
@@ -418,7 +397,7 @@ ALWAYS_INLINE void gen_skew_normal(double *x, size_t len, double mu,
   size_t i = 0;
   double u[128];
   while (i < len) {
-    int n = min(128, len - i);
+    int n = mini(128, len - i);
     rand_norm(u, n, rng);
     for (int j = 0; j < n; j++) {
       double v = delta*fabs(u[j]) + scale*x[i + j];
