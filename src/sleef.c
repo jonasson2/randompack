@@ -8,6 +8,7 @@
 #include <immintrin.h>
 #include <math.h>
 #include <stddef.h>
+#include <stdio.h>
 
 #if defined(_WIN32)
   #define HIDDEN
@@ -33,6 +34,24 @@ typedef struct {
 typedef struct {
   vfloat x, y;
 } vfloat2;
+
+#if defined(_WIN32)
+static int debug_expd4_calls = 0;
+static int debug_expd4_chunks = 0;
+static void debug_print_vdouble(char *label, vdouble d) {
+  double a[4];
+  _mm256_storeu_pd(a, d);
+  fprintf(stderr, "%s %.17g %.17g %.17g %.17g\n",
+    label, a[0], a[1], a[2], a[3]);
+  fflush(stderr);
+}
+static void debug_print_vint(char *label, vint x) {
+  int a[4];
+  _mm_storeu_si128((__m128i *)a, x);
+  fprintf(stderr, "%s %d %d %d %d\n", label, a[0], a[1], a[2], a[3]);
+  fflush(stderr);
+}
+#endif
 
 STATINLINE vdouble vcast_vd_d(double d) { return _mm256_set1_pd(d); }
 STATINLINE vmask vreinterpret_vm_vd(vdouble vd) { return _mm256_castpd_si256(vd); }
@@ -66,10 +85,27 @@ STATINLINE CONST vdouble vldexp2_vd_vd_vi(vdouble d, vint e) {
 }
 
 CONST vdouble Sleef_expd4_u10avx2(vdouble d) {
+#if defined(_WIN32)
+  int dbg = debug_expd4_calls++;
+  if (dbg < 8) {
+    fprintf(stderr, "Sleef_expd4_u10avx2: enter call=%d\n", dbg);
+    fflush(stderr);
+    debug_print_vdouble("  input", d);
+  }
+#endif
   vdouble u = vrint_vd_vd(vmul_vd_vd_vd(d, vcast_vd_d(1.442695040888963407359924681001892137426645954152985934135449406931))), s;
+#if defined(_WIN32)
+  if (dbg < 8) debug_print_vdouble("  u_after_round", u);
+#endif
   vint q = vrint_vi_vd(u);
+#if defined(_WIN32)
+  if (dbg < 8) debug_print_vint("  q", q);
+#endif
   s = vmla_vd_vd_vd_vd(u, vcast_vd_d(-.69314718055966295651160180568695068359375), d);
   s = vmla_vd_vd_vd_vd(u, vcast_vd_d(-.28235290563031577122588448175013436025525412068e-12), s);
+#if defined(_WIN32)
+  if (dbg < 8) debug_print_vdouble("  s", s);
+#endif
   vdouble s2 = vmul_vd_vd_vd(s, s), s4 = vmul_vd_vd_vd(s2, s2), s8 = vmul_vd_vd_vd(s4, s4);
     u = vmla_vd_vd_vd_vd((s8), (vmla_vd_vd_vd_vd((s),
     (vcast_vd_d(+0.2081276378237164457e-8)), (vcast_vd_d(+0.2511210703042288022e-7)))),
@@ -80,13 +116,25 @@ CONST vdouble Sleef_expd4_u10avx2(vdouble d) {
     (vmla_vd_vd_vd_vd((s), (vcast_vd_d(+0.1388888888914497797e-2)),
     (vcast_vd_d(+0.8333333333314938210e-2)))), (vmla_vd_vd_vd_vd((s),
     (vcast_vd_d(+0.4166666666666602598e-1)), (vcast_vd_d(+0.1666666666666669072e+0)))))))));
+#if defined(_WIN32)
+  if (dbg < 8) debug_print_vdouble("  poly", u);
+#endif
   u = vfma_vd_vd_vd_vd(u, s, vcast_vd_d(+0.5000000000000000000e+0));
   u = vfma_vd_vd_vd_vd(u, s, vcast_vd_d(+0.1000000000000000000e+1));
   u = vfma_vd_vd_vd_vd(u, s, vcast_vd_d(+0.1000000000000000000e+1));
+#if defined(_WIN32)
+  if (dbg < 8) debug_print_vdouble("  after_fma", u);
+#endif
   u = vldexp2_vd_vd_vi(u, q);
+#if defined(_WIN32)
+  if (dbg < 8) debug_print_vdouble("  after_ldexp", u);
+#endif
   vopmask o = vgt_vo_vd_vd(d, vcast_vd_d(0x1.62e42fefa39efp+9));
   u = vsel_vd_vo_vd_vd(o, vcast_vd_d(__builtin_inf()), u);
   u = vreinterpret_vd_vm(vandnot_vm_vo64_vm(vlt_vo_vd_vd(d, vcast_vd_d(-1000)), vreinterpret_vm_vd(u)));
+#if defined(_WIN32)
+  if (dbg < 8) debug_print_vdouble("  output", u);
+#endif
   return u;
 }
 
@@ -358,13 +406,41 @@ CONST vfloat Sleef_logf8_u10avx2(vfloat d) {
 }
 
 HIDDEN void sleef_expd4_u10avx2_array(double *x, size_t len) {
+#if defined(_WIN32)
+  fprintf(stderr, "sleef_expd4_u10avx2_array: begin len=%zu\n", len);
+  fflush(stderr);
+#endif
   size_t i = 0;
   for (; i + 4 <= len; i += 4) {
+#if defined(_WIN32)
+    if (debug_expd4_chunks < 8) {
+      fprintf(stderr, "sleef_expd4_u10avx2_array: chunk=%d i=%zu before"
+        " %.17g %.17g %.17g %.17g\n", debug_expd4_chunks, i,
+        x[i], x[i + 1], x[i + 2], x[i + 3]);
+      fflush(stderr);
+    }
+#endif
     __m256d d = _mm256_loadu_pd(x + i);
     d = Sleef_expd4_u10avx2(d);
+#if defined(_WIN32)
+    if (debug_expd4_chunks < 8) debug_print_vdouble("sleef_expd4_u10avx2_array: after_kernel", d);
+#endif
     _mm256_storeu_pd(x + i, d);
+#if defined(_WIN32)
+    if (debug_expd4_chunks < 8) {
+      fprintf(stderr, "sleef_expd4_u10avx2_array: chunk=%d i=%zu after"
+        " %.17g %.17g %.17g %.17g\n", debug_expd4_chunks, i,
+        x[i], x[i + 1], x[i + 2], x[i + 3]);
+      fflush(stderr);
+    }
+    debug_expd4_chunks++;
+#endif
   }
   for (; i < len; i++) x[i] = exp(x[i]);
+#if defined(_WIN32)
+  fprintf(stderr, "sleef_expd4_u10avx2_array: end i=%zu\n", i);
+  fflush(stderr);
+#endif
 }
 
 HIDDEN void sleef_logd4_u35avx2_array(double *x, size_t len) {

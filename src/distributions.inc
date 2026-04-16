@@ -27,18 +27,29 @@ static int LastNonzeroColumn(int m, int n, double A[]) {
 
 static void rand_lognormal(double x[], size_t len, double mu, double sigma,
   randompack_rng *rng) {
+#if defined(_WIN32)
   fprintf(stderr, "rand_lognormal: begin len=%zu mu=%.17g sigma=%.17g\n",
     len, mu, sigma);
   fflush(stderr);
+#endif
   rand_norm(x, len, rng); // N(0,1)
-  fprintf(stderr, "rand_lognormal: after rand_norm\n");
+#if defined(_WIN32)
+  fprintf(stderr, "rand_lognormal: after rand_norm x0=%.17g x1=%.17g\n",
+    x[0], x[1]);
   fflush(stderr);
+#endif
   if (mu != 0 || sigma != 1) shift_scale_double_inplace(x, len, mu, sigma, rng);
-  fprintf(stderr, "rand_lognormal: after shift_scale\n");
+#if defined(_WIN32)
+  fprintf(stderr, "rand_lognormal: after shift_scale x0=%.17g x1=%.17g\n",
+    x[0], x[1]);
   fflush(stderr);
+#endif
   exp_inplace(x, len, rng);
-  fprintf(stderr, "rand_lognormal: after exp_inplace\n");
+#if defined(_WIN32)
+  fprintf(stderr, "rand_lognormal: after exp_inplace x0=%.17g x1=%.17g\n",
+    x[0], x[1]);
   fflush(stderr);
+#endif
 }
 
 // All the rand_uintXX, rand_int and rand_long_long are strict-aliasing-safe
