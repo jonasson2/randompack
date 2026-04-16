@@ -6,6 +6,16 @@
 #else
 
 #include <immintrin.h>
+#include <math.h>
+#include <stddef.h>
+
+#if defined(_WIN32)
+  #define HIDDEN
+#elif defined(__GNUC__) || defined(__clang__)
+  #define HIDDEN __attribute__((visibility("hidden")))
+#else
+  #define HIDDEN
+#endif
 
 #define STATINLINE static inline __attribute__((always_inline))
 #define STATINLINECONST static inline __attribute__((always_inline)) __attribute__((const))
@@ -345,5 +355,45 @@ CONST vfloat Sleef_logf8_u10avx2(vfloat d) {
   r = vsel_vf_vo_vf_vf_sp(vor_vo_vo_vo_sp(vlt_vo_vf_vf_sp(d, vcast_vf_f_sp(0)), visnan_vo_vf_sp(d)), vcast_vf_f_sp(__builtin_nanf("")), r);
   r = vsel_vf_vo_vf_vf_sp(veq_vo_vf_vf_sp(d, vcast_vf_f_sp(0)), vcast_vf_f_sp(-__builtin_inff()), r);
   return r;
+}
+
+HIDDEN void sleef_expd4_u10avx2_array(double *x, size_t len) {
+  size_t i = 0;
+  for (; i + 4 <= len; i += 4) {
+    __m256d d = _mm256_loadu_pd(x + i);
+    d = Sleef_expd4_u10avx2(d);
+    _mm256_storeu_pd(x + i, d);
+  }
+  for (; i < len; i++) x[i] = exp(x[i]);
+}
+
+HIDDEN void sleef_logd4_u35avx2_array(double *x, size_t len) {
+  size_t i = 0;
+  for (; i + 4 <= len; i += 4) {
+    __m256d d = _mm256_loadu_pd(x + i);
+    d = Sleef_logd4_u35avx2(d);
+    _mm256_storeu_pd(x + i, d);
+  }
+  for (; i < len; i++) x[i] = log(x[i]);
+}
+
+HIDDEN void sleef_expf8_u10avx2_array(float *x, size_t len) {
+  size_t i = 0;
+  for (; i + 8 <= len; i += 8) {
+    __m256 d = _mm256_loadu_ps(x + i);
+    d = Sleef_expf8_u10avx2(d);
+    _mm256_storeu_ps(x + i, d);
+  }
+  for (; i < len; i++) x[i] = expf(x[i]);
+}
+
+HIDDEN void sleef_logf8_u10avx2_array(float *x, size_t len) {
+  size_t i = 0;
+  for (; i + 8 <= len; i += 8) {
+    __m256 d = _mm256_loadu_ps(x + i);
+    d = Sleef_logf8_u10avx2(d);
+    _mm256_storeu_ps(x + i, d);
+  }
+  for (; i < len; i++) x[i] = logf(x[i]);
 }
 #endif
