@@ -1,6 +1,7 @@
 // -*- C -*-
 // Tests for full_mantissa flag
 #include <math.h>
+#include <stdio.h>
 #include "test_util.h"
 #include "test_cdfs.h"
 #include "xCheck.h"
@@ -74,11 +75,21 @@ void TestFullMantissa1(void) {
   for (int i = 0; i < LEN(engines); i++) {
     char *engine = engines[i];
     randompack_rng *rng = create_seeded_rng(engine, 123);
+    fprintf(stderr, "TestFullMantissa: engine=%s set full_mantissa\n", engine);
+    fflush(stderr);
     bool ok = randompack_full_mantissa(rng, true);
     check_success(ok, rng);
+    fprintf(stderr, "TestFullMantissa: engine=%s check_unif\n", engine);
+    fflush(stderr);
     check_unif(rng, engine);
+    fprintf(stderr, "TestFullMantissa: engine=%s check_exp2\n", engine);
+    fflush(stderr);
     check_exp2(rng, engine);
+    fprintf(stderr, "TestFullMantissa: engine=%s check_lognormal\n", engine);
+    fflush(stderr);
     check_lognormal(rng, engine);
+    fprintf(stderr, "TestFullMantissa: engine=%s check_weibull\n", engine);
+    fflush(stderr);
     check_weibull(rng, engine);
     randompack_free(rng);
   }
@@ -89,11 +100,21 @@ void TestFullMantissa(void) {
   for (int i = 0; i < LEN(engines); i++) {
     char *engine = engines[i];
     randompack_rng *rng = create_seeded_rng(engine, 123);
+    fprintf(stderr, "TestFullMantissa1: engine=%s set full_mantissa\n", engine);
+    fflush(stderr);
     bool ok = randompack_full_mantissa(rng, true);
     check_success(ok, rng);
+    fprintf(stderr, "TestFullMantissa1: engine=%s check_unif\n", engine);
+    fflush(stderr);
     check_unif(rng, engine);
+    fprintf(stderr, "TestFullMantissa1: engine=%s check_exp2\n", engine);
+    fflush(stderr);
     check_exp2(rng, engine);
+    fprintf(stderr, "TestFullMantissa1: engine=%s check_lognormal\n", engine);
+    fflush(stderr);
     check_lognormal(rng, engine);
+    fprintf(stderr, "TestFullMantissa1: engine=%s check_weibull\n", engine);
+    fflush(stderr);
     check_weibull(rng, engine);
     randompack_free(rng);
   }
