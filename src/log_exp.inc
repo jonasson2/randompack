@@ -27,6 +27,12 @@ NEVER_INLINE void exp_inplace(double *x, size_t len, randompack_rng *rng) {
     }
     return;
 #elif defined(__x86_64__) || defined(_M_X64)
+#if defined(_WIN32)
+    fprintf(stderr, "exp_inplace: using scalar libm on windows\n");
+    fflush(stderr);
+    for (size_t i = 0; i < len; i++) x[i] = exp(x[i]);
+    return;
+#else
 #if defined(BUILD_AVX512)
     if (rng->cpu_has_avx512) {
       fprintf(stderr, "exp_inplace: using avx512\n");
@@ -47,6 +53,7 @@ NEVER_INLINE void exp_inplace(double *x, size_t len, randompack_rng *rng) {
     fflush(stderr);
     for (size_t i = 0; i < len; i++) x[i] = exp(x[i]);
     return;
+#endif
 // #elif defined(__aarch64__) && !defined(__APPLE__)
 //     sleef_exp_inplace(x, len);
 //     return;
@@ -71,6 +78,10 @@ NEVER_INLINE void log_inplace(double *x, size_t len, randompack_rng *rng) {
     }
     return;
 #elif defined(__x86_64__) || defined(_M_X64)
+#if defined(_WIN32)
+    for (size_t i = 0; i < len; i++) x[i] = log(x[i]);
+    return;
+#else
 #if defined(BUILD_AVX512)
     if (rng->cpu_has_avx512) {
       sleef_log_inplace_avx512(x, len);
@@ -85,6 +96,7 @@ NEVER_INLINE void log_inplace(double *x, size_t len, randompack_rng *rng) {
 #endif
     for (size_t i = 0; i < len; i++) x[i] = log(x[i]);
     return;
+#endif
 // #elif defined(__aarch64__) && !defined(__APPLE__)
 //     sleef_log_inplace(x, len);
 //     return;
