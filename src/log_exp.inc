@@ -14,6 +14,9 @@ void sleef_log_inplace_avx512(double *x, size_t len);
 #endif
 
 NEVER_INLINE void exp_inplace(double *x, size_t len, randompack_rng *rng) {
+  fprintf(stderr, "exp_inplace: begin len=%zu bitexact=%d avx2=%d avx512=%d\n",
+    len, (int)rng->bitexact, (int)rng->cpu_has_avx2, (int)rng->cpu_has_avx512);
+  fflush(stderr);
   if (!rng->bitexact) {
 #if defined(USE_ACCEL_VV)
     for (size_t i = 0; i < len; ) {
@@ -26,16 +29,22 @@ NEVER_INLINE void exp_inplace(double *x, size_t len, randompack_rng *rng) {
 #elif defined(__x86_64__) || defined(_M_X64)
 #if defined(BUILD_AVX512)
     if (rng->cpu_has_avx512) {
+      fprintf(stderr, "exp_inplace: using avx512\n");
+      fflush(stderr);
       sleef_exp_inplace_avx512(x, len);
       return;
     }
 #endif
 #if defined(BUILD_AVX2)
     if (rng->cpu_has_avx2) {
+      fprintf(stderr, "exp_inplace: using avx2\n");
+      fflush(stderr);
       sleef_exp_inplace(x, len);
       return;
     }
 #endif
+    fprintf(stderr, "exp_inplace: using scalar libm\n");
+    fflush(stderr);
     for (size_t i = 0; i < len; i++) x[i] = exp(x[i]);
     return;
 // #elif defined(__aarch64__) && !defined(__APPLE__)
@@ -46,6 +55,8 @@ NEVER_INLINE void exp_inplace(double *x, size_t len, randompack_rng *rng) {
     return;
 #endif
   }
+  fprintf(stderr, "exp_inplace: using openlibm scalar\n");
+  fflush(stderr);
   for (size_t i = 0; i < len; i++) x[i] = openlibm_exp(x[i]);
 }
 

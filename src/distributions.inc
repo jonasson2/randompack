@@ -1,5 +1,6 @@
 // -*- mode: c; -*-
 #include <float.h>
+#include <stdio.h>
 #if defined(USE_ACCEL_VV)
 void vvexp(double *y, const double *x, const int *n);
 void vvlog(double *y, const double *x, const int *n);
@@ -26,9 +27,18 @@ static int LastNonzeroColumn(int m, int n, double A[]) {
 
 static void rand_lognormal(double x[], size_t len, double mu, double sigma,
   randompack_rng *rng) {
+  fprintf(stderr, "rand_lognormal: begin len=%zu mu=%.17g sigma=%.17g\n",
+    len, mu, sigma);
+  fflush(stderr);
   rand_norm(x, len, rng); // N(0,1)
+  fprintf(stderr, "rand_lognormal: after rand_norm\n");
+  fflush(stderr);
   if (mu != 0 || sigma != 1) shift_scale_double_inplace(x, len, mu, sigma, rng);
+  fprintf(stderr, "rand_lognormal: after shift_scale\n");
+  fflush(stderr);
   exp_inplace(x, len, rng);
+  fprintf(stderr, "rand_lognormal: after exp_inplace\n");
+  fflush(stderr);
 }
 
 // All the rand_uintXX, rand_int and rand_long_long are strict-aliasing-safe
