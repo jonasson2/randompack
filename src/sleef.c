@@ -8,41 +8,15 @@
 #include <immintrin.h>
 #include <math.h>
 #include <stddef.h>
+#include "randompack_config.h"
 
-#if defined(_WIN32)
-  #define HIDDEN
-#elif defined(__GNUC__) || defined(__clang__)
-  #define HIDDEN __attribute__((visibility("hidden")))
-#else
-  #define HIDDEN
-#endif
-
-#if defined(_MSC_VER)
-#define STATINLINE static __forceinline // MinGW crashes on the out-of-line AVX2 vector helper form.
-#define STATINLINECONST static __forceinline
-#define CONST
-#define SLEEF_INF HUGE_VAL
-#define SLEEF_INFF INFINITY
-#define SLEEF_NAN NAN
-#define SLEEF_NANF NAN
-#elif defined(__GNUC__) || defined(__clang__)
-#define ALWAYS_INLINE __attribute__((always_inline)) // MinGW crashes on the out-of-line AVX2 vector helper form.
-#define STATINLINE static inline ALWAYS_INLINE
-#define STATINLINECONST static inline ALWAYS_INLINE __attribute__((const))
-#define CONST __attribute__((const))
-#define SLEEF_INF __builtin_inf()
-#define SLEEF_INFF __builtin_inff()
-#define SLEEF_NAN __builtin_nan("")
-#define SLEEF_NANF __builtin_nanf("")
-#else
-#define STATINLINE static inline
-#define STATINLINECONST static inline
-#define CONST
-#define SLEEF_INF HUGE_VAL
-#define SLEEF_INFF INFINITY
-#define SLEEF_NAN NAN
-#define SLEEF_NANF NAN
-#endif
+#define STATINLINE ALWAYS_INLINE // MinGW crashes on the out-of-line AVX2 vector helper form.
+#define STATINLINECONST ALWAYS_INLINE CONST_ATTR
+#define CONST CONST_ATTR
+#define SLEEF_INF INF_VALUE
+#define SLEEF_INFF INFF_VALUE
+#define SLEEF_NAN NAN_VALUE
+#define SLEEF_NANF NANF_VALUE
 
 typedef __m256i vmask;
 typedef __m256i vopmask;

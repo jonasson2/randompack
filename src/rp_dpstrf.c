@@ -1,14 +1,7 @@
 #include <math.h>
 #include <stdbool.h>
+#include "randompack_config.h"
 #include "BlasGateway.h"
-
-#if defined(_WIN32)
-  #define HIDDEN
-#elif defined(__GNUC__) || defined(__clang__)
-  #define HIDDEN __attribute__((visibility("hidden")))
-#else
-  #define HIDDEN
-#endif
 
 // isnan portable stand-in (matches Fortran DISNAN)
 #define disnan(x) isnan(x)

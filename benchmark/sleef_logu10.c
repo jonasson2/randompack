@@ -7,23 +7,12 @@
 
 #include <immintrin.h>
 #include <math.h>
+#include "../src/randompack_config.h"
 
-#if defined(_MSC_VER)
-#define STATINLINE static __forceinline
-#define CONST
-#define SLEEF_INF HUGE_VAL
-#define SLEEF_NAN NAN
-#elif defined(__GNUC__) || defined(__clang__)
-#define STATINLINE static inline __attribute__((always_inline))
-#define CONST __attribute__((const))
-#define SLEEF_INF __builtin_inf()
-#define SLEEF_NAN __builtin_nan("")
-#else
-#define STATINLINE static inline
-#define CONST
-#define SLEEF_INF HUGE_VAL
-#define SLEEF_NAN NAN
-#endif
+#define STATINLINE ALWAYS_INLINE
+#define CONST CONST_ATTR
+#define SLEEF_INF INF_VALUE
+#define SLEEF_NAN NAN_VALUE
 
 typedef __m256i vmask;
 typedef __m256i vopmask;

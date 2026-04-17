@@ -71,14 +71,6 @@ typedef __m512i __m512i_u;
 #include <string.h>
 #include "buffer_draw.inc"
 
-#if defined(_WIN32)
-#define HIDDEN
-#elif defined(__GNUC__) || defined(__clang__)
-#define HIDDEN __attribute__((visibility("hidden")))
-#else
-#define HIDDEN
-#endif
-
 HIDDEN bool cpu_has_avx512(void) {
 #if defined(_MSC_VER)
   int info[4];

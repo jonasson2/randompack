@@ -71,20 +71,8 @@ typedef __m256i __m256i_u;
 #include <string.h>
 #include "buffer_draw.inc"
 
-#if defined(_WIN32)
-#define HIDDEN
-#elif defined(__GNUC__) || defined(__clang__)
-#define HIDDEN __attribute__((visibility("hidden")))
-#else
-#define HIDDEN
-#endif
-
 #if defined(RANDOMPACK_TEST_HOOKS)
-#if !defined(_WIN32) && (defined(__GNUC__) || defined(__clang__))
-#define TEST_HOOK __attribute__((visibility("default")))
-#else
-#define TEST_HOOK
-#endif
+#define TEST_HOOK DEFAULT_VISIBLE
 static int avx2_used = 0;
 TEST_HOOK int randompack_avx2_used(void) {
   return avx2_used;

@@ -3,14 +3,7 @@
 
 #include <math.h>
 #include <stddef.h>
-
-#if defined(_WIN32)
-  #define HIDDEN
-#elif defined(__GNUC__) || defined(__clang__)
-  #define HIDDEN __attribute__((visibility("hidden")))
-#else
-  #define HIDDEN
-#endif
+#include "randompack_config.h"
 
 #if defined(__x86_64__) || defined(_M_X64)
 
