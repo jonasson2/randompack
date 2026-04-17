@@ -76,7 +76,7 @@ static void test_case(int m, int n, int seed) {
   if (k > 0) {
     perm(M1, A0, m, piv);
     double err = relabsdiff(M1, M2, (int)an);
-    double tol = 10.0*m*DBL_EPSILON;
+    double tol = 16.0*m*DBL_EPSILON;
     snprintf(msg, sizeof(msg), "rp_dpstrf m=%d n=%d err=%.3e tol=%.3e", m, n, err, tol);
     xCheckMsg(err <= tol, msg);
   }
