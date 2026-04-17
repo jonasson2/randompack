@@ -126,7 +126,7 @@ if cc.get_id() == 'msvc'
     include_directories: randompack_inc,
     dependencies: c_deps,
     c_args: base_c_args,
-    vs_module_defs: files('randompack.def'),
+    vs_module_defs: 'randompack.def',
     install: true,
   )
 else
