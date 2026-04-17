@@ -115,9 +115,25 @@ warmup = function(seconds) {
 warm = warmup(0.1)
 cat(sprintf("Warmup:    %.3f s\n\n", warm))
 
-cat(sprintf("%-14s %10s %11s %10s %8s %8s\n",
-            "DISTRIBUTION", "BASE-R", "RANDOMPACK", "DQRNG", "FACTOR-B",
-            "FACTOR-D"))
+dist_names = c(
+  "u01",
+  "unif(2,5)",
+  "norm",
+  "normal(2,3)",
+  "exp(1)",
+  "exp(2)",
+  "lognormal(0,1)",
+  "skew_norm(0,1,2)",
+  "gumbel(0,1)",
+  "pareto(1,2)"
+)
+dist_width = max(nchar(c("DISTRIBUTION", dist_names)))
+header_fmt = paste0("%-", dist_width, "s %10s %11s %10s %8s %8s\n")
+row_fmt = paste0("%-", dist_width, "s %10.2f %11.2f %10s %8.2f %8s\n")
+rp_only_fmt = paste0("%-", dist_width, "s %10s %11.2f %10s %8s %8s\n")
+
+cat(sprintf(header_fmt, "DISTRIBUTION", "BASE-R", "RANDOMPACK", "DQRNG",
+            "FACTOR-B", "FACTOR-D"))
 
 old_kind <- RNGkind()
 draw_seed <- function() {
@@ -149,7 +165,7 @@ run_case = function(name, f_base, f_rp, f_dqrng=NULL, use_dqset=FALSE) {
     dqrng_str = sprintf("%10.2f", dqrng_ns)
     factor_d_str = sprintf("%8.2f", dqrng_ns / rp_ns)
   }
-  cat(sprintf("%-14s %10.2f %11.2f %s %8.2f %s\n",
+  cat(sprintf(row_fmt,
               name, base_ns, rp_ns, dqrng_str, factor_b, factor_d_str))
 }
 
@@ -185,9 +201,28 @@ run_case("exp(2)",
          function() rexp(chunk, rate=1/2),
          function() rng$exp(chunk, 2))
 
+run_case_rp_only = function(name, f_rp) {
+  case_seed = draw_seed()
+  restore_rng(case_seed)
+  rp_ns = time_dist(f_rp, chunk, reps, bench_time)
+  dqrng_str = sprintf("%10s", "")
+  factor_d_str = sprintf("%8s", "")
+  cat(sprintf(rp_only_fmt,
+              name, "-", rp_ns, dqrng_str, "-", factor_d_str))
+}
+
 run_case("lognormal(0,1)",
          function() rlnorm(chunk, meanlog=0, sdlog=1),
          function() rng$lognormal(chunk, 0, 1))
+
+run_case_rp_only("skew_norm(0,1,2)",
+                 function() rng$skew_normal(chunk, 0, 1, 2))
+
+run_case_rp_only("gumbel(0,1)",
+                 function() rng$gumbel(chunk, 0, 1))
+
+run_case_rp_only("pareto(1,2)",
+                 function() rng$pareto(chunk, 1, 2))
 
 run_case("gamma(2,3)",
          function() rgamma(chunk, shape=2, scale=3),
@@ -212,20 +247,3 @@ run_case("F(5,10)",
 run_case("weibull(2,3)",
          function() rweibull(chunk, shape=2, scale=3),
          function() rng$weibull(chunk, 2, 3))
-
-run_case_rp_only = function(name, f_rp) {
-  case_seed = draw_seed()
-  restore_rng(case_seed)
-  rp_ns = time_dist(f_rp, chunk, reps, bench_time)
-  cat(sprintf("%-14s %10s %11.2f %10s %8s %8s\n",
-              name, "-", rp_ns, "", "-", ""))
-}
-
-run_case_rp_only("skew_norm(0,1,2)",
-                 function() rng$skew_normal(chunk, 0, 1, 2))
-
-run_case_rp_only("gumbel(0,1)",
-                 function() rng$gumbel(chunk, 0, 1))
-
-run_case_rp_only("pareto(1,2)",
-                 function() rng$pareto(chunk, 1, 2))
