@@ -271,10 +271,11 @@ while [ "$i" -le "$repeats" ]; do
           }
           mode == "r" && /^DISTRIBUTION[[:space:]]+/ { in_table = 1; next }
           mode == "r" && in_table {
-            name = trim(substr($0, 1, 14))
-            col2 = trim(substr($0, 16, 10))
-            col3 = trim(substr($0, 27, 11))
-            col4 = trim(substr($0, 39, 10))
+            n = split($0, cols, /[[:space:]][[:space:]]+/)
+            name = trim(cols[1])
+            col2 = n >= 2 ? trim(cols[2]) : ""
+            col3 = n >= 3 ? trim(cols[3]) : ""
+            col4 = n >= 4 ? trim(cols[4]) : ""
             if (field == 2 && col2 ~ /^[0-9.]+$/) print name "\t" col2
             if (field == 3 && col3 ~ /^[0-9.]+$/) print name "\t" col3
             if (field == 4 && col4 ~ /^[0-9.]+$/) print name "\t" col4
@@ -328,10 +329,11 @@ while [ "$i" -le "$repeats" ]; do
               }
               /^DISTRIBUTION[[:space:]]+/ { in_table = 1; next }
               in_table {
-                name = trim(substr($0, 1, 14))
-                col2 = trim(substr($0, 16, 10))
-                col3 = trim(substr($0, 27, 11))
-                col4 = trim(substr($0, 39, 10))
+                n = split($0, cols, /[[:space:]][[:space:]]+/)
+                name = trim(cols[1])
+                col2 = n >= 2 ? trim(cols[2]) : ""
+                col3 = n >= 3 ? trim(cols[3]) : ""
+                col4 = n >= 4 ? trim(cols[4]) : ""
                 if (field == 2 && col2 ~ /^[0-9.]+$/) print name "\t" col2
                 if (field == 3 && col3 ~ /^[0-9.]+$/) print name "\t" col3
                 if (field == 4 && col4 ~ /^[0-9.]+$/) print name "\t" col4
