@@ -212,3 +212,20 @@ run_case("F(5,10)",
 run_case("weibull(2,3)",
          function() rweibull(chunk, shape=2, scale=3),
          function() rng$weibull(chunk, 2, 3))
+
+run_case_rp_only = function(name, f_rp) {
+  case_seed = draw_seed()
+  restore_rng(case_seed)
+  rp_ns = time_dist(f_rp, chunk, reps, bench_time)
+  cat(sprintf("%-14s %10s %11.2f %10s %8s %8s\n",
+              name, "-", rp_ns, "", "-", ""))
+}
+
+run_case_rp_only("skew_norm(0,1,2)",
+                 function() rng$skew_normal(chunk, 0, 1, 2))
+
+run_case_rp_only("gumbel(0,1)",
+                 function() rng$gumbel(chunk, 0, 1))
+
+run_case_rp_only("pareto(1,2)",
+                 function() rng$pareto(chunk, 1, 2))
