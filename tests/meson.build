@@ -49,6 +49,10 @@ dpstrf_test_src = files('../src/rp_dpstrf.c')
 
 blas_test_args = using_builtin_blas ? ['-DRANDOMPACK_BUILTIN_BLAS'] : []
 test_buf_define = '-DBUFSIZE=' + test_bufsize.to_string()
+test_env = environment()
+if host_machine.system() == 'windows'
+  test_env.prepend('PATH', join_paths(meson.current_build_dir(), '..', 'src'))
+endif
 
 run_tests = executable(
   'RunTests',
@@ -58,7 +62,7 @@ run_tests = executable(
   c_args : ['-DRANDOMPACK_TEST_HOOKS'] + blas_test_args,
 )
 
-test('RunTests', run_tests, args : ['-v'])
+test('RunTests', run_tests, args : ['-v'], env : test_env)
 
 run_tests_buf8 = executable(
   # Small buffer test to stress the buffer-filling and -drawing machinery
@@ -69,7 +73,7 @@ run_tests_buf8 = executable(
   c_args : ['-DRANDOMPACK_TEST_HOOKS', test_buf_define] + blas_test_args,
 )
 
-test('RunTestsBuf8', run_tests_buf8, args : ['-v'])
+test('RunTestsBuf8', run_tests_buf8, args : ['-v'], env : test_env)
 
 if build_fortran_interface
   darwin_link_args = host_machine.system() == 'darwin' ? ['-Wl,-no_warn_duplicate_libraries'] : []
