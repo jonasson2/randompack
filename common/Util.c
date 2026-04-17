@@ -19,13 +19,6 @@
   #include <windows.h>
 #endif
 
-// -*- C -*-
-#define _GNU_SOURCE
-#include <errno.h>
-#include <sched.h>
-#include <stdio.h>
-#include <string.h>
-
 double get_time(void) { // seconds
   return 1e-9*(double)clock_nsec();
 }  
