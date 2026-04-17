@@ -6,9 +6,24 @@
 #else
 
 #include <immintrin.h>
+#include <math.h>
 
+#if defined(_MSC_VER)
+#define STATINLINE static __forceinline
+#define CONST
+#define SLEEF_INF HUGE_VAL
+#define SLEEF_NAN NAN
+#elif defined(__GNUC__) || defined(__clang__)
 #define STATINLINE static inline __attribute__((always_inline))
 #define CONST __attribute__((const))
+#define SLEEF_INF __builtin_inf()
+#define SLEEF_NAN __builtin_nan("")
+#else
+#define STATINLINE static inline
+#define CONST
+#define SLEEF_INF HUGE_VAL
+#define SLEEF_NAN NAN
+#endif
 
 typedef __m256i vmask;
 typedef __m256i vopmask;
@@ -66,7 +81,7 @@ STATINLINE vopmask visnan_vo_vd(vdouble d) {
   return vreinterpret_vm_vd(_mm256_cmp_pd(d, d, 0x04));
 }
 STATINLINE vopmask vispinf_vo_vd(vdouble d) {
-  return vreinterpret_vm_vd(_mm256_cmp_pd(d, _mm256_set1_pd(__builtin_inf()),
+  return vreinterpret_vm_vd(_mm256_cmp_pd(d, _mm256_set1_pd(SLEEF_INF),
       0x00));
 }
 STATINLINE vopmask vor_vo_vo_vo(vopmask x, vopmask y) {
@@ -175,11 +190,11 @@ CONST vdouble Sleef_logd4_u10avx2(vdouble d) {
   s = ddadd_vd2_vd2_vd(s, vmul_vd_vd_vd(vmul_vd_vd_vd(x2, vd2getx_vd_vd2(x)),
       t));
   vdouble r = vadd_vd_vd_vd(vd2getx_vd_vd2(s), vd2gety_vd_vd2(s));
-  r = vsel_vd_vo_vd_vd(vispinf_vo_vd(d), vcast_vd_d(__builtin_inf()), r);
+  r = vsel_vd_vo_vd_vd(vispinf_vo_vd(d), vcast_vd_d(SLEEF_INF), r);
   r = vsel_vd_vo_vd_vd(vor_vo_vo_vo(vlt_vo_vd_vd(d, vcast_vd_d(0)),
-      visnan_vo_vd(d)), vcast_vd_d(__builtin_nan("")), r);
+      visnan_vo_vd(d)), vcast_vd_d(SLEEF_NAN), r);
   r = vsel_vd_vo_vd_vd(veq_vo_vd_vd(d, vcast_vd_d(0)),
-      vcast_vd_d(-__builtin_inf()), r);
+      vcast_vd_d(-SLEEF_INF), r);
   return r;
 }
 
