@@ -52,7 +52,7 @@ test_buf_define = '-DBUFSIZE=' + test_bufsize.to_string()
 
 run_tests = executable(
   'RunTests',
-  test_sources + extra_util + dpstrf_test_src,
+  test_sources + extra_util + common_util + dpstrf_test_src,
   include_directories: [common_inc],
   dependencies : [randompack_dep],
   c_args : ['-DRANDOMPACK_TEST_HOOKS'] + blas_test_args,
@@ -63,7 +63,7 @@ test('RunTests', run_tests, args : ['-v'])
 run_tests_buf8 = executable(
   # Small buffer test to stress the buffer-filling and -drawing machinery
   'RunTestsBuf8',
-  test_sources + extra_util + dpstrf_test_src,
+  test_sources + extra_util + common_util + dpstrf_test_src,
   include_directories: [common_inc],
   dependencies : [randompack_buf8_dep],
   c_args : ['-DRANDOMPACK_TEST_HOOKS', test_buf_define] + blas_test_args,

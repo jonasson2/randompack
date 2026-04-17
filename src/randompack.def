@@ -60,3 +60,5 @@ EXPORTS
   randompack_paretof
   randompack_weibullf
   randompack_skew_normalf
+  randompack_avx2_used
+  randompack_avx2_reset
