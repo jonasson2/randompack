@@ -118,16 +118,28 @@ endif
 
 extra_objs = avx2_objs + avx512_objs + blas_objs
 extra_objs_buf8 = avx2_objs_buf8 + avx512_objs_buf8 + blas_objs
-
-librandompack = shared_library(
-  'randompack',
-  randompack_src,
-  objects: extra_objs,
-  include_directories: randompack_inc,
-  dependencies: c_deps,
-  c_args: base_c_args,
-  install: true,
-)
+if cc.get_id() == 'msvc'
+  librandompack = shared_library(
+    'randompack',
+    randompack_src,
+    objects: extra_objs,
+    include_directories: randompack_inc,
+    dependencies: c_deps,
+    c_args: base_c_args,
+    vs_module_defs: files('randompack.def'),
+    install: true,
+  )
+else
+  librandompack = shared_library(
+    'randompack',
+    randompack_src,
+    objects: extra_objs,
+    include_directories: randompack_inc,
+    dependencies: c_deps,
+    c_args: base_c_args,
+    install: true,
+  )
+endif
 
 install_headers(
   'randompack.h',
