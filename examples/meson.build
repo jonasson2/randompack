@@ -40,7 +40,7 @@ raw_stream = executable(
   dependencies : [randompack_dep],
 )
 
-if build_fortran
+if build_fortran_interface
   darwin_link_args = host_machine.system() == 'darwin' ? ['-Wl,-no_warn_duplicate_libraries'] : []
   check_fortran_ints = executable(
     'CheckFortranInts',
