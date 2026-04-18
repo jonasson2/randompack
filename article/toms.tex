@@ -881,8 +881,37 @@ to compute them. Randompack offers a setting, \texttt{bitexact}, that
 makes these derived distributions also bit-identical across platforms
 by using OpenLibm instead of Sleef for all library function calls.
 
+\subsection{
+
 \subsection{Miscellaneous features}
 % =====================================================================
+\textbf{Thread safety and checkpointing.} Randompack is thread-safe
+provided that each thread uses its own RNG object. There is no global
+state, and error conditions belong to individual RNGs. The package is
+accompanied by several examples demonstrating the use of parallel
+random number generation. 
+
+A serialization function allows checkpointing long-running simulation
+jobs. It encodes the current state of an RNG in an opaque byte buffer.
+This buffer may be used to restore the state exactly at a later time.
+Jobs can then be restarted if they stop prematurely for some
+reason. This is particularly relevant when massively parallel jobs are
+run, with their associated increased likelihood of failures.
+
+\textbf{Engine query.} The function \texttt{randompack\_engines}
+reports the supported engine identifiers together with short
+descriptions that include the engines' traditional full names, their
+authors and publication years, and the state size. The interface
+deliberately uses a single canonical identifier for each engine; it is
+case-insensitive, but apart from that no aliases exist.
+
+\textbf{Float versions.} Almost all the continuous Randompack
+distributions exist in both double precision (C
+\texttt{double}) and single precision (C \texttt{float}) versions. The
+float functions have an \texttt{f} appended to their name, e.g.
+\texttt{randompack_expf}. For many simulation applications there is no
+need for the extra precision of doubles, so both space and time can be
+saved by using floats.
 
 \section{Validation and performance}
 % ==================================
@@ -896,18 +925,37 @@ some cases using a belt-and-suspenders approach because errors in
 random number generation can have serious consequences while being
 hard to infer from simulation output alone.
 
-Randompack has been 
+\begin{table}
+\caption{Systems used for testing and benchmarking Randompack. The tests were run
+with both clang and gcc on all systems. Intel icx was also used on the Linux
+workstation, and MSVC on Windows. All tests passed.}
+\label{table:platforms}
+\centering
+\begin{tabular}{llll}
+  \toprule
+  Computer          & CPU                      & SIMD support & Operating system \\
+  \midrule
+  Linux workstation & Intel Core i5-1335U      & AVX2         & Ubuntu           \\
+  Linux server      & Intel Xeon Platinum 8358 & AVX-512      & Rocky Linux      \\
+  DGX-Spark         & Arm Cortex-X925          & NEON         & Ubuntu           \\
+  Apple MacBook     & Apple M4 (Arm)           & NEON         & macOS            \\
+  Windows           & ?                        & ?            & Windows          \\
+  \bottomrule
+\end{tabular}
+\end{table}
 
 \subsection{Test suite} 
 % =====================
 \label{subsec:testing}
-Randompack includes a comprehensive test suite with contents that fall into
-three categories:
-\begin{itemize}
+Randompack includes a comprehensive test suite which has been run on
+five platforms (Table \ref{table:platforms}). The tests fall into three
+categories:
+%
+\begin{enumerate}
 \item Tests of correct API behaviour
 \item Validation of sample series, internal and external
 \item Checking of statistical quality
-\end{itemize}
+\end{enumerate}
 The API testing includes testing expected error reporting, testing
 edge cases (e.g. zero and maximum lengths should work, clean failure
 on null buffer and rng pointers), correct default engine behaviour and
@@ -954,8 +1002,8 @@ the same way.
 The discrete distributions are compared similarly for support (no
 draws outside specified result intervals), balanced counts of each
 possible outcome, bit balance for draws in $[0,2^k)$, and
-combinatorial validity for \texttt{randompack_perm} and
-\texttt{randompack_sample}.
+combinatorial validity for \texttt{randompack\_perm} and
+\texttt{randompack\_sample}.
 
 \subsection{Statistical quality}
 % ==============================
@@ -979,7 +1027,7 @@ were no greater than expected by chance.
 
 
 
-\begin{table*}[t]
+\begin{table}[t]
 \centering
 \caption{Timing for selected continuous distributions in nanoseconds
   per draw, with the Python--C++ columns rounded to one decimal
@@ -1024,9 +1072,9 @@ Standard normal & 1.18 &  1.84 & 0.90 &  1.43 && 1.0 &  1.6 && 2.8 &  2.7 &&  8.
 Normal$(2,3)$   & 1.28 &  2.00 & 0.98 &  1.46 && 1.1 &  1.7 && 2.7 &  2.7 &&  9.6 & 21.4 &  1.4 & 14.3 \\
 Exponential     & 1.19 &  1.67 & 1.00 &  1.33 && 1.1 &  1.5 && 2.7 &  2.7 &&  4.2 & 23.5 &  1.4 & 10.6 \\
 Log-normal      & 2.57 &  2.92 & 1.79 &  2.52 && 1.9 &  2.7 && 7.1 &  3.8 && 13.9 & 28.7 &  4.0 & 18.9 \\
-Skew-normal     & 2.64 &  4.45 & 2.06 &  3.23 && 2.2 &  3.5 && 3.7 &  \NA && 27.9 &  \NA &  8.2 & 28.9 \\
-Gumbel          & 4.81 &  3.23 & 2.59 &  3.67 && 2.6 &  3.8 && 8.3 &  \NA && 13.3 &  \NA &  8.4 & 16.3 \\
-Pareto          & 2.94 &  3.41 & 2.06 &  2.95 && 2.1 &  3.1 && 4.3 &  \NA && 17.5 &  \NA &  4.4 & 16.3 \\
+Skew-normal     & 2.64 &  4.45 & 2.06 &  3.23 && 2.2 &  3.5 && 3.7 &  5.0 && 27.9 &  \NA &  8.2 & 28.9 \\
+Gumbel          & 4.81 &  3.23 & 2.59 &  3.67 && 2.6 &  3.8 && 8.3 &  5.5 && 13.3 &  \NA &  8.4 & 16.3 \\
+Pareto          & 2.94 &  3.41 & 2.06 &  2.95 && 2.1 &  3.1 && 4.3 &  4.7 && 17.5 &  \NA &  4.4 & 16.3 \\
 Gamma$(2,3)$    & 3.95 &  9.71 & 3.61 &  5.41 && 3.6 &  5.6 && 5.6 &  7.0 && 15.7 & 53.4 &  8.8 & 27.5 \\
 Beta$(2,5)$     & 8.12 & 19.72 & 7.29 & 11.02 && 7.2 & 11.4 && 9.2 & 13.6 && 31.3 & 56.2 & 20.0 & 55.3 \\
 Chi-square$(5)$ & 3.84 &  9.08 & 3.54 &  5.29 && 3.5 &  5.5 && 5.3 &  7.0 && 15.7 & 53.4 &  8.7 & 27.2 \\
@@ -1035,9 +1083,9 @@ $F(5,10)$       & 7.92 & 19.24 & 7.21 & 10.97 && 7.0 & 11.1 && 9.0 & 13.4 && 32.
 Weibull$(2,3)$  & 4.83 &  4.33 & 3.04 &  4.15 && 3.1 &  4.3 && 9.9 &  5.7 && 14.1 & 24.2 & 31.4 & 23.1 \\
 \bottomrule
 \end{tabular}
-\end{table*}
+\end{table}
 
-\begin{table*}[t]
+\begin{table}[t]
 \centering
 \caption{Engine throughput timings in nanoseconds per 64 output bits.
   Lower is better.}
@@ -1071,7 +1119,7 @@ ranlux++                       & \texttt{ranlux++}   & 2.69 & 4.23 & 8.12 & 4.79
 ChaCha20                       & \texttt{chacha20}   & 7.39 & 8.20 & 13.10 & 9.76 \\
 \bottomrule
 \end{tabular}
-\end{table*}
+\end{table}
 
 Selecting (a,b,c), selecting increment in PCG, Jumping or selecting
 key a for Philox is better.
