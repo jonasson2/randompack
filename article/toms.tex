@@ -886,14 +886,15 @@ by using OpenLibm instead of Sleef for all library function calls.
 A small buffer is used between the engine and distribution layers.
 When the buffer is empty, the selected engine refills it with raw
 random bits; th distribution functions then consume these buffered
-words as uint64_t or uint32_t values, either singly or in bulk.This
-arrangement is important to the structure of the library, since it
-allows many engines and many distributions to coexist cleanly in one
-implementation without engine-specific distribution code. The buffer
-size must be a multiple of 72 65-bit words, as ranlux++ fills it in 9
-word chunks and the SIMD-engines as well as chacha20 fill it in 8 word
-chunks. The current buffer size is 144 words, a value selected by
-approximate benchmarking experiments to give good performance.
+words as \texttt{uint64\_t} or \texttt{uint32\_t} values, either singly
+or in bulk.This arrangement is important to the structure of the
+library, since it allows many engines and many distributions to
+coexist cleanly in one implementation without engine-specific
+distribution code. The buffer size must be a multiple of 72 65-bit
+words, as ranlux++ fills it in 9 word chunks and the SIMD-engines as
+well as chacha20 fill it in 8 word chunks. The current buffer size is
+144 words, a value selected by approximate benchmarking experiments to
+give good performance.
 
 \subsection{Miscellaneous features}
 % =====================================================================
@@ -920,7 +921,7 @@ case-insensitive, but apart from that no aliases exist.
 \textbf{Float versions.} Almost all the continuous Randompack
 distributions exist in both double precision (C \texttt{double}) and
 single precision (C \texttt{float}) versions. The float functions have
-an \texttt{f} appended to their name, e.g. \texttt{randompack_expf}.
+an \texttt{f} appended to their name, e.g. \texttt{randompack\_expf}.
 For many simulation applications there is no need for the extra
 precision of doubles, so both space and time can be saved by using
 floats.
@@ -1034,10 +1035,41 @@ tests and the PIT tests were done by checking that in 100 BigCrush
 runs the total numbers of p-values below 0.001, 0.0001, and 0.00001
 were no greater than expected by chance.
 
-\section{Performance}
-% ===================
-
-
+\begin{table}[t]
+\centering
+\caption{Engine throughput timings in nanoseconds per 64 output bits.
+  Lower is better.}
+\label{tab:bench-engines}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{
+  ll
+  S[table-format=1.2]
+  S[table-format=1.2]
+  S[table-format=2.2]
+  S[table-format=1.2]
+}
+\toprule
+Engine & Short name & {Mac-M4}
+& {Spark} & {Xeon}
+& {Core-i5} \\
+\midrule
+xoshiro256++, SIMD accelerated & \texttt{x256++simd} & 0.30 & 0.41 & 0.30 & 0.44 \\
+xoshiro256**, SIMD accelerated & \texttt{x256**simd} & 0.40 & 0.54 & 0.33 & 0.47 \\
+sfc64, SIMD accelerated        & \texttt{sfc64simd}  & 0.32 & 0.34 & 0.30 & 0.33 \\
+xoshiro256++                   & \texttt{x256++}     & 0.73 & 0.81 & 1.07 & 0.88 \\
+xoshiro256**                   & \texttt{x256**}     & 0.76 & 0.80 & 1.15 & 0.83 \\
+xorshift128+                   & \texttt{x128+}      & 0.76 & 0.88 & 1.14 & 0.91 \\
+xoroshiro128++                 & \texttt{xoro++}     & 0.99 & 0.82 & 1.36 & 1.16 \\
+PCG64-DXSM                     & \texttt{pcg64}      & 1.17 & 1.56 & 1.73 & 1.26 \\
+sfc64                          & \texttt{sfc64}      & 0.72 & 0.70 & 1.04 & 0.91 \\
+squares64                      & \texttt{squares}    & 0.82 & 0.99 & 1.99 & 1.25 \\
+Philox-4x64                    & \texttt{philox}     & 1.07 & 1.77 & 2.75 & 1.51 \\
+cwg128                         & \texttt{cwg128}     & 0.91 & 1.25 & 1.55 & 1.22 \\
+ranlux++                       & \texttt{ranlux++}   & 2.69 & 4.23 & 8.12 & 4.79 \\
+ChaCha20                       & \texttt{chacha20}   & 7.39 & 8.20 & 13.10 & 9.76 \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \begin{table}[t]
 \centering
@@ -1097,41 +1129,33 @@ Weibull$(2,3)$  & 4.83 &  4.33 & 3.04 &  4.15 && 3.1 &  4.3 && 9.9 &  5.7 && 14.
 \end{tabular}
 \end{table}
 
-\begin{table}[t]
-\centering
-\caption{Engine throughput timings in nanoseconds per 64 output bits.
-  Lower is better.}
-\label{tab:bench-engines}
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{
-  ll
-  S[table-format=1.2]
-  S[table-format=1.2]
-  S[table-format=2.2]
-  S[table-format=1.2]
-}
-\toprule
-Engine & Short name & {Mac-M4}
-& {Spark} & {Xeon}
-& {Core-i5} \\
-\midrule
-xoshiro256++, SIMD accelerated & \texttt{x256++simd} & 0.30 & 0.41 & 0.30 & 0.44 \\
-xoshiro256**, SIMD accelerated & \texttt{x256**simd} & 0.40 & 0.54 & 0.33 & 0.47 \\
-sfc64, SIMD accelerated        & \texttt{sfc64simd}  & 0.32 & 0.34 & 0.30 & 0.33 \\
-xoshiro256++                   & \texttt{x256++}     & 0.73 & 0.81 & 1.07 & 0.88 \\
-xoshiro256**                   & \texttt{x256**}     & 0.76 & 0.80 & 1.15 & 0.83 \\
-xorshift128+                   & \texttt{x128+}      & 0.76 & 0.88 & 1.14 & 0.91 \\
-xoroshiro128++                 & \texttt{xoro++}     & 0.99 & 0.82 & 1.36 & 1.16 \\
-PCG64-DXSM                     & \texttt{pcg64}      & 1.17 & 1.56 & 1.73 & 1.26 \\
-sfc64                          & \texttt{sfc64}      & 0.72 & 0.70 & 1.04 & 0.91 \\
-squares64                      & \texttt{squares}    & 0.82 & 0.99 & 1.99 & 1.25 \\
-Philox-4x64                    & \texttt{philox}     & 1.07 & 1.77 & 2.75 & 1.51 \\
-cwg128                         & \texttt{cwg128}     & 0.91 & 1.25 & 1.55 & 1.22 \\
-ranlux++                       & \texttt{ranlux++}   & 2.69 & 4.23 & 8.12 & 4.79 \\
-ChaCha20                       & \texttt{chacha20}   & 7.39 & 8.20 & 13.10 & 9.76 \\
-\bottomrule
-\end{tabular}
-\end{table}
+\section{Performance}
+% ===================
+Several benchmarking programs accompany Randompack, as detailed in the
+readme file. These benchmark both continuous and discrete sampling
+using Randompack from C, as well as its interfaces to Fortran, Python,
+R, and Julia. There are also timing programs for several other random
+number generation libraries including the built-in generators of
+Python, R, and Julia.
+
+The performance of the implemented engines on the platforms in Table
+\ref{table:platforms} is reported in Table \ref{tab:bench-engines} and
+Table \ref{tab:bench-distributions} reports benchmarking of the
+different continuous distributions on selected platforms, both for
+Randompack and some other libraries. We note that Randompack is
+several times faster than the other libraries: For $U(0,1)$ it is 3,
+3.7, 1.7 and 15 times faster than Python, R, Julia, and C++,
+respectively, and for $N(2,3)$ the factors are 6, 8, 1 and 10. Except
+for C++, this comparison applies to the respective language interfaces
+of Randompack.
+
+Table xxx reports the
+performance of the implemented engines, 
+
+and a selection of the
+results are reported in Tables xx, yy and zz. The Linux
+workstation has been selected for comparison of Randompack with other
+libraries, 
 
 Selecting (a,b,c), selecting increment in PCG, Jumping or selecting
 key a for Philox is better.

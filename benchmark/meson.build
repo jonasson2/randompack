@@ -19,13 +19,6 @@ time_dist_c = executable(
   dependencies : [randompack_dep],
 )
 
-time_norm_exp = executable(
-  'TimeNormExp',
-  ['TimeNormExp.c', 'TimeUtil.c'] + common_util,
-  include_directories : [common_inc],
-  dependencies : [randompack_dep],
-)
-
 time_logexp_src = ['TimeLogExp.c'] + common_util
 time_logexp_c_args = []
 time_logexp_dependencies = [randompack_dep]
