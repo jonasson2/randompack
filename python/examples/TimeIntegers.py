@@ -195,6 +195,7 @@ def main() -> None:
   sample_specs = [
     SampleSpec(1000, 10, "1000/10"),
     SampleSpec(1000, 499, "1000/499"),
+    SampleSpec(1000, 500, "1000/500"),
     SampleSpec(1000, 501, "1000/501"),
     SampleSpec(1000, 990, "1000/990"),
   ]

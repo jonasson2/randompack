@@ -228,7 +228,7 @@ static void rand_sample_floyd(int p[], int len, int k, randompack_rng *rng) {
 
 static void rand_sample(int p[], int len, int k, randompack_rng *rng) {
   // Floyd for small k, reservoir for big k
-  if (k <= len/2) rand_sample_floyd(p, len, k, rng);
+  if (k < len/2) rand_sample_floyd(p, len, k, rng);
   else rand_sample_reservoir(p, len, k, rng);
 }
 
