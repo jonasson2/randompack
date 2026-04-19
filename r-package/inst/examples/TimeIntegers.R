@@ -172,11 +172,6 @@ main <- function() {
   factor <- r_ns / rp_ns
   cat(sprintf("%-18s %10.2f %11.2f %8.2f\n", "int 1-2e9", r_ns, rp_ns, factor))
 
-  # long long 1-6e18
-  if (!is.null(seed)) set.seed(seed) else set.seed(as.integer(runif(1, 0, 2^31)))
-  r_ns <- time_int_range(NULL, chunk, bench_time, 1, 6000000000000000000, FALSE)
-  cat(sprintf("%-18s %10.2f %11s %8s\n", "long long 1-6e18", r_ns, "N/A", "N/A"))
-
   # perm 100
   if (!is.null(seed)) set.seed(seed) else set.seed(as.integer(runif(1, 0, 2^31)))
   rp_rng$seed(if (!is.null(seed)) seed else as.integer(runif(1, 0, 2^31)))
