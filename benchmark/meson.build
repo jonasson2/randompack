@@ -76,6 +76,33 @@ if build_cpp
   )
 endif
 
+mkl_bench_dep = disabler()
+mkl_bench_found = false
+mkl_header_found = cc.has_header('mkl.h')
+if mkl_header_found
+  foreach mkl_variant : ['mkl-dynamic-lp64-iomp', 'mkl-static-lp64-iomp', 'mkl']
+    mkl_bench_dep = dependency(mkl_variant, required : false)
+    if mkl_bench_dep.found()
+      mkl_bench_found = true
+      break
+    endif
+  endforeach
+  if not mkl_bench_found
+    mkl_bench_dep = cc.find_library('mkl_rt', required : false)
+    mkl_bench_found = mkl_bench_dep.found()
+  endif
+endif
+
+if mkl_header_found and mkl_bench_found
+  time_dist_mkl = executable(
+    'TimeDistMKL',
+    'TimeDistMKL.c',
+    dependencies : [randompack_dep, mkl_bench_dep],
+  )
+else
+  message('Skipping TimeDistMKL benchmark (MKL headers or libraries not found)')
+endif
+
 if build_fortran_interface
   darwin_link_args = host_machine.system() == 'darwin' ? ['-Wl,-no_warn_duplicate_libraries'] : []
   time_distributions_f = executable(
