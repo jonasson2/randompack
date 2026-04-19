@@ -196,6 +196,7 @@ int main(int argc, char **argv) {
   struct { int n; char *label; } int_ranges[] = {
     { 10, "1-10" },
     { 100000, "1-1e5" },
+    { 2000000000, "1-2e9" },
   };
   struct { long long n; char *label; } ll_ranges[] = {
     { 2000000000LL, "1-2e9" },
@@ -214,32 +215,37 @@ int main(int argc, char **argv) {
   printf("time per value:   ns/value\n");
   printf("bench_time:       %.3f s per case\n", bench_time);
   printf("chunk:            %d\n", chunk);
-  printf("\n%-14s %8s\n", "int range", "ns/value");
+  printf("\n%-18s %10s\n", "Benchmark", "Randompack");
   for (int i = 0; i < LEN(int_ranges); i++) {
+    char label[32];
     set_seed(rng, seed, have_seed);
     double ns = time_int_range(chunk, bench_time, 1, int_ranges[i].n, rng);
-    printf("%-14s %8.2f\n", int_ranges[i].label, ns);
+    STRSETF(label, "int %s", int_ranges[i].label);
+    printf("%-18s %10.2f\n", label, ns);
   }
-  printf("\n%-14s %8s\n", "long long", "ns/value");
   for (int i = 0; i < LEN(ll_ranges); i++) {
+    char label[32];
     set_seed(rng, seed, have_seed);
     double ns = time_long_long_range(chunk, bench_time, 1, ll_ranges[i].n, rng);
-    printf("%-14s %8.2f\n", ll_ranges[i].label, ns);
+    STRSETF(label, "long long %s", ll_ranges[i].label);
+    printf("%-18s %10.2f\n", label, ns);
   }
-  printf("\n%-14s %10s\n", "perm n", "ns/value");
   for (int i = 0; i < LEN(perm_specs); i++) {
+    char label[32];
     int n = perm_specs[i].n;
     set_seed(rng, seed, have_seed);
     double ns = time_perm(n, bench_time, rng);
-    printf("%-14s %10.2f\n", perm_specs[i].label, ns/n);
+    STRSETF(label, "perm %s", perm_specs[i].label);
+    printf("%-18s %10.2f\n", label, ns/n);
   }
-  printf("\n%-14s %10s\n", "sample", "ns/value");
   for (int i = 0; i < LEN(sample_specs); i++) {
+    char label[32];
     int n = sample_specs[i].n;
     int k = sample_specs[i].k;
     set_seed(rng, seed, have_seed);
     double ns = time_sample(n, k, bench_time, rng);
-    printf("%-14s %10.2f\n", sample_specs[i].label, ns/k);
+    STRSETF(label, "sample %d/%d", k, n);
+    printf("%-18s %10.2f\n", label, ns/k);
   }
   randompack_free(rng);
   return 0;
