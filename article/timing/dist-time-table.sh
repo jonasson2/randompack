@@ -5,12 +5,25 @@ print_help() {
   cat <<EOF
 Usage: article/timing/dist-time-table.sh
 
-Read the timing files listed on the last
-  %% .out files: ...
-comment line in article/toms.tex and print only the LaTeX body rows for the
-distribution table that follows it.
+Read the standard distribution timing files in article/timing and print the
+LaTeX body rows for the distribution timing table.
 
-The output is intended to be pasted between that comment line and \\\\bottomrule.
+Files read:
+  spark.out
+  xeon.out
+  mac.out
+  i5.out
+  rp-py-mac.out
+  rp-python.out
+  rp-r-mac.out
+  rp-r.out
+  numpy.out
+  r.out
+  julia.out
+  cpp.out
+  mkl.out
+
+The output is intended to be pasted between \\midrule and \\bottomrule.
 Missing values are printed as \\NA. Empty separator columns are printed as &&.
 EOF
 }
@@ -29,43 +42,12 @@ if [ $# -gt 0 ]; then
 fi
 
 script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-toms="$script_dir/../toms.tex"
-comment=$(
-  awk '/^%% \.out files:/{line=$0} END{if (line) print line}' "$toms"
-)
 
-if [ -z "$comment" ]; then
-  echo "dist-time-table.sh: no '%% .out files:' line found in article/toms.tex" >&2
-  exit 1
-fi
-
-awk -v dir="$script_dir" -v comment="$comment" '
+awk -v dir="$script_dir" '
   function trim(s) {
     sub(/^[[:space:]]+/, "", s)
     sub(/[[:space:]]+$/, "", s)
     return s
-  }
-  function normalize_file(s) {
-    s = trim(s)
-    if (s == "") return ""
-    if (s !~ /\.out$/) s = s ".out"
-    return s
-  }
-  function parse_comment(line,    n, i, j, groups, toks, tok) {
-    sub(/^.*:[[:space:]]*/, "", line)
-    ngroups = split(line, groups, /[[:space:]]*&&[[:space:]]*/)
-    nfiles = 0
-    for (i = 1; i <= ngroups; i++) {
-      group_start[i] = nfiles + 1
-      group_len[i] = 0
-      n = split(groups[i], toks, /[[:space:]]*&[[:space:]]*/)
-      for (j = 1; j <= n; j++) {
-        tok = normalize_file(toks[j])
-        if (tok == "") continue
-        files[++nfiles] = tok
-        group_len[i]++
-      }
-    }
   }
   function canonical(name) {
     if (name == "u01" || name == "unif(0,1)") return "u01"
@@ -139,11 +121,29 @@ awk -v dir="$script_dir" -v comment="$comment" '
     close(path)
   }
   BEGIN {
-    parse_comment(comment)
-    if (ngroups != 4 || nfiles != 12) {
-      print "dist-time-table.sh: expected 4 groups and 12 files in comment line" > "/dev/stderr"
-      exit 1
-    }
+    ngroups = 4
+    nfiles = 13
+    group_start[1] = 1
+    group_len[1] = 4
+    group_start[2] = 5
+    group_len[2] = 2
+    group_start[3] = 7
+    group_len[3] = 2
+    group_start[4] = 9
+    group_len[4] = 5
+    files[1] = "spark.out"
+    files[2] = "xeon.out"
+    files[3] = "mac.out"
+    files[4] = "i5.out"
+    files[5] = "rp-py-mac.out"
+    files[6] = "rp-python.out"
+    files[7] = "rp-r-mac.out"
+    files[8] = "rp-r.out"
+    files[9] = "numpy.out"
+    files[10] = "r.out"
+    files[11] = "julia.out"
+    files[12] = "cpp.out"
+    files[13] = "mkl.out"
 
     distw = length("Distribution")
     add_key("u01")

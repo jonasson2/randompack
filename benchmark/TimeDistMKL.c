@@ -320,15 +320,15 @@ static void fill_rp_weibull_2_3(void *vctx) {
   consume(ctx->x[ctx->chunk - 1]);
 }
 
-static void fill_mkl_weibull_5_6(void *vctx) {
+static void fill_mkl_weibull_3_4(void *vctx) {
   mkl_ctx *ctx = vctx;
-  fill_mkl_weibull(ctx->stream, ctx->chunk, ctx->x, 5, 6);
+  fill_mkl_weibull(ctx->stream, ctx->chunk, ctx->x, 3, 4);
   consume(ctx->x[ctx->chunk - 1]);
 }
 
-static void fill_rp_weibull_5_6(void *vctx) {
+static void fill_rp_weibull_3_4(void *vctx) {
   rp_ctx *ctx = vctx;
-  randompack_weibull(ctx->x, ctx->chunk, 5, 6, ctx->rng);
+  randompack_weibull(ctx->x, ctx->chunk, 3, 4, ctx->rng);
   consume(ctx->x[ctx->chunk - 1]);
 }
 
@@ -470,8 +470,8 @@ int main(int argc, char **argv) {
   run_case("weibull(2,3)", case_seed, chunk, bench_time, reps, brng, &mctx,
     &rctx, fill_mkl_weibull_2_3, fill_rp_weibull_2_3);
   case_seed = have_seed ? seed : (int)(rand_r(&s0) & 0x7fffffff);
-  run_case("weibull(5,6)", case_seed, chunk, bench_time, reps, brng, &mctx,
-    &rctx, fill_mkl_weibull_5_6, fill_rp_weibull_5_6);
+  run_case("weibull(3,4)", case_seed, chunk, bench_time, reps, brng, &mctx,
+    &rctx, fill_mkl_weibull_3_4, fill_rp_weibull_3_4);
   vslDeleteStream(&mctx.stream);
   free(x);
   randompack_free(rng);

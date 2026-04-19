@@ -96,8 +96,15 @@ if mkl_header_found and mkl_bench_found
     dependencies : [randompack_dep, mkl_bench_dep],
     c_args : ['-I' + mkl_inc_dir],
   )
+
+  time_int_mkl = executable(
+    'TimeIntMKL',
+    'TimeIntMKL.c',
+    dependencies : [randompack_dep, mkl_bench_dep],
+    c_args : ['-I' + mkl_inc_dir],
+  )
 else
-  message('Skipping TimeDistMKL benchmark (MKL headers or libraries not found)')
+  message('Skipping TimeDistMKL and TimeIntMKL benchmarks (MKL headers or libraries not found)')
 endif
 
 if build_fortran_interface
