@@ -61,9 +61,10 @@ ALWAYS_INLINE void gen_gammaf(float *x, size_t len, float shape, float scale,
     while (i < len) {
       size_t n = len - i < 256 ? len - i : 256;
       rand_float(t, n, rng);
-      logf_inplace(t, n, rng);
-      for (size_t j = 0; j < n; j++) t[j] *= inv_shape;
-      expf_inplace(t, n, rng);
+      for (size_t j = 0; j < n; j++) {
+        float y = rng->bitexact ? openlibm_log1pf(-t[j]) : log1pf(-t[j]);
+        t[j] = rng->bitexact ? openlibm_expf(inv_shape*y) : expf(inv_shape*y);
+      }
       for (size_t j = 0; j < n; j++) x[i + j] *= t[j];
       i += n;
     }

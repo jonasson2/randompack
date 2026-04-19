@@ -145,35 +145,16 @@ xoroshiro128++, cwg128, sfc64, and squares64), verification relies on careful
 implementation of the published algorithms together with the distributional
 tests described in the next section.
 
-## Testing
-
-In addition to the verification described above, the test suite checks both API
-behavior and distributional correctness. The tests include checking that
-
-- zero-length buffers are handled correctly
-- invalid inputs return an error
-- same seed produces identical output
-- different seeds produce different outputs
-- drawn variates are contained in each distribution's support
-- the frequency of each bit in bit streams is statistically balanced
-- counts across all values of bounded and interval integer draws are balanced
-- for continuous distributions, the corresponding PIT-transformed U01 distribution
-  exhibits balanced bins, and its mean, variance, skewness, and kurtosis pass
-  statistical tests
-  
-The test framework supports increasing the size of generated test vectors
-(currently ranging from `2e4` to `5e5`) for more comprehensive, longer-running
-test suites.
-
 ## SIMD support
 
-The two SIMD (single-intstruction multiple-data) accelerated engines use the SIMD
-instruction sets of modern CPUs, AVX2, AVX-512 and NEON, to speed up execution. Eight
-independent RNG streams are advanced in parallel. On NEON (e.g. Apple M-series) processors
-vector instructions provide two lanes, and each lane uses instruction-level parallelism
-(ILP) via loop unrolling to give four independent execution chains. On x86-64 processors
-with AVX2, four SIMD lanes with two chains are used, and on AVX-512 eight lanes. On other
-processors eight-way loop unrolling is used to advance the eight streams.
+The two SIMD (single-intstruction multiple-data) accelerated engines use the
+SIMD instruction sets of modern CPUs, AVX2, AVX-512 and NEON, to speed up
+execution. Eight independent RNG streams are advanced in parallel. On NEON (e.g.
+Apple M-series) processors vector instructions provide two lanes, and each lane
+uses instruction-level parallelism (ILP) via loop unrolling to give four
+independent execution chains. On x86-64 processors with AVX2, four SIMD lanes
+with two chains are used, and on AVX-512 eight lanes. On other processors
+eight-way loop unrolling is used to advance the eight streams.
 
 ## Building and installation
 Randompack relies on the Meson/Ninja build system. Install these programs if
@@ -183,10 +164,6 @@ To build an optimized release version of Randompack:
 ```sh
     meson setup build --buildtype=release
     meson compile -C build
-```
-To run the test suite:
-```sh
-    meson test -C build
 ```
 To install the library and headers into the default installation directory
 (usually `/usr/local`):
@@ -204,18 +181,55 @@ After installation, Randompack can be used by other projects via pkg-config:
     pkg-config --cflags --libs randompack
 ```
 
+## Testing
+
+In addition to the verification described above, the included tests check both
+API behavior and distributional correctness. This includes checking that
+
+- zero-length buffers are handled correctly
+- invalid inputs return an error
+- same seed produces identical output
+- different seeds produce different outputs
+- drawn variates are contained in each distribution's support
+- the frequency of each bit in bit streams is statistically balanced
+- counts across all values of bounded and interval integer draws are balanced
+- for continuous distributions, the corresponding PIT-transformed U01 distribution
+  exhibits balanced bins, and its mean, variance, skewness, and kurtosis pass
+  statistical tests
+  
+There is a meson option `build_tests` with default true. The test framework
+supports increasing the size of generated test vectors (currently ranging from
+`2e4` to `5e5`) for more comprehensive, longer-running test suites.
+
+To run the test suites:
+```sh
+    meson test -C build
+    meson test -C build --suite comprehensive
+    meson test -C build --suite quick
+```
+For maximum testing with all execution paths exersized the comprehensive tests
+should be run on all supported platforms: X86-64 Linux (both AVX2 and AVX-512),
+Arm Mac, Arm Linux and Windows. Since computers with no SIMD support and/or no
+128-bit multiply are rare, there are also special tests for the fallbacks for 
+such systems which should be run on one platform:
+```sh
+    meson setup build-no128 -Dbuild_tests=true -Dforce_no128=true
+    meson compile -C build-no128
+    meson test -C build-no128
+```
+
 ## Timing
 
-Randompack includes a small set of benchmarking programs intended to measure
-raw generator throughput and per-value distribution costs. All benchmarks are
+Randompack includes a small set of benchmarking programs intended to measure raw
+generator throughput and per-value distribution costs. All benchmarks are
 implemented as standalone C programs with a small number of command-line
 options; details are available via the `-h` option.
 
 - `TimeEngines` measures the throughput of each random number generator in
-  MB/s by repeatedly drawing blocks of 1024 `uint64` values.
-- `TimeIntegers` reports time per generated value (in ns) for selected integer
-  distributions.
-- `TimeDistCpp` reports time per generated value (in ns) for each
+  ns/draw and MB/s by repeatedly drawing blocks of 4096 `uint64` values.
+- `TimeIntegers` reports time per generated value (in ns) for bulk draws of
+  selected integer distributions.
+- `TimeDistributions` reports time per generated value (in ns) for each
   continuous distribution in double and float, using the default engine
   (`xoshiro256++`).
 

@@ -48,7 +48,8 @@ extra_util = files(
 dpstrf_test_src = files('../src/rp_dpstrf.c')
 
 blas_test_args = using_builtin_blas ? ['-DRANDOMPACK_BUILTIN_BLAS'] : []
-test_buf_define = '-DBUFSIZE=' + test_bufsize.to_string()
+build_buf8_tests = get_option('build_buf8_tests')
+test_buf_define = '-DBUFSIZE=8'
 test_env = environment()
 if host_machine.system() == 'windows'
   test_env.prepend('PATH', join_paths(meson.current_build_dir(), '..', 'src'))
@@ -62,18 +63,48 @@ run_tests = executable(
   c_args : ['-DRANDOMPACK_TEST_HOOKS'] + blas_test_args,
 )
 
-test('RunTests', run_tests, args : ['-v'], env : test_env)
-
-run_tests_buf8 = executable(
-  # Small buffer test to stress the buffer-filling and -drawing machinery
-  'RunTestsBuf8',
-  test_sources + extra_util + common_util + dpstrf_test_src,
-  include_directories: [common_inc],
-  dependencies : [randompack_buf8_dep],
-  c_args : ['-DRANDOMPACK_TEST_HOOKS', test_buf_define] + blas_test_args,
+test(
+  'quick-tests',
+  run_tests,
+  args : ['-v', '-Q'],
+  env : test_env,
+  suite : ['quick'],
 )
 
-test('RunTestsBuf8', run_tests_buf8, args : ['-v'], env : test_env)
+test(
+  'normal-tests',
+  run_tests,
+  args : ['-v'],
+  env : test_env,
+  suite : ['normal'],
+)
+
+if build_buf8_tests
+  run_tests_buf8 = executable(
+    # Small buffer test to stress the buffer-filling and -drawing machinery
+    'RunTestsBuf8',
+    test_sources + extra_util + common_util + dpstrf_test_src,
+    include_directories: [common_inc],
+    dependencies : [randompack_buf8_dep],
+    c_args : ['-DRANDOMPACK_TEST_HOOKS', test_buf_define] + blas_test_args,
+  )
+
+  test(
+    'bufsize-8-tests',
+    run_tests_buf8,
+    args : ['-v'],
+    env : test_env,
+    suite : ['comprehensive'],
+  )
+endif
+
+test(
+  'large-sample-tests',
+  run_tests,
+  args : ['-v', '-C'],
+  env : test_env,
+  suite : ['comprehensive'],
+)
 
 if build_fortran_interface
   darwin_link_args = host_machine.system() == 'darwin' ? ['-Wl,-no_warn_duplicate_libraries'] : []
@@ -94,3 +125,20 @@ seedseq_test = executable(
 )
 
 test('TestSeedSeq', seedseq_test)
+
+add_test_setup(
+  'normal',
+  is_default : true,
+  exclude_suites : ['quick', 'comprehensive'],
+)
+
+add_test_setup(
+  'quick',
+  exclude_suites : ['normal', 'comprehensive'],
+)
+
+add_test_setup(
+  'comprehensive',
+  timeout_multiplier : 10,
+  exclude_suites : ['quick', 'normal'],
+)

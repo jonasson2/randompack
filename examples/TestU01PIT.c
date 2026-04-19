@@ -2,7 +2,7 @@
 //
 // To build, install TestU01 in <prefix> and build randompack with:
 //
-//    meson setup -C release -Dbuildtype=release -DTestU01=<prefix>
+//    meson setup -C release -Dbuildtype=release -DTestU01_prefix=<prefix>
 //    meson compile -C release
 
 #include <math.h>

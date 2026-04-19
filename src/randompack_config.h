@@ -118,9 +118,10 @@ static inline void copy64(void *dst, const void *src, int n) { memcpy(dst, src, 
 #define BUFSIZE 144
 #endif
 
-_Static_assert(BUFSIZE % 8 == 0, "BUFSIZE must be a multiple of 8 (for chacha20)");
-_Static_assert(BUFSIZE <= 512,
-	       "BUFSIZE must be <= 512 to allow BUFSIZE arrays on the stack");
+_Static_assert(BUFSIZE % 8 == 0, "BUFSIZE must be a multiple of 8");
+_Static_assert(BUFSIZE == 8 || BUFSIZE % 9 == 0,
+               "BUFSIZE must be a multiple of 9 (for ranlux++)");
+_Static_assert(BUFSIZE <= 576, "BUFSIZE must be <= 576 to allow buffer on the stack");
 
 static inline uint32_t mix32(uint32_t x) {
   x ^= x >> 16;

@@ -5,7 +5,7 @@ import argparse
 import random
 import time
 from dataclasses import dataclass
-from typing import Callable, List
+from typing import List
 
 import numpy as np
 

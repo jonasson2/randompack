@@ -17,11 +17,7 @@ static int LastNonzeroColumn(int m, int n, double A[]) {
 }
 
 //#include "zmgd.inc"   // static zmgd() lives here
-#if defined(NORM_POLAR)
-#include "norm_polar.inc"
-#else
 #include "norm_exp.inc"
-#endif
 #include "rand_dble.inc"
 
 static void rand_lognormal(double x[], size_t len, double mu, double sigma,

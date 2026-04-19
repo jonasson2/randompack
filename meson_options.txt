@@ -1,29 +1,15 @@
 # See DEVELOPER.md for explanations for some of these options.
 
-option('blas',
-  type: 'string',
-  value: 'auto',
-  description: 'System BLAS: builtin/accelerate/mkl/openblas/auto/system (auto searches accelerate/mkl/openblas)'
-)
-
-# Creates <build-dir>/examples/TestU01Driver
-# TestU01 prefix should be given as an absolute path.
-option('TestU01',
-  type: 'string',
-  value: '',
-  description: 'Prefix for TestU01 install (enable when non-empty)'
-)
-
-option('build_fortran_interface',
-  type: 'boolean',
-  value: true,
-  description: 'Build the Fortran interface'
-)
-
 option('build_examples',
   type: 'boolean',
   value: true,
   description: 'Build example programs'
+)
+
+option('build_benchmarks',
+  type: 'boolean',
+  value: true,
+  description: 'Build benchmark programs'
 )
 
 option('build_tests',
@@ -32,33 +18,43 @@ option('build_tests',
   description: 'Build tests'
 )
 
-option('test_bufsize',
-  type: 'integer',
-  value: 8,
-  description: 'BUFSIZE for small-buffer tests (multiple of 8, <= 512)'
+option('build_fortran_interface',
+  type: 'boolean',
+  value: true,
+  description: 'Build the Fortran interface'
 )
 
-# Current benchmarking does not show speed-up over -O3 with these options
-option('perf',
+option('build_buf8_tests',
   type: 'boolean',
-  value: false,
-  description: 'Enable performance benchmarking flags/macros'
-)
-
-option('norm_polar',
-  type: 'boolean',
-  value: false,
-  description: 'Use src/norm_polar.inc instead of src/norm_exp.inc'
+  value: true,
+  description: 'Build the BUFSIZE=8 test variant'
 )
 
 option('force_no128',
   type: 'boolean',
   value: false,
-  description: 'Force 64x64->128 emulation (pretend no __int128)'
+  description: 'Force non-128-bit-integer fallback code paths'
 )
 
 option('force_nosimd',
   type: 'boolean',
   value: false,
   description: 'Force scalar code paths and disable SIMD builds'
+)
+
+# auto searches accelerate, openblas, then mkl, and falls back to built-in BLAS
+# system searches the same external backends but errors out if none is found
+# builtin uses a subset of the Netlib Fortran reference BLAS
+option('blas',
+  type: 'string',
+  value: 'auto',
+  description: 'BLAS backend: accelerate/mkl/openblas/auto/system/builtin'
+)
+
+# Creates <build-dir>/examples/TestU01Driver
+# TestU01 prefix should be given as an absolute path.
+option('TestU01_prefix',
+  type: 'string',
+  value: '',
+  description: 'Prefix for TestU01 install (enable when non-empty)'
 )

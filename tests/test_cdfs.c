@@ -25,6 +25,8 @@ double test_cdf_weibull(double x, double shape, double scale) {
 }
 
 double test_cdf_f(double x, double nu1, double nu2) {
+  if (x <= 0) return 0;
+  if (!isfinite(x)) return 1;
   double z = (nu1*x)/(nu1*x + nu2);
   return incbet(0.5*nu1, 0.5*nu2, z);
 }

@@ -19,13 +19,6 @@ time_dist_c = executable(
   dependencies : [randompack_dep],
 )
 
-time_unif = executable(
-  'TimeUnif',
-  ['TimeUnif.c', 'TimeUtil.c'] + common_util,
-  include_directories : [common_inc],
-  dependencies : [randompack_dep],
-)
-
 time_norm_exp = executable(
   'TimeNormExp',
   ['TimeNormExp.c', 'TimeUtil.c'] + common_util,

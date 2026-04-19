@@ -881,7 +881,19 @@ to compute them. Randompack offers a setting, \texttt{bitexact}, that
 makes these derived distributions also bit-identical across platforms
 by using OpenLibm instead of Sleef for all library function calls.
 
-\subsection{
+\subsection{Buffered architecture}
+% ================================
+A small buffer is used between the engine and distribution layers.
+When the buffer is empty, the selected engine refills it with raw
+random bits; th distribution functions then consume these buffered
+words as uint64_t or uint32_t values, either singly or in bulk.This
+arrangement is important to the structure of the library, since it
+allows many engines and many distributions to coexist cleanly in one
+implementation without engine-specific distribution code. The buffer
+size must be a multiple of 72 65-bit words, as ranlux++ fills it in 9
+word chunks and the SIMD-engines as well as chacha20 fill it in 8 word
+chunks. The current buffer size is 144 words, a value selected by
+approximate benchmarking experiments to give good performance.
 
 \subsection{Miscellaneous features}
 % =====================================================================
@@ -906,12 +918,12 @@ deliberately uses a single canonical identifier for each engine; it is
 case-insensitive, but apart from that no aliases exist.
 
 \textbf{Float versions.} Almost all the continuous Randompack
-distributions exist in both double precision (C
-\texttt{double}) and single precision (C \texttt{float}) versions. The
-float functions have an \texttt{f} appended to their name, e.g.
-\texttt{randompack_expf}. For many simulation applications there is no
-need for the extra precision of doubles, so both space and time can be
-saved by using floats.
+distributions exist in both double precision (C \texttt{double}) and
+single precision (C \texttt{float}) versions. The float functions have
+an \texttt{f} appended to their name, e.g. \texttt{randompack_expf}.
+For many simulation applications there is no need for the extra
+precision of doubles, so both space and time can be saved by using
+floats.
 
 \section{Validation and performance}
 % ==================================

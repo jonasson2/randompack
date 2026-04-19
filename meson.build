@@ -53,27 +53,8 @@ if fp_args.length() > 0
   add_project_arguments(fp_args, language: 'c')
 endif
 
-perf_opt = get_option('perf')
 force_no128 = get_option('force_no128')
 force_nosimd = get_option('force_nosimd')
-test_bufsize = get_option('test_bufsize')
-norm_polar = get_option('norm_polar')
-if perf_opt
-  add_project_arguments('-DRANDOMPACK_PERF', language: 'c')
-  add_project_arguments(
-    cc.get_supported_arguments([
-      '-fno-math-errno',
-      '-fno-trapping-math',
-      '-fomit-frame-pointer',
-      '-fno-semantic-interposition',
-    ]),
-    language: 'c'
-  )
-endif
-
-if norm_polar
-  add_project_arguments('-DNORM_POLAR', language: 'c')
-endif
 
 if force_nosimd
   add_project_arguments('-DPRETEND_NOSIMD', language: 'c')
@@ -262,8 +243,11 @@ pkg.generate(
 )
 
 if get_option('build_examples')
-  subdir('benchmark')
   subdir('examples')
+endif
+
+if get_option('build_benchmarks')
+  subdir('benchmark')
 endif
 
 if get_option('build_tests')

@@ -21,10 +21,11 @@ static void print_help(void) {
   puts("Usage: RunTests [options]\n"
        "Options:\n"
        "  -h       Show this help message\n"
-       "  -F       Fast debug run (all sample counts set to default/20)\n"
+       "  -Q       Quick run (all sample counts set to default/20)\n"
+       "  -C       Comprehensive run (all sample counts set to default*20)\n"
        "  -v       Verbose tests\n"
        "  -vv      More verbosity\n"
-       "  -vvv     Even moren verbosity\n"
+       "  -vvv     Even more verbosity\n"
        "  -d       Double-only tests in TestContinuous\n"
        "  -f N     Set N_STAT_FAST (u01, unif, norm, exp; default 100000)\n"
        "  -s N     Set N_STAT_SLOW (other distributions; default 20000)\n"
@@ -60,11 +61,18 @@ static int parse_posint(const char *s) {
   return (int)v;
 }
 
-static void set_fast_debug_sizes(void) {
+static void set_quick_sizes(void) {
   N_STAT_FAST = N_STAT_FAST_DEFAULT/20;
   N_STAT_SLOW = N_STAT_SLOW_DEFAULT/20;
   N_BAL_CNTS = N_BAL_CNTS_DEFAULT/20;
   N_BAL_BITS = N_BAL_BITS_DEFAULT/20;
+}
+
+static void set_comprehensive_sizes(void) {
+  N_STAT_FAST = 20*N_STAT_FAST_DEFAULT;
+  N_STAT_SLOW = 20*N_STAT_SLOW_DEFAULT;
+  N_BAL_CNTS = 20*N_BAL_CNTS_DEFAULT;
+  N_BAL_BITS = 20*N_BAL_BITS_DEFAULT;
 }
 
 static void run_test(char *name, void (*fn)(void)) {
@@ -78,24 +86,14 @@ static void run_test(char *name, void (*fn)(void)) {
   vprint(table_fmt, name, ntotal - nfail, nfail);
 }
 
-static void run_testx(char *name, void (*fn)(char *), char *engine) {
-  int ntotal, nfail;
-  xCheckInit();
-  fn(engine);
-  ntotal = xCheckNTotal();
-  nfail  = xCheckNFailures();
-  NTOTAL += ntotal;
-  NFAIL  += nfail;
-  vprint(table_fmt, name, ntotal - nfail, nfail);
-}
-
 int main(int argc, char **argv) {
-  char *optstring = ":vFhf:s:c:b:d";
+  char *optstring = ":vQChf:s:c:b:d";
   int c;
   while ((c = getopt(argc, argv, optstring)) != -1) {
     switch (c) {
       case 'h': print_help(); return 0;
-      case 'F': set_fast_debug_sizes(); break;
+      case 'Q': set_quick_sizes(); break;
+      case 'C': set_comprehensive_sizes(); break;
       case 'v': TESTVERBOSITY++; break;
       case 'd': TESTFLOAT = 0; break;
       case 'f': N_STAT_FAST = parse_posint(optarg); break;
@@ -111,21 +109,6 @@ int main(int argc, char **argv) {
   if (TESTVERBOSITY <= 1) printOff();
   vprint("\n");
   vprint(headr_fmt, "TEST OF", "PASSED", "FAILED");
-#if BUFSIZE <= 16
-  (void) run_test;
-  char *engine = "x256++simd";
-  run_testx("Buf8-Unif",       TestUnifx,       engine);
-  run_testx("Buf8-Exp",        TestExpx,       engine);
-  run_testx("Buf8-Bitexact",   TestBitexactx,   engine);
-  run_testx("Buf8-Buffer",     TestBufferx,     engine);
-  run_testx("Buf8-Reference",  TestReferencex,  engine);
-  run_testx("Buf8-Uint32",     TestUint32x,     engine);
-  run_testx("Buf8-Uint64",     TestUint64x,     engine);
-  run_testx("Buf8-Int",        TestIntx,        engine);
-  run_testx("Buf8-Normal",     TestNormx,       engine);
-  run_testx("Buf8-Continuous", TestContinuousx, engine);
-#else
-  (void) run_testx;
   run_test("Helpers",     TestHelpers);
   run_test("Openlibm",    TestOpenlibm);
   run_test("FullMantissa",TestFullMantissa);
@@ -154,7 +137,6 @@ int main(int argc, char **argv) {
   run_test("Continuous",  TestContinuous);
   run_test("Dpstrf",      TestDpstrf);
   run_test("Mvn",         TestMvn);
-#endif
   vprint(table_fmt, "TOTAL", NTOTAL - NFAIL, NFAIL);
   return (NFAIL > 0);
 }

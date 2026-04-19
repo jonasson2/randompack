@@ -51,7 +51,7 @@ if build_fortran_interface
   )
 endif
 
-testu01_prefix = get_option('TestU01')
+testu01_prefix = get_option('TestU01_prefix')
 if testu01_prefix != ''
   testu01_inc = include_directories(join_paths(testu01_prefix, 'include'))
   testu01_libdir = join_paths(testu01_prefix, 'lib')
