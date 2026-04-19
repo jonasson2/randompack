@@ -144,9 +144,18 @@ ALWAYS_INLINE void gen_paretof(float *x, size_t len, float xm, float alpha,
 ALWAYS_INLINE void gen_weibullf(float *x, size_t len, float shape,
   float scale, randompack_rng *rng) {
   rand_expf(x, len, rng);
+  if (shape == 1.0f) {
+    if (scale != 1.0f) scale_float_inplace(x, len, scale, rng);
+    return;
+  }
+  if (shape == 2.0f) {
+    for (size_t i = 0; i < len; i++) x[i] = sqrtf(x[i]);
+    if (scale != 1.0f) scale_float_inplace(x, len, scale, rng);
+    return;
+  }
   float inv_shape = 1.0f/shape;
   logf_inplace(x, len, rng);
-  for (size_t i = 0; i < len; i++) x[i] *= inv_shape;
+  scale_float_inplace(x, len, inv_shape, rng);
   expf_inplace(x, len, rng);
   if (scale != 1.0f) scale_float_inplace(x, len, scale, rng);
 }

@@ -77,20 +77,15 @@ if build_cpp
 endif
 
 mkl_bench_dep = disabler()
+mkl_header_found = false
 mkl_bench_found = false
-mkl_header_found = cc.has_header('mkl.h')
+mkl_root = '/opt/intel/oneapi/mkl/latest'
+mkl_inc_dir = join_paths(mkl_root, 'include')
+mkl_lib_dirs = [join_paths(mkl_root, 'lib', 'intel64'), join_paths(mkl_root, 'lib')]
+mkl_header_found = cc.has_header('mkl.h', args : ['-I' + mkl_inc_dir])
 if mkl_header_found
-  foreach mkl_variant : ['mkl-dynamic-lp64-iomp', 'mkl-static-lp64-iomp', 'mkl']
-    mkl_bench_dep = dependency(mkl_variant, required : false)
-    if mkl_bench_dep.found()
-      mkl_bench_found = true
-      break
-    endif
-  endforeach
-  if not mkl_bench_found
-    mkl_bench_dep = cc.find_library('mkl_rt', required : false)
-    mkl_bench_found = mkl_bench_dep.found()
-  endif
+  mkl_bench_dep = cc.find_library('mkl_rt', dirs : mkl_lib_dirs, required : false)
+  mkl_bench_found = mkl_bench_dep.found()
 endif
 
 if mkl_header_found and mkl_bench_found
@@ -98,6 +93,7 @@ if mkl_header_found and mkl_bench_found
     'TimeDistMKL',
     'TimeDistMKL.c',
     dependencies : [randompack_dep, mkl_bench_dep],
+    c_args : ['-I' + mkl_inc_dir],
   )
 else
   message('Skipping TimeDistMKL benchmark (MKL headers or libraries not found)')

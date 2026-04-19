@@ -377,9 +377,18 @@ ALWAYS_INLINE void gen_pareto(double *x, size_t len, double xm, double alpha,
 ALWAYS_INLINE void gen_weibull(double *x, size_t len, double shape,
   double scale, randompack_rng *rng) {
   rand_exp(x, len, rng); // x[i] = E ~ Exp(1) using ziggurat exponential
+  if (shape == 1) {
+    if (scale != 1) scale_double_inplace(x, len, scale, rng);
+    return;
+  }
+  if (shape == 2) {
+    for (size_t i = 0; i < len; i++) x[i] = sqrt(x[i]);
+    if (scale != 1) scale_double_inplace(x, len, scale, rng);
+    return;
+  }
   double inv_shape = 1/shape;
   log_inplace(x, len, rng);
-  for (size_t i = 0; i < len; i++) x[i] *= inv_shape;
+  scale_double_inplace(x, len, inv_shape, rng);
   exp_inplace(x, len, rng);
   if (scale != 1) scale_double_inplace(x, len, scale, rng);
 }

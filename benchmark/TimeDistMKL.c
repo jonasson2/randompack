@@ -320,8 +320,20 @@ static void fill_rp_weibull_2_3(void *vctx) {
   consume(ctx->x[ctx->chunk - 1]);
 }
 
+static void fill_mkl_weibull_5_6(void *vctx) {
+  mkl_ctx *ctx = vctx;
+  fill_mkl_weibull(ctx->stream, ctx->chunk, ctx->x, 5, 6);
+  consume(ctx->x[ctx->chunk - 1]);
+}
+
+static void fill_rp_weibull_5_6(void *vctx) {
+  rp_ctx *ctx = vctx;
+  randompack_weibull(ctx->x, ctx->chunk, 5, 6, ctx->rng);
+  consume(ctx->x[ctx->chunk - 1]);
+}
+
 static void run_case(const char *name, int case_seed, int chunk,
-  double bench_time, int reps, VSLBRngMethod brng, mkl_ctx *mctx,
+  double bench_time, int reps, MKL_INT brng, mkl_ctx *mctx,
   rp_ctx *rctx, fill_fn fill_mkl, fill_fn fill_rp) {
   if (vslDeleteStream(&mctx->stream) != VSL_STATUS_OK) {
     die_mkl("vslDeleteStream", -1);
@@ -406,7 +418,7 @@ int main(int argc, char **argv) {
     return 1;
   }
   VSLStreamStatePtr stream = 0;
-  VSLBRngMethod brng = VSL_BRNG_MT19937;
+  MKL_INT brng = VSL_BRNG_MT19937;
   mkl_ctx mctx = {stream, x, chunk};
   rp_ctx rctx = {rng, x, chunk};
   unsigned int s0 = (unsigned int)time(0);
@@ -457,6 +469,9 @@ int main(int argc, char **argv) {
   case_seed = have_seed ? seed : (int)(rand_r(&s0) & 0x7fffffff);
   run_case("weibull(2,3)", case_seed, chunk, bench_time, reps, brng, &mctx,
     &rctx, fill_mkl_weibull_2_3, fill_rp_weibull_2_3);
+  case_seed = have_seed ? seed : (int)(rand_r(&s0) & 0x7fffffff);
+  run_case("weibull(5,6)", case_seed, chunk, bench_time, reps, brng, &mctx,
+    &rctx, fill_mkl_weibull_5_6, fill_rp_weibull_5_6);
   vslDeleteStream(&mctx.stream);
   free(x);
   randompack_free(rng);
