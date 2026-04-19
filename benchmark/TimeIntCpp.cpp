@@ -222,9 +222,9 @@ void warmup(double seconds) {
   randompack_seed(123, 0, 0, rp_rng);
 
   std::uniform_int_distribution<int32_t> dist1(1, 1000);
-  std::uniform_int_distribution<int64_t> dist2(1, 1000000);
+  std::uniform_int_distribution<long long> dist2(1, 1000000);
   std::vector<int32_t> buf32(1024);
-  std::vector<int64_t> buf64(1024);
+  std::vector<long long> buf64(1024);
   std::vector<int> perm_buf(1000);
   for (int i = 0; i < 1000; i++) {
     perm_buf[i] = i;

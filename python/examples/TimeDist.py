@@ -104,8 +104,8 @@ def make_dists() -> List[Dist]:
   def np_gamma_0_5_2(rng: np.random.Generator, n: int) -> np.ndarray:
     return rng.gamma(0.5, 2.0, n)
 
-  def np_weibull_2_3(rng: np.random.Generator, n: int) -> np.ndarray:
-    return 3.0*rng.weibull(2.0, n)
+  def np_weibull_3_4(rng: np.random.Generator, n: int) -> np.ndarray:
+    return 4.0*rng.weibull(3.0, n)
 
   def rp_u01(rng: rp.Rng, n: int) -> np.ndarray:
     return rng.unif(size=n)
@@ -175,7 +175,7 @@ def make_dists() -> List[Dist]:
     Dist("chi2(5)", np_chi2_5, rp_chi2_5),
     Dist("t(10)", np_t_10, rp_t_10),
     Dist("F(5,10)", np_f_5_10, rp_f_5_10),
-    Dist("weibull(2,3)", np_weibull_2_3, rp_weibull_2_3),
+    Dist("weibull(3,4)", np_weibull_3_4, rp_weibull_3_4),
   ]
 
 

@@ -244,6 +244,6 @@ run_case("F(5,10)",
          function() rf(chunk, df1=5, df2=10),
          function() rng$f(chunk, 5, 10))
 
-run_case("weibull(2,3)",
-         function() rweibull(chunk, shape=2, scale=3),
-         function() rng$weibull(chunk, 2, 3))
+run_case("weibull(3,4)",
+         function() rweibull(chunk, shape=3, scale=4),
+         function() rng$weibull(chunk, 3, 4))
