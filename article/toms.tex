@@ -1072,62 +1072,98 @@ ChaCha20                       & \texttt{chacha20}   & 7.39 & 8.20 & 13.10 & 9.7
 \end{table}
 
 \begin{table}[t]
-\centering
-\caption{Timing for selected continuous distributions in nanoseconds
-  per draw, with the Python--C++ columns rounded to one decimal
-  place. Randompack C/C++/Fortran versions were benchmarked on four
-  systems; interface and comparison libraries were benchmarked on
-  Core-i5. Lower is better.}
-\label{tab:bench-distributions}
-\setlength{\tabcolsep}{3pt}
-\setlength{\cmidrulewidth}{\lightrulewidth}
-\begin{tabular}{
-  l
-  S[table-format=1.2]
-  S[table-format=1.2]
-  S[table-format=2.2]
-  S[table-format=2.2]
-  c@{\quad}
-  *{2}{S[table-format=2.1]}
-  c@{\quad}
-  *{2}{S[table-format=2.1]}
-  c@{\quad}
-  *{3}{S[table-format=2.1]}@{\quad}
-  S[table-format=2.1]
-}
-\toprule
-& \multicolumn{10}{c}{R a n d o m p a c k} & \multicolumn{5}{c}{} \\
-\cmidrule(r){2-11}
-& \multicolumn{4}{c}{C, C++, Julia, Fortran} && \multicolumn{2}{c}{Python} && \multicolumn{2}{c}{R}
-&& \multicolumn{4}{c}{Other libraries (on Core-i5)} \\
-\cmidrule(r){2-5}
-\cmidrule(r){7-8}
-\cmidrule(r){10-11}
-\cmidrule{13-16}
-Distribution & {Spark} & {Xeon} & {Mac} & {Core-i5}
-&& {Mac} & {Core-i5} && {Mac} & {Core-i5}
-&& {NumPy} & {Base-R} & {Julia} & {C++} \\
-\midrule
-%%              –––––––––––––––––R a n d o m p a c k ––––––––––––––––––––    –––– Other libraries ––––
-%% .out files:   spark & xeon  & Mac  & i5    &&pymac& pyi5 &&R-mac& R-i5 && NumPy&   R  & Julia& cpp
-$U(0,1)$        & 0.44 &  0.29 & 0.34 &  0.42 && 0.4 &  0.6 && 2.1 &  1.8 &&  1.8 &  6.7 &  0.7 &  6.3 \\
-$U(2,5)$        & 0.47 &  0.30 & 0.34 &  0.41 && 0.5 &  0.7 && 2.1 &  1.7 &&  2.7 &  6.7 &  0.8 &  6.4 \\
-Standard normal & 1.18 &  1.84 & 0.90 &  1.43 && 1.0 &  1.6 && 2.8 &  2.7 &&  8.9 & 21.4 &  1.4 & 14.3 \\
-Normal$(2,3)$   & 1.28 &  2.00 & 0.98 &  1.46 && 1.1 &  1.7 && 2.7 &  2.7 &&  9.6 & 21.4 &  1.4 & 14.3 \\
-Exponential     & 1.19 &  1.67 & 1.00 &  1.33 && 1.1 &  1.5 && 2.7 &  2.7 &&  4.2 & 23.5 &  1.4 & 10.6 \\
-Log-normal      & 2.57 &  2.92 & 1.79 &  2.52 && 1.9 &  2.7 && 7.1 &  3.8 && 13.9 & 28.7 &  4.0 & 18.9 \\
-Skew-normal     & 2.64 &  4.45 & 2.06 &  3.23 && 2.2 &  3.5 && 3.7 &  5.0 && 27.9 &  \NA &  8.2 & 28.9 \\
-Gumbel          & 4.81 &  3.23 & 2.59 &  3.67 && 2.6 &  3.8 && 8.3 &  5.5 && 13.3 &  \NA &  8.4 & 16.3 \\
-Pareto          & 2.94 &  3.41 & 2.06 &  2.95 && 2.1 &  3.1 && 4.3 &  4.7 && 17.5 &  \NA &  4.4 & 16.3 \\
-Gamma$(2,3)$    & 3.95 &  9.71 & 3.61 &  5.41 && 3.6 &  5.6 && 5.6 &  7.0 && 15.7 & 53.4 &  8.8 & 27.5 \\
-Beta$(2,5)$     & 8.12 & 19.72 & 7.29 & 11.02 && 7.2 & 11.4 && 9.2 & 13.6 && 31.3 & 56.2 & 20.0 & 55.3 \\
-Chi-square$(5)$ & 3.84 &  9.08 & 3.54 &  5.29 && 3.5 &  5.5 && 5.3 &  7.0 && 15.7 & 53.4 &  8.7 & 27.2 \\
-$t(10)$         & 5.84 & 15.46 & 4.78 &  9.62 && 4.8 &  9.7 && 6.4 & 11.1 && 25.3 & 60.2 & 15.4 & 42.2 \\
-$F(5,10)$       & 7.92 & 19.24 & 7.21 & 10.97 && 7.0 & 11.1 && 9.0 & 13.4 && 32.5 & 98.2 & 25.7 & 55.5 \\
-Weibull$(2,3)$  & 4.83 &  4.33 & 3.04 &  4.15 && 3.1 &  4.3 && 9.9 &  5.7 && 14.1 & 24.2 & 31.4 & 23.1 \\
-\bottomrule
-\end{tabular}
+  \centering
+  \caption{Timing for selected continuous distributions in nanoseconds
+    per draw, with the Python--C++ columns rounded to one decimal
+    place. Randompack C/C++/Fortran versions were benchmarked on four
+    systems; interface and comparison libraries were benchmarked on
+    Core-i5. Lower is better.}
+  \label{tab:bench-distributions}
+  \setlength{\tabcolsep}{3pt}
+  \setlength{\cmidrulewidth}{\lightrulewidth}
+  \begin{tabular}{
+      l
+      S[table-format=1.2]
+      S[table-format=1.2]
+      S[table-format=2.2]
+      S[table-format=2.2]
+      c@{\quad}
+      *{2}{S[table-format=2.1]}
+      c@{\quad}
+      *{2}{S[table-format=2.1]}
+      c@{\quad}
+      *{3}{S[table-format=2.1]}@{\quad}
+      S[table-format=2.1]
+    }
+    \toprule
+    & \multicolumn{10}{c}{R a n d o m p a c k} & \multicolumn{5}{c}{} \\
+    \cmidrule(r){2-11}
+    & \multicolumn{4}{c}{C, C++, Julia, Fortran} && \multicolumn{2}{c}{Python} && \multicolumn{2}{c}{R}
+    && \multicolumn{4}{c}{Other libraries (on Core-i5)} \\
+    \cmidrule(r){2-5}
+    \cmidrule(r){7-8}
+    \cmidrule(r){10-11}
+    \cmidrule{13-16}
+    Distribution & {Spark} & {Xeon} & {Mac} & {Core-i5}
+    && {Mac} & {Core-i5} && {Mac} & {Core-i5}
+    && {NumPy} & {Base-R} & {Julia} & {C++} \\
+    \midrule
+    %% –––––––––––––––––R a n d o m p a c k ––––––––––––––––––––    –––– Other libraries ––––
+    %% .out files:   spark & xeon  & Mac  & i5    &&pymac& pyi5 &&R-mac& R-i5 && NumPy&   R  & Julia& cpp
+    $U(0,1)$        & 0.44 &  0.29 & 0.34 &  0.42 && 0.4 &  0.6 && 2.1 &  1.8 &&  1.8 &  6.7 &  0.7 &  6.3 \\
+    $U(2,5)$        & 0.47 &  0.30 & 0.34 &  0.41 && 0.5 &  0.7 && 2.1 &  1.7 &&  2.7 &  6.7 &  0.8 &  6.4 \\
+    Standard normal & 1.18 &  1.84 & 0.90 &  1.43 && 1.0 &  1.6 && 2.8 &  2.7 &&  8.9 & 21.4 &  1.4 & 14.3 \\
+    Normal$(2,3)$   & 1.28 &  2.00 & 0.98 &  1.46 && 1.1 &  1.7 && 2.7 &  2.7 &&  9.6 & 21.4 &  1.4 & 14.3 \\
+    Exponential     & 1.19 &  1.67 & 1.00 &  1.33 && 1.1 &  1.5 && 2.7 &  2.7 &&  4.2 & 23.5 &  1.4 & 10.6 \\
+    Log-normal      & 2.57 &  2.92 & 1.79 &  2.52 && 1.9 &  2.7 && 7.1 &  3.8 && 13.9 & 28.7 &  4.0 & 18.9 \\
+    Skew-normal     & 2.64 &  4.45 & 2.06 &  3.23 && 2.2 &  3.5 && 3.7 &  5.0 && 27.9 &  \NA &  8.2 & 28.9 \\
+    Gumbel          & 4.81 &  3.23 & 2.59 &  3.67 && 2.6 &  3.8 && 8.3 &  5.5 && 13.3 &  \NA &  8.4 & 16.3 \\
+    Pareto          & 2.94 &  3.41 & 2.06 &  2.95 && 2.1 &  3.1 && 4.3 &  4.7 && 17.5 &  \NA &  4.4 & 16.3 \\
+    Gamma$(2,3)$    & 3.95 &  9.71 & 3.61 &  5.41 && 3.6 &  5.6 && 5.6 &  7.0 && 15.7 & 53.4 &  8.8 & 27.5 \\
+    Beta$(2,5)$     & 8.12 & 19.72 & 7.29 & 11.02 && 7.2 & 11.4 && 9.2 & 13.6 && 31.3 & 56.2 & 20.0 & 55.3 \\
+    Chi-square$(5)$ & 3.84 &  9.08 & 3.54 &  5.29 && 3.5 &  5.5 && 5.3 &  7.0 && 15.7 & 53.4 &  8.7 & 27.2 \\
+    $t(10)$         & 5.84 & 15.46 & 4.78 &  9.62 && 4.8 &  9.7 && 6.4 & 11.1 && 25.3 & 60.2 & 15.4 & 42.2 \\
+    $F(5,10)$       & 7.92 & 19.24 & 7.21 & 10.97 && 7.0 & 11.1 && 9.0 & 13.4 && 32.5 & 98.2 & 25.7 & 55.5 \\
+    Weibull$(2,3)$  & 4.83 &  4.33 & 3.04 &  4.15 && 3.1 &  4.3 && 9.9 &  5.7 && 14.1 & 24.2 & 31.4 & 23.1 \\
+    \bottomrule
+  \end{tabular}
 \end{table}
+
+\begin{table}
+  \caption{Integer timing results in ns/value.}
+  \label{tab:bench-integers}
+  \centering
+  \begin{tabular}{
+      l
+      l
+      S[table-format=1.1]
+      S[table-format=2.1]
+      S[table-format=3.1]
+      c@{\quad}
+      S[table-format=3.1]
+      S[table-format=3.1]
+      S[table-format=3.1]
+      S[table-format=2.1]
+    }
+    \toprule
+    && \multicolumn{3}{c}{Randompack} && \multicolumn{4}{c}{Other libraries} \\
+    \cmidrule(lr){3-5} \cmidrule(lr){7-10}
+    {Distribution} & {Parameters} & {C} & {Python} & {R} && {NumPy} & {Base-R} & {Julia} & {C++} \\
+    \midrule
+    bounded integer & $1,10$             & 0.7 &  0.8 &   1.9 &&   3.1 &  28.4 &   2.2 &  2.3 \\
+    bounded integer & $1,10^5$           & 0.7 &  0.8 &   1.6 &&   3.0 &  27.4 &   2.2 &  2.2 \\
+    bounded integer & $1,2\cdot 10^9$    & 1.3 &  1.4 &   2.3 &&   7.7 &  20.1 &   2.2 &  2.2 \\
+    64-bit integer  & $1,2\cdot 10^9$    & 0.9 &  1.1 &   \NA &&   7.6 &   \NA &   2.1 &  2.2 \\
+    64-bit integer  & $1,6\cdot 10^{18}$ & 1.1 &  1.3 &   \NA &&   6.4 &   \NA &   4.8 &  5.9 \\
+    permutation     & $100$              & 3.8 & 11.5 &  29.3 &&  17.9 &  59.7 &   3.9 &  1.6 \\
+    permutation     & $100000$           & 3.6 &  3.8 &   4.3 &&   8.3 &  30.2 &   4.0 &  1.7 \\
+    sample          & $20,1000$          & 9.7 & 51.4 & 139.6 && 203.7 & 205.9 & 201.9 & 81.9 \\
+    sample          & $500,1000$         & 9.9 & 16.1 &  16.1 &&  19.5 &  30.9 &   8.6 &  3.2 \\
+    sample          & $980,1000$         & 3.5 &  4.4 &   6.7 &&  13.7 &  27.0 &   4.5 &  1.7 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
 
 \section{Performance}
 % ===================
@@ -1139,16 +1175,18 @@ number generation libraries including the built-in generators of
 Python, R, and Julia.
 
 The performance of the implemented engines on the platforms in Table
-\ref{table:platforms} is reported in Table \ref{tab:bench-engines} and
-Table \ref{tab:bench-distributions} reports benchmarking of the
-different continuous distributions on selected platforms, both for
-Randompack and some other libraries. 
-We note that Randompack is
-several times faster than the other libraries: For $U(0,1)$ it is 3,
-3.7, 1.7 and 15 times faster than Python, R, Julia, and C++,
-respectively, and for $N(2,3)$ the factors are 6, 8, 1 and 10. Except
-for C++, this comparison applies to the respective language interfaces
-of Randompack. 
+\ref{table:platforms} is reported in Table \ref{tab:bench-engines},
+and Tables \ref{tab:bench-distributions} and \ref{tab:bench-integers}
+report benchmarking of the different continuous and integer
+distributions on selected platforms, both for Randompack and some
+other libraries.
+
+We note that Randompack is several times faster than the other
+libraries: For $U(0,1)$ it is 3, 3.7, 1.7 and 15 times faster than
+Python, R, Julia, and C++, respectively, and for $N(2,3)$ the factors
+are 6, 8, 1 and 10 and for integers in $\{1,2,\ldots,10\}$ they are
+x,y,z,t. . Except for C++, this comparison applies to the respective
+language interfaces of Randompack, 
 
 
 

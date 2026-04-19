@@ -155,8 +155,8 @@ def make_dists() -> List[Dist]:
   def rp_gamma_0_5_2(rng: rp.Rng, n: int) -> np.ndarray:
     return rng.gamma(size=n, shape=0.5, scale=2)
 
-  def rp_weibull_2_3(rng: rp.Rng, n: int) -> np.ndarray:
-    return rng.weibull(size=n, shape=2, scale=3)
+  def rp_weibull_3_4(rng: rp.Rng, n: int) -> np.ndarray:
+    return rng.weibull(size=n, shape=3, scale=4)
 
   return [
     Dist("unif(0,1)", np_u01, rp_u01),
