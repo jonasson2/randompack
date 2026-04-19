@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <limits.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -41,6 +42,34 @@ _Static_assert(sizeof(long long) == 8, "randompack requires 64-bit long long");
   #define AVX_INLINE static inline
 #endif
 
+#if defined(_WIN32)
+  #define HIDDEN
+#elif defined(__GNUC__) || defined(__clang__)
+  #define HIDDEN __attribute__((visibility("hidden")))
+#else
+  #define HIDDEN
+#endif
+
+#if !defined(_WIN32) && (defined(__GNUC__) || defined(__clang__))
+  #define DEFAULT_VISIBLE __attribute__((visibility("default")))
+#else
+  #define DEFAULT_VISIBLE
+#endif
+
+#if defined(__clang__) || defined(__GNUC__)
+  #define CONST_ATTR __attribute__((const))
+  #define INF_VALUE __builtin_inf()
+  #define INFF_VALUE __builtin_inff()
+  #define NAN_VALUE __builtin_nan("")
+  #define NANF_VALUE __builtin_nanf("")
+#else
+  #define CONST_ATTR
+  #define INF_VALUE HUGE_VAL
+  #define INFF_VALUE INFINITY
+  #define NAN_VALUE NAN
+  #define NANF_VALUE NAN
+#endif
+
 #if defined(BUILD_AVX2) && (defined(__x86_64__) || defined(__amd64__) || defined(_M_X64))
   #define NORMEXP_INLINE static inline __attribute__((target("avx")))
 #elif defined(__clang__) || defined(__GNUC__)
@@ -73,8 +102,8 @@ _Static_assert(sizeof(long long) == 8, "randompack requires 64-bit long long");
      snprintf((dst), (size_t)(maxlen), "%s", (src) ? (src) : "");    \
  } while (0)
 
-static inline int min(int m, int n) { return m < n ? m : n; }
-static inline int max(int m, int n) { return m > n ? m : n; }
+static inline int mini(int m, int n) { return m < n ? m : n; }
+static inline int maxi(int m, int n) { return m > n ? m : n; }
 
 static inline bool is_little_endian(void) {
   uint32_t one = 1;
@@ -89,9 +118,10 @@ static inline void copy64(void *dst, const void *src, int n) { memcpy(dst, src, 
 #define BUFSIZE 144
 #endif
 
-_Static_assert(BUFSIZE % 8 == 0, "BUFSIZE must be a multiple of 8 (for chacha20)");
-_Static_assert(BUFSIZE <= 512,
-	       "BUFSIZE must be <= 512 to allow BUFSIZE arrays on the stack");
+_Static_assert(BUFSIZE % 8 == 0, "BUFSIZE must be a multiple of 8");
+_Static_assert(BUFSIZE == 8 || BUFSIZE % 9 == 0,
+               "BUFSIZE must be a multiple of 9 (for ranlux++)");
+_Static_assert(BUFSIZE <= 576, "BUFSIZE must be <= 576 to allow buffer on the stack");
 
 static inline uint32_t mix32(uint32_t x) {
   x ^= x >> 16;

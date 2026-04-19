@@ -30,8 +30,10 @@ cdef extern from "randompack.h":
     bint randompack_raw(void *out, size_t nbytes,
                         randompack_rng *rng) nogil
 
+    bint randompack_u01(double *x, size_t n, randompack_rng *rng) nogil
     bint randompack_unif(double *x, size_t n, double a, double b,
                          randompack_rng *rng) nogil
+    bint randompack_norm(double *x, size_t n, randompack_rng *rng) nogil
     bint randompack_normal(double *x, size_t n, double mu, double sigma,
                            randompack_rng *rng) nogil
     bint randompack_lognormal(double *x, size_t n, double mu, double sigma,
@@ -60,8 +62,10 @@ cdef extern from "randompack.h":
                         double *X, int ldX, double *L,
                         randompack_rng *rng) nogil
 
+    bint randompack_u01f(float *x, size_t n, randompack_rng *rng) nogil
     bint randompack_uniff(float *x, size_t n, float a, float b,
                           randompack_rng *rng) nogil
+    bint randompack_normf(float *x, size_t n, randompack_rng *rng) nogil
     bint randompack_normalf(float *x, size_t n, float mu, float sigma,
                             randompack_rng *rng) nogil
     bint randompack_lognormalf(float *x, size_t n, float mu, float sigma,

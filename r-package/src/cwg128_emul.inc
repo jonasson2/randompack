@@ -73,18 +73,6 @@ static inline ALIGN64 void fill_cwg128(uint64_t *buf, size_t len,
     out[i] = z.lo;
     out[i + 1] = z.hi;
   }
-  if (len & 1) {
-    rp_u128 t1, t2;
-    U128_ADD(c2, c1);
-    U128_OR1(c2);
-    U128_SHR1(t1, c1);
-    U128_MUL(t2, t1, c2);
-    U128_ADD(c3, c0);
-    U128_XOR(c1, t2, c3);
-    rp_u128 z = c1;
-    U128_XOR64(z, U128_SHR96_LO(c2));
-    out[len - 1] = z.lo;
-  }
   state->u64[0] = c0.lo;
   state->u64[1] = c0.hi;
   state->u64[2] = c1.lo;

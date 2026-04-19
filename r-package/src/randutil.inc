@@ -45,7 +45,7 @@ static inline uint64_t rand_splitmix64(uint64_t *x) {
 static void fill_splitmix64(uint8_t *a, int len, uint64_t *x) {
   for (int k = 0; k < len; k += 8) {
     uint64_t mixed = rand_splitmix64(x);
-    memcpy(a + k, &mixed, min(8, len - k));
+    memcpy(a + k, &mixed, mini(8, len - k));
   }
 }
 

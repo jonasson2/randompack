@@ -3,6 +3,7 @@ project('randompack', 'c',
   version: '0.1.1',
   default_options: [
     'c_std=c11',
+    'cpp_std=c++11',
     'warning_level=3',
     'buildtype=debug',
     'default_library=shared',

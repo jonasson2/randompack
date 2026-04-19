@@ -25,7 +25,9 @@
   #include <windows.h>
   #define RtlGenRandom SystemFunction036
   BOOLEAN NTAPI RtlGenRandom(PVOID RandomBuffer, ULONG RandomBufferLength);
+  #if defined(_MSC_VER)
   #pragma comment(lib, "advapi32.lib")
+  #endif
 #elif defined(__APPLE__) || defined(__OpenBSD__) // macOS, iOS, OpenBSD
   #include <stdlib.h>
 #elif defined(USE_GETRANDOM)  // Linux, FreeBSD, DragonFly with getrandom support

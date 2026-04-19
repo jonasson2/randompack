@@ -112,7 +112,7 @@ CONST vdouble Sleef_expd8_u10avx512f(vdouble d) {
 
 CONST vdouble Sleef_logd8_u35avx512f(vdouble d) {
   vopmask o = vlt_vo_vd_vd(d, vcast_vd_d(0x1p-1022));
-  d = vsel_vd_vo_vd_vd(o, vmul_vd_vd_vd(d, vcast_vd_d((double)(1L << 32)*(double)(1L << 32))), d);
+  d = vsel_vd_vo_vd_vd(o, vmul_vd_vd_vd(d, vcast_vd_d(4294967296.0 * 4294967296.0)), d);
   vint e = vilogb2k_vi_vd(vmul_vd_vd_vd(d, vcast_vd_d(1.0/0.75)));
   vdouble m = vldexp3_vd_vd_vi(d, vneg_vi_vi(e));
   e = vsel_vi_vo_vi_vi(o, vsub_vi_vi_vi(e, vcast_vi_i(64)), e);
@@ -307,7 +307,7 @@ STATINLINE CONST vfloat vldexp3_vf_vf_vi2_sp(vfloat d, vint2 q) {
 CONST vfloat Sleef_logf16_u10avx512f(vfloat d) {
   vopmaskf o = vlt_vo_vf_vf_sp(d, vcast_vf_f_sp(0x1p-126));
   d = vsel_vf_vo_vf_vf_sp(o, vmul_vf_vf_vf_sp(d,
-    vcast_vf_f_sp((float)(1L << 32)*(float)(1L << 32))), d);
+    vcast_vf_f_sp(4294967296.0f * 4294967296.0f)), d);
   vint2 e = vilogb2k_vi2_vf_sp(vmul_vf_vf_vf_sp(d, vcast_vf_f_sp(1.0f/0.75f)));
   vfloat m = vldexp3_vf_vf_vi2_sp(d, vneg_vi2_vi2_sp(e));
   e = vsel_vi2_vo_vi2_vi2_sp(o, vsub_vi2_vi2_vi2_sp(e, vcast_vi2_i_sp(64)), e);

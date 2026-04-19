@@ -17,11 +17,7 @@ static int LastNonzeroColumn(int m, int n, double A[]) {
 }
 
 //#include "zmgd.inc"   // static zmgd() lives here
-#if defined(NORM_POLAR)
-#include "norm_polar.inc"
-#else
 #include "norm_exp.inc"
-#endif
 #include "rand_dble.inc"
 
 static void rand_lognormal(double x[], size_t len, double mu, double sigma,
@@ -232,7 +228,7 @@ static void rand_sample_floyd(int p[], int len, int k, randompack_rng *rng) {
 
 static void rand_sample(int p[], int len, int k, randompack_rng *rng) {
   // Floyd for small k, reservoir for big k
-  if (k <= len/2) rand_sample_floyd(p, len, k, rng);
+  if (k < len/2) rand_sample_floyd(p, len, k, rng);
   else rand_sample_reservoir(p, len, k, rng);
 }
 
@@ -311,7 +307,7 @@ ALWAYS_INLINE void gen_beta(double *x, size_t len, double a, double b, randompac
   double gb[128];
   size_t i = 0;
   while (i < len) {
-    int n = min(128, len - i);
+    int n = mini(128, len - i);
     gen_gamma(gb, n, b, 1.0, rng);
     double hi = 1.0 - DBL_EPSILON;
     for (int j = 0; j < n; j++) { // force the beta-draws to (0, 1)
@@ -332,7 +328,7 @@ ALWAYS_INLINE void gen_t(double *x, size_t len, double nu, randompack_rng *rng) 
   rand_norm(x, len, rng);
   size_t i = 0;
   while (i < len) {
-    int n = min(128, len - i);
+    int n = mini(128, len - i);
     gen_gamma(u, n, 0.5*nu, 2.0, rng);
     for (int j = 0; j < n; j++)
       x[i + j] /= sqrt(u[j]/nu);
@@ -348,7 +344,7 @@ ALWAYS_INLINE void gen_f(double *x, size_t len, double nu1, double nu2,
   gen_gamma(x, len, nu1/2.0, 1.0, rng);
   size_t i = 0;
   while (i < len) {
-    int n = min(len - i, 128);
+    int n = mini(len - i, 128);
     gen_gamma(x2, n, nu2/2.0, 1.0, rng);
     for (int j = 0; j < n; j++)
       x[i + j] = (x[i + j]*nu2)/(x2[j]*nu1);
@@ -381,9 +377,18 @@ ALWAYS_INLINE void gen_pareto(double *x, size_t len, double xm, double alpha,
 ALWAYS_INLINE void gen_weibull(double *x, size_t len, double shape,
   double scale, randompack_rng *rng) {
   rand_exp(x, len, rng); // x[i] = E ~ Exp(1) using ziggurat exponential
+  if (shape == 1) {
+    if (scale != 1) scale_double_inplace(x, len, scale, rng);
+    return;
+  }
+  if (shape == 2) {
+    for (size_t i = 0; i < len; i++) x[i] = sqrt(x[i]);
+    if (scale != 1) scale_double_inplace(x, len, scale, rng);
+    return;
+  }
   double inv_shape = 1/shape;
   log_inplace(x, len, rng);
-  for (size_t i = 0; i < len; i++) x[i] *= inv_shape;
+  scale_double_inplace(x, len, inv_shape, rng);
   exp_inplace(x, len, rng);
   if (scale != 1) scale_double_inplace(x, len, scale, rng);
 }
@@ -397,7 +402,7 @@ ALWAYS_INLINE void gen_skew_normal(double *x, size_t len, double mu,
   size_t i = 0;
   double u[128];
   while (i < len) {
-    int n = min(128, len - i);
+    int n = mini(128, len - i);
     rand_norm(u, n, rng);
     for (int j = 0; j < n; j++) {
       double v = delta*fabs(u[j]) + scale*x[i + j];

@@ -67,6 +67,12 @@ if build_cpp
     'TimeDistCpp.cpp',
     dependencies : [randompack_dep],
   )
+
+  time_int_cpp = executable(
+    'TimeIntCpp',
+    'TimeIntCpp.cpp',
+    dependencies : [randompack_dep],
+  )
 endif
 
 mkl_bench_dep = disabler()

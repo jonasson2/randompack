@@ -101,56 +101,6 @@ static double time_int_range(int chunk, double bench_time, int m, int n, randomp
   return (t - t0)/((double)calls*chunk);
 }
 
-static double time_uint8_bound(int chunk, double bench_time, uint8_t bound,
-                               randompack_rng *rng) {
-  uint8_t *buf;
-  TEST_ALLOC(buf, chunk);
-  int reps = 1000000/chunk;
-  if (reps < 1)
-    reps = 1;
-  int calls = 0;
-  uint64_t t0 = clock_nsec();
-  uint64_t deadline = t0 + (uint64_t)(bench_time*1e9);
-  uint64_t t = t0;
-  while (t < deadline) {
-    for (int i = 0; i < reps; i++) {
-      ASSERT(randompack_uint8(buf, chunk, bound, rng));
-      consume_u64(buf[chunk - 1]);
-    }
-    calls += reps;
-    t = clock_nsec();
-  }
-  FREE(buf);
-  if (calls == 0)
-    return 0;
-  return (t - t0)/((double)calls*chunk);
-}
-
-static double time_uint64_bound(int chunk, double bench_time, uint64_t bound,
-                                randompack_rng *rng) {
-  uint64_t *buf;
-  TEST_ALLOC(buf, chunk);
-  int reps = 1000000/chunk;
-  if (reps < 1)
-    reps = 1;
-  int calls = 0;
-  uint64_t t0 = clock_nsec();
-  uint64_t deadline = t0 + (uint64_t)(bench_time*1e9);
-  uint64_t t = t0;
-  while (t < deadline) {
-    for (int i = 0; i < reps; i++) {
-      ASSERT(randompack_uint64(buf, chunk, bound, rng));
-      consume_u64(buf[chunk - 1]);
-    }
-    calls += reps;
-    t = clock_nsec();
-  }
-  FREE(buf);
-  if (calls == 0)
-    return 0;
-  return (t - t0)/((double)calls*chunk);
-}
-
 static double time_perm(int n, double bench_time, randompack_rng *rng) {
   int *buf;
   TEST_ALLOC(buf, n);
@@ -244,36 +194,22 @@ int main(int argc, char **argv) {
   }
   warmup_cpu(0.1);
   struct { int n; char *label; } int_ranges[] = {
-    { 3, "1-3" },
-    { 20, "1-20" },
-    { 1000, "1-1000" },
+    { 10, "1-10" },
     { 100000, "1-1e5" },
-    { 10000000, "1-1e7" },
-    { 1000000000, "1-1e9" },
   };
   struct { long long n; char *label; } ll_ranges[] = {
-    { 10, "1-10" },
-    { 1000, "1-1e3" },
-    { 1000000, "1-1e6" },
-    { 10000000000LL, "1-1e10" },
-    { 1000000000000000000LL, "1-1e18" },
-  };
-  struct { uint8_t bound; char *label; } u8_specs[] = {
-    { 2, "bound 2" },
-    { 10, "bound 10" },
+    { 2000000000LL, "1-2e9" },
+    { 6000000000000000000LL, "1-6e18" },
   };
   struct { int n; char *label; } perm_specs[] = {
     { 100, "100" },
     { 100000, "100000" },
   };
   struct { int n; int k; char *label; } sample_specs[] = {
-    { 1000, 10, "1000/10" },
-    { 1000, 499, "1000/499" },
+    { 1000, 20, "1000/20" },
     { 1000, 500, "1000/500" },
-    { 1000, 501, "1000/501" },
-    { 1000, 990, "1000/990" },
+    { 1000, 980, "1000/980" },
   };
-  uint64_t u64_bound = UINT64_MAX/3;
   printf("engine:           %s\n", engine);
   printf("time per value:   ns/value\n");
   printf("bench_time:       %.3f s per case\n", bench_time);
@@ -290,16 +226,6 @@ int main(int argc, char **argv) {
     double ns = time_long_long_range(chunk, bench_time, 1, ll_ranges[i].n, rng);
     printf("%-14s %8.2f\n", ll_ranges[i].label, ns);
   }
-  printf("\n%-14s %8s\n", "uint8", "ns/value");
-  for (int i = 0; i < LEN(u8_specs); i++) {
-    set_seed(rng, seed, have_seed);
-    double ns = time_uint8_bound(chunk, bench_time, u8_specs[i].bound, rng);
-    printf("%-14s %8.2f\n", u8_specs[i].label, ns);
-  }
-  printf("\n%-14s %8s\n", "uint64", "ns/value");
-  set_seed(rng, seed, have_seed);
-  double ns_u64 = time_uint64_bound(chunk, bench_time, u64_bound, rng);
-  printf("%-14s %8.2f\n", "UINT64_MAX/3", ns_u64);
   printf("\n%-14s %10s\n", "perm n", "ns/value");
   for (int i = 0; i < LEN(perm_specs); i++) {
     int n = perm_specs[i].n;

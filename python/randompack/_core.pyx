@@ -11,6 +11,8 @@ from cpython.bytes cimport PyBytes_AS_STRING, PyBytes_GET_SIZE
 U32_MAX = (1 << 32) - 1
 U64_MAX = (1 << 64) - 1
 U128_MAX = (1 << 128) - 1
+DTYPE_F32 = np.dtype(np.float32)
+DTYPE_F64 = np.dtype(np.float64)
 
 from ._core cimport (
     randompack_rng, randompack_create,
@@ -21,6 +23,7 @@ from ._core cimport (
     randompack_uint32, randompack_uint64,
     randompack_perm, randompack_sample,
     randompack_raw,
+    randompack_u01, randompack_norm,
     randompack_unif,
     randompack_normal, randompack_lognormal,
     randompack_exp, randompack_gamma,
@@ -29,6 +32,7 @@ from ._core cimport (
     randompack_gumbel, randompack_pareto,
     randompack_weibull, randompack_skew_normal,
     randompack_mvn,
+    randompack_u01f, randompack_normf,
     randompack_uniff, randompack_normalf,
     randompack_lognormalf, randompack_expf,
     randompack_gammaf, randompack_betaf,
@@ -74,8 +78,8 @@ cdef inline np.ndarray _prep_out_float(randompack_rng *rng, object out, object d
     cdef object dt
     _out_check(rng, out, dtype, size)
     if out is None:
-        dt = np.dtype(np.float64) if dtype is None else np.dtype(dtype)
-        if dt != np.dtype(np.float32) and dt != np.dtype(np.float64):
+        dt = DTYPE_F64 if dtype is None else np.dtype(dtype)
+        if dt != DTYPE_F32 and dt != DTYPE_F64:
             raise TypeError("dtype must be float32 or float64")
         if size is None:
             arr = np.empty(1, dtype=dt)
@@ -83,11 +87,11 @@ cdef inline np.ndarray _prep_out_float(randompack_rng *rng, object out, object d
             arr = np.empty(size, dtype=dt)
     else:
         arr = out
-        if arr.dtype != np.dtype(np.float32) and arr.dtype != np.dtype(np.float64):
+        if arr.dtype != DTYPE_F32 and arr.dtype != DTYPE_F64:
             raise TypeError("out must be float32 or float64")
     ptr[0] = <void *>np.PyArray_DATA(arr)
     n_elem[0] = <size_t>np.PyArray_SIZE(arr)
-    is_f64[0] = arr.dtype == np.dtype(np.float64)
+    is_f64[0] = arr.dtype == DTYPE_F64
     return arr
 
 cdef inline np.ndarray _prep_out_int(randompack_rng *rng, object out, object dtype,
@@ -724,10 +728,17 @@ cdef class Rng:
         arr = _prep_out_float(self.ptr, out, dtype, size, &ptr, &n_elem, &is_f64)
         with nogil:
             if is_f64:
-                ok = randompack_unif(<double *>ptr, n_elem, a_d, b_d, self.ptr)
+                if a_d == 0 and b_d == 1:
+                    ok = randompack_u01(<double *>ptr, n_elem, self.ptr)
+                else:
+                    ok = randompack_unif(<double *>ptr, n_elem, a_d, b_d,
+                                         self.ptr)
             else:
-                ok = randompack_uniff(<float *>ptr, n_elem, <float>a_d,
-                                      <float>b_d, self.ptr)
+                if a_d == 0 and b_d == 1:
+                    ok = randompack_u01f(<float *>ptr, n_elem, self.ptr)
+                else:
+                    ok = randompack_uniff(<float *>ptr, n_elem, <float>a_d,
+                                          <float>b_d, self.ptr)
         if not ok:
             _raise_last_error(self.ptr)
         return _return_scalar(arr, out, size)
@@ -794,11 +805,17 @@ cdef class Rng:
         arr = _prep_out_float(self.ptr, out, dtype, size, &ptr, &n_elem, &is_f64)
         with nogil:
             if is_f64:
-                ok = randompack_normal(<double *>ptr, n_elem, mu_d, sigma_d,
-                                       self.ptr)
+                if mu_d == 0 and sigma_d == 1:
+                    ok = randompack_norm(<double *>ptr, n_elem, self.ptr)
+                else:
+                    ok = randompack_normal(<double *>ptr, n_elem, mu_d,
+                                           sigma_d, self.ptr)
             else:
-                ok = randompack_normalf(<float *>ptr, n_elem, <float>mu_d,
-                                        <float>sigma_d, self.ptr)
+                if mu_d == 0 and sigma_d == 1:
+                    ok = randompack_normf(<float *>ptr, n_elem, self.ptr)
+                else:
+                    ok = randompack_normalf(<float *>ptr, n_elem, <float>mu_d,
+                                            <float>sigma_d, self.ptr)
         if not ok:
             _raise_last_error(self.ptr)
         return _return_scalar(arr, out, size)

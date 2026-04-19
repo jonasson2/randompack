@@ -1,14 +1,7 @@
 #include <math.h>
 #include <stdbool.h>
+#include "randompack_config.h"
 #include "BlasGateway.h"
-
-#if defined(_MSC_VER)
-  #define HIDDEN
-#elif defined(__GNUC__) || defined(__clang__)
-  #define HIDDEN __attribute__((visibility("hidden")))
-#else
-  #define HIDDEN
-#endif
 
 // isnan portable stand-in (matches Fortran DISNAN)
 #define disnan(x) isnan(x)
@@ -32,7 +25,7 @@
 //   lda   - leading dimension of a (>= n)
 //   piv   - pivot indices (1-indexed): column/row j was interchanged with piv[j]-1
 //   rank  - estimated rank of A on output
-//   tol   - user tolerance; if < 0 use n*eps*max(diag(A))
+//   tol   - user tolerance; if < 0 use n*eps*maxi(diag(A))
 //   work  - workspace of length 2*n
 //   info  - 0: success; 1: matrix not positive definite (rank < n)
 // ----------------------------------------------------------------------------

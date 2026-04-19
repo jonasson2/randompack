@@ -160,8 +160,8 @@ bool randompack_engines(char *engines, char *descriptions, int *nengines,
   for (int i = 0; i < n; i++) {
     int elen = (int)strlen(rng_table[i].name) + 1;
     int dlen = (int)strlen(rng_table[i].description) + 1;
-    emax = max(emax, elen);
-    dmax = max(dmax, dlen);
+    emax = maxi(emax, elen);
+    dmax = maxi(dmax, dlen);
   }
   *nengines = n;
   *eng_maxlen = emax;
@@ -442,7 +442,7 @@ bool randompack_deserialize(const uint8_t *buf, int len, randompack_rng *rng) {
     return false;
   }
   rng_blob blob = {0};
-  memcpy(&blob, buf, min(len, STATE_NEED));
+  memcpy(&blob, buf, mini(len, STATE_NEED));
   rng_entry *ent = find_entry(blob.engine);
   int need = STATE_NEED;
   if (blob.version != 1 || !ent || len < need) {
