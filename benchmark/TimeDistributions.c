@@ -256,6 +256,7 @@ int main(int argc, char **argv) {
     { CHI2,      "chi2(5)",        1, { 5, 0} },
     { T,         "t(10)",          1, {10, 0} },
     { F,         "F(5,10)",        2, { 5,10} },
+    { WEIBULL,   "weibull(2,3)",   2, { 2, 3} },
     { WEIBULL,   "weibull(3,4)",   2, { 3, 4} },
   };
   printf("engine:           %s\n", engine);
