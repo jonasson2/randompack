@@ -49,7 +49,8 @@
 %%
 %% Title
 %%
-\title{Algorithm XXX: Randompack, A Portable C Library for Reproducible Random Number Generation}
+\title{Randompack: Cross-Platform Reproducible Random Number
+Generation and Distribution Sampling in C}
 
 %%
 %% Author information - FILL IN YOUR DETAILS
@@ -216,7 +217,10 @@ given by \cite{bhattacharjee2022search} and
 
 \begin{table}
 \caption{Default random number generators in selected languages and
-  libraries. The generators are discussed briefly in the main text.}
+  libraries. The generators are discussed briefly in the main text.
+  ChaCha8 and ChaCha12 are exactly like ChaCha20 except that the core
+  loop takes fewer rounds. The Mersenne Twister is in all cases the
+  original 32-bit MT19937 version.}
 \label{tab:language-rngs}
 \centering
 \begin{minipage}{0.52\columnwidth}
@@ -260,52 +264,52 @@ engine most commonly used in the official documentation and examples.
 \end{minipage}
 \end{table}
 
-% Rest of introduction
-
-	% •	motivate the problem
-	% •	place the work historically
-	% •	state what Randompack provides
-	% •	explain what is new or distinctive
-	% •	outline the rest of the paper
-
-
-\section{Design and interface}
-%
-\subsection{Design goals}
-% =====================================================================
-Randompack is intended to fill a gap in the random-number-generation
-support available in programming languages and libraries by providing
-a C library with a selection of modern, high quality, and efficient
-pseudo-random number generators, together with a range of continuous
-and discrete distributions. The C libraries that come closest are the
-GNU scientific library (GSL), UNURAN \cite{hormann2000randomnumber},
-the NAG library, and Intel oneMKL. However none of these libraries are
-permissively licensed and only the first two are open source.
-Moreover, those two are somewhat dated and rely largely on older
-underlying RNG engines.
+Randompack is a C library providing a selection of modern,
+high-quality, and efficient pseudo-random number generators together
+with a range of continuous and discrete distributions. It is intended
+to fill a gap in the random-number-generation support available in
+programming languages and libraries. The C libraries that come closest
+are the GNU Scientific Library (GSL), UNURAN
+\cite{hormann2000randomnumber}, the NAG library, and Intel oneMKL.
+However, none of these libraries are permissively licensed, and only
+the first two are open source. Moreover, those two are somewhat dated
+and rely largely on older RNG engines.
 
 C is a particularly suitable implementation language because it can be
-interfaced easily from many other programming languages. As an added
-benefit, this makes it possible to obtain not only exact repeatability
-across computers, as for example in NumPy, but also exact repeatability
-across programming languages. The importance of repeatability as a basic
-requirement for high-quality random number generation has been stressed
-by L’Ecuyer \cite{lecuyer2015rng,lecuyer2017parallel}.
+interfaced readily from many other programming languages. This makes
+it possible to aim not only at exact repeatability across computers,
+as in some existing systems (e.g. NumPy), but also at exact
+repeatability across programming languages. The importance of
+repeatability as a basic requirement for high-quality random number
+generation has been stressed by L’Ecuyer
+\cite{lecuyer2015rng,lecuyer2017parallel}.
 
 Randompack is intended for scientific and statistical computing rather
-than cryptographic use. Its design emphasizes high-throughput
-generation of pseudo-random numbers for Monte Carlo simulation,
-bootstrap resampling, stochastic optimization, and related large-scale
-computational tasks in which both speed and statistical quality
-matter. A further design goal is modularity: It should be reasonably
-easy to add engines and distributions to allow using Randompack
-as a test bed for new ideas.
+than cryptographic use. It emphasizes high-throughput generation for
+Monte Carlo simulation, bootstrap resampling, stochastic optimization,
+and related large-scale computational tasks in which both speed and
+statistical quality matter. The library further aims to provide a
+small stable C interface, portable implementation, thread-safety, few
+external dependencies, clear separation between engine and
+distribution layers, support for independent substreams and state
+serialization, and reproducibility across platforms. It is also meant
+to be modular enough to serve as a test bed for adding new engines and
+distributions.
 
-Further design goals include a small, stable C interface, portable
-implementation, thread-safety, few external dependencies, clear
-separation between engine and distribution layers, and as indicated
-above, support for independent substreams, and bit-level
-reproducibility across platforms.
+The rest of this article is organized as follows. Section 2 discusses
+the primary components of Randompack: The interface, the generators,
+and the distributions, and Section 3 provides details of the
+algorithms used to sample the supported probability distributions.
+Section 4 describes implementation details, including how modern CPU
+features are used to accelerate the computations and how
+reproducibility across platforms is achieved, Section 5 describes
+testing and timing, and the article concludes with a short Discussion.
+
+\section{Library interface and functionality}
+% ===========================================
+This section describes the main components of Randompack: the user
+interface, the implemented engines, the methods for state
+initialization and stream control, and the supported distributions.
 
 \subsection{User interface}
 % =====================================================================
@@ -336,7 +340,7 @@ int main(void) {
 }
 \end{lstlisting}
 
-A specific engine can be selected by name, e.g.
+A specific engine can be selected by name (engine identifier) e.g.
 \texttt{randompack\_create(\"ranlbux++\")}. The RNG created by the
 constructor is automatically randomized but it can also be manually
 seeded after creation, for example with \texttt{randompack\_seed(42,
@@ -363,37 +367,39 @@ for the engines are that they should
 \begin{table}
 \caption{Random number generators (engines) implemented in Randompack.
 Three engines have SIMD-accelerated versions that are not listed,
-xoshiro256++, xoshiro256**, and sfc64, with short names
+xoshiro256++, xoshiro256**, and sfc64, with identifiers
 \texttt{x256++simd}, \texttt{x256**simd}, and \texttt{sfc64simd}, the
-first of which has been selected as Randompack's default engine.}
+first of which has been selected as Randompack's default engine. State
+words gives the size of the RNG state in 64-bit words.}
 %
+\newcommand{\tsup}[1]{\textsuperscript{#1}}
 \label{tab:engines}
 \begin{tabular}{llcclcc}
 \toprule
-engine & short name & state words & period\textsuperscript{a} & authors & year & references \\
+Engine & Identifier & State words & Period\tsup{a} & Authors & Year & References \\
 \midrule
-xoshiro256++   & x256++   & 4 & $2^{256}-1$        & Vigna and Blackman  & 2019 & \scrambledandweb\\
-xoshiro256**   & x256**   & 4 & $2^{256}-1$        & Vigna and Blackman  & 2018 & \scrambledandweb\\
-xorshift128+   & x128+    & 2 & $2^{128}-1$        & Vigna               & 2014 & \cite{vigna2016experimental}\\
-xoroshiro128++ & xoro++   & 2 & $2^{128}-1$        & Vigna and Blackman  & 2019 & \scrambledandweb\\
-PCG64 DXSM     & pcg64    & 4 & $2^{128}$          & O'Neil              & 2019 & \oneillpcgandpost\\
-squares64      & squares  & 2 & $2^{64}$           & Widynski            & 2021 & \cite{widynski2020squares}\\
-Philox-4x64    & philox   & 6 & $2^{256}$          & Salmon and Moraes   & 2011 & \cite{salmon2011parallel}\\
-sfc64          & sfc64    & 4 & $\approx 2^{255}$  & Chris Doty-Humphrey & 2010 & \cite{dotyhumphrey2010pract}\\
-cwg128         & cwg128   & 8 & $2^{128}$          & Działa              & 2022 & \cite{dziala2023collatz}\\
-ranlux++       & ranlux++ & 9 & $\approx 2^{570}$  & Sibidanov           & 2017 & \cite{sibidanov2017ranluxpp}\\
-ChaCha20       & chacha20 & 6 & $2^{35}$           & Bernstein           & 2008 & \cite{bernstein2008chacha}\\
+xoshiro256++   & x256++   & 4 & $2^{256}-1$          & Vigna and Blackman  & 2019 & \scrambledandweb\\
+xoshiro256**   & x256**   & 4 & $2^{256}-1$          & Vigna and Blackman  & 2018 & \scrambledandweb\\
+xorshift128+   & x128+    & 2 & $2^{128}-1$          & Vigna               & 2014 & \cite{vigna2016experimental}\\
+xoroshiro128++ & xoro++   & 2 & $2^{128}-1$          & Vigna and Blackman  & 2019 & \scrambledandweb\\
+PCG64 DXSM     & pcg64    & 4 & $2^{128}$            & O'Neil              & 2019 & \oneillpcgandpost\\
+squares64      & squares  & 2 & $2^{64}$             & Widynski            & 2021 & \cite{widynski2020squares}\\
+Philox-4x64    & philox   & 6 & $2^{256}$            & Salmon and Moraes   & 2011 & \cite{salmon2011parallel}\\
+sfc64          & sfc64    & 4 & $\geq 2^{64}$        & Chris Doty-Humphrey & 2010 & \cite{dotyhumphrey2010pract}\\
+cwg128         & cwg128   & 8 & $2^{128}$            & Działa              & 2022 & \cite{dziala2023collatz}\\
+ranlux++       & ranlux++ & 9 & $\approx 2^{570}$    & Sibidanov           & 2017 & \cite{sibidanov2017ranluxpp}\\
+ChaCha20       & chacha20 & 6 & $2^{35}$             & Bernstein           & 2008 & \cite{bernstein2008chacha}\\
 \bottomrule
 \end{tabular}
 \par\medskip
 \centering
 \begin{minipage}{\dimexpr\linewidth-2cm\relax}
-\footnotesize
-\raggedright
-\textsuperscript{a}For PCG64 DXSM and cwg128 the listed period is for
-each increment (out of $2^{127}$), for Philox and squares64 it is for
-each key (out of $2^{128}$ and $2^{64}$, respectively, and for
-ChaCha20 it is for each nonce, (out of $2^{96}$).
+  \footnotesize \raggedright \tsup{a}For PCG64 DXSM and cwg128 the
+  listed period is for each increment (out of $2^{127}$), for Philox
+  and squares64 it is for each key (out of $2^{128}$ and $2^{64}$,
+  respectively, and for ChaCha20 it is for each nonce, (out of
+  $2^{96}$). For sfc64 the average period is ``a substantial fraction
+  of the state space'' \cite{dotyhumphrey2010pract}.
 \end{minipage}
 \end{table}
 %
@@ -488,7 +494,7 @@ with \texttt{randompack\_pcg64\_advance} (or with
   \label{tab:stream-select}
   \begin{tabular}{llll}
     \toprule
-    engine   & state layout (64-bit words in parentheses)        & stream selector  & stream setter      \\
+    Engine   & State layout (64-bit words in parentheses)        & Stream selector  & Stream setter      \\
     \midrule
     pcg64    & state (2) + increment (2)                         & increment        & \texttt{pcg64\_set\_inc}      \\
     squares  & counter (1) + key (1)                             & key              & \texttt{squares\_set\_key}    \\
@@ -567,7 +573,7 @@ with \texttt{randompack\_set\_state}.
   \texttt{uint32}     & $\mathrm{Unif}\{0,\ldots,b-1\}$   & bounded/unbounded unsigned 32-bit integers \\
   \texttt{uint64}     & $\mathrm{Unif}\{0,\ldots,b-1\}$   & bounded/unbounded unsigned 64-bit integers \\
   \texttt{perm}       & permutation of $\{0,\ldots,n-1\}$ & Fisher--Yates shuffle                      \\
-  \texttt{sample}     & $k$-subset of $\{0,\ldots,n-1\}$  & Floyd / reservoir sampling                 \\
+  \texttt{sample}     & $k$-subset of $\{0,\ldots,n-1\}$  & Floyd$/$reservoir sampling                 \\
   \texttt{raw}        & bitstream                         & raw unbounded bytes into \texttt{void} buffer \\
   \bottomrule
 \end{tabular}
@@ -609,10 +615,6 @@ More details of the individual distributions are given in the next
 section, which also discusses the underlying algorithms.
 
 \section{Algorithms for distributions}
-This section discusses briefly how the sampling of different
-distributions is implemented in Randompack.
-
-The first subsection discusses continuous distributions,
 
 \subsection{Continuous distributions}
 % =====================================================================
@@ -1038,7 +1040,9 @@ were no greater than expected by chance.
 \begin{table}[t]
 \centering
 \caption{Engine throughput timings in nanoseconds per 64 output bits.
-  Lower is better.}
+  The table shows averages over 10 runs of 1-second timings on four
+  computers (see Table \ref{table:platforms}), with the benchmark
+  programs compiled using clang.}
 \label{tab:bench-engines}
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{
@@ -1049,7 +1053,7 @@ were no greater than expected by chance.
   S[table-format=1.2]
 }
 \toprule
-Engine & Short name & {Mac-M4}
+Engine & Identifier & {Mac-M4}
 & {Spark} & {Xeon}
 & {Core-i5} \\
 \midrule
@@ -1073,13 +1077,17 @@ ChaCha20                       & \texttt{chacha20}   & 7.39 & 8.20 & 13.10 & 9.7
 
 \begin{table}[t]
   \centering
-  \caption{Timing for selected continuous distributions in nanoseconds
-    per draw, with the Python--C++ columns rounded to one decimal
-    place. Randompack C/C++/Fortran versions were benchmarked on four
-    systems; interface and comparison libraries were benchmarked on
-    Core-i5. Lower is better.}
+  \caption{Benchmark timings for continuous distributions. The table
+    shows average nanoseconds per value over 10 runs of 0.5-second
+    timings, obtained by repeatedly filling a buffer with 4096 values.
+    See Table \ref{table:platforms} for details of the computers. The
+    first four columns show timings for the C program but benchmarking
+    in C++, Julia, and Fortran gave essentially identical results.
+    These results are based on clang compilation; gcc was also tested
+    and was 1\%–16\% slower across the platforms, while on the
+    workstation icx was 6\% slower than clang. }
   \label{tab:bench-distributions}
-  \setlength{\tabcolsep}{3pt}
+  \setlength{\tabcolsep}{2pt}
   \setlength{\cmidrulewidth}{\lightrulewidth}
   \begin{tabular}{
       l
@@ -1092,24 +1100,26 @@ ChaCha20                       & \texttt{chacha20}   & 7.39 & 8.20 & 13.10 & 9.7
       c@{\quad}
       *{2}{S[table-format=2.1]}
       c@{\quad}
-      *{3}{S[table-format=2.1]}@{\quad}
+      *{3}{S[table-format=2.1]}
+      c@{\quad}
       S[table-format=2.1]
+      S[table-format=1.1]
     }
     \toprule
-    & \multicolumn{10}{c}{R a n d o m p a c k} & \multicolumn{5}{c}{} \\
+    & \multicolumn{10}{c}{R a n d o m p a c k} & \multicolumn{6}{c}{} \\
     \cmidrule(r){2-11}
     & \multicolumn{4}{c}{C, C++, Julia, Fortran} && \multicolumn{2}{c}{Python} && \multicolumn{2}{c}{R}
-    && \multicolumn{4}{c}{Other libraries (on Core-i5)} \\
+    && \multicolumn{5}{c}{Other libraries (on Core-i5)} \\
     \cmidrule(r){2-5}
     \cmidrule(r){7-8}
     \cmidrule(r){10-11}
-    \cmidrule{13-16}
+    \cmidrule{13-17}
     Distribution & {Spark} & {Xeon} & {Mac} & {Core-i5}
     && {Mac} & {Core-i5} && {Mac} & {Core-i5}
-    && {NumPy} & {Base-R} & {Julia} & {C++} \\
+    && {NumPy} & {Base-R} & {Julia} & {C++} & {MKL} \\
     \midrule
-    %%              –––––––––––––––––R a n d o m p a c k ––––––––––––––––––––    –––– Other libraries ––––
-    %% .out files:   spark & xeon  & Mac  & i5    &&pymac& pyi5 &&R-mac& R-i5 && NumPy&   R  & Julia& cpp
+    %%              –––––––––––––––––R a n d o m p a c k ––––––––––––––––––––    ––––––– Other libraries –––––––
+    %% .out files:   spark & xeon  & Mac  & i5    &&pymac& pyi5 &&R-mac& R-i5 && NumPy&   R  & Julia&  cpp & MKL
     $U(0,1)$        & 0.44 &  0.29 & 0.34 &  0.42 && 0.4 &  0.5 && 2.1 &  1.8 &&  1.8 &  6.7 &  0.7 &  6.3 & 0.5 \\
     $U(2,5)$        & 0.47 &  0.30 & 0.34 &  0.41 && 0.5 &  0.5 && 2.1 &  1.7 &&  2.7 &  6.7 &  0.8 &  6.4 & 0.5 \\
     Standard normal & 1.18 &  1.84 & 0.90 &  1.43 && 1.0 &  1.6 && 2.8 &  2.7 &&  8.9 & 21.4 &  1.4 & 14.3 & 2.3 \\
@@ -1124,27 +1134,21 @@ ChaCha20                       & \texttt{chacha20}   & 7.39 & 8.20 & 13.10 & 9.7
     Chi-square$(5)$ & 3.84 &  9.08 & 3.54 &  5.29 && 3.5 &  5.5 && 5.3 &  7.0 && 15.7 & 53.4 &  8.7 & 27.2 & 6.0 \\
     $t(10)$         & 5.84 & 15.46 & 4.78 &  9.62 && 4.8 &  9.7 && 6.4 & 11.1 && 25.3 & 60.2 & 15.4 & \NA  & \NA \\
     $F(5,10)$       & 7.92 & 19.24 & 7.21 & 10.97 && 7.0 & 11.1 && 9.0 & 13.4 && 32.5 & 98.2 & 25.7 & \NA  & \NA \\
-    Weibull$(3,4)$  & 3.91 &  4.33 & 3.04 &  4.15 && 3.1 &  4.3 && 9.9 &  5.7 && 14.1 & 24.2 & 31.4 & 23.1 & 2.9 \\
+    Weibull$(3,4)$  & 4.91 &  4.33 & 3.04 &  4.15 && 3.1 &  4.3 && 9.9 &  5.7 && 14.1 & 24.2 & 31.4 & 23.1 & 2.9 \\
     \bottomrule
   \end{tabular}
 \end{table}
-& 0.5 
-& 0.5 
-& 2.3 
-& 2.3 
-& 1.6 
-& 3.0 
-& \NA 
-& \NA 
-& \NA 
-& 6.1 
-& 8.9 
-& 6.0 
-& \NA 
-& \NA 
-& 2.3 
+
 \begin{table}
-  \caption{Integer timing results in ns/value.}
+  \caption{Benchmark timings for discrete distributions. The table
+    shows average nanoseconds per value over 10 runs of 0.5 second
+    timings. The bounded-integer results were obtained by repeatedly
+    filling a buffer with 4096 values, while the other rows were
+    obtained by repeatedly creating a permutation or drawing a sample
+    without replacement of the indicated size. Results are for the
+    Linux workstation (Table \ref{table:platforms}), with clang used
+    for the compilation of Randompack. C++, Julia, and Fortran times
+    were essentially identical to the C times.}
   \label{tab:bench-integers}
   \setlength{\tabcolsep}{3pt}
   \centering
@@ -1159,27 +1163,28 @@ ChaCha20                       & \texttt{chacha20}   & 7.39 & 8.20 & 13.10 & 9.7
       S[table-format=3.1]
       S[table-format=3.1]
       S[table-format=2.1]
+      S[table-format=1.1]
     }
     \toprule
-    && \multicolumn{3}{c}{Randompack} && \multicolumn{4}{c}{Other libraries} \\
-    \cmidrule(lr){3-5} \cmidrule(){7-10}
-    {Distribution} & {Parameters} & {C} & {Python} & {R} && {NumPy} & {Base-R} & {Julia} & {C++} \\
+    && \multicolumn{3}{c}{Randompack} && \multicolumn{5}{c}{Other libraries} \\
+    \cmidrule(lr){3-5} \cmidrule(){7-11}
+    {Distribution} & {Parameters} & {C} & {Python} & {R} && {NumPy} & {Base-R} & {Julia} & {C++} & {MKL} \\
     \midrule
-    bounded integer & $1,10$                  & 0.7 &  0.8 &   1.9 &&   3.1 &  28.4 &   2.2 &  2.3 \\
-    bounded integer & $1,10^5$                & 0.7 &  0.8 &   1.6 &&   3.0 &  27.4 &   2.2 &  2.2 \\
-    bounded integer & $1,2\!\cdot\!\!10^9$    & 1.3 &  1.4 &   2.3 &&   7.7 &  20.1 &   2.2 &  2.2 \\
-    bounded integer & $1,6\!\cdot\!\!10^{18}$ & 1.1 &  1.3 &   \NA &&   6.4 &   \NA &   4.8 &  5.9 \\
-    permutation     & $100$                   & 3.8 & 11.5 &  29.3 &&  17.9 &  59.7 &   3.9 &  1.6 \\
-    permutation     & $100000$                & 3.6 &  3.8 &   4.3 &&   8.3 &  30.2 &   4.0 &  1.7 \\
-    sample          & $20,1000$               & 9.7 & 51.4 & 139.6 && 203.7 & 205.9 & 201.9 & 81.9 \\
-    sample          & $500,1000$              & 9.9 & 16.1 &  16.1 &&  19.5 &  30.9 &   8.6 &  3.2 \\
-    sample          & $980,1000$              & 3.5 &  4.4 &   6.7 &&  13.7 &  27.0 &   4.5 &  1.7 \\
+    bounded-integer & $1,10$                  & 0.7 &  0.8 &   1.9 &&   3.1 &  28.4 &   2.2 &  2.3 & 0.6 \\
+    bounded-integer & $1,10^5$                & 0.7 &  0.8 &   1.6 &&   3.0 &  27.4 &   2.2 &  2.2 & 0.6 \\
+    bounded-integer & $1,2\!\cdot\!\!10^9$    & 1.3 &  1.4 &   2.3 &&   7.7 &  20.1 &   2.2 &  2.2 & 0.6 \\
+    bounded-integer & $1,6\!\cdot\!\!10^{18}$ & 1.1 &  1.3 &   \NA &&   6.4 &   \NA &   4.8 &  5.9 & \NA \\
+    permutation     & $100$                   & 3.8 & 11.5 &  29.3 &&  17.9 &  59.7 &   3.9 &  1.6 & \NA \\
+    permutation     & $100000$                & 3.6 &  3.8 &   4.3 &&   8.3 &  30.2 &   4.0 &  1.7 & \NA \\
+    sample          & $20,1000$               & 9.7 & 51.4 & 139.6 && 203.7 & 205.9 & 201.9 & 81.9 & \NA \\
+    sample          & $500,1000$              & 9.9 & 16.1 &  16.1 &&  19.5 &  30.9 &   8.6 &  3.2 & \NA \\
+    sample          & $980,1000$              & 3.5 &  4.4 &   6.7 &&  13.7 &  27.0 &   4.5 &  1.7 & \NA \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-\section{Performance}
-% ===================
+\subsection{Performance}
+% ======================
 Several benchmarking programs accompany Randompack, as detailed in the
 readme file. These benchmark both continuous and discrete sampling
 using Randompack from C, as well as its interfaces to Fortran, Python,
@@ -1188,22 +1193,21 @@ number generation libraries including the built-in generators of
 Python, R, and Julia.
 
 The performance of the implemented engines on the platforms in Table
-\ref{table:platforms} is reported in Table \ref{tab:bench-engines},
-and Tables \ref{tab:bench-distributions} and \ref{tab:bench-integers}
+\ref{table:platforms} is reported in Table \ref{tab:bench-engines}.
+Tables \ref{tab:bench-distributions} and \ref{tab:bench-integers}
 report benchmarking of the different continuous and integer
-distributions on selected platforms, both for Randompack. Tables
-\ref{tab:bench-distributions} and \ref{tab:bench-integers} also
-include comparison with some other libraries on the Linux workstation.
-We note that Randompack is several times faster than these libraries:
-For $U(0,1)$ it is 3, 3.7, 1.7, and 15 times faster than Python, R,
-Julia, and C++, respectively, for $N(2,3)$ the factors are 6, 8, 1,
-and 10, and for integers in $\{1,2,\ldots,10\}$ they are approximately
-4, 14, 3, and 3. Except for C++, this comparison applies to the
-respective language interfaces of Randompack (in order to compare
-apples to apples).
+distributions on selected platforms. These two tables also include
+comparison with some other libraries on the Linux workstation. We note
+that Randompack is often several times faster than these libraries:
+For $U(0,1)$ it is 3, 3.7, 1.7, 15, and 1.3 times faster than Python,
+R, Julia, C++, and MKL, respectively, for $N(2,3)$ the factors are
+approximately 6, 8, 1, 10, and 2, and for integers in
+$\{1,2,\ldots,10\}$ they are ca. 4, 14, 3, 3, and 1. For Python and R
+this comparison applies to the respective language interfaces of
+Randompack (in order to compare apples to apples).
 
 Selecting (a,b,c), selecting increment in PCG, Jumping or selecting
-key for Philox is better.
+key for Philox is better. Language interfaces.
 
 Errors in the Ranlux++ programs
 

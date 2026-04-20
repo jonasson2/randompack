@@ -227,11 +227,23 @@ options; details are available via the `-h` option.
 
 - `TimeEngines` measures the throughput of each random number generator in
   ns/draw and MB/s by repeatedly drawing blocks of 4096 `uint64` values.
-- `TimeIntegers` reports time per generated value (in ns) for bulk draws of
-  selected integer distributions.
 - `TimeDistributions` reports time per generated value (in ns) for each
   continuous distribution in double and float, using the default engine
-  (`xoshiro256++`).
+  (`xoshiro256++`) and bulk draws of 4096-word blocks.
+- `TimeIntegers` reports time per generated value (in ns) for bulk draws of
+  selected integer distributions.
+
+There are also timing programs for other random-generation libraries:
+
+- BENCHMARK                               LIBRARY
+- TimeDistCpp.cpp                         C++ standard library
+- TimeDistMKL.c                           oneMKL VSL library
+- python/examples/TimeDist.py             NumPy continuous distributions
+- python/examples/TimeIntegers.py         NumPy discrete distributions
+- r-package/inst/examples/TimeDist.R      R's built-in RNGs
+- r-package/inst/examples/                R's dqrng package
+- Randompack.jl/examples/TimeDist.jl      Julia Random module
+- Randompack.jl/examples/TimeIntegers.jl  Julia Random discrete sampling
 
 ## External statistical validation
 

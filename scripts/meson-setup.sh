@@ -8,6 +8,7 @@ print_help() {
   cat 1>&2 <<EOF
 Usage: scripts/meson-setup.sh <builddir> [meson args...]
        CC=<C-compiler> scripts/meson-setup.sh <builddir> [meson args...]
+       cc=<C-compiler> scripts/meson-setup.sh <builddir> [meson args...]
 
 Set up a Meson build directory for randompack.
 
@@ -17,7 +18,8 @@ Notes:
   The library directory is install/lib/.
   If <builddir> already exists, it is removed first.
   Additional Meson arguments are passed through unchanged.
-  If CC is unset, clang is preferred when available, otherwise cc is used.
+  If CC and cc are unset, clang is preferred when available, otherwise cc is
+  used. If both are set, CC takes precedence.
 EOF
 }
 
@@ -72,6 +74,11 @@ case "$buildtype" in
     exit 1
     ;;
 esac
+
+if [ -n "${cc:-}" ] && [ -z "${CC:-}" ]; then
+  CC="$cc"
+  export CC
+fi
 
 if [ -z "${CC:-}" ]; then
   if command -v clang >/dev/null 2>&1; then

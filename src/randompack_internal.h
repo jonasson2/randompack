@@ -31,7 +31,7 @@ typedef enum {
   CHACHA20,
   CWG128,
   SFCSIMD,
-  FAST,
+  X256PPSIMD,
 } rng_engine;
 
 typedef struct {
@@ -75,7 +75,7 @@ struct randompack_rng {
 
 #if defined(BUILD_AVX512)
 bool cpu_has_avx512(void);
-void fill_fast_avx512(uint64_t *buf, size_t len, randompack_state *state);
+void fill_x256ppsimd_avx512(uint64_t *buf, size_t len, randompack_state *state);
 void fill_x256sssimd_avx512(uint64_t *buf, size_t len, randompack_state *state);
 void fill_sfc64simd_avx512(uint64_t *buf, size_t len, randompack_state *state);
 void rand_dble_avx512(double x[], size_t len, randompack_rng *rng);
@@ -92,7 +92,7 @@ void shift_scale_float_avx512(float x[], size_t len, float shift, float scale);
 
 #if defined(BUILD_AVX2)
 bool cpu_has_avx2(void);
-void fill_fast_avx2(uint64_t *buf, size_t len, randompack_state *state);
+void fill_x256ppsimd_avx2(uint64_t *buf, size_t len, randompack_state *state);
 void fill_x256sssimd_avx2(uint64_t *buf, size_t len, randompack_state *state);
 void fill_sfc64simd_avx2(uint64_t *buf, size_t len, randompack_state *state);
 void rand_dble_avx2(double x[], size_t len, randompack_rng *rng);

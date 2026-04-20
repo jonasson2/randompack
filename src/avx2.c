@@ -8,7 +8,7 @@ bool cpu_has_avx2(void) {
   return false;
 }
 
-void fill_fast_avx2(uint64_t *buf, size_t len, randompack_state *state) {
+void fill_x256ppsimd_avx2(uint64_t *buf, size_t len, randompack_state *state) {
   (void)buf;
   (void)len;
   (void)state;
@@ -157,7 +157,8 @@ HIDDEN bool cpu_has_avx2(void) {
   (outv) = r_; \
 } while (0)
 
-HIDDEN void fill_fast_avx2(uint64_t *buf, size_t len, randompack_state *state) {
+HIDDEN void fill_x256ppsimd_avx2(uint64_t *buf, size_t len,
+  randompack_state *state) {
   uint64_t *out = buf;
   xo256 *st = &state->xo;
   VEC_T s00 = VEC_LOAD(&st->s0[0]);

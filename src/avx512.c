@@ -8,7 +8,8 @@ bool cpu_has_avx512(void) {
   return false;
 }
 
-void fill_fast_avx512(uint64_t *buf, size_t len, randompack_state *state) {
+void fill_x256ppsimd_avx512(uint64_t *buf, size_t len,
+  randompack_state *state) {
   (void)buf;
   (void)len;
   (void)state;
@@ -98,7 +99,7 @@ HIDDEN bool cpu_has_avx512(void) {
 #endif
 }
 
-HIDDEN void fill_fast_avx512(uint64_t *buf, size_t len,
+HIDDEN void fill_x256ppsimd_avx512(uint64_t *buf, size_t len,
   randompack_state *state) {
   uint64_t *out = buf;
   xo256 *st = &state->xo;

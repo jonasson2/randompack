@@ -13,9 +13,12 @@ typedef struct randompack_rng randompack_rng;
 
 //================================== CREATION AND SETUP ==================================
 
-randompack_rng *randompack_create( // Create randomized RNG of given engine type, error→0
-  const char *engine    // in      Type ("x256++simd" [default], "pcg64",... 0→default)
-);
+randompack_rng *randompack_create( // Create randomized RNG with given engine, error → 0
+  const char *engine    // in      Engine identifier, one of:
+  );                    //           x256++simd   x256++   xoro++    philox   ranlux++
+//								//				 x256**simd	  x256**	  pcg64     sfc64 	chacha20
+//								//				 sfc64simd 	  x128+ 	  squares   cwg128
+//                      //         randompack_create(0) gives he default, x256++simd.
 
 bool randompack_seed( // Seed RNG deterministically, false on error
   int seed,             // in      Any integer seed; expanded with a hash to fill state
