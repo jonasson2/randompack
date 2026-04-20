@@ -70,7 +70,7 @@ awk -v dir="$script_dir" '
     if (key == "chi2(5)") return "Chi-square$(5)$"
     if (key == "t(10)") return "$t(10)$"
     if (key == "F(5,10)") return "$F(5,10)$"
-    if (key == "weibull(2,3)") return "Weibull$(2,3)$"
+    if (key == "weibull(3,4)") return "Weibull$(3,4)$"
     return key
   }
   function keep_key(key) {
@@ -88,7 +88,7 @@ awk -v dir="$script_dir" '
            key == "chi2(5)" ||
            key == "t(10)" ||
            key == "F(5,10)" ||
-           key == "weibull(2,3)"
+           key == "weibull(3,4)"
   }
   function add_key(key,    w) {
     if (!keep_key(key)) return
@@ -160,7 +160,7 @@ awk -v dir="$script_dir" '
     add_key("chi2(5)")
     add_key("t(10)")
     add_key("F(5,10)")
-    add_key("weibull(2,3)")
+    add_key("weibull(3,4)")
 
     for (i = 1; i <= nfiles; i++) {
       colw[i] = 3
