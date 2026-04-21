@@ -120,7 +120,7 @@ TABLE OF CONTENTS
     julia test/runtests.jl             # run the Julia tests
 
 ## BENCHMARKING
-    cd <projectroot>/release/examples  # enter build folder
+    cd <project-root>/release/examples # enter build folder
     TimeDistributions                  # benchmark distributions with C randompack
     TimeDistFortran                    # = distributions with Fortran randompack
     TimeEngines                        # = engines with C bitstream samples
@@ -144,7 +144,7 @@ TABLE OF CONTENTS
     wget http://simul.iro.umontreal.ca/testu01/TestU01.zip  # Download official TestU01
     unzip TestU01.zip                                       # = unzip it
     cd TestU01-1.2.3                                        # = and install it 
-    configure --prefix=<prefix>                             # E.g. $HOME/lib
+    ./configure --prefix=<prefix>                           # E.g. $HOME/lib
     make -j                                                 #
     make install                                            #
     meson setup -C release -Dbuildtype=release \            #
@@ -166,19 +166,19 @@ TABLE OF CONTENTS
     cd <project-root>/release/examples
 
     RawStream | Rng_test stdin64           # default engine, runs "forever"
-    RawStream -e x128+ | RNG_test stdin64  # x128+ fails fast
+    RawStream -e x128+ | Rng_test stdin64  # x128+ fails fast
     RawStream -h                           # help
     Rng_test -h                            # help
 
 ## JULIA RELEASE
     Yggdrasil (Julia):
-    scripts/make-julia-tarball.sh         # create .tar.gz file with C library in archives/
-    cd archives                           # clone of github.com/jonasson2/randompack-src
-    – update packageng/build_tarballs.jl  # change version number (2x) and sha (from script)
-    git commit -am "Release x.y.z"        #
-    git push                              # 
-    git tag vx.y.z                        # (can also use local tarball from build_tarball.jl
-    git push origin vx.y.z                # push new tag
+    scripts/make-julia-tarball.sh       # create .tar.gz file with C library in archives/
+    cd archives                         # clone of github.com/jonasson2/randompack-src
+    – update package/build_tarballs.jl  # change version number (2x) and sha (from script)
+    git commit -am "Release x.y.z"      #
+    git push                            # 
+    git tag vx.y.z                      # (can also use local tarball from build_tarball.jl
+    git push origin vx.y.z              # push new tag
     julia build_tarballs.jl --debug                  # 
       --verbose --deploy=local                       # Check all platforms
       x86_64-linux-gnu-libgfortran5-cxx11            # locally
@@ -233,7 +233,7 @@ TABLE OF CONTENTS
     gh workflow list
     gh workflow run xxx.yml  # trigger wheel building
     gh run watch
-    gh run list --json databaseId --jq '.[].databaseId'  # just the id-s, use in foreach...
+    gh run list --json databaseId --jq '.[].databaseId'  # just the ids, use in foreach...
 
 ## CRAN SUBMISSION
     scripts/syncR.sh
@@ -246,6 +246,6 @@ TABLE OF CONTENTS
 
     From project root:
     R CMD build r-package
-    R CMD check randompack_*.gz
+    R CMD check randompack_*.tar.gz
     R CMD check --as-cran randompack_*.gz  # complete checking
                                            # edit cran-comments.md with results
