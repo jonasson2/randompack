@@ -1,0 +1,7 @@
+﻿
+Rng.cwg128\_set\_weyl
+=====================
+
+.. currentmodule:: randompack
+
+.. automethod:: randompack.Rng.cwg128_set_weyl

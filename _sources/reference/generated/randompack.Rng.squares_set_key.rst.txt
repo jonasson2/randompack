@@ -1,0 +1,7 @@
+﻿
+Rng.squares\_set\_key
+=====================
+
+.. currentmodule:: randompack
+
+.. automethod:: randompack.Rng.squares_set_key

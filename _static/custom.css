@@ -1,0 +1,28 @@
+.highlight {
+  background: #f6ebcb;   /* pale gold */
+}
+
+/* Narrow the whole main content area (keeps margins from ballooning) */
+/* Narrow the overall page width (sidebar + content) */
+
+article[role="main"] {
+  max-width: 650px;
+}
+
+/* Increase font size in code blocks */
+div.highlight pre {
+  font-size: 0.9rem;
+}
+
+/* Also affect inline code */
+code.literal {
+  font-size: 0.9rem;
+}
+
+/* .page { */
+/*   width: 600px !important; */
+/*   max-width: 600px !important; */
+/*   margin: 0 !important;      /\* <-- not centered *\/ */
+/*   padding-left: 1rem !important; */
+/*   padding-right: 1rem !important; */
+/* } */

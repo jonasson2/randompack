@@ -1,0 +1,7 @@
+﻿
+Rng.pcg64\_set\_inc
+===================
+
+.. currentmodule:: randompack
+
+.. automethod:: randompack.Rng.pcg64_set_inc

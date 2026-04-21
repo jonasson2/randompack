@@ -1,0 +1,7 @@
+﻿
+Rng.chacha\_set\_nonce
+======================
+
+.. currentmodule:: randompack
+
+.. automethod:: randompack.Rng.chacha_set_nonce

@@ -1,0 +1,7 @@
+﻿
+Rng.philox\_set\_key
+====================
+
+.. currentmodule:: randompack
+
+.. automethod:: randompack.Rng.philox_set_key
