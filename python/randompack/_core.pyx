@@ -42,7 +42,7 @@ from ._core cimport (
     randompack_skew_normalf, randompack_serialize,
     randompack_deserialize, randompack_philox_set_key,
     randompack_sfc64_set_abc, randompack_squares_set_key,
-    randompack_jump, randompack_pcg64_advance,
+    randompack_jump, randompack_advance,
     randompack_pcg64_set_inc, randompack_cwg128_set_weyl,
     randompack_chacha_set_nonce,
     randompack_set_state, )
@@ -150,11 +150,12 @@ cdef class Rng:
     >>> rng2.seed(123)
     >>> rng2.normal(3)
     >>> rng3 = randompack.Rng(engine="pcg64", bitexact=True)  # make samples bit-identical across platforms (x==y true)
+    >>> rng4 = randompack.Rng(full_mantissa=True)             # use 53-bit mantissas for doubles
     """
 
     cdef randompack_rng *ptr
     
-    def __cinit__(self, engine=None, bitexact=False):
+    def __cinit__(self, engine=None, bitexact=False, full_mantissa=False):
         self.ptr = NULL
         if engine is None:
             self.ptr = randompack_create(NULL)
@@ -171,6 +172,9 @@ cdef class Rng:
             raise ValueError((<bytes>msg).decode())
         if bitexact:
             if not randompack_bitexact(self.ptr, True):
+                _raise_last_error(self.ptr)
+        if full_mantissa:
+            if not randompack_full_mantissa(self.ptr, True):
                 _raise_last_error(self.ptr)
 
     def __dealloc__(self):
@@ -268,38 +272,6 @@ cdef class Rng:
         if not randompack_randomize(self.ptr):
             _raise_last_error(self.ptr)
 
-    def full_mantissa(self, enable=True):
-        """
-        Toggle full mantissa generation for Float64 and Float32 draws.
-
-        When enabled, Float64 draws use 53 bits of precision and Float32 draws use 24
-        bits; otherwise 52 and 23 bits are used. The factory default is disabled. Enabling
-        full mantissas slightly slows down the generator.
-
-        Parameters
-        ----------
-        enable : bool
-            True to enable full mantissas, False to disable.
-
-        Returns
-        -------
-        None
-
-        Examples
-        --------
-        >>> import randompack
-        >>> rng = randompack.Rng()
-        >>> rng.full_mantissa()       # turn full mantissa on
-        >>> rng.full_mantissa(False)  # turn it off again
-        """
-
-        cdef bint ok
-        if self.ptr == NULL:
-            raise RuntimeError("RNG pointer is NULL")
-        ok = randompack_full_mantissa(self.ptr, bool(enable))
-        if not ok:
-            _raise_last_error(self.ptr)
-
     def jump(self, p):
         """
         Jump an xor-family engine ahead by \\eqn{2^p} steps. The `x128+` and
@@ -324,14 +296,15 @@ cdef class Rng:
         if not ok:
             _raise_last_error(self.ptr)
 
-    def pcg64_advance(self, delta):
+    def advance(self, delta):
         """
         Advance a `pcg64` engine by an arbitrary 128-bit delta.
 
         Parameters
         ----------
-        delta : sequence of int
-            Two 64-bit words `[low, high]` in [0, 2^64-1].
+        delta : int or sequence of int
+            A 64-bit step count `s`, interpreted as `[s, 0]`, or two 64-bit
+            words `[low, high]`, all in [0, 2^64-1].
 
         Returns
         -------
@@ -344,15 +317,22 @@ cdef class Rng:
         cdef int i
         if self.ptr == NULL:
             raise RuntimeError("RNG pointer is NULL")
-        vals = list(delta)
-        if len(vals) != 2:
-            raise ValueError("delta must have length 2")
-        for i in range(2):
-            val = int(vals[i])
+        if isinstance(delta, (list, tuple, np.ndarray)):
+            vals = list(delta)
+            if len(vals) != 2:
+                raise ValueError("delta must have length 2")
+            for i in range(2):
+                val = int(vals[i])
+                if val < 0 or val > U64_MAX:
+                    raise ValueError("delta entries must be in [0, 2^64-1]")
+                c_delta[i] = <uint64_t>val
+        else:
+            val = int(delta)
             if val < 0 or val > U64_MAX:
-                raise ValueError("delta entries must be in [0, 2^64-1]")
-            c_delta[i] = <uint64_t>val
-        if not randompack_pcg64_advance(c_delta, self.ptr):
+                raise ValueError("delta must be in [0, 2^64-1]")
+            c_delta[0] = <uint64_t>val
+            c_delta[1] = 0
+        if not randompack_advance(c_delta, self.ptr):
             _raise_last_error(self.ptr)
 
     def duplicate(self):

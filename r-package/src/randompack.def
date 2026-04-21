@@ -8,7 +8,7 @@ EXPORTS
   randompack_engines
   randompack_last_error
   randompack_jump
-  randompack_pcg64_advance
+  randompack_advance
   randompack_pcg64_set_inc
   randompack_cwg128_set_weyl
   randompack_chacha_set_nonce

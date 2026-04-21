@@ -128,28 +128,6 @@ function randomize!(rng::RNG)
 end
 
 """
-    Randompack.full_mantissa!(rng::RNG, enable::Bool=true)
-
-Toggle full mantissa generation for Float64 and Float32 draws (53-bit vs 52-bit;
-24-bit vs 23-bit). The factory default is off. Note that using the full mantissa
-slows down the RNG.
-
-# Examples
-```julia
-Randompack.full_mantissa!(rng)         # turn full mantissa on
-Randompack.full_mantissa!(rng, false)  # turn it off again
-```
-
-"""
-function full_mantissa!(rng::RNG, enable::Bool=true)
-  rng.ptr == C_NULL && throw(ErrorException("RNG pointer is NULL"))
-  ok = ccall(_sym(:randompack_full_mantissa), Bool, (RNGPtr, Bool),
-             rng.ptr, enable)
-  _check_ok(ok, rng.ptr, "randompack_full_mantissa failed")
-  return nothing
-end
-
-"""
     Randompack.jump!(rng::RNG, p::Integer)
 
 Jump an xor-family engine ahead by 2^p steps. The `x128+` and `xoro128++`
@@ -164,26 +142,37 @@ function jump!(rng::RNG, p::Integer)
 end
 
 """
-    Randompack.pcg64_advance!(rng::RNG; delta)
+    Randompack.advance!(rng::RNG, delta)
 
 Advance a `pcg64` engine by an arbitrary 128-bit delta.
 
 Values are range-checked and converted to `UInt64` before calling the C
-library. `delta` must be a length-2 vector `[low, high]`.
+library. `delta` may be a scalar integer `s`, interpreted as `[s, 0]`, or a
+length-2 vector `[low, high]`.
 
 # Examples
 ```julia
-Randompack.pcg64_advance!(rng; delta=[1024, 0])
+Randompack.advance!(rng, 1024)
+Randompack.advance!(rng, [1024, 0])
 ```
 
 """
-function pcg64_advance!(rng::RNG; delta)
+function advance!(rng::RNG, delta::Integer)
+  rng.ptr == C_NULL && throw(ErrorException("RNG pointer is NULL"))
+  c_delta = UInt64[_u64_scalar_checked(delta), 0]
+  ok = ccall(_sym(:randompack_advance), Bool, (Ptr{UInt64}, RNGPtr),
+             c_delta, rng.ptr)
+  _check_ok(ok, rng.ptr, "randompack_advance failed")
+  return nothing
+end
+
+function advance!(rng::RNG, delta::AbstractVector{<:Integer})
   rng.ptr == C_NULL && throw(ErrorException("RNG pointer is NULL"))
   length(delta) == 2 || throw(ArgumentError("delta must have length 2"))
   c_delta = _u64_vec_from_ints(delta)
-  ok = ccall(_sym(:randompack_pcg64_advance), Bool,
+  ok = ccall(_sym(:randompack_advance), Bool,
              (Ptr{UInt64}, RNGPtr), c_delta, rng.ptr)
-  _check_ok(ok, rng.ptr, "randompack_pcg64_advance failed")
+  _check_ok(ok, rng.ptr, "randompack_advance failed")
   return nothing
 end
 

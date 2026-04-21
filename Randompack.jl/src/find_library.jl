@@ -23,12 +23,6 @@ function _dev_install_lib()::String
 end
 
 function _choose_libpath()::String
-  try
-    Base.require(@__MODULE__, :Randompack_jll)
-    jll = getfield(@__MODULE__, :Randompack_jll)
-    return getfield(jll, :librandompack_path)
-  catch
-  end
   p = get(ENV, "RANDOMPACK_LIB", "")
   if !isempty(p)
     return p
@@ -36,6 +30,12 @@ function _choose_libpath()::String
   devlib = _dev_install_lib()
   if isfile(devlib)
     return devlib
+  end
+  try
+    Base.require(@__MODULE__, :Randompack_jll)
+    jll = getfield(@__MODULE__, :Randompack_jll)
+    return getfield(jll, :librandompack_path)
+  catch
   end
   return "librandompack"
 end

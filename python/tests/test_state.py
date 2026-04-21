@@ -38,10 +38,9 @@ def test_duplicate():
     assert np.any(x != y)
 
 
-def test_full_mantissa_toggle():
-    rng = rp.Rng(pick_engine())
-    rng.full_mantissa(True)
-    rng.full_mantissa(False)
+def test_full_mantissa_create():
+    rng = rp.Rng(pick_engine(), full_mantissa=True)
+    rng.unif(10)
 
 
 def test_bitexact_create():
@@ -172,7 +171,7 @@ def test_jump():
         rng1.jump(254)
 
 
-def test_pcg64_advance():
+def test_advance():
     engs = rp.engines()
     if "pcg64" not in engs:
         return
@@ -186,10 +185,14 @@ def test_pcg64_advance():
     rng2 = rp.Rng("pcg64")
     rng1.set_state(state)
     rng2.set_state(state)
-    rng1.pcg64_advance([0, 1 << 16])
+    rng1.advance([0, 1 << 16])
     rng2.jump(80)
     assert rng1.unif() == rng2.unif()
+    rng1.set_state(state)
+    rng2.set_state(state)
+    rng1.advance(0)
+    assert rng1.unif() == rng2.unif()
     with pytest.raises(Exception):
-        rng1.pcg64_advance([1])
+        rng1.advance([1])
     with pytest.raises(Exception):
-        rp.Rng("squares").pcg64_advance([1, 0])
+        rp.Rng("squares").advance([1, 0])

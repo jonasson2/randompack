@@ -4,12 +4,14 @@
 \alias{randompack_rng}
 \title{Create and Use Random Number Generators}
 \usage{
-randompack_rng(engine = "x256++simd", bitexact = FALSE)
+randompack_rng(engine = "x256++simd", bitexact = FALSE, full_mantissa = FALSE)
 }
 \arguments{
 \item{engine}{RNG engine}
 
 \item{bitexact}{Logical; set TRUE to make samples bit-identical across platforms}
+
+\item{full_mantissa}{Logical; set TRUE to use full mantissas for floating draws}
 }
 \value{
 An RNG object with methods for drawing random variates.
@@ -117,18 +119,16 @@ Reinitialize the RNG deterministically from \code{seed} and an optional
 numeric vector \code{spawn_key}.
 }
 \item{\code{rng$randomize()}}{Randomize the RNG state from system entropy.}
-\item{\code{rng$full_mantissa(enable = TRUE)}}{
-Enable or disable 53-bit mantissas for double-precision draws.
-}
 \item{\code{rng$jump(p)}}{
 Jump an xor-family or \verb{ranlux++} engine ahead by \eqn{2^p} steps. The
 \verb{x128+} and \verb{xoro128++} engines support \verb{p = 32, 64, 96}, while
 \verb{x256++}, \verb{x256**}, \code{x256++simd}, and \verb{ranlux++} also support
 \code{p = 128} and \code{p = 192}.
 }
-\item{\code{rng$pcg64_advance(delta)}}{
+\item{\code{rng$advance(delta)}}{
 Advance the \code{pcg64} engine by an arbitrary 128-bit delta. \code{delta} may
-have length up to 4 and shorter vectors are zero-padded.
+be a scalar, interpreted as \code{[delta, 0]}, or have length up to 4; shorter
+vectors are zero-padded.
 }
 \item{\code{rng$duplicate()}}{Duplicate the RNG, preserving its state.}
 \item{\code{rng$serialize()}}{Serialize the current RNG state as a raw vector.}
@@ -187,7 +187,7 @@ x <- rng$raw(4)
 # Configuration and copying
 rng$seed(12345)                          # seed for reproducibility
 rng$randomize()                          # randomize from system entropy
-rng$full_mantissa(TRUE)                  # 53-bit mantissas for doubles
+rngm <- randompack_rng(full_mantissa = TRUE)  # 53-bit mantissas for doubles
 rng2 <- rng$duplicate()                  # duplicate with same state
 identical(rng$unif(3), rng2$unif(3))     # TRUE
 raw_state <- rng$serialize()             # save state

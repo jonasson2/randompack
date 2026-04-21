@@ -87,7 +87,11 @@ rngs <- randompack_rng("sfc64")
 rngw <- randompack_rng("cwg128")
 rngx <- randompack_rng("x256**")
 rngz <- randompack_rng("squares")
-rngq$advance()                 # advance pcg64 by 1024 steps
+rngq$advance()                                 # advance pcg64 by 1024 steps
+rngx$set_state(c(1, 2, 3, 4))                  # general state setter
+rngq$pcg64_advance(c(1024, 0))                 # advance pcg64 by 1024 steps
+rngx$set_state(c(1, 2, 3, 4))                  # general state setter
+rngq$advance(1024)                             # advance pcg64 by 1024 steps
 rngq$pcg64_set_inc(c(3, 0, 5, 0))              # change PCG stream increment
 rngw$cwg128_set_weyl(c(3, 0, 5, 0))            # change CWG128 Weyl increment
 rngs$set_state(c(1, 0, 2, 0, 3, 0, 17, 0))     # set full sfc64 state
@@ -104,6 +108,6 @@ rngy <- randompack_rng("x256**")               # engines must match
 state <- rngx$serialize()                      # copy engine state of rngx
 rngy$deserialize(state)                        # and put in rngy
 
-full_mantissa(rng, TRUE)              # enable full 53-bit mantissa (52 bit is default)
+rngm <- randompack_rng(full_mantissa = TRUE)  # enable full 53-bit mantissa (52 bit is default)
 rng <- randompack_rng(bitexact=TRUE)  # make agreement across platforms exact
 ```

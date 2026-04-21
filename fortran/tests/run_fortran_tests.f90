@@ -310,6 +310,15 @@ use, intrinsic :: ieee_arithmetic, only: ieee_is_finite, ieee_set_flag, ieee_und
 
   if (has_pcg) then
     call p1%create("pcg64")
+    call p2%create("pcg64")
+    call p1%set_state([1_c_int64_t, 0_c_int64_t, 3_c_int64_t, 0_c_int64_t])
+    call p2%set_state([1_c_int64_t, 0_c_int64_t, 3_c_int64_t, 0_c_int64_t])
+    call p1%advance(17_c_int64_t)
+    call p2%advance([17_c_int64_t, 0_c_int64_t])
+    call p1%unif(xe)
+    call p2%unif(xn)
+    call assert(all(approx_equal_d(xe, xn)), "advance scalar/vector")
+    call p2%free()
     call p1%set_state([1_c_int64_t, 0_c_int64_t, 1_c_int64_t, 0_c_int64_t])
     inc_pcg = [3_c_int64_t, 5_c_int64_t]
     call p1%pcg64_set_inc(inc_pcg)

@@ -107,7 +107,7 @@ rngy = randompack.Rng("x256**")  # engines must match
 state = rngx.serialize()         # copy engine state of rngx
 rngy.deserialize(state)          # and put in rngy
 
-rng.full_mantissa(True)          # enable full 53-bit mantissa (52-bit is default)
+rngm = randompack.Rng(full_mantissa=True)  # enable full 53-bit mantissa (52-bit is default)
 rng = randompack.Rng(bitexact=True)            # make agreement across platforms exact
 rng = randompack.Rng("philox", bitexact=True)  # exact agreement with specified engine
 ```

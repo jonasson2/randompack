@@ -87,7 +87,7 @@ Randompack.set_state!(rngx; state=[1,2,3,4])                  # general state se
 Randompack.set_state!(rngp; state=[1,2,3,4,0,0])              # set full Philox state
 Randompack.philox_set_key!(rngp; key=[4,6])                   # set Philox key
 Randompack.jump!(rngx, 128)                                   # jump state by 2^128 steps
-Randompack.pcg64_advance!(rngq; delta=[1024, 0])              # advance pcg64 by 1024 steps
+Randompack.advance!(rngq, 1024)                               # advance pcg64 by 1024 steps
 Randompack.pcg64_set_inc!(rngq; inc=[3, 5])                   # change PCG increment
 Randompack.cwg128_set_weyl!(rngw; weyl=[3,5])                # change CWG128 Weyl increment
 Randompack.set_state!(rngs; state=[1,2,3,17])                # set full sfc64 state
@@ -101,7 +101,7 @@ rngy = rng_create("x256**")                      # engines must match
 state = Randompack.serialize(rngx)               # copy engine state of rngx
 Randompack.deserialize!(rngy, state)             # and put in rngy
 
-Randompack.full_mantissa!(rng, true)      # enable 53-bit mantissa (52-bit is default)
+rngm = rng_create(full_mantissa=true)     # enable 53-bit mantissa (52-bit is default)
 rng = rng_create(bitexact=true)           # make agreement across platforms exact
 rng = rng_create("philox"; bitexact=true) # exact agreement with specified engine
 ``` 
