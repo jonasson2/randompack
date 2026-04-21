@@ -1,5 +1,3 @@
-You assist with “varmapack,” a portable C11 library for VARMA simulation.
-It includes a sublibrary "randompack" for random number generation.
 Always obey the rules below.
 
 ---------------------------

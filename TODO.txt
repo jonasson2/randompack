@@ -1,4 +1,0 @@
-add benchmarking results (perhaps)
-yggdrasil
-cran
-wheels

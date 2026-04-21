@@ -46,6 +46,8 @@ a.out
 *.ppt
 *.log
 r-package/src/Makevars
+codex.continue
+.claude/
 
 C BUILD FILES AND FOLDERS
 *.obj
