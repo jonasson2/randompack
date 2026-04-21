@@ -16,7 +16,7 @@
 # only needed if pyproject.toml, package layout, or Python version changes.
 
 project('randompack', 'c',
-  version: '0.1.1',
+  version: '0.1.2',
   default_options: ['c_std=c11']
 )
 
