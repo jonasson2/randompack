@@ -233,19 +233,19 @@ bool randompack_jump(int p, randompack_rng *rng) {
   return true;
 }
 
-bool randompack_pcg64_advance(uint64_t delta[2], randompack_rng *rng) {
+bool randompack_advance(uint64_t delta[2], randompack_rng *rng) {
   if (!rng) return false;
   if (rng->engine == INVALID) {
-    rng->last_error = "randompack_pcg64_advance: invalid rng";
+    rng->last_error = "randompack advance: invalid rng";
     return false;
   }
   rng->last_error = 0;
   if (!delta) {
-    rng->last_error = "randompack_pcg64_advance: delta is null";
+    rng->last_error = "randompack advance: delta is null";
     return false;
   }
   if (rng->engine != PCG64) {
-    rng->last_error = "randompack_pcg64_advance: only supported for pcg64";
+    rng->last_error = "randompack advance: only supported for pcg64";
     return false;
   }
   pcg_advance(delta, rng);

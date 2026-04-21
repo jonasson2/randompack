@@ -4,12 +4,13 @@
 
 """
     rng_create()
-    rng_create(engine; bitexact=false)
+    rng_create(engine; bitexact=false, full_mantissa=false)
 
 Create a new RNG using the selected engine. The default engine is `x256++simd`. The
 `engine` argument is a string naming the RNG engine to use. Call `Randompack.engines()` to
 list available engine names. If `bitexact` is true, the RNG uses bitexact log/exp for
-distributions that rely on them.
+distributions that rely on them. If `full_mantissa` is true, uniform floating draws use
+53-bit mantissas for `Float64` and 24-bit mantissas for `Float32`.
 
 Use `Randompack.engines()` to list available names.
 
@@ -18,13 +19,15 @@ Use `Randompack.engines()` to list available names.
 rng = rng_create()
 rng = rng_create("pcg64")
 rng = rng_create("pcg64"; bitexact=true)  # make samples bit-identical across platforms (x==y true)
+rng = rng_create("pcg64"; full_mantissa=true)
 ```
 
 # See also
 - Randompack.engines
 - rng_seed!
 """
-function rng_create(engine::AbstractString; bitexact::Bool=false)
+function rng_create(engine::AbstractString; bitexact::Bool=false,
+                    full_mantissa::Bool=false)
   p = ccall(_sym(:randompack_create), RNGPtr, (Cstring,), engine)
   if p == C_NULL
     throw(ErrorException("unknown RNG engine '$engine' (check spelling)"))
@@ -38,6 +41,10 @@ function rng_create(engine::AbstractString; bitexact::Bool=false)
     ok = ccall(_sym(:randompack_bitexact), Bool, (RNGPtr, Bool), p, true)
     _check_ok(ok, p, "randompack_bitexact failed")
   end
+  if full_mantissa
+    ok = ccall(_sym(:randompack_full_mantissa), Bool, (RNGPtr, Bool), p, true)
+    _check_ok(ok, p, "randompack_full_mantissa failed")
+  end
   rng = RNG(p)
   finalizer(rng) do r
     _free(r.ptr)
@@ -46,7 +53,8 @@ function rng_create(engine::AbstractString; bitexact::Bool=false)
   return rng
 end
 
-rng_create() = rng_create("x256++simd"; bitexact=false)
+rng_create(; bitexact::Bool=false, full_mantissa::Bool=false) =
+  rng_create("x256++simd"; bitexact=bitexact, full_mantissa=full_mantissa)
 
 """
     rng_seed!(rng, seed)

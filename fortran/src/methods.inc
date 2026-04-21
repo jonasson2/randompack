@@ -12,10 +12,11 @@ subroutine rp_free(self)
   end if
 end subroutine
 
-subroutine rp_create(self, engine, bitexact)
+subroutine rp_create(self, engine, bitexact, full_mantissa)
   class(randompack_rng), intent(inout) :: self
   character(len=*), intent(in), optional :: engine
   logical, intent(in), optional :: bitexact
+  logical, intent(in), optional :: full_mantissa
   character(kind=c_char), allocatable, target :: eng(:)
   character(len=:), allocatable :: emsg
   type(c_ptr) :: p
@@ -42,6 +43,12 @@ subroutine rp_create(self, engine, bitexact)
       if (.not. c_ok) error stop rp_error_message(self, "bitexact")
     end if
   end if
+  if (present(full_mantissa)) then
+    if (full_mantissa) then
+      c_ok = crp_full_mantissa(self%p, .true._c_bool)
+      if (.not. c_ok) error stop rp_error_message(self, "full_mantissa")
+    end if
+  end if
 end subroutine
 
 subroutine rp_duplicate(self, out)
@@ -58,15 +65,6 @@ subroutine rp_randomize(self)
   if (.not. c_associated(self%p)) error stop rp_error_message(self, "randomize")
   c_ok = crp_randomize(self%p)
   if (.not. c_ok) error stop rp_error_message(self, "randomize")
-end subroutine
-
-subroutine rp_full_mantissa(self, enable)
-  class(randompack_rng), intent(inout) :: self
-  logical, intent(in) :: enable
-  logical(c_bool) :: c_ok
-  if (.not. c_associated(self%p)) error stop rp_error_message(self, "full_mantissa")
-  c_ok = crp_full_mantissa(self%p, merge(.true._c_bool, .false._c_bool, enable))
-  if (.not. c_ok) error stop rp_error_message(self, "full_mantissa")
 end subroutine
 
 subroutine rp_jump(self, p)
@@ -1033,6 +1031,40 @@ subroutine set_state64(self, state)
   c_ok = crp_set_state(state, int(size(state), c_int), self%p)
   if (.not. c_ok) error stop rp_error_message(self, "set_state")
 end subroutine
+
+subroutine rp_advance32(self, delta)
+  class(randompack_rng), intent(inout) :: self
+  integer(c_int32_t), intent(in) :: delta
+  integer(c_int64_t) :: delta64(2)
+  logical(c_bool) :: c_ok
+  if (.not. c_associated(self%p)) error stop rp_error_message(self, "advance")
+  if (delta < 0_c_int32_t) error stop "advance: delta must be nonnegative"
+  delta64 = [int(delta, c_int64_t), 0_c_int64_t]
+  c_ok = crp_advance(delta64, self%p)
+  if (.not. c_ok) error stop rp_error_message(self, "advance")
+end subroutine
+
+subroutine rp_advance64(self, delta)
+  class(randompack_rng), intent(inout) :: self
+  integer(c_int64_t), intent(in) :: delta
+  integer(c_int64_t) :: delta64(2)
+  logical(c_bool) :: c_ok
+  if (.not. c_associated(self%p)) error stop rp_error_message(self, "advance")
+  if (delta < 0_c_int64_t) error stop "advance: delta must be nonnegative"
+  delta64 = [delta, 0_c_int64_t]
+  c_ok = crp_advance(delta64, self%p)
+  if (.not. c_ok) error stop rp_error_message(self, "advance")
+end subroutine
+
+subroutine rp_advance128(self, delta)
+  class(randompack_rng), intent(inout) :: self
+  integer(c_int64_t), intent(in) :: delta(2)
+  logical(c_bool) :: c_ok
+  if (.not. c_associated(self%p)) error stop rp_error_message(self, "advance")
+  c_ok = crp_advance(delta, self%p)
+  if (.not. c_ok) error stop rp_error_message(self, "advance")
+end subroutine
+
 subroutine rp_philox_set_key(self, key)
   class(randompack_rng), intent(inout) :: self
   integer(c_int64_t), intent(in) :: key(2)

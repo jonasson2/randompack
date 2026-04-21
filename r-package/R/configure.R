@@ -37,15 +37,6 @@ methods_configure <- list(
     invisible(self)
   },
 
-  full_mantissa = function(enable = TRUE) {
-    if (is.null(self$ptr)) stop("RNG is not initialized")
-    if (length(enable) != 1L || is.na(enable))
-      stop("enable must be TRUE or FALSE")
-    enable <- as.logical(enable)
-    .Call("randompack_full_mantissa_R", self$ptr, enable, PACKAGE = "randompack")
-    invisible(self)
-  },
-
   jump = function(p) {
     if (is.null(self$ptr)) stop("RNG is not initialized")
     p <- as.integer(p)
@@ -55,10 +46,10 @@ methods_configure <- list(
     invisible(self)
   },
 
-  pcg64_advance = function(delta) {
+  advance = function(delta) {
     if (is.null(self$ptr)) stop("RNG is not initialized")
     delta <- as_u32_vec(delta, "delta", max_len = 4L)
-    .Call("randompack_pcg64_advance_R", self$ptr, delta, PACKAGE = "randompack")
+    .Call("randompack_advance_R", self$ptr, delta, PACKAGE = "randompack")
     invisible(self)
   },
 

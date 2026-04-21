@@ -104,6 +104,7 @@ non-optimized version omit `--buildtype=release`.
     call rng%create()                ! default engine (x256++simd)
     call rng%create('pcg64')         ! specified engine
     call rng%create('pcg64', .true.) ! make samples bit-identical across platforms (x==y true)
+    call rng%create('pcg64', full_mantissa=.true.)
     call rng%seed(123)               ! deterministic seed
     call rng%randomize()             ! seed with system entropy
 
@@ -150,10 +151,11 @@ management:
 - `free`
 - `duplicate(out)`
 - `randomize` (seed from system entropy)
-- `full_mantissa(enable)` (logical)
 - `seed(seed[, spawn_key])`
 - `serialize(buf)` / `deserialize(buf)`
 - `set_state(state)`
+- `advance(delta)` where `delta` is either a nonnegative scalar or a two-word
+  `integer(c_int64_t)` vector `[low, high]`
 - `pcg64_set_inc(inc)`
 - `sfc64_set_abc(abc)`
 - `chacha_set_nonce(nonce)`

@@ -209,7 +209,7 @@ static void test_pcg_advance(void) {
   randompack_rng *rng = make_rng("pcg64");
   bool ok = randompack_set_state(state, LEN(state), rng);
   check_success(ok, rng);
-  ok = randompack_pcg64_advance(delta0, rng);
+  ok = randompack_advance(delta0, rng);
   check_success(ok, rng);
   uint64_t got[2];
   ok = randompack_uint64(got, LEN(got), 0, rng);
@@ -217,22 +217,22 @@ static void test_pcg_advance(void) {
   CHECK_EQUALV(got, want0, LEN(got));
   ok = randompack_set_state(state, LEN(state), rng);
   check_success(ok, rng);
-  ok = randompack_pcg64_advance(delta10, rng);
+  ok = randompack_advance(delta10, rng);
   check_success(ok, rng);
   ok = randompack_uint64(got, LEN(got), 0, rng);
   check_success(ok, rng);
   CHECK_EQUALV(got, want10, LEN(got));
   ok = randompack_set_state(state, LEN(state), rng);
   check_success(ok, rng);
-  ok = randompack_pcg64_advance(delta_big, rng);
+  ok = randompack_advance(delta_big, rng);
   check_success(ok, rng);
   ok = randompack_uint64(got, LEN(got), 0, rng);
   check_success(ok, rng);
   CHECK_EQUALV(got, want_big, LEN(got));
-  xCheck(!randompack_pcg64_advance(0, rng));
+  xCheck(!randompack_advance(0, rng));
   randompack_free(rng);
   rng = make_rng("squares");
-  ok = randompack_pcg64_advance(delta10, rng);
+  ok = randompack_advance(delta10, rng);
   check_failure(ok, rng);
   randompack_free(rng);
 }
@@ -259,7 +259,7 @@ static void test_pcg_jump(void) {
     else delta[1] = 1ULL << (p - 64);
     ok = randompack_jump(p, rng0);
     check_success(ok, rng0);
-    ok = randompack_pcg64_advance(delta, rng1);
+    ok = randompack_advance(delta, rng1);
     check_success(ok, rng1);
     ok = randompack_uint64(a, LEN(a), 0, rng0);
     check_success(ok, rng0);

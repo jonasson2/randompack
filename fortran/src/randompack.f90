@@ -15,7 +15,6 @@ contains
   procedure :: free => rp_free
   procedure :: duplicate => rp_duplicate
   procedure :: randomize => rp_randomize
-  procedure :: full_mantissa => rp_full_mantissa
   procedure :: jump => rp_jump
   procedure, private :: seed32 => rp_seed32
   procedure, private :: seed64 => rp_seed64
@@ -103,6 +102,10 @@ contains
   procedure, private :: set_state32
   procedure, private :: set_state64
   generic :: set_state => set_state32, set_state64
+  procedure, private :: advance32 => rp_advance32
+  procedure, private :: advance64 => rp_advance64
+  procedure, private :: advance128 => rp_advance128
+  generic :: advance => advance32, advance64, advance128
   procedure :: philox_set_key => rp_philox_set_key
   procedure :: pcg64_set_inc => rp_pcg64_set_inc
   procedure :: sfc64_set_abc => rp_sfc64_set_abc

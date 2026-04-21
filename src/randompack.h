@@ -60,9 +60,9 @@ bool randompack_jump( // Jump pcg64 / ranlux / xor-family rng by 2^p steps, fals
   randompack_rng *rng  // in/out  Random number generator
 );
 
-bool randompack_pcg64_advance( // Advance pcg64 by arbitrary 128-bit delta
-  uint64_t delta[2],          // in      128-bit advance delta {low, high}
-  randompack_rng *rng         // in/out  Random number generator
+bool randompack_advance( // Advance pcg64 by arbitrary 128-bit delta
+  uint64_t delta[2],     // in      128-bit advance delta {low, high}
+  randompack_rng *rng    // in/out  Random number generator
 );
 
 bool randompack_pcg64_set_inc( // Set PCG increment (state unchanged)

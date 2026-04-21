@@ -16,6 +16,7 @@ NULL
 #'
 #' @param engine RNG engine
 #' @param bitexact Logical; set TRUE to make samples bit-identical across platforms
+#' @param full_mantissa Logical; set TRUE to use full mantissas for floating draws
 #'
 #' @return An RNG object with methods for drawing random variates.
 #'
@@ -102,18 +103,16 @@ NULL
 #'     numeric vector `spawn_key`.
 #'   }
 #'   \item{`rng$randomize()`}{Randomize the RNG state from system entropy.}
-#'   \item{`rng$full_mantissa(enable = TRUE)`}{
-#'     Enable or disable 53-bit mantissas for double-precision draws.
-#'   }
 #'   \item{`rng$jump(p)`}{
 #'     Jump an xor-family or `ranlux++` engine ahead by \eqn{2^p} steps. The
 #'     `x128+` and `xoro128++` engines support `p = 32, 64, 96`, while
 #'     `x256++`, `x256**`, `x256++simd`, and `ranlux++` also support
 #'     `p = 128` and `p = 192`.
 #'   }
-#'   \item{`rng$pcg64_advance(delta)`}{
-#'     Advance the `pcg64` engine by an arbitrary 128-bit delta. `delta` may
-#'     have length up to 4 and shorter vectors are zero-padded.
+#'   \item{`rng$advance(delta)`}{
+#'     Advance the `pcg64` engine by an arbitrary 128-bit delta. `delta` may be
+#'     a scalar, interpreted as `[delta, 0]`, or a vector of up to 4 32-bit
+#'     words; shorter vectors are zero-padded.
 #'   }
 #'   \item{`rng$duplicate()`}{Duplicate the RNG, preserving its state.}
 #'   \item{`rng$serialize()`}{Serialize the current RNG state as a raw vector.}
@@ -171,7 +170,7 @@ NULL
 #' # Configuration and copying
 #' rng$seed(12345)                          # seed for reproducibility
 #' rng$randomize()                          # randomize from system entropy
-#' rng$full_mantissa(TRUE)                  # 53-bit mantissas for doubles
+#' rngm <- randompack_rng(full_mantissa = TRUE)  # 53-bit mantissas for doubles
 #' rng2 <- rng$duplicate()                  # duplicate with same state
 #' identical(rng$unif(3), rng2$unif(3))     # TRUE
 #' raw_state <- rng$serialize()             # save state
@@ -185,8 +184,10 @@ NULL
 #' @seealso \code{\link{randompack_engines}} to list all available engines
 #'
 #' @export
-randompack_rng <- function(engine = "x256++simd", bitexact = FALSE) {
-  RandompackRNG$new(engine = engine, bitexact = bitexact)
+randompack_rng <- function(engine = "x256++simd", bitexact = FALSE,
+                           full_mantissa = FALSE) {
+  RandompackRNG$new(engine = engine, bitexact = bitexact,
+                    full_mantissa = full_mantissa)
 }
 
 #' Available RNG Engines
@@ -217,15 +218,21 @@ RandompackRNG <- R6::R6Class(
     list(
       ptr = NULL,
       engine = NULL,
-      initialize = function(engine = "", bitexact = FALSE) {
+      initialize = function(engine = "", bitexact = FALSE,
+                            full_mantissa = FALSE) {
         if (is.null(engine)) engine <- ""
         if (!is.character(engine) || length(engine) != 1L)
           stop("engine must be a single character string")
         if (length(bitexact) != 1L || is.na(bitexact))
           stop("bitexact must be TRUE or FALSE")
+        if (length(full_mantissa) != 1L || is.na(full_mantissa))
+          stop("full_mantissa must be TRUE or FALSE")
         bitexact <- as.logical(bitexact)
+        full_mantissa <- as.logical(full_mantissa)
         self$engine <- engine
         self$ptr <- .Call("randompack_create_R", engine, bitexact, PACKAGE = "randompack")
+        if (full_mantissa)
+          .Call("randompack_full_mantissa_R", self$ptr, TRUE, PACKAGE = "randompack")
         reg.finalizer(
           self,
           function(e) e$.__enclos_env__$private$finalize(),

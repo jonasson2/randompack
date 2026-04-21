@@ -79,14 +79,10 @@ end
   @test isfinite(x)
 end
 
-@testset "full_mantissa!" begin
-  rng = rng_create()
-  Randompack.full_mantissa!(rng, true)
+@testset "full_mantissa create" begin
+  rng = rng_create(; full_mantissa=true)
   x = random_unif(rng)
   @test isfinite(x)
-  Randompack.full_mantissa!(rng, false)
-  y = random_unif(rng)
-  @test isfinite(y)
 end
 
 @testset "jump!" begin
@@ -102,7 +98,7 @@ end
   @test_throws ErrorException Randompack.jump!(rng1, 254)
 end
 
-@testset "pcg64_advance!" begin
+@testset "advance!" begin
   has_pcg = true
   try
     rng_create("pcg64")
@@ -116,12 +112,16 @@ end
              0x26dbcfc7823f9c3b, 0x0d4e48fee886333a]
     Randompack.set_state!(rng1; state=state)
     Randompack.set_state!(rng2; state=state)
-    Randompack.pcg64_advance!(rng1; delta=[0, 1 << 16])
+    Randompack.advance!(rng1, [0, 1 << 16])
     Randompack.jump!(rng2, 80)
     @test random_unif(rng1) == random_unif(rng2)
-    @test_throws ArgumentError Randompack.pcg64_advance!(rng1; delta=[1])
+    Randompack.set_state!(rng1; state=state)
+    Randompack.set_state!(rng2; state=state)
+    Randompack.advance!(rng1, 0)
+    @test random_unif(rng1) == random_unif(rng2)
+    @test_throws ArgumentError Randompack.advance!(rng1, [1])
     rng3 = rng_create("squares")
-    @test_throws ErrorException Randompack.pcg64_advance!(rng3; delta=[1, 0])
+    @test_throws ErrorException Randompack.advance!(rng3, [1, 0])
   else
     @test true
   end

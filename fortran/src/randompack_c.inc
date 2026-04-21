@@ -374,6 +374,12 @@ interface
     type(c_ptr), value :: rngp
   end function
 
+  logical(c_bool) function crp_advance(delta, rngp) bind(C, name="randompack_advance")
+    import :: c_ptr, c_bool, c_int64_t
+    integer(c_int64_t), intent(in) :: delta(2)
+    type(c_ptr), value :: rngp
+  end function
+
   logical(c_bool) function crp_squares_set_key(key, rngp) bind(C, name="randompack_squares_set_key")
     import :: c_ptr, c_bool, c_int64_t
     integer(c_int64_t), value :: key

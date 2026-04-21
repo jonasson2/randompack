@@ -16,6 +16,14 @@ test_that("randomize runs and allows draws", {
   expect_true(all(is.finite(x)))
 })
 
+test_that("full_mantissa create runs and allows draws", {
+  rng <- randompack_rng("pcg64", full_mantissa = TRUE)
+  x <- rng$unif(5)
+  expect_type(x, "double")
+  expect_length(x, 5)
+  expect_true(all(is.finite(x)))
+})
+
 test_that("set_state accepts numeric state words", {
   rng1 <- randompack_rng("pcg64")
   rng2 <- randompack_rng("pcg64")
@@ -36,11 +44,15 @@ test_that("advance matches jump for pcg64", {
   )
   rng1$set_state(state)
   rng2$set_state(state)
-  rng1$pcg64_advance(c(0, 0, 65536, 0))
+  rng1$advance(c(0, 0, 65536, 0))
   rng2$jump(80)
   expect_identical(rng1$unif(5), rng2$unif(5))
-  expect_error(rng1$pcg64_advance(c(1, 2, 3, 4, 5)))
-  expect_error(randompack_rng("squares")$pcg64_advance(c(1, 0)))
+  rng1$set_state(state)
+  rng2$set_state(state)
+  rng1$advance(0)
+  expect_identical(rng1$unif(5), rng2$unif(5))
+  expect_error(rng1$advance(c(1, 2, 3, 4, 5)))
+  expect_error(randompack_rng("squares")$advance(c(1, 0)))
 })
 
 test_that("pcg64_set_inc makes draws repeatable", {

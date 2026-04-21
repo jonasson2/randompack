@@ -166,7 +166,7 @@ SEXP randompack_jump_R(SEXP ext, SEXP p_){
   return R_NilValue;
 }
 
-SEXP randompack_pcg64_advance_R(SEXP ext, SEXP delta_){
+SEXP randompack_advance_R(SEXP ext, SEXP delta_){
   randompack_rng *rng = (randompack_rng *)R_ExternalPtrAddr(ext);
   if (!rng) Rf_error("RNG pointer is NULL");
   if (!Rf_isNumeric(delta_))
@@ -186,10 +186,10 @@ SEXP randompack_pcg64_advance_R(SEXP ext, SEXP delta_){
       else delta[1] |= w;
     }
   }
-  bool ok = randompack_pcg64_advance(delta, rng);
+  bool ok = randompack_advance(delta, rng);
   if (!ok) {
     char *err = randompack_last_error(rng);
-    Rf_error("%s", err ? err : "randompack_pcg64_advance failed");
+    Rf_error("%s", err ? err : "randompack_advance failed");
   }
   return R_NilValue;
 }

@@ -89,7 +89,7 @@ rngz = randompack.Rng("squares")
 rngr = randompack.Rng("ranlux++")
 rngx.set_state(state=[1,2,3,4])                  # general state setter
 rngx.jump(128)                                   # jump the state by 2^128 steps
-rngq.pcg64_advance([1024, 0])                    # advance pcg64 by 1024 steps
+rngq.advance(1024)                               # advance pcg64 by 1024 steps
 rngp.set_state([1,2,3,4,0,0])                    # set full Philox state
 rngp.philox_set_key([4,6])                       # set Philox key
 rngq.pcg64_set_inc([3, 5])                       # change PCG stream increment
@@ -105,7 +105,7 @@ rngy = randompack.Rng("x256**")  # engines must match
 state = rngx.serialize()         # copy engine state of rngx
 rngy.deserialize(state)          # and put in rngy
 
-rng.full_mantissa(True)          # enable full 53-bit mantissa (52-bit is default)
+rngm = randompack.Rng(full_mantissa=True)  # enable full 53-bit mantissa (52-bit is default)
 rng = randompack.Rng(bitexact=True)            # make agreement across platforms exact
 rng = randompack.Rng("philox", bitexact=True)  # exact agreement with specified engine
 ```

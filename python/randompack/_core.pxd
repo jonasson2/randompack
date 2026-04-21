@@ -13,7 +13,7 @@ cdef extern from "randompack.h":
     bint randompack_full_mantissa(randompack_rng *rng, bint enable)
     bint randompack_bitexact(randompack_rng *rng, bint enable)
     bint randompack_jump(int p, randompack_rng *rng)
-    bint randompack_pcg64_advance(uint64_t delta[2], randompack_rng *rng)
+    bint randompack_advance(uint64_t delta[2], randompack_rng *rng)
     bint randompack_engines(char *engines, char *descriptions, int *nengines,
                             int *eng_maxlen, int *desc_maxlen)
 
