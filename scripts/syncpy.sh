@@ -11,6 +11,7 @@ rsync -av --delete \
   --exclude='meson.build' \
   --exclude='norm_polar.inc' \
   --exclude='printX.c' \
+  --exclude='randompack.def' \
   src/ \
   python/src/
 
