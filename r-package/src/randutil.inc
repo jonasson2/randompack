@@ -15,8 +15,8 @@ static bool select_engine(const char *s, randompack_rng *rng) {
   // set rng->{engine,next} according to the engine name s
   if (!rng) return false;
   if (!s) {
-    rng->engine = FAST; // default engine
-    rng->fill   = fill_fast;
+    rng->engine = X256PPSIMD; // default engine
+    rng->fill   = fill_x256ppsimd;
     return true;
   }
   char t[64];
@@ -26,7 +26,7 @@ static bool select_engine(const char *s, randompack_rng *rng) {
     if (t[i] == '-') t[i] = '_';
   }
   for (int i = 0; i < LEN(rng_table); i++) {
-    if (!strcmp(t, rng_table[i].name)) {
+    if (!strcmp(t, rng_table[i].identifier)) {
       rng->engine = rng_table[i].engine;
       rng->fill   = rng_table[i].fill;
       return true;
@@ -85,7 +85,7 @@ static inline void scatter_to_stream0(randompack_rng *rng) {
 }
 
 static inline bool is_x256simd_engine(randompack_rng *rng) {
-  return rng->engine == FAST || rng->engine == X256SSSIMD;
+  return rng->engine == X256PPSIMD || rng->engine == X256SSSIMD;
 }
 
 static inline void x256simd_jump(int p, randompack_rng *rng) {
@@ -135,7 +135,7 @@ static inline void normalize_state(randompack_rng *rng) {
   case X256PP:
   case X256SS:
   case X256SSSIMD:
-  case FAST:
+  case X256PPSIMD:
   case XORO:
   case X128P:
   case RANLUXPP:

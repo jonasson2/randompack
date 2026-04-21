@@ -6,10 +6,17 @@
 #else
 
 #include <immintrin.h>
+#include <math.h>
+#include <stddef.h>
+#include "randompack_config.h"
 
-#define STATINLINE static inline __attribute__((always_inline))
-#define STATINLINECONST static inline __attribute__((always_inline)) __attribute__((const))
-#define CONST __attribute__((const))
+#define STATINLINE ALWAYS_INLINE // MinGW crashes on the out-of-line AVX2 vector helper form.
+#define STATINLINECONST ALWAYS_INLINE CONST_ATTR
+#define CONST CONST_ATTR
+#define SLEEF_INF INF_VALUE
+#define SLEEF_INFF INFF_VALUE
+#define SLEEF_NAN NAN_VALUE
+#define SLEEF_NANF NANF_VALUE
 
 typedef __m256i vmask;
 typedef __m256i vopmask;
@@ -55,7 +62,7 @@ STATINLINE CONST vdouble vldexp2_vd_vd_vi(vdouble d, vint e) {
   return vmul_vd_vd_vd(vmul_vd_vd_vd(d, vpow2i_vd_vi(vsra_vi_vi_i(e, 1))), vpow2i_vd_vi(vsub_vi_vi_vi(e, vsra_vi_vi_i(e, 1))));
 }
 
-CONST vdouble Sleef_expd4_u10avx2(vdouble d) {
+STATINLINECONST vdouble Sleef_expd4_u10avx2(vdouble d) {
   vdouble u = vrint_vd_vd(vmul_vd_vd_vd(d, vcast_vd_d(1.442695040888963407359924681001892137426645954152985934135449406931))), s;
   vint q = vrint_vi_vd(u);
   s = vmla_vd_vd_vd_vd(u, vcast_vd_d(-.69314718055966295651160180568695068359375), d);
@@ -75,7 +82,7 @@ CONST vdouble Sleef_expd4_u10avx2(vdouble d) {
   u = vfma_vd_vd_vd_vd(u, s, vcast_vd_d(+0.1000000000000000000e+1));
   u = vldexp2_vd_vd_vi(u, q);
   vopmask o = vgt_vo_vd_vd(d, vcast_vd_d(0x1.62e42fefa39efp+9));
-  u = vsel_vd_vo_vd_vd(o, vcast_vd_d(__builtin_inf()), u);
+  u = vsel_vd_vo_vd_vd(o, vcast_vd_d(SLEEF_INF), u);
   u = vreinterpret_vd_vm(vandnot_vm_vo64_vm(vlt_vo_vd_vd(d, vcast_vd_d(-1000)), vreinterpret_vm_vd(u)));
   return u;
 }
@@ -112,7 +119,7 @@ STATINLINE CONST vfloat vldexp2_vf_vf_vi2_sp(vfloat d, vint2 e) {
   vpow2i_vf_vi2_sp(vsub_vi2_vi2_vi2_sp(e, vsra_vi2_vi2_i_sp(e, 1))));
 }
 
-CONST vfloat Sleef_expf8_u10avx2(vfloat d) {
+STATINLINECONST vfloat Sleef_expf8_u10avx2(vfloat d) {
   vint2 q = vrint_vi2_vf_sp(vmul_vf_vf_vf_sp(d, vcast_vf_f_sp(1.442695040888963407359924681001892137426645954152985934135449406931f)));
   vfloat s, u;
   s = vmla_vf_vf_vf_vf_sp(vcast_vf_vi2_sp(q), vcast_vf_f_sp(-0.693145751953125f), d);
@@ -126,7 +133,7 @@ CONST vfloat Sleef_expf8_u10avx2(vfloat d) {
   u = vadd_vf_vf_vf_sp(vcast_vf_f_sp(1.0f), vmla_vf_vf_vf_vf_sp(vmul_vf_vf_vf_sp(s, s), u, s));
   u = vldexp2_vf_vf_vi2_sp(u, q);
   u = vreinterpret_vf_vm_sp(vandnot_vm_vo32_vm_sp(vlt_vo_vf_vf_sp(d, vcast_vf_f_sp(-104)), vreinterpret_vm_vf_sp(u)));
-  u = vsel_vf_vo_vf_vf_sp(vlt_vo_vf_vf_sp(vcast_vf_f_sp(100), d), vcast_vf_f_sp(__builtin_inff()), u);
+  u = vsel_vf_vo_vf_vf_sp(vlt_vo_vf_vf_sp(vcast_vf_f_sp(100), d), vcast_vf_f_sp(SLEEF_INFF), u);
   return u;
 }
 
@@ -155,7 +162,7 @@ STATINLINE vint vand_vi_vi_vi(vint x, vint y) { return _mm_and_si128(x, y); }
 STATINLINE vint vsrl_vi_vi_i(vint x, int c) { return _mm_srli_epi32(x, c); }
 STATINLINE vint vsel_vi_vo_vi_vi(vopmask m, vint x, vint y) { return _mm_blendv_epi8(y, x, _mm256_castsi256_si128(m)); }
 STATINLINE vopmask vispinf_vo_vd(vdouble d) {
-  return vreinterpret_vm_vd(_mm256_cmp_pd(d, _mm256_set1_pd(__builtin_inf()), 0x00));
+  return vreinterpret_vm_vd(_mm256_cmp_pd(d, _mm256_set1_pd(SLEEF_INF), 0x00));
 }
 STATINLINE vopmask visnan_vo_vd(vdouble d) {
   return vreinterpret_vm_vd(_mm256_cmp_pd(d, d, 0x04));
@@ -222,11 +229,11 @@ STATINLINE CONST vdouble vldexp3_vd_vd_vi(vdouble d, vint q) {
 
 STATINLINE vdouble vdiv_vd_vd_vd(vdouble x, vdouble y) { return _mm256_div_pd(x, y); }
 
-CONST vdouble Sleef_logd4_u35avx2(vdouble d) {
+STATINLINECONST vdouble Sleef_logd4_u35avx2(vdouble d) {
   vdouble x, x2;
   vdouble t, m;
   vopmask o = vlt_vo_vd_vd(d, vcast_vd_d(0x1p-1022));
-  d = vsel_vd_vo_vd_vd(o, vmul_vd_vd_vd(d, vcast_vd_d((double)(1L << 32) * (double)(1L << 32))), d);
+  d = vsel_vd_vo_vd_vd(o, vmul_vd_vd_vd(d, vcast_vd_d(4294967296.0 * 4294967296.0)), d);
   vint e = vilogb2k_vi_vd(vmul_vd_vd_vd(d, vcast_vd_d(1.0/0.75)));
   m = vldexp3_vd_vd_vi(d, vneg_vi_vi(e));
   e = vsel_vi_vo_vi_vi(vcast_vo32_vo64(o), vsub_vi_vi_vi(e, vcast_vi_i(64)), e);
@@ -242,9 +249,9 @@ CONST vdouble Sleef_logd4_u35avx2(vdouble d) {
     (vcast_vd_d(0.6666666666667778740063)))))));
   x = vmla_vd_vd_vd_vd(x, vcast_vd_d(2), vmul_vd_vd_vd(vcast_vd_d(0.693147180559945286226764), vcast_vd_vi(e)));
   x = vmla_vd_vd_vd_vd(x3, t, x);
-  x = vsel_vd_vo_vd_vd(vispinf_vo_vd(d), vcast_vd_d(__builtin_inf()), x);
-  x = vsel_vd_vo_vd_vd(vor_vo_vo_vo(vlt_vo_vd_vd(d, vcast_vd_d(0)), visnan_vo_vd(d)), vcast_vd_d(__builtin_nan("")), x);
-  x = vsel_vd_vo_vd_vd(veq_vo_vd_vd(d, vcast_vd_d(0)), vcast_vd_d(-__builtin_inf()), x);
+  x = vsel_vd_vo_vd_vd(vispinf_vo_vd(d), vcast_vd_d(SLEEF_INF), x);
+  x = vsel_vd_vo_vd_vd(vor_vo_vo_vo(vlt_vo_vd_vd(d, vcast_vd_d(0)), visnan_vo_vd(d)), vcast_vd_d(SLEEF_NAN), x);
+  x = vsel_vd_vo_vd_vd(veq_vo_vd_vd(d, vcast_vd_d(0)), vcast_vd_d(-SLEEF_INF), x);
   return x;
 }
 
@@ -268,7 +275,7 @@ STATINLINE vint2 vsrl_vi2_vi2_i_sp(vint2 x, int c) { return _mm256_srli_epi32(x,
 STATINLINE vint2 vsel_vi2_vo_vi2_vi2_sp(vopmask m, vint2 x, vint2 y) {
   return _mm256_blendv_epi8(y, x, m);
 }
-STATINLINE vopmask vispinf_vo_vf_sp(vfloat d) { return veq_vo_vf_vf_sp(d, vcast_vf_f_sp(__builtin_inff())); }
+STATINLINE vopmask vispinf_vo_vf_sp(vfloat d) { return veq_vo_vf_vf_sp(d, vcast_vf_f_sp(SLEEF_INFF)); }
 STATINLINE vopmask visnan_vo_vf_sp(vfloat d) { return vneq_vo_vf_vf_sp(d, d); }
 STATINLINE CONST vfloat vf2getx_vf_vf2_sp(vfloat2 v) { return v.x; }
 STATINLINE CONST vfloat vf2gety_vf_vf2_sp(vfloat2 v) { return v.y; }
@@ -324,11 +331,11 @@ STATINLINE CONST vfloat vldexp3_vf_vf_vi2_sp(vfloat d, vint2 q) {
   return vreinterpret_vf_vi2_sp(vadd_vi2_vi2_vi2_sp(vreinterpret_vi2_vf_sp(d), vsll_vi2_vi2_i_sp(q, 23)));
 }
 
-CONST vfloat Sleef_logf8_u10avx2(vfloat d) {
+STATINLINECONST vfloat Sleef_logf8_u10avx2(vfloat d) {
   vfloat2 x;
   vfloat t, m, x2;
   vopmask o = vlt_vo_vf_vf_sp(d, vcast_vf_f_sp(0x1p-126));
-  d = vsel_vf_vo_vf_vf_sp(o, vmul_vf_vf_vf_sp(d, vcast_vf_f_sp((float)(1L << 32) * (float)(1L << 32))), d);
+  d = vsel_vf_vo_vf_vf_sp(o, vmul_vf_vf_vf_sp(d, vcast_vf_f_sp(4294967296.0f * 4294967296.0f)), d);
   vint2 e = vilogb2k_vi2_vf_sp(vmul_vf_vf_vf_sp(d, vcast_vf_f_sp(1.0f/0.75f)));
   m = vldexp3_vf_vf_vi2_sp(d, vneg_vi2_vi2_sp(e));
   e = vsel_vi2_vo_vi2_vi2_sp(o, vsub_vi2_vi2_vi2_sp(e, vcast_vi2_i_sp(64)), e);
@@ -341,9 +348,49 @@ CONST vfloat Sleef_logf8_u10avx2(vfloat d) {
   s = dfadd_vf2_vf2_vf2_sp(s, dfscale_vf2_vf2_vf_sp(x, vcast_vf_f_sp(2)));
   s = dfadd_vf2_vf2_vf_sp(s, vmul_vf_vf_vf_sp(vmul_vf_vf_vf_sp(x2, vf2getx_vf_vf2_sp(x)), t));
   vfloat r = vadd_vf_vf_vf_sp(vf2getx_vf_vf2_sp(s), vf2gety_vf_vf2_sp(s));
-  r = vsel_vf_vo_vf_vf_sp(vispinf_vo_vf_sp(d), vcast_vf_f_sp(__builtin_inff()), r);
-  r = vsel_vf_vo_vf_vf_sp(vor_vo_vo_vo_sp(vlt_vo_vf_vf_sp(d, vcast_vf_f_sp(0)), visnan_vo_vf_sp(d)), vcast_vf_f_sp(__builtin_nanf("")), r);
-  r = vsel_vf_vo_vf_vf_sp(veq_vo_vf_vf_sp(d, vcast_vf_f_sp(0)), vcast_vf_f_sp(-__builtin_inff()), r);
+  r = vsel_vf_vo_vf_vf_sp(vispinf_vo_vf_sp(d), vcast_vf_f_sp(SLEEF_INFF), r);
+  r = vsel_vf_vo_vf_vf_sp(vor_vo_vo_vo_sp(vlt_vo_vf_vf_sp(d, vcast_vf_f_sp(0)), visnan_vo_vf_sp(d)), vcast_vf_f_sp(SLEEF_NANF), r);
+  r = vsel_vf_vo_vf_vf_sp(veq_vo_vf_vf_sp(d, vcast_vf_f_sp(0)), vcast_vf_f_sp(-SLEEF_INFF), r);
   return r;
+}
+
+HIDDEN void sleef_expd4_u10avx2_array(double *x, size_t len) {
+  size_t i = 0;
+  for (; i + 4 <= len; i += 4) {
+    __m256d d = _mm256_loadu_pd(x + i);
+    d = Sleef_expd4_u10avx2(d);
+    _mm256_storeu_pd(x + i, d);
+  }
+  for (; i < len; i++) x[i] = exp(x[i]);
+}
+
+HIDDEN void sleef_logd4_u35avx2_array(double *x, size_t len) {
+  size_t i = 0;
+  for (; i + 4 <= len; i += 4) {
+    __m256d d = _mm256_loadu_pd(x + i);
+    d = Sleef_logd4_u35avx2(d);
+    _mm256_storeu_pd(x + i, d);
+  }
+  for (; i < len; i++) x[i] = log(x[i]);
+}
+
+HIDDEN void sleef_expf8_u10avx2_array(float *x, size_t len) {
+  size_t i = 0;
+  for (; i + 8 <= len; i += 8) {
+    __m256 d = _mm256_loadu_ps(x + i);
+    d = Sleef_expf8_u10avx2(d);
+    _mm256_storeu_ps(x + i, d);
+  }
+  for (; i < len; i++) x[i] = expf(x[i]);
+}
+
+HIDDEN void sleef_logf8_u10avx2_array(float *x, size_t len) {
+  size_t i = 0;
+  for (; i + 8 <= len; i += 8) {
+    __m256 d = _mm256_loadu_ps(x + i);
+    d = Sleef_logf8_u10avx2(d);
+    _mm256_storeu_ps(x + i, d);
+  }
+  for (; i < len; i++) x[i] = logf(x[i]);
 }
 #endif

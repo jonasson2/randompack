@@ -23,7 +23,7 @@
 //============================== INTERNAL TYPES AND TABLES ===============================
 
 typedef struct { // Used in table below
-  char *name;
+  char *identifier;
   char *description;
   rng_engine engine;
   int state_words;
@@ -31,10 +31,9 @@ typedef struct { // Used in table below
 } rng_entry;
 
 static rng_entry rng_table[] = {  // x256++simd is default
-  {"x256++simd","xoshiro256++, SIMD accelerated (8x4x64)",     FAST,    4,fill_fast     },
-  {"x256**simd","xoshiro256**, SIMD accelerated (8x4x64)",     X256SSSIMD,4,
-    fill_x256sssimd},
-  {"sfc64simd","sfc64, SIMD accelerated (8x4x64)",             SFCSIMD, 4,fill_sfc64simd},
+  {"x256++simd","xoshiro256++, SIMD accelerated (8x4x64)", X256PPSIMD, 4,fill_x256ppsimd},
+  {"x256**simd","xoshiro256**, SIMD accelerated (8x4x64)", X256SSSIMD, 4,fill_x256sssimd},
+  {"sfc64simd","sfc64, SIMD accelerated (8x4x64)",         SFCSIMD,    4,fill_sfc64simd },
   {"x256++",   "xoshiro256++, Vigna & Blackman, 2019 (4x64)",  X256PP,  4,fill_x256pp   },
   {"x256**",   "xoshiro256**, Vigna & Blackman, 2019 (4x64)",  X256SS,  4,fill_x256ss   },
   {"x128+",    "xorshift128+, Vigna, 2014 (2x64)",             X128P,   2,fill_x128p    },
@@ -72,12 +71,16 @@ randompack_rng *randompack_create(const char *engine) {
 #endif
 #if defined(BUILD_AVX2)
   rng->cpu_has_avx2 = cpu_has_avx2();
-  if (rng->engine == FAST && rng->cpu_has_avx2) rng->fill = fill_fast_avx2;
+  if (rng->engine == X256PPSIMD && rng->cpu_has_avx2) {
+    rng->fill = fill_x256ppsimd_avx2;
+  }
   if (rng->engine == X256SSSIMD && rng->cpu_has_avx2) rng->fill = fill_x256sssimd_avx2;
   if (rng->engine == SFCSIMD && rng->cpu_has_avx2) rng->fill = fill_sfc64simd_avx2;
 #endif
 #if defined(BUILD_AVX512)
-  if (rng->engine == FAST && rng->cpu_has_avx512) rng->fill = fill_fast_avx512;
+  if (rng->engine == X256PPSIMD && rng->cpu_has_avx512) {
+    rng->fill = fill_x256ppsimd_avx512;
+  }
   if (rng->engine == X256SSSIMD && rng->cpu_has_avx512) rng->fill = fill_x256sssimd_avx512;
   if (rng->engine == SFCSIMD && rng->cpu_has_avx512) rng->fill = fill_sfc64simd_avx512;
 #endif
@@ -158,10 +161,10 @@ bool randompack_engines(char *engines, char *descriptions, int *nengines,
   int emax = 1;
   int dmax = 1;
   for (int i = 0; i < n; i++) {
-    int elen = (int)strlen(rng_table[i].name) + 1;
+    int elen = (int)strlen(rng_table[i].identifier) + 1;
     int dlen = (int)strlen(rng_table[i].description) + 1;
-    emax = max(emax, elen);
-    dmax = max(dmax, dlen);
+    emax = maxi(emax, elen);
+    dmax = maxi(dmax, dlen);
   }
   *nengines = n;
   *eng_maxlen = emax;
@@ -169,7 +172,7 @@ bool randompack_engines(char *engines, char *descriptions, int *nengines,
   if (!engines) return true;
   if (!descriptions) return false;
   for (int i = 0; i < n; i++) {
-    STRSETN(engines + i*emax, emax, rng_table[i].name);
+    STRSETN(engines + i*emax, emax, rng_table[i].identifier);
     STRSETN(descriptions + i*dmax, dmax, rng_table[i].description);
   }
   return true;
@@ -192,7 +195,7 @@ bool randompack_jump(int p, randompack_rng *rng) {
   }
   rng->last_error = 0;
   if (rng->engine != X256PP && rng->engine != X256SS &&
-      rng->engine != X256SSSIMD && rng->engine != FAST &&
+      rng->engine != X256SSSIMD && rng->engine != X256PPSIMD &&
       rng->engine != XORO && rng->engine != X128P &&
       rng->engine != PCG64 &&
       rng->engine != RANLUXPP) {
@@ -223,7 +226,7 @@ bool randompack_jump(int p, randompack_rng *rng) {
   else if (rng->engine == XORO)     xoroshiro128pp_jump (rng->state.u64, p);
   else if (rng->engine == X128P)    xorshift128p_jump   (rng->state.u64, p);
   else if (rng->engine == RANLUXPP) ranlux_jump         (rng->state.u64, p);
-  else if (rng->engine == FAST)     x256simd_jump       (p, rng);
+  else if (rng->engine == X256PPSIMD) x256simd_jump     (p, rng);
   else if (rng->engine == PCG64)    pcg_jump            (p, rng);
   rng->buf_word = BUFSIZE;
   rng->buf_byte = 0;
@@ -366,7 +369,7 @@ bool randompack_set_state(uint64_t state[], int nstate, randompack_rng *rng) {
   else if (nstate != nwords)
     rng->last_error = "randompack set_state: wrong nstate for this engine";
   else if (rng->engine == X256PP || rng->engine == X256SS ||
-           rng->engine == X256SSSIMD || rng->engine == FAST ||
+           rng->engine == X256SSSIMD || rng->engine == X256PPSIMD ||
            rng->engine == XORO || rng->engine == X128P ||
            rng->engine == RANLUXPP) {
     if (all_zero_state(state, nstate))
@@ -442,7 +445,7 @@ bool randompack_deserialize(const uint8_t *buf, int len, randompack_rng *rng) {
     return false;
   }
   rng_blob blob = {0};
-  memcpy(&blob, buf, min(len, STATE_NEED));
+  memcpy(&blob, buf, mini(len, STATE_NEED));
   rng_entry *ent = find_entry(blob.engine);
   int need = STATE_NEED;
   if (blob.version != 1 || !ent || len < need) {
@@ -459,12 +462,16 @@ bool randompack_deserialize(const uint8_t *buf, int len, randompack_rng *rng) {
     return false;
   }
 #if defined(BUILD_AVX2)
-  if (rng->engine == FAST && rng->cpu_has_avx2) rng->fill = fill_fast_avx2;
+  if (rng->engine == X256PPSIMD && rng->cpu_has_avx2) {
+    rng->fill = fill_x256ppsimd_avx2;
+  }
   if (rng->engine == X256SSSIMD && rng->cpu_has_avx2) rng->fill = fill_x256sssimd_avx2;
   if (rng->engine == SFCSIMD && rng->cpu_has_avx2) rng->fill = fill_sfc64simd_avx2;
 #endif
 #if defined(BUILD_AVX512)
-  if (rng->engine == FAST && rng->cpu_has_avx512) rng->fill = fill_fast_avx512;
+  if (rng->engine == X256PPSIMD && rng->cpu_has_avx512) {
+    rng->fill = fill_x256ppsimd_avx512;
+  }
   if (rng->engine == X256SSSIMD && rng->cpu_has_avx512) rng->fill = fill_x256sssimd_avx512;
   if (rng->engine == SFCSIMD && rng->cpu_has_avx512) rng->fill = fill_sfc64simd_avx512;
 #endif

@@ -61,9 +61,10 @@ ALWAYS_INLINE void gen_gammaf(float *x, size_t len, float shape, float scale,
     while (i < len) {
       size_t n = len - i < 256 ? len - i : 256;
       rand_float(t, n, rng);
-      logf_inplace(t, n, rng);
-      for (size_t j = 0; j < n; j++) t[j] *= inv_shape;
-      expf_inplace(t, n, rng);
+      for (size_t j = 0; j < n; j++) {
+        float y = rng->bitexact ? openlibm_log1pf(-t[j]) : log1pf(-t[j]);
+        t[j] = rng->bitexact ? openlibm_expf(inv_shape*y) : expf(inv_shape*y);
+      }
       for (size_t j = 0; j < n; j++) x[i + j] *= t[j];
       i += n;
     }
@@ -76,7 +77,7 @@ ALWAYS_INLINE void gen_betaf(float *x, size_t len, float a, float b,
   float gb[64];
   size_t i = 0;
   while (i < len) {
-    int n = min(64, len - i);
+    int n = mini(64, len - i);
     gen_gammaf(gb, n, b, 1.0f, rng);
     float hi = 1.0f - FLT_EPSILON; // restrict draws to (0, 1):
     for (int j = 0; j < n; j++) {
@@ -96,7 +97,7 @@ ALWAYS_INLINE void gen_tf(float *x, size_t len, float nu, randompack_rng *rng) {
   rand_normf(x, len, rng);
   size_t i = 0;
   while (i < len) {
-    int n = min(64, len - i);
+    int n = mini(64, len - i);
     gen_gammaf(u, n, 0.5f*nu, 2.0f, rng);
     for (int j = 0; j < n; j++)
       x[i + j] /= sqrtf(u[j]/nu);
@@ -110,7 +111,7 @@ ALWAYS_INLINE void gen_ff(float *x, size_t len, float nu1, float nu2,
   gen_gammaf(x, len, nu1/2.0f, 1.0f, rng);
   size_t i = 0;
   while (i < len) {
-    int n = min(64, len - i);
+    int n = mini(64, len - i);
     gen_gammaf(x2, n, nu2/2.0f, 1.0f, rng);
     for (int j = 0; j < n; j++)
       x[i + j] = (x[i + j]*nu2)/(x2[j]*nu1);
@@ -143,9 +144,18 @@ ALWAYS_INLINE void gen_paretof(float *x, size_t len, float xm, float alpha,
 ALWAYS_INLINE void gen_weibullf(float *x, size_t len, float shape,
   float scale, randompack_rng *rng) {
   rand_expf(x, len, rng);
+  if (shape == 1.0f) {
+    if (scale != 1.0f) scale_float_inplace(x, len, scale, rng);
+    return;
+  }
+  if (shape == 2.0f) {
+    for (size_t i = 0; i < len; i++) x[i] = sqrtf(x[i]);
+    if (scale != 1.0f) scale_float_inplace(x, len, scale, rng);
+    return;
+  }
   float inv_shape = 1.0f/shape;
   logf_inplace(x, len, rng);
-  for (size_t i = 0; i < len; i++) x[i] *= inv_shape;
+  scale_float_inplace(x, len, inv_shape, rng);
   expf_inplace(x, len, rng);
   if (scale != 1.0f) scale_float_inplace(x, len, scale, rng);
 }
@@ -159,7 +169,7 @@ ALWAYS_INLINE void gen_skew_normalf(float *x, size_t len, float mu,
   size_t i = 0;
   float u[64];
   while (i < len) {
-    int n = min(64, len - i);
+    int n = mini(64, len - i);
     rand_normf(u, n, rng);
     for (int j = 0; j < n; j++) {
       float v = delta*fabsf(u[j]) + scale*x[i + j];

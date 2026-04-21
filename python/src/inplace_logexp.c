@@ -3,62 +3,31 @@
 
 #include <math.h>
 #include <stddef.h>
-
-#if defined(_MSC_VER)
-  #define HIDDEN
-#elif defined(__GNUC__) || defined(__clang__)
-  #define HIDDEN __attribute__((visibility("hidden")))
-#else
-  #define HIDDEN
-#endif
+#include "randompack_config.h"
 
 #if defined(__x86_64__) || defined(_M_X64)
 
 #include <immintrin.h>
 
-__m256d Sleef_expd4_u10avx2(__m256d d);
-__m256d Sleef_logd4_u35avx2(__m256d d);
-__m256 Sleef_expf8_u10avx2(__m256 d);
-__m256 Sleef_logf8_u10avx2(__m256 d);
+void sleef_expd4_u10avx2_array(double *x, size_t len);
+void sleef_logd4_u35avx2_array(double *x, size_t len);
+void sleef_expf8_u10avx2_array(float *x, size_t len);
+void sleef_logf8_u10avx2_array(float *x, size_t len);
 
 HIDDEN void sleef_exp_inplace(double *x, size_t len) {
-  size_t i = 0;
-  for (; i + 4 <= len; i += 4) {
-    __m256d d = _mm256_loadu_pd(x + i);
-    d = Sleef_expd4_u10avx2(d);
-    _mm256_storeu_pd(x + i, d);
-  }
-  for (; i < len; i++) x[i] = exp(x[i]);
+  sleef_expd4_u10avx2_array(x, len);
 }
 
 HIDDEN void sleef_log_inplace(double *x, size_t len) {
-  size_t i = 0;
-  for (; i + 4 <= len; i += 4) {
-    __m256d d = _mm256_loadu_pd(x + i);
-    d = Sleef_logd4_u35avx2(d);
-    _mm256_storeu_pd(x + i, d);
-  }
-  for (; i < len; i++) x[i] = log(x[i]);
+  sleef_logd4_u35avx2_array(x, len);
 }
 
 HIDDEN void sleef_expf_inplace(float *x, size_t len) {
-  size_t i = 0;
-  for (; i + 8 <= len; i += 8) {
-    __m256 d = _mm256_loadu_ps(x + i);
-    d = Sleef_expf8_u10avx2(d);
-    _mm256_storeu_ps(x + i, d);
-  }
-  for (; i < len; i++) x[i] = expf(x[i]);
+  sleef_expf8_u10avx2_array(x, len);
 }
 
 HIDDEN void sleef_logf_inplace(float *x, size_t len) {
-  size_t i = 0;
-  for (; i + 8 <= len; i += 8) {
-    __m256 d = _mm256_loadu_ps(x + i);
-    d = Sleef_logf8_u10avx2(d);
-    _mm256_storeu_ps(x + i, d);
-  }
-  for (; i < len; i++) x[i] = logf(x[i]);
+  sleef_logf8_u10avx2_array(x, len);
 }
 
 #elif (defined(__aarch64__) || defined(_M_ARM64)) && !defined(__APPLE__)
