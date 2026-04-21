@@ -74,8 +74,10 @@ methods_continuous <- list(
   },
   mvn = function(n, Sigma, mu = NULL) {
     if (is.null(self$ptr)) stop("RNG is not initialized")
-    n <- as_int1(n, "n")
-    if (n < 0L) stop("n must be non-negative")
+    if (!is.numeric(n) || length(n) != 1L || is.na(n) || !is.finite(n))
+      stop("n must be a finite numeric scalar")
+    if (n < 0 || n != floor(n)) stop("n must be a non-negative integer")
+    n <- as.integer(n)
     if (is.null(Sigma)) stop("Sigma must not be NULL")
     if (!is.matrix(Sigma) || !is.numeric(Sigma))
       stop("Sigma must be a numeric matrix")
