@@ -1,33 +1,36 @@
 # randompack
 
-This package provides Python bindings to the C library Randompack, a random number
-generation toolkit that also includes interfaces for Julia, R, and Fortran. Randompack
-exposes a collection of modern RNG engines, including xoshiro256++/**, PCG64 DXSM, sfc64,
-ranlux++, Philox, and ChaCha20, together with a range of probability distributions, both
-integer and continuous. The library allows matching random draws across platforms and
-supported language interfaces. It provides unbounded and bounded integer draws,
-permutations, sampling without replacement, and 14 continuous distributions, ranging from
-basic ones (uniform, normal, exponential), through commonly used distributions (beta,
-gamma), to more specialized ones (such as skew-normal). Multivariate normal sampling is
-also supported.
+This package provides Python bindings to the C library Randompack, a random
+number generation toolkit that also includes interfaces for Julia, R, and
+Fortran. Randompack exposes a collection of modern RNG engines, including
+xoshiro256++/**, PCG64 DXSM, sfc64, ranlux++, Philox, and ChaCha20, together
+with a range of probability distributions, both integer and continuous. The
+library allows matching random draws across platforms and supported language
+interfaces. It provides unbounded and bounded integer draws, permutations,
+sampling without replacement, and 14 continuous distributions, ranging from
+basic ones (uniform, normal, exponential), through commonly used distributions
+(beta, gamma), to more specialized ones (such as skew-normal). Multivariate
+normal sampling is also supported.
 
-Through SIMD instructions on modern CPUs, the inherently fast default engine xoshiro256++
-delivers high throughput for bulk generation, typically providing 3–6× faster performance
-than NumPy for uniform, normal, and exponential draws.
+Through SIMD instructions on modern CPUs, the inherently fast default engine
+xoshiro256++ delivers high throughput for bulk generation, typically providing
+3–6 times faster performance than NumPy for uniform, normal, and exponential
+draws.
 
-For more information, including implementation details, benchmarking results, and
-documentation of engines and distributions, see the main project readme file at
-https://github.com/jonasson2/randompack. The same page also links to DEVELOPMENT.md, which
-contains setup and development instructions, including details specific to the Python
-interface.
+For more information, including implementation details, benchmarking results,
+and documentation of engines and distributions, see the main project readme file
+at https://github.com/jonasson2/randompack. The same page also links to
+DEVELOPMENT.md, which contains setup and development instructions, including
+details specific to the Python interface.
 
 ## Cross platform consistency
 
-Given the same engine and seed, samples obtained on different platforms (programming
-language/computer/compiler/OS/architecture) agree. For uniform, normal, exponential, and
-integer distributions the agreement is bit-exact (x == y holds). For the remaining
-distributions, samples agree to within ca. 2 ulp. If the `bitexact` parameter is set to
-`true` the agreement is bit-exact for all distributions.
+Given the same engine and seed, samples obtained on different platforms
+(programming language/computer/compiler/OS/architecture) agree. For uniform,
+normal, exponential, and integer distributions the agreement is bit-exact (x ==
+y holds). For the remaining distributions, samples agree to within ca. 2 ulp. If
+the `bitexact` parameter is set to `true` the agreement is bit-exact for all
+distributions.
 
 ## Usage
 
@@ -39,13 +42,14 @@ pip install randompack
 ```python
 import numpy as np
 import randompack
-rng = randompack.Rng()              # default engine (x256++simd)
-rng = randompack.Rng("pcg64")       # specified engine; rng is randomized by default
-randompack.engines()                # list available engines
-rng.seed(123)                       # deterministic seed
-rng.seed(123, spawn_key=[1, 2])     # independent substreams
-rng.randomize()                     # seed from system entropy
-rng2 = rng.duplicate()              # identical independent copy
+
+rng = randompack.Rng()          # default engine (x256++simd)
+rng = randompack.Rng("pcg64")   # specified engine; rng is randomized by default
+randompack.engines()            # list available engines
+rng.seed(123)                   # deterministic seed
+rng.seed(123, spawn_key=[1,2])  # independent substreams
+rng.randomize()                 # seed from system entropy
+rng2 = rng.duplicate()          # identical independent copy
 ```
 
 ### Continuous distributions
@@ -79,27 +83,25 @@ rng.mvn(Sigma, out=Z)                            # Sigma must be 2×2
 
 ### State control and serialization
 ```python
-rngx = randompack.Rng("x256**")
+rngc = randompack.Rng("chacha20")
 rngp = randompack.Rng("philox")
 rngq = randompack.Rng("pcg64")
-rngw = randompack.Rng("cwg128")
-rngs = randompack.Rng("sfc64")
-rngc = randompack.Rng("chacha20")
-rngz = randompack.Rng("squares")
 rngr = randompack.Rng("ranlux++")
-rngx.set_state(state=[1,2,3,4])                  # general state setter
-rngx.jump(128)                                   # jump the state by 2^128 steps
-rngq.pcg64_advance([1024, 0])                    # advance pcg64 by 1024 steps
-rngp.set_state([1,2,3,4,0,0])                    # set full Philox state
-rngp.philox_set_key([4,6])                       # set Philox key
-rngq.pcg64_set_inc([3, 5])                       # change PCG stream increment
-rngw.cwg128_set_weyl([3, 5])                     # change CWG128 Weyl increment
-rngs.set_state([1, 2, 3, 17])                    # set full sfc64 state
-rngs.sfc64_set_abc([7, 11, 13])                  # update only a, b, c
-rngc.chacha_set_nonce([7, 11, 13])               # change ChaCha20 nonce
-rngz.set_state([3, 0])                           # set full Squares state
-rngz.squares_set_key(4)                          # set Squares key
-rngr.jump(32)                                    # jump the state by 2^32 steps
+rngs = randompack.Rng("sfc64")
+rngw = randompack.Rng("cwg128")
+rngx = randompack.Rng("x256**")
+rngz = randompack.Rng("squares")
+rngq.pcg64_set_inc([3, 5])           # change PCG stream increment
+rngq.advance(2**16)                  # advance pcg64 by 2^16 steps
+rngq.jump(16)                        # also advances by 2^16 steps
+rngr.jump(32)                        # jump ranlux++ state by 2^32 steps
+rngx.jump(128)                       # jump x256** state by 2^128 steps
+rngc.chacha_set_nonce([7, 11, 13])   # change ChaCha20 nonce
+rngw.cwg128_set_weyl([3, 5])         # change CWG128 Weyl increment
+rngs.sfc64_set_abc([7, 11, 13])      # update only a, b, c
+rngp.philox_set_key([4,6])           # set Philox key
+rngz.squares_set_key(4)              # set Squares key
+rngx.set_state(state=[1,2,3,4])      # general state setter
 
 rngy = randompack.Rng("x256**")  # engines must match
 state = rngx.serialize()         # copy engine state of rngx
