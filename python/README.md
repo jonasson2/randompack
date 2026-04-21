@@ -90,24 +90,27 @@ rngr = randompack.Rng("ranlux++")
 rngs = randompack.Rng("sfc64")
 rngw = randompack.Rng("cwg128")
 rngx = randompack.Rng("x256**")
+rngy = randompack.Rng("x256**")
 rngz = randompack.Rng("squares")
-rngq.pcg64_set_inc([3, 5])           # change PCG stream increment
-rngq.advance(2**16)                  # advance pcg64 by 2^16 steps
-rngq.jump(16)                        # also advances by 2^16 steps
-rngr.jump(32)                        # jump ranlux++ state by 2^32 steps
-rngx.jump(128)                       # jump x256** state by 2^128 steps
-rngc.chacha_set_nonce([7, 11, 13])   # change ChaCha20 nonce
-rngw.cwg128_set_weyl([3, 5])         # change CWG128 Weyl increment
-rngs.sfc64_set_abc([7, 11, 13])      # update only a, b, c
-rngp.philox_set_key([4,6])           # set Philox key
-rngz.squares_set_key(4)              # set Squares key
-rngx.set_state(state=[1,2,3,4])      # general state setter
 
-rngy = randompack.Rng("x256**")  # engines must match
-state = rngx.serialize()         # copy engine state of rngx
-rngy.deserialize(state)          # and put in rngy
+rngq.pcg64_set_inc([3, 5])         # change PCG stream increment
+rngq.advance(2**16)                # advance pcg64 by 2^16 steps (< 2^128 ok)
+rngq.advance([2**16, 0])           # also advances by 2^16 steps
+rngq.jump(16)                      # and also advances by 2^16 steps
+rngr.jump(32)                      # jump ranlux++ state by 2^32 steps
+rngx.jump(128)                     # jump x256** state by 2^128 steps
+rngc.chacha_set_nonce([7, 11, 13]) # change ChaCha20 nonce, each entry < 2^32
+rngw.cwg128_set_weyl([3, 5])       # change CWG128 Weyl increment
+rngs.sfc64_set_abc([7, 11, 13])    # change a, b, c
+rngp.philox_set_key([4,6])         # change Philox key
+rngz.squares_set_key(4)            # change squares key
+rngx.set_state(state=[1,2,3,4])    # general state setter
 
-rngm = randompack.Rng(full_mantissa=True)  # enable full 53-bit mantissa (52-bit is default)
-rng = randompack.Rng(bitexact=True)            # make agreement across platforms exact
-rng = randompack.Rng("philox", bitexact=True)  # exact agreement with specified engine
+state = rngx.serialize()           # copy engine state of rngx
+rngy.deserialize(state)            # and put in rngy (engines must match)
+
+rng = randompack.Rng(bitexact=True)      # make agreement across platforms exact
+rng = randompack.Rng("philox", bitexact=True)  # bitexact with specified engine
+rng = randompack.Rng(full_mantissa=True)       # enable full 53-bit mantissa
+                                               # (52-bit is default)
 ```

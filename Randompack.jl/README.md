@@ -1,33 +1,35 @@
 # Randompack.jl
 
-This package provides Julia bindings to the C library Randompack, a random number
-generation toolkit that also includes interfaces for R, Fortran, and Python. Randompack
-exposes a collection of modern RNG engines, including xoshiro256++/**, PCG64 DXSM, sfc64,
-ranlux++, Philox, and ChaCha20, together with a range of probability distributions, both
-integer and continuous. The library allows matching random draws across platforms and
-supported language interfaces. It provides unbounded and bounded integer draws,
-permutations, sampling without replacement, and 14 continuous distributions, ranging from
-basic ones (uniform, normal, exponential), through commonly used distributions (beta,
-gamma), to some not available in Julia’s standard distribution library (skew-normal).
-Multivariate normal sampling is also supported.
+This package provides Julia bindings to the C library Randompack, a random
+number generation toolkit that also includes interfaces for R, Fortran, and
+Python. Randompack exposes a collection of modern RNG engines, including
+xoshiro256++/**, PCG64 DXSM, sfc64, ranlux++, Philox, and ChaCha20, together
+with a range of probability distributions, both integer and continuous. The
+library allows matching random draws across platforms and supported language
+interfaces. It provides unbounded and bounded integer draws, permutations,
+sampling without replacement, and 14 continuous distributions, ranging from
+basic ones (uniform, normal, exponential), through commonly used distributions
+(beta, gamma), to some not available in Julia’s standard distribution library
+(skew-normal). Multivariate normal sampling is also supported.
 
 Through SIMD instructions on modern CPUs, the inherently fast default engine,
-xoshiro256++, delivers performance that matches or exceeds native Julia’s random number
-generation.
+xoshiro256++, delivers performance that matches or exceeds native Julia’s random
+number generation.
 
-For more information, including implementation details, benchmarking results, and
-documentation of engines and distributions, see the main project readme file at
-https://github.com/jonasson2/randompack. The same page also links to DEVELOPMENT.md, which
-contains setup and development instructions, including details specific to the Julia
-interface.
+For more information, including implementation details, benchmarking results,
+and documentation of engines and distributions, see the main project readme file
+at https://github.com/jonasson2/randompack. The same page also links to
+DEVELOPMENT.md, which contains setup and development instructions, including
+details specific to the Julia interface.
 
 ## Cross-platform consistency
 
-Given the same engine and seed, samples obtained on different platforms (programming
-language/computer/compiler/OS/architecture) agree. For uniform, normal, exponential, and
-integer distributions the agreement is bit-exact (x == y holds). For the remaining
-distributions, samples agree to within ca. 2 ulp. If the `bitexact` parameter is set to
-`true` the agreement is bit-exact for all distributions.
+Given the same engine and seed, samples obtained on different platforms
+(programming language/computer/compiler/OS/architecture) agree. For uniform,
+normal, exponential, and integer distributions the agreement is bit-exact (x ==
+y holds). For the remaining distributions, samples agree to within ca. 2 ulp. If
+the `bitexact` parameter is set to `true` the agreement is bit-exact for all
+distributions.
 
 ## Usage
 
@@ -75,33 +77,34 @@ random_mvn!(rng, Z, Sigma)                       # Sigma must be 2×2
 
 ### State control and serialization
 ```julia
-rngx = rng_create("x256**")
+rngc = rng_create("chacha20")
 rngp = rng_create("philox")
 rngq = rng_create("pcg64")
-rngw = rng_create("cwg128")
-rngs = rng_create("sfc64")
-rngc = rng_create("chacha20")
-rngz = rng_create("squares")
 rngr = rng_create("ranlux++")
-Randompack.set_state!(rngx; state=[1,2,3,4])                  # general state setter
-Randompack.set_state!(rngp; state=[1,2,3,4,0,0])              # set full Philox state
-Randompack.philox_set_key!(rngp; key=[4,6])                   # set Philox key
-Randompack.jump!(rngx, 128)                                   # jump state by 2^128 steps
-Randompack.advance!(rngq, 1024)                               # advance pcg64 by 1024 steps
-Randompack.pcg64_set_inc!(rngq; inc=[3, 5])                   # change PCG increment
-Randompack.cwg128_set_weyl!(rngw; weyl=[3,5])                # change CWG128 Weyl increment
-Randompack.set_state!(rngs; state=[1,2,3,17])                # set full sfc64 state
-Randompack.sfc64_set_abc!(rngs; abc=[7,11,13])               # update only a, b, c
-Randompack.chacha_set_nonce!(rngc; nonce=[7,11,13])          # change ChaCha20 nonce
-Randompack.set_state!(rngz; state=[3,0])                     # set full Squares state
-Randompack.squares_set_key!(rngz; key=4)                     # set Squares key
-Randompack.jump!(rngr, 32)                                    # jump state by 2^32 steps
+rngs = rng_create("sfc64")
+rngw = rng_create("cwg128")
+rngx = rng_create("x256**")
+rngz = rng_create("squares")
+rngy = rng_create("x256**")
 
-rngy = rng_create("x256**")                      # engines must match
-state = Randompack.serialize(rngx)               # copy engine state of rngx
-Randompack.deserialize!(rngy, state)             # and put in rngy
+Randompack.pcg64_set_inc!(rngq, [3, 5])       # change PCG stream increment     
+Randompack.advance!(rngq, 2^16)               # advance pcg64 by 2^16 steps
+Randompack.advance!(rngq, [2^16, 0])          #	also advances by 2^16 steps     
+Randompack.jump!(rngq, 16)                    # and also advances by 2^16 steps 
+Randompack.jump!(rngr, 32)                    # jump ranlux++ by 2^32 steps     
+Randompack.jump!(rngx, 128)                   # jump x256** by 2^128 steps      
+Randompack.chacha_set_nonce!(rngc, [7,11,13]) # change nonce (each entry < 2^32)
+Randompack.cwg128_set_weyl!(rngw, [3,5])      # change CWG128 Weyl increment    
+Randompack.sfc64_set_abc!(rngs, [7,11,13])    # change a, b, c                  
+Randompack.philox_set_key!(rngp, [4,6])       # change Philox key               
+Randompack.squares_set_key!(rngz, 4)          # change squares key              
+Randompack.set_state!(rngx, [1,2,3,4])        # general state setter            
 
-rngm = rng_create(full_mantissa=true)     # enable 53-bit mantissa (52-bit is default)
-rng = rng_create(bitexact=true)           # make agreement across platforms exact
-rng = rng_create("philox"; bitexact=true) # exact agreement with specified engine
-``` 
+state = Randompack.serialize(rngx)     # copy engine state of rngx
+Randompack.deserialize!(rngy, state)   # and put in rngy (engines must match)
+
+rng = rng_create(bitexact=true)        # make agreement across platforms exact
+rng = rng_create("philox"; bitexact=true) # bitexact with specified engine
+rng = rng_create(full_mantissa=true)      # enable full 53-bit mantissa
+                                          # (52-bit is default)           
+```

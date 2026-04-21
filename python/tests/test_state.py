@@ -192,7 +192,14 @@ def test_advance():
     rng2.set_state(state)
     rng1.advance(0)
     assert rng1.unif() == rng2.unif()
+    rng1.set_state(state)
+    rng2.set_state(state)
+    rng1.advance(2**96)
+    rng2.advance([0, 2**32])
+    assert rng1.unif() == rng2.unif()
     with pytest.raises(Exception):
         rng1.advance([1])
+    with pytest.raises(Exception):
+        rng1.advance(2**128)
     with pytest.raises(Exception):
         rp.Rng("squares").advance([1, 0])

@@ -147,19 +147,21 @@ end
 Advance a `pcg64` engine by an arbitrary 128-bit delta.
 
 Values are range-checked and converted to `UInt64` before calling the C
-library. `delta` may be a scalar integer `s`, interpreted as `[s, 0]`, or a
-length-2 vector `[low, high]`.
+library. `delta` may be a scalar integer in `[0, 2^128 - 1]`, or a
+length-2 vector `[low, high]` of 64-bit words.
 
 # Examples
 ```julia
 Randompack.advance!(rng, 1024)
+Randompack.advance!(rng, big(2)^96)
 Randompack.advance!(rng, [1024, 0])
 ```
 
 """
 function advance!(rng::RNG, delta::Integer)
   rng.ptr == C_NULL && throw(ErrorException("RNG pointer is NULL"))
-  c_delta = UInt64[_u64_scalar_checked(delta), 0]
+  d = _u128_scalar_checked(delta)
+  c_delta = UInt64[UInt64(d % (UInt128(1) << 64)), UInt64(d >> 64)]
   ok = ccall(_sym(:randompack_advance), Bool, (Ptr{UInt64}, RNGPtr),
              c_delta, rng.ptr)
   _check_ok(ok, rng.ptr, "randompack_advance failed")
@@ -181,7 +183,7 @@ end
 # -----------------------------------------------------------------------------
 
 """
-    Randompack.set_state!(rng::RNG; state::AbstractVector{<:Integer})
+    Randompack.set_state!(rng::RNG, state::AbstractVector{<:Integer})
 
 Set the raw engine state from a vector of integer words.
 
@@ -193,11 +195,11 @@ engine (see `Randompack.engines()` for available engine names and state sizes).
 
 # Examples
 ```julia
-Randompack.set_state!(rng; state=[1, 2, 3, 4])         # converts Int to UInt64
-Randompack.set_state!(rng; state=UInt64[1, 2, 3, 4])   # no conversion needed
+Randompack.set_state!(rng, [1, 2, 3, 4])         # converts Int to UInt64
+Randompack.set_state!(rng, UInt64[1, 2, 3, 4])   # no conversion needed
 ```
 """
-function set_state!(rng::RNG; state::AbstractVector{<:Integer})
+function set_state!(rng::RNG, state::AbstractVector{<:Integer})
   if state isa AbstractVector{UInt64}
     return _set_state_u64!(rng, state)
   end
@@ -220,11 +222,11 @@ function _set_state_u64!(rng::RNG, state::AbstractVector{UInt64})
 end
 
 """
-    Randompack.philox_set_key!(rng::RNG; key::AbstractVector{<:Integer})
+    Randompack.philox_set_key!(rng::RNG, key::AbstractVector{<:Integer})
 
 Set the Philox key directly.
 """
-function philox_set_key!(rng::RNG; key::AbstractVector{<:Integer})
+function philox_set_key!(rng::RNG, key::AbstractVector{<:Integer})
   rng.ptr == C_NULL && throw(ErrorException("RNG pointer is NULL"))
   length(key) == 2 || throw(ArgumentError("philox key must have length 2"))
   keyv = _u64_vec_from_ints(key)
@@ -235,7 +237,7 @@ function philox_set_key!(rng::RNG; key::AbstractVector{<:Integer})
 end
 
 """
-    Randompack.squares_set_key!(rng::RNG; key::Integer)
+    Randompack.squares_set_key!(rng::RNG, key::Integer)
 
 Set the Squares64 key directly.
 
@@ -244,11 +246,11 @@ library. Throws if the RNG is not a squares engine.
 
 # Examples
 ```julia
-Randompack.squares_set_key!(rng; key=4)
+Randompack.squares_set_key!(rng, 4)
 ```
 
 """
-function squares_set_key!(rng::RNG; key::Integer)
+function squares_set_key!(rng::RNG, key::Integer)
   rng.ptr == C_NULL && throw(ErrorException("RNG pointer is NULL"))
   k64 = _u64_scalar_checked(key)
   ok = ccall(_sym(:randompack_squares_set_key), Bool,
@@ -258,7 +260,7 @@ function squares_set_key!(rng::RNG; key::Integer)
 end
 
 """
-    Randompack.pcg64_set_inc!(rng::RNG; inc)
+    Randompack.pcg64_set_inc!(rng::RNG, inc)
 
 Set the 128-bit PCG64 increment.
 
@@ -268,11 +270,11 @@ be odd. Throws if the RNG is not a pcg64 engine.
 
 # Examples
 ```julia
-Randompack.pcg64_set_inc!(rng; inc=[3, 5])
+Randompack.pcg64_set_inc!(rng, [3, 5])
 ```
 
 """
-function pcg64_set_inc!(rng::RNG; inc)
+function pcg64_set_inc!(rng::RNG, inc)
   rng.ptr == C_NULL && throw(ErrorException("RNG pointer is NULL"))
   length(inc) == 2 || throw(ArgumentError("inc must have length 2"))
   c_inc = _u64_vec_from_ints(inc)
@@ -283,7 +285,7 @@ function pcg64_set_inc!(rng::RNG; inc)
 end
 
 """
-    Randompack.cwg128_set_weyl!(rng::RNG; weyl)
+    Randompack.cwg128_set_weyl!(rng::RNG, weyl)
 
 Set the 128-bit CWG128 Weyl increment.
 
@@ -293,11 +295,11 @@ be odd.
 
 # Examples
 ```julia
-Randompack.cwg128_set_weyl!(rng; weyl=[3, 5])
+Randompack.cwg128_set_weyl!(rng, [3, 5])
 ```
 
 """
-function cwg128_set_weyl!(rng::RNG; weyl)
+function cwg128_set_weyl!(rng::RNG, weyl)
   rng.ptr == C_NULL && throw(ErrorException("RNG pointer is NULL"))
   length(weyl) == 2 || throw(ArgumentError("weyl must have length 2"))
   c_weyl = _u64_vec_from_ints(weyl)
@@ -308,7 +310,7 @@ function cwg128_set_weyl!(rng::RNG; weyl)
 end
 
 """
-    Randompack.sfc64_set_abc!(rng::RNG; abc)
+    Randompack.sfc64_set_abc!(rng::RNG, abc)
 
 Set the `sfc64` `a`, `b`, `c` state words directly, leaving the counter
 unchanged.
@@ -318,11 +320,11 @@ library. `abc` must be a length-3 vector `[a, b, c]`.
 
 # Examples
 ```julia
-Randompack.sfc64_set_abc!(rng; abc=[7, 11, 13])
+Randompack.sfc64_set_abc!(rng, [7, 11, 13])
 ```
 
 """
-function sfc64_set_abc!(rng::RNG; abc)
+function sfc64_set_abc!(rng::RNG, abc)
   rng.ptr == C_NULL && throw(ErrorException("RNG pointer is NULL"))
   length(abc) == 3 || throw(ArgumentError("abc must have length 3"))
   c_abc = _u64_vec_from_ints(abc)
@@ -333,7 +335,7 @@ function sfc64_set_abc!(rng::RNG; abc)
 end
 
 """
-    Randompack.chacha_set_nonce!(rng::RNG; nonce)
+    Randompack.chacha_set_nonce!(rng::RNG, nonce)
 
 Set the 96-bit ChaCha20 nonce.
 
@@ -342,11 +344,11 @@ library. `nonce` must be a length-3 vector `[n0, n1, n2]`.
 
 # Examples
 ```julia
-Randompack.chacha_set_nonce!(rng; nonce=[7, 11, 13])
+Randompack.chacha_set_nonce!(rng, [7, 11, 13])
 ```
 
 """
-function chacha_set_nonce!(rng::RNG; nonce)
+function chacha_set_nonce!(rng::RNG, nonce)
   rng.ptr == C_NULL && throw(ErrorException("RNG pointer is NULL"))
   length(nonce) == 3 || throw(ArgumentError("nonce must have length 3"))
   c_nonce = _u32_vec_from_ints(nonce)

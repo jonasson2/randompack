@@ -110,16 +110,22 @@ end
     rng2 = rng_create("pcg64")
     state = [0x5bee00f1ac1e7b4d, 0x786df8ae32b3fe64,
              0x26dbcfc7823f9c3b, 0x0d4e48fee886333a]
-    Randompack.set_state!(rng1; state=state)
-    Randompack.set_state!(rng2; state=state)
+    Randompack.set_state!(rng1, state)
+    Randompack.set_state!(rng2, state)
     Randompack.advance!(rng1, [0, 1 << 16])
     Randompack.jump!(rng2, 80)
     @test random_unif(rng1) == random_unif(rng2)
-    Randompack.set_state!(rng1; state=state)
-    Randompack.set_state!(rng2; state=state)
+    Randompack.set_state!(rng1, state)
+    Randompack.set_state!(rng2, state)
     Randompack.advance!(rng1, 0)
     @test random_unif(rng1) == random_unif(rng2)
+    Randompack.set_state!(rng1, state)
+    Randompack.set_state!(rng2, state)
+    Randompack.advance!(rng1, big(2)^96)
+    Randompack.advance!(rng2, [0, 2^32])
+    @test random_unif(rng1) == random_unif(rng2)
     @test_throws ArgumentError Randompack.advance!(rng1, [1])
+    @test_throws ArgumentError Randompack.advance!(rng1, big(1) << 128)
     rng3 = rng_create("squares")
     @test_throws ErrorException Randompack.advance!(rng3, [1, 0])
   else
@@ -138,8 +144,8 @@ end
 @testset "set_state!" begin
   rng1 = rng_create("squares")
   rng2 = rng_create("squares")
-  Randompack.set_state!(rng1; state=[1, 2])
-  Randompack.set_state!(rng2; state=[1, 2])
+  Randompack.set_state!(rng1, [1, 2])
+  Randompack.set_state!(rng2, [1, 2])
   x1 = random_unif(rng1)
   x2 = random_unif(rng2)
   @test x1 == x2
@@ -148,14 +154,14 @@ end
 @testset "squares_set_key!" begin
   rng1 = rng_create("squares")
   rng2 = rng_create("squares")
-  Randompack.set_state!(rng1; state=[3, 0])
-  Randompack.squares_set_key!(rng1; key=4)
-  Randompack.set_state!(rng2; state=[3, 0])
-  Randompack.squares_set_key!(rng2; key=4)
+  Randompack.set_state!(rng1, [3, 0])
+  Randompack.squares_set_key!(rng1, 4)
+  Randompack.set_state!(rng2, [3, 0])
+  Randompack.squares_set_key!(rng2, 4)
   x1 = random_unif(rng1)
   x2 = random_unif(rng2)
   @test x1 == x2
-  @test_throws ArgumentError Randompack.squares_set_key!(rng1; key=big(1) << 65)
+  @test_throws ArgumentError Randompack.squares_set_key!(rng1, big(1) << 65)
 end
 
 @testset "philox_set_key!" begin
@@ -168,10 +174,10 @@ end
   if has_philox
     rng1 = rng_create("philox")
     rng2 = rng_create("philox")
-    Randompack.set_state!(rng1; state=[1, 2, 3, 4, 0, 0])
-    Randompack.philox_set_key!(rng1; key=[5, 6])
-    Randompack.set_state!(rng2; state=[1, 2, 3, 4, 0, 0])
-    Randompack.philox_set_key!(rng2; key=[5, 6])
+    Randompack.set_state!(rng1, [1, 2, 3, 4, 0, 0])
+    Randompack.philox_set_key!(rng1, [5, 6])
+    Randompack.set_state!(rng2, [1, 2, 3, 4, 0, 0])
+    Randompack.philox_set_key!(rng2, [5, 6])
     x1 = random_unif(rng1)
     x2 = random_unif(rng2)
     @test x1 == x2
@@ -190,14 +196,14 @@ end
   if has_pcg
     rng1 = rng_create("pcg64")
     rng2 = rng_create("pcg64")
-    Randompack.set_state!(rng1; state=[1, 0, 1, 0])
-    Randompack.set_state!(rng2; state=[1, 0, 1, 0])
-    Randompack.pcg64_set_inc!(rng1; inc=[3, 5])
-    Randompack.pcg64_set_inc!(rng2; inc=[3, 5])
+    Randompack.set_state!(rng1, [1, 0, 1, 0])
+    Randompack.set_state!(rng2, [1, 0, 1, 0])
+    Randompack.pcg64_set_inc!(rng1, [3, 5])
+    Randompack.pcg64_set_inc!(rng2, [3, 5])
     x1 = random_unif(rng1)
     x2 = random_unif(rng2)
     @test x1 == x2
-    @test_throws ErrorException Randompack.pcg64_set_inc!(rng1; inc=[2, 5])
+    @test_throws ErrorException Randompack.pcg64_set_inc!(rng1, [2, 5])
   else
     @test true
   end
@@ -206,23 +212,23 @@ end
 @testset "cwg128_set_weyl!" begin
   rng1 = rng_create("cwg128")
   rng2 = rng_create("cwg128")
-  Randompack.set_state!(rng1; state=[1, 0, 7, 0, 11, 0, 13, 0])
-  Randompack.set_state!(rng2; state=[1, 0, 7, 0, 11, 0, 13, 0])
-  Randompack.cwg128_set_weyl!(rng1; weyl=[3, 5])
-  Randompack.cwg128_set_weyl!(rng2; weyl=[3, 5])
+  Randompack.set_state!(rng1, [1, 0, 7, 0, 11, 0, 13, 0])
+  Randompack.set_state!(rng2, [1, 0, 7, 0, 11, 0, 13, 0])
+  Randompack.cwg128_set_weyl!(rng1, [3, 5])
+  Randompack.cwg128_set_weyl!(rng2, [3, 5])
   x1 = random_unif(rng1)
   x2 = random_unif(rng2)
   @test x1 == x2
-  @test_throws ErrorException Randompack.cwg128_set_weyl!(rng1; weyl=[2, 5])
+  @test_throws ErrorException Randompack.cwg128_set_weyl!(rng1, [2, 5])
 end
 
 @testset "sfc64_set_abc!" begin
   rng1 = rng_create("sfc64")
   rng2 = rng_create("sfc64")
-  Randompack.set_state!(rng1; state=[1, 2, 3, 17])
-  Randompack.set_state!(rng2; state=[1, 2, 3, 17])
-  Randompack.sfc64_set_abc!(rng1; abc=[7, 11, 13])
-  Randompack.sfc64_set_abc!(rng2; abc=[7, 11, 13])
+  Randompack.set_state!(rng1, [1, 2, 3, 17])
+  Randompack.set_state!(rng2, [1, 2, 3, 17])
+  Randompack.sfc64_set_abc!(rng1, [7, 11, 13])
+  Randompack.sfc64_set_abc!(rng2, [7, 11, 13])
   x1 = random_unif(rng1)
   x2 = random_unif(rng2)
   @test x1 == x2
@@ -240,8 +246,8 @@ end
     rng2 = rng_create("chacha20")
     rng_seed!(rng1, 123)
     rng_seed!(rng2, 123)
-    Randompack.chacha_set_nonce!(rng1; nonce=[7, 11, 13])
-    Randompack.chacha_set_nonce!(rng2; nonce=[7, 11, 13])
+    Randompack.chacha_set_nonce!(rng1, [7, 11, 13])
+    Randompack.chacha_set_nonce!(rng2, [7, 11, 13])
     x1 = random_unif(rng1)
     x2 = random_unif(rng2)
     @test x1 == x2

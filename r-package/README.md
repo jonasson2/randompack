@@ -86,28 +86,27 @@ rngr <- randompack_rng("ranlux++")
 rngs <- randompack_rng("sfc64")
 rngw <- randompack_rng("cwg128")
 rngx <- randompack_rng("x256**")
+rngy <- randompack_rng("x256**")
 rngz <- randompack_rng("squares")
-rngq$advance()                                 # advance pcg64 by 1024 steps
-rngx$set_state(c(1, 2, 3, 4))                  # general state setter
-rngq$pcg64_advance(c(1024, 0))                 # advance pcg64 by 1024 steps
-rngx$set_state(c(1, 2, 3, 4))                  # general state setter
-rngq$advance(1024)                             # advance pcg64 by 1024 steps
-rngq$pcg64_set_inc(c(3, 0, 5, 0))              # change PCG stream increment
-rngw$cwg128_set_weyl(c(3, 0, 5, 0))            # change CWG128 Weyl increment
-rngs$set_state(c(1, 0, 2, 0, 3, 0, 17, 0))     # set full sfc64 state
-rngs$sfc64_set_abc(c(7, 0, 11, 0, 13, 0))      # update only a, b, c
-rngc$chacha_set_nonce(c(7, 11, 13))            # change ChaCha20 nonce
-rngx$jump(128)                                 # jump the state by 2^128 steps
-rngp$philox_set_key(c(4, 6))                   # set Philox key
-rngz$set_state(c(3, 0, 0, 0))                  # set full Squares state
-rngz$squares_set_key(c(4, 0))                  # set Squares key
-rngr$jump(32)                                  # jump the state by 2^32 steps
-rngx$set_state(c(1, 2, 3, 4))                  # general state setter
 
-rngy <- randompack_rng("x256**")               # engines must match
-state <- rngx$serialize()                      # copy engine state of rngx
-rngy$deserialize(state)                        # and put in rngy
+rngq$pcg64_set_inc(c(3, 0, 5, 0))         # change PCG stream increment
+rngq$advance(2**16)                       # advance pcg64 by 2^16 steps
+rngq.advance([2**16, 0])                  # also advances by 2^16 steps
+rngq.jump(16)                             # and also advances by 2^16 steps
+rngr$jump(32)                             # jump ranlux++ state by 2^32 steps
+rngx$jump(128)                            # jump x256** state by 2^128 steps
+rngc$chacha_set_nonce(c(7, 11, 13))       # change ChaCha20 nonce
+rngw$cwg128_set_weyl(c(3, 0, 5, 0))       # change CWG128 Weyl increment            
+rngs$sfc64_set_abc(c(7, 0, 11, 0, 13, 0)) # change a, b, c                          
+rngp$philox_set_key(c(4, 6))              # set Philox key                          
+rngz$squares_set_key(c(4, 0))             # change squares key
+rngx$set_state(c(1, 2, 3, 4))             # general state setter                    
 
-rngm <- randompack_rng(full_mantissa = TRUE)  # enable full 53-bit mantissa (52 bit is default)
-rng <- randompack_rng(bitexact=TRUE)  # make agreement across platforms exact
+state <- rngx$serialize()                 # copy engine state of rngx
+rngy$deserialize(state)                   # and put in rngy (engines much match)
+
+rng <- randompack_rng(bitexact=TRUE)     # make agreement across platforms exact
+rng <- randompack_rng('philox', bitexact=TRUE) # bitexact with specified engine
+rng <- randompack_rng(full_mantissa = TRUE)    # enable full 53-bit mantissa
+                                               # (52 bit is default)
 ```

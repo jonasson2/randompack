@@ -303,8 +303,9 @@ cdef class Rng:
         Parameters
         ----------
         delta : int or sequence of int
-            A 64-bit step count `s`, interpreted as `[s, 0]`, or two 64-bit
-            words `[low, high]`, all in [0, 2^64-1].
+            A non-negative scalar interpreted as a 128-bit step count, or two
+            64-bit words `[low, high]`, where scalar values must lie in
+            `[0, 2^128-1]` and word entries in `[0, 2^64-1]`.
 
         Returns
         -------
@@ -328,10 +329,10 @@ cdef class Rng:
                 c_delta[i] = <uint64_t>val
         else:
             val = int(delta)
-            if val < 0 or val > U64_MAX:
-                raise ValueError("delta must be in [0, 2^64-1]")
-            c_delta[0] = <uint64_t>val
-            c_delta[1] = 0
+            if val < 0 or val >= (1 << 128):
+                raise ValueError("delta must be in [0, 2^128-1]")
+            c_delta[0] = <uint64_t>(val & U64_MAX)
+            c_delta[1] = <uint64_t>(val >> 64)
         if not randompack_advance(c_delta, self.ptr):
             _raise_last_error(self.ptr)
 
