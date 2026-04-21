@@ -121,14 +121,14 @@ numeric vector \code{spawn_key}.
 Enable or disable 53-bit mantissas for double-precision draws.
 }
 \item{\code{rng$jump(p)}}{
-Jump an xor-family or \code{ranlux++} engine ahead by \eqn{2^p} steps. The
-\code{x128+} and \code{xoro128++} engines support \code{p = 32, 64, 96}, while
-\code{x256++}, \code{x256**}, \code{x256++simd}, and \code{ranlux++} also
-support \code{p = 128} and \code{p = 192}.
+Jump an xor-family or \verb{ranlux++} engine ahead by \eqn{2^p} steps. The
+\verb{x128+} and \verb{xoro128++} engines support \verb{p = 32, 64, 96}, while
+\verb{x256++}, \verb{x256**}, \code{x256++simd}, and \verb{ranlux++} also support
+\code{p = 128} and \code{p = 192}.
 }
 \item{\code{rng$pcg64_advance(delta)}}{
-Advance the \code{pcg64} engine by an arbitrary 128-bit delta. \code{delta}
-may have length up to 4 and shorter vectors are zero-padded.
+Advance the \code{pcg64} engine by an arbitrary 128-bit delta. \code{delta} may
+have length up to 4 and shorter vectors are zero-padded.
 }
 \item{\code{rng$duplicate()}}{Duplicate the RNG, preserving its state.}
 \item{\code{rng$serialize()}}{Serialize the current RNG state as a raw vector.}
@@ -136,20 +136,20 @@ may have length up to 4 and shorter vectors are zero-padded.
 by \code{serialize()}.}
 \item{\code{rng$set_state(state)}}{Set the engine state directly (advanced use).}
 \item{\code{rng$pcg64_set_inc(inc)}}{
-Set the increment of the PCG64 engine. The increment may have length up to 4
-and shorter vectors are zero-padded.
+Set the increment of the PCG64 engine. The increment may have length up
+to 4 and shorter vectors are zero-padded.
 }
 \item{\code{rng$cwg128_set_weyl(weyl)}}{
-Set the Weyl increment of the cwg128 engine. \code{weyl} may have length up to
-4 and shorter vectors are zero-padded.
+Set the Weyl increment of the cwg128 engine. \code{weyl} may have length up
+to 4 and shorter vectors are zero-padded.
 }
 \item{\code{rng$sfc64_set_abc(abc)}}{
-Set the \code{a}, \code{b}, \code{c} state words of the sfc64 engine.
-\code{abc} may have length up to 6 and shorter vectors are zero-padded.
+Set the \code{a}, \code{b}, \code{c} state words of the sfc64 engine. \code{abc} may have
+length up to 6 and shorter vectors are zero-padded.
 }
 \item{\code{rng$chacha_set_nonce(nonce)}}{
-Set the nonce of the ChaCha20 engine. The nonce may have length up to 3 and
-shorter vectors are zero-padded.
+Set the nonce of the ChaCha20 engine. The nonce may have length up to 3
+and shorter vectors are zero-padded.
 }
 \item{\code{rng$philox_set_key(key)}}{
 Set the key of the Philox engine. The key may have length up to 4 and

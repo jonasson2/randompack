@@ -1,17 +1,20 @@
+randompack
+================
+
 # randompack
 
 This package provides R bindings to the C library Randompack, a random
 number generation toolkit that also includes interfaces for Julia,
 Fortran, and Python. Randompack exposes a collection of modern RNG
-engines, including xoshiro256++/\*\*, PCG64 DXSM, sfc64, ranlux++, Philox,
-and ChaCha20, together with a range of probability distributions, both
-integer and continuous. The library allows matching random draws across
-platforms and supported language interfaces. It provides unbounded and
-bounded integer draws, permutations, sampling without replacement, and
-14 continuous distributions, ranging from basic ones (uniform, normal,
-exponential), through commonly used distributions (beta, gamma), to more
-specialized ones (such as skew-normal). Multivariate normal sampling is
-also supported.
+engines, including xoshiro256++/\*\*, PCG64 DXSM, sfc64, ranlux++,
+Philox, and ChaCha20, together with a range of probability
+distributions, both integer and continuous. The library allows matching
+random draws across platforms and supported language interfaces. It
+provides unbounded and bounded integer draws, permutations, sampling
+without replacement, and 14 continuous distributions, ranging from basic
+ones (uniform, normal, exponential), through commonly used distributions
+(beta, gamma), to more specialized ones (such as skew-normal).
+Multivariate normal sampling is also supported.
 
 Through SIMD instructions on modern CPUs, the inherently fast default
 engine xoshiro256++ delivers high throughput for bulk generation,
@@ -107,6 +110,6 @@ rngy <- randompack_rng("x256**")               # engines must match
 state <- rngx$serialize()                      # copy engine state of rngx
 rngy$deserialize(state)                        # and put in rngy
 
-full_mantissa(rng, TRUE)                       # enable full 53-bit mantissa (52 bit is default)
-rng <- randompack_rng(bitexact=TRUE)           # make agreement across platforms exact
+full_mantissa(rng, TRUE)              # enable full 53-bit mantissa (52 bit is default)
+rng <- randompack_rng(bitexact=TRUE)  # make agreement across platforms exact
 ```
