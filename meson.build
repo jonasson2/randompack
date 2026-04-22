@@ -221,16 +221,15 @@ if build_fortran and not build_fortran_interface
 endif
 fortran_src = []
 fortran_inc = []
+if build_fortran_interface
+  fortran_src = files('fortran/src/randompack.f90')
+endif
 
 # -------------------------------------------------
 # Includes / subdirectories
 # -------------------------------------------------
 
 inc = include_directories('src')
-
-if build_fortran_interface
-  subdir('fortran')
-endif
 
 subdir('src')
 
