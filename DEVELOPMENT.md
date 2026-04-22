@@ -69,9 +69,9 @@ TABLE OF CONTENTS
     conda install meson meson-python ninja cython pytest numpy
     scripts/syncpy.sh
     cd python
-    pip install -e . --no-build-isolation
     = optionally use clang: "CC=clang pip install -e . --no-build-isolation"
     = optionally specify Python version: "conda create -n randompack-dev python=3.12"
+    to change the setup remove python/build/cp312
 
     AFTER CHANGE TO C LIBRARY
     cd <project-root>
