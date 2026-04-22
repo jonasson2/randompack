@@ -87,7 +87,7 @@ TABLE OF CONTENTS
 ### Build:
     cd <project-root>                  # enter project root
     scripts/syncR.sh                   # copy C sources from src to r-package/src
-    R CMD install r-package            # create R library             
+    R CMD INSTALL --preclean r-package # create R library
     = do this both first-time and 
       after changes to C library; 
       then restart R
