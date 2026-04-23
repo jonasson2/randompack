@@ -8,6 +8,7 @@ public :: randompack_rng, engines
 
 integer, parameter :: MAXSTRLEN = 1000
 
+! Public Fortran API.
 type :: randompack_rng
   type(c_ptr) :: p = c_null_ptr
 contains
@@ -153,7 +154,8 @@ interface
     logical(c_bool), value :: enable
   end function
 
-  logical(c_bool) function crp_bitexact(rngp, enable) bind(C, name="randompack_bitexact")
+  logical(c_bool) function crp_bitexact(rngp, enable) &
+    bind(C, name="randompack_bitexact")
     import :: c_ptr, c_bool
     type(c_ptr), value :: rngp
     logical(c_bool), value :: enable
@@ -600,605 +602,1437 @@ interface
 
 end interface
 
-! Helper routines and free procedures implemented in the submodule.
-interface
-  pure module function to_c_string(s) result(cs)
+contains
+
+! Helper routines.
+pure function to_c_string(s) result(cs)
   character(len=*), intent(in) :: s
   character(kind=c_char), allocatable :: cs(:)
-  end function
+  integer :: i, n
+  n = len_trim(s)
+  allocate(cs(n+1))
+  do i = 1, n
+    cs(i) = transfer(s(i:i), cs(i))
+  end do
+  cs(n+1) = c_null_char
+end function
 
-  module function cstr_to_fstring(p) result(msg)
+function cstr_to_fstring(p) result(msg)
   type(c_ptr), intent(in) :: p
   character(len=:), allocatable :: msg
-  end function
+  character(kind=c_char), pointer :: s(:)
+  integer :: i, n
+  if (.not. c_associated(p)) then
+    msg = ""
+    return
+  end if
+  call c_f_pointer(p, s, [MAXSTRLEN])
+  n = 0
+  do i = 1, size(s)
+    if (s(i) == c_null_char) exit
+    n = n + 1
+  end do
+  allocate(character(len=n) :: msg)
+  do i = 1, n
+    msg(i:i) = transfer(s(i), msg(i:i))
+  end do
+end function
 
-  module subroutine check_kinds()
-  end subroutine
+subroutine check_kinds()
+  logical, save :: done = .false.
+  if (done) return
+  if (kind(1.0d0) /= c_double) then
+    error stop "randompack: c_double mismatch"
+  end if
+  if (kind(1.0) /= c_float) then
+    error stop "randompack: c_float mismatch"
+  end if
+  done = .true.
+end subroutine
 
-  module function rp_error_message(self, where) result(msg)
+function rp_error_message(self, where) result(msg)
   class(randompack_rng), intent(in) :: self
   character(len=*), intent(in) :: where
   character(len=:), allocatable :: msg
-  end function
+  character(len=:), allocatable :: emsg
+  type(c_ptr) :: p
+  if (.not. c_associated(self%p)) then
+    msg = where//": rng not created"
+    return
+  end if
+  p = crp_last_error(self%p)
+  emsg = cstr_to_fstring(p)
+  if (len(emsg) == 0) then
+    msg = where//": randompack call failed"
+  else
+    msg = where//": "//trim(emsg)
+  end if
+end function
 
-  module subroutine engines(names, descriptions)
+subroutine require_rng(self, where)
+  class(randompack_rng), intent(in) :: self
+  character(len=*), intent(in) :: where
+  if (.not. c_associated(self%p)) then
+    error stop rp_error_message(self, where)
+  end if
+end subroutine
+
+subroutine check_call(self, c_ok, where)
+  class(randompack_rng), intent(in) :: self
+  logical(c_bool), intent(in) :: c_ok
+  character(len=*), intent(in) :: where
+  if (.not. c_ok) then
+    error stop rp_error_message(self, where)
+  end if
+end subroutine
+
+subroutine engines(names, descriptions)
   character(len=:), allocatable, intent(out) :: names(:)
   character(len=:), allocatable, intent(out) :: descriptions(:)
-  end subroutine
-end interface
+  integer(c_int) :: neng, eng_maxlen, desc_maxlen
+  character(kind=c_char), allocatable, target :: raw_eng(:)
+  character(kind=c_char), allocatable, target :: raw_desc(:)
+  logical(c_bool) :: ok
+  integer :: i, j, k, n, m
+  call check_kinds()
+  neng = 0_c_int
+  eng_maxlen = 0_c_int
+  desc_maxlen = 0_c_int
+  ok = crp_engines(c_null_ptr, c_null_ptr, neng, eng_maxlen, desc_maxlen)
+  if (.not. ok) error stop "engines: query failed"
+  n = int(neng)
+  if (n <= 0) then
+    allocate(character(len=0) :: names(0))
+    allocate(character(len=0) :: descriptions(0))
+    return
+  end if
+  allocate(raw_eng(n*int(eng_maxlen)))
+  allocate(raw_desc(n*int(desc_maxlen)))
+  ok = crp_engines(c_loc(raw_eng(1)), c_loc(raw_desc(1)), neng, eng_maxlen, desc_maxlen)
+  if (.not. ok) error stop "engines: fill failed"
+  allocate(character(len=int(eng_maxlen)) :: names(n))
+  allocate(character(len=int(desc_maxlen)) :: descriptions(n))
+  do i = 1, n
+    m = 0
+    do j = 1, int(eng_maxlen)
+      k = (i-1)*int(eng_maxlen) + j
+      if (raw_eng(k) == c_null_char) exit
+      m = m + 1
+    end do
+    names(i) = ""
+    do j = 1, m
+      k = (i-1)*int(eng_maxlen) + j
+      names(i)(j:j) = transfer(raw_eng(k), names(i)(j:j))
+    end do
+    m = 0
+    do j = 1, int(desc_maxlen)
+      k = (i-1)*int(desc_maxlen) + j
+      if (raw_desc(k) == c_null_char) exit
+      m = m + 1
+    end do
+    descriptions(i) = ""
+    do j = 1, m
+      k = (i-1)*int(desc_maxlen) + j
+      descriptions(i)(j:j) = transfer(raw_desc(k), descriptions(i)(j:j))
+    end do
+  end do
+end subroutine
+!-*- fortran -*-
 
-! Type-bound procedure implementations provided by the submodule.
-interface
-  module subroutine rp_finalize(self)
+! RNG lifecycle and configuration.
+subroutine rp_finalize(self)
   type(randompack_rng), intent(inout) :: self
-  end subroutine
+  call self%free()
+end subroutine
 
-  module subroutine rp_free(self)
+subroutine rp_free(self)
   class(randompack_rng), intent(inout) :: self
-  end subroutine
+  if (c_associated(self%p)) then
+    call crp_free(self%p)
+    self%p = c_null_ptr
+  end if
+end subroutine
 
-  module subroutine rp_create(self, engine, bitexact, full_mantissa)
+subroutine rp_create(self, engine, bitexact, full_mantissa)
   class(randompack_rng), intent(inout) :: self
   character(len=*), intent(in), optional :: engine
   logical, intent(in), optional :: bitexact
   logical, intent(in), optional :: full_mantissa
-  end subroutine
+  character(kind=c_char), allocatable, target :: eng(:)
+  character(len=:), allocatable :: emsg
+  type(c_ptr) :: p
+  logical(c_bool) :: c_ok
+  call check_kinds()
+  if (c_associated(self%p)) call self%free()
+  if (present(engine)) then
+    eng = to_c_string(engine)
+    self%p = crp_create(c_loc(eng(1)))
+  else
+    self%p = crp_create(c_null_ptr)
+  end if
+  if (.not. c_associated(self%p)) then
+    error stop "create: failed"
+  end if
+  p = crp_last_error(self%p)
+  emsg = cstr_to_fstring(p)
+  if (len(emsg) > 0) then
+    error stop "create: "//trim(emsg)
+  end if
+  if (present(bitexact)) then
+    if (bitexact) then
+      c_ok = crp_bitexact(self%p, .true._c_bool)
+      call check_call(self, c_ok, "bitexact")
+    end if
+  end if
+  if (present(full_mantissa)) then
+    if (full_mantissa) then
+      c_ok = crp_full_mantissa(self%p, .true._c_bool)
+      call check_call(self, c_ok, "full_mantissa")
+    end if
+  end if
+end subroutine
 
-  module subroutine rp_duplicate(self, out)
+subroutine rp_duplicate(self, out)
   class(randompack_rng), intent(in) :: self
   type(randompack_rng), intent(out) :: out
-  end subroutine
+  call require_rng(self, "duplicate")
+  out%p = crp_duplicate(self%p)
+  if (.not. c_associated(out%p)) error stop rp_error_message(self, "duplicate")
+end subroutine
 
-  module subroutine rp_randomize(self)
+subroutine rp_randomize(self)
   class(randompack_rng), intent(inout) :: self
-  end subroutine
+  logical(c_bool) :: c_ok
+  call require_rng(self, "randomize")
+  c_ok = crp_randomize(self%p)
+  call check_call(self, c_ok, "randomize")
+end subroutine
 
-  module subroutine rp_jump(self, p)
+subroutine rp_jump(self, p)
   class(randompack_rng), intent(inout) :: self
   integer(c_int), intent(in) :: p
-  end subroutine
+  logical(c_bool) :: c_ok
+  call require_rng(self, "jump")
+  c_ok = crp_jump(p, self%p)
+  call check_call(self, c_ok, "jump")
+end subroutine
 
-  module subroutine rp_seed32(self, seed, spawn_key)
+
+subroutine rp_seed32(self, seed, spawn_key)
   class(randompack_rng), intent(inout) :: self
   integer(c_int32_t), intent(in) :: seed
   integer(c_int32_t), intent(in), optional, target :: spawn_key(:)
-  end subroutine
+  type(c_ptr) :: keyp
+  integer(c_int) :: nkey
+  logical(c_bool) :: c_ok
+  call require_rng(self, "seed")
+  if (present(spawn_key)) then
+    keyp = c_loc(spawn_key(1))
+    nkey = int(size(spawn_key), c_int)
+  else
+    keyp = c_null_ptr
+    nkey = 0_c_int
+  end if
+  c_ok = crp_seed(seed, keyp, nkey, self%p)
+  call check_call(self, c_ok, "seed")
+end subroutine
 
-  module subroutine rp_seed64(self, seed, spawn_key)
+subroutine rp_seed64(self, seed, spawn_key)
   class(randompack_rng), intent(inout) :: self
   integer(c_int64_t), intent(in) :: seed
   integer(c_int64_t), intent(in), optional, target :: spawn_key(:)
-  end subroutine
+  integer(c_int32_t) :: seed32
+  integer(c_int32_t), allocatable, target :: key32(:)
+  integer(c_int64_t) :: min32, max32
+  type(c_ptr) :: keyp
+  integer(c_int) :: nkey
+  logical(c_bool) :: c_ok
+  call require_rng(self, "seed")
+  max32 = int(huge(0_c_int32_t), c_int64_t)
+  min32 = -max32 - 1_c_int64_t
+  if (seed < min32 .or. seed > max32) then
+    error stop "seed: out of range"
+  end if
+  seed32 = int(seed, c_int32_t)
+  if (present(spawn_key)) then
+    if (any(spawn_key < min32 .or. spawn_key > max32)) then
+      error stop "seed: spawn_key out of range"
+    end if
+    allocate(key32(size(spawn_key)))
+    key32 = int(spawn_key, c_int32_t)
+    keyp = c_loc(key32(1))
+    nkey = int(size(key32), c_int)
+  else
+    keyp = c_null_ptr
+    nkey = 0_c_int
+  end if
+  c_ok = crp_seed(seed32, keyp, nkey, self%p)
+  call check_call(self, c_ok, "seed")
+end subroutine
 
-  module subroutine unif_vec(self, x, a, b)
+! Continuous distributions.
+subroutine unif_vec(self, x, a, b)
   class(randompack_rng), intent(inout) :: self
   double precision, intent(out) :: x(:)
   double precision, intent(in), optional :: a
   double precision, intent(in), optional :: b
-  end subroutine
+  double precision :: aa, bb
+  logical(c_bool) :: c_ok
+  call require_rng(self, "unif")
+  aa = 0
+  bb = 1
+  if (present(a)) aa = a
+  if (present(b)) bb = b
+  if (.not. (aa < bb)) error stop "unif: require a < b"
+  c_ok = crp_unif(x, int(size(x), c_size_t), aa, bb, self%p)
+  call check_call(self, c_ok, "unif")
+end subroutine
 
-  module subroutine unif_mat(self, x, a, b)
+subroutine unif_mat(self, x, a, b)
   class(randompack_rng), intent(inout) :: self
   double precision, intent(out) :: x(:,:)
   double precision, intent(in), optional :: a
   double precision, intent(in), optional :: b
-  end subroutine
+  double precision :: aa, bb
+  logical(c_bool) :: c_ok
+  call require_rng(self, "unif")
+  aa = 0
+  bb = 1
+  if (present(a)) aa = a
+  if (present(b)) bb = b
+  if (.not. (aa < bb)) error stop "unif: require a < b"
+  c_ok = crp_unif(x, int(size(x), c_size_t), aa, bb, self%p)
+  call check_call(self, c_ok, "unif")
+end subroutine
 
-  module subroutine uniff_vec(self, x, a, b)
+subroutine uniff_vec(self, x, a, b)
   class(randompack_rng), intent(inout) :: self
   real, intent(out) :: x(:)
   real, intent(in), optional :: a
   real, intent(in), optional :: b
-  end subroutine
+  real :: aa, bb
+  logical(c_bool) :: c_ok
+  call require_rng(self, "unif")
+  aa = 0
+  bb = 1
+  if (present(a)) aa = a
+  if (present(b)) bb = b
+  if (.not. (aa < bb)) error stop "unif: require a < b"
+  c_ok = crp_uniff(x, int(size(x), c_size_t), aa, bb, self%p)
+  call check_call(self, c_ok, "unif")
+end subroutine
 
-  module subroutine uniff_mat(self, x, a, b)
+subroutine uniff_mat(self, x, a, b)
   class(randompack_rng), intent(inout) :: self
   real, intent(out) :: x(:,:)
   real, intent(in), optional :: a
   real, intent(in), optional :: b
-  end subroutine
+  real :: aa, bb
+  logical(c_bool) :: c_ok
+  call require_rng(self, "unif")
+  aa = 0
+  bb = 1
+  if (present(a)) aa = a
+  if (present(b)) bb = b
+  if (.not. (aa < bb)) error stop "unif: require a < b"
+  c_ok = crp_uniff(x, int(size(x), c_size_t), aa, bb, self%p)
+  call check_call(self, c_ok, "unif")
+end subroutine
 
-  module subroutine normal_vec(self, x, mu, sigma)
+subroutine normal_vec(self, x, mu, sigma)
   class(randompack_rng), intent(inout) :: self
   double precision, intent(out) :: x(:)
   double precision, intent(in), optional :: mu
   double precision, intent(in), optional :: sigma
-  end subroutine
+  double precision :: mu0, sig0
+  logical(c_bool) :: c_ok
+  call require_rng(self, "normal")
+  mu0 = 0
+  sig0 = 1
+  if (present(mu)) mu0 = mu
+  if (present(sigma)) sig0 = sigma
+  if (.not. (sig0 > 0)) error stop "normal: sigma must be positive"
+  c_ok = crp_normal(x, int(size(x), c_size_t), mu0, sig0, self%p)
+  call check_call(self, c_ok, "normal")
+end subroutine
 
-  module subroutine normal_mat(self, x, mu, sigma)
+subroutine normal_mat(self, x, mu, sigma)
   class(randompack_rng), intent(inout) :: self
   double precision, intent(out) :: x(:,:)
   double precision, intent(in), optional :: mu
   double precision, intent(in), optional :: sigma
-  end subroutine
+  double precision :: mu0, sig0
+  logical(c_bool) :: c_ok
+  call require_rng(self, "normal")
+  mu0 = 0
+  sig0 = 1
+  if (present(mu)) mu0 = mu
+  if (present(sigma)) sig0 = sigma
+  if (.not. (sig0 > 0)) error stop "normal: sigma must be positive"
+  c_ok = crp_normal(x, int(size(x), c_size_t), mu0, sig0, self%p)
+  call check_call(self, c_ok, "normal")
+end subroutine
 
-  module subroutine normalf_vec(self, x, mu, sigma)
+subroutine normalf_vec(self, x, mu, sigma)
   class(randompack_rng), intent(inout) :: self
   real, intent(out) :: x(:)
   real, intent(in), optional :: mu
   real, intent(in), optional :: sigma
-  end subroutine
+  real :: mu0, sig0
+  logical(c_bool) :: c_ok
+  call require_rng(self, "normal")
+  mu0 = 0
+  sig0 = 1
+  if (present(mu)) mu0 = mu
+  if (present(sigma)) sig0 = sigma
+  if (.not. (sig0 > 0)) error stop "normal: sigma must be positive"
+  c_ok = crp_normalf(x, int(size(x), c_size_t), mu0, sig0, self%p)
+  call check_call(self, c_ok, "normal")
+end subroutine
 
-  module subroutine normalf_mat(self, x, mu, sigma)
+subroutine normalf_mat(self, x, mu, sigma)
   class(randompack_rng), intent(inout) :: self
   real, intent(out) :: x(:,:)
   real, intent(in), optional :: mu
   real, intent(in), optional :: sigma
-  end subroutine
+  real :: mu0, sig0
+  logical(c_bool) :: c_ok
+  call require_rng(self, "normal")
+  mu0 = 0
+  sig0 = 1
+  if (present(mu)) mu0 = mu
+  if (present(sigma)) sig0 = sigma
+  if (.not. (sig0 > 0)) error stop "normal: sigma must be positive"
+  c_ok = crp_normalf(x, int(size(x), c_size_t), mu0, sig0, self%p)
+  call check_call(self, c_ok, "normal")
+end subroutine
 
-  module subroutine exp_vec(self, x, scale)
+subroutine exp_vec(self, x, scale)
   class(randompack_rng), intent(inout) :: self
   double precision, intent(out) :: x(:)
   double precision, intent(in), optional :: scale
-  end subroutine
+  double precision :: s0
+  logical(c_bool) :: c_ok
+  call require_rng(self, "exp")
+  s0 = 1
+  if (present(scale)) s0 = scale
+  if (.not. (s0 > 0)) error stop "exp: scale must be positive"
+  c_ok = crp_exp(x, int(size(x), c_size_t), s0, self%p)
+  call check_call(self, c_ok, "exp")
+end subroutine
 
-  module subroutine exp_mat(self, x, scale)
+subroutine exp_mat(self, x, scale)
   class(randompack_rng), intent(inout) :: self
   double precision, intent(out) :: x(:,:)
   double precision, intent(in), optional :: scale
-  end subroutine
+  double precision :: s0
+  logical(c_bool) :: c_ok
+  call require_rng(self, "exp")
+  s0 = 1
+  if (present(scale)) s0 = scale
+  if (.not. (s0 > 0)) error stop "exp: scale must be positive"
+  c_ok = crp_exp(x, int(size(x), c_size_t), s0, self%p)
+  call check_call(self, c_ok, "exp")
+end subroutine
 
-  module subroutine expf_vec(self, x, scale)
+subroutine expf_vec(self, x, scale)
   class(randompack_rng), intent(inout) :: self
   real, intent(out) :: x(:)
   real, intent(in), optional :: scale
-  end subroutine
+  real :: s0
+  logical(c_bool) :: c_ok
+  call require_rng(self, "exp")
+  s0 = 1
+  if (present(scale)) s0 = scale
+  if (.not. (s0 > 0)) error stop "exp: scale must be positive"
+  c_ok = crp_expf(x, int(size(x), c_size_t), s0, self%p)
+  call check_call(self, c_ok, "exp")
+end subroutine
 
-  module subroutine expf_mat(self, x, scale)
+subroutine expf_mat(self, x, scale)
   class(randompack_rng), intent(inout) :: self
   real, intent(out) :: x(:,:)
   real, intent(in), optional :: scale
-  end subroutine
+  real :: s0
+  logical(c_bool) :: c_ok
+  call require_rng(self, "exp")
+  s0 = 1
+  if (present(scale)) s0 = scale
+  if (.not. (s0 > 0)) error stop "exp: scale must be positive"
+  c_ok = crp_expf(x, int(size(x), c_size_t), s0, self%p)
+  call check_call(self, c_ok, "exp")
+end subroutine
 
-  module subroutine lognormal_vec(self, x, mu, sigma)
+subroutine lognormal_vec(self, x, mu, sigma)
   class(randompack_rng), intent(inout) :: self
   double precision, intent(out) :: x(:)
   double precision, intent(in), optional :: mu
   double precision, intent(in), optional :: sigma
-  end subroutine
+  double precision :: mu0, sig0
+  logical(c_bool) :: c_ok
+  call require_rng(self, "lognormal")
+  mu0 = 0
+  sig0 = 1
+  if (present(mu)) mu0 = mu
+  if (present(sigma)) sig0 = sigma
+  if (.not. (sig0 > 0)) error stop "lognormal: sigma must be positive"
+  c_ok = crp_lognormal(x, int(size(x), c_size_t), mu0, sig0, self%p)
+  call check_call(self, c_ok, "lognormal")
+end subroutine
 
-  module subroutine lognormal_mat(self, x, mu, sigma)
+subroutine lognormal_mat(self, x, mu, sigma)
   class(randompack_rng), intent(inout) :: self
   double precision, intent(out) :: x(:,:)
   double precision, intent(in), optional :: mu
   double precision, intent(in), optional :: sigma
-  end subroutine
+  double precision :: mu0, sig0
+  logical(c_bool) :: c_ok
+  call require_rng(self, "lognormal")
+  mu0 = 0
+  sig0 = 1
+  if (present(mu)) mu0 = mu
+  if (present(sigma)) sig0 = sigma
+  if (.not. (sig0 > 0)) error stop "lognormal: sigma must be positive"
+  c_ok = crp_lognormal(x, int(size(x), c_size_t), mu0, sig0, self%p)
+  call check_call(self, c_ok, "lognormal")
+end subroutine
 
-  module subroutine lognormalf_vec(self, x, mu, sigma)
+subroutine lognormalf_vec(self, x, mu, sigma)
   class(randompack_rng), intent(inout) :: self
   real, intent(out) :: x(:)
   real, intent(in), optional :: mu
   real, intent(in), optional :: sigma
-  end subroutine
+  real :: mu0, sig0
+  logical(c_bool) :: c_ok
+  call require_rng(self, "lognormal")
+  mu0 = 0
+  sig0 = 1
+  if (present(mu)) mu0 = mu
+  if (present(sigma)) sig0 = sigma
+  if (.not. (sig0 > 0)) error stop "lognormal: sigma must be positive"
+  c_ok = crp_lognormalf(x, int(size(x), c_size_t), mu0, sig0, self%p)
+  call check_call(self, c_ok, "lognormal")
+end subroutine
 
-  module subroutine lognormalf_mat(self, x, mu, sigma)
+subroutine lognormalf_mat(self, x, mu, sigma)
   class(randompack_rng), intent(inout) :: self
   real, intent(out) :: x(:,:)
   real, intent(in), optional :: mu
   real, intent(in), optional :: sigma
-  end subroutine
+  real :: mu0, sig0
+  logical(c_bool) :: c_ok
+  call require_rng(self, "lognormal")
+  mu0 = 0
+  sig0 = 1
+  if (present(mu)) mu0 = mu
+  if (present(sigma)) sig0 = sigma
+  if (.not. (sig0 > 0)) error stop "lognormal: sigma must be positive"
+  c_ok = crp_lognormalf(x, int(size(x), c_size_t), mu0, sig0, self%p)
+  call check_call(self, c_ok, "lognormal")
+end subroutine
 
-  module subroutine gamma_vec(self, x, shape, scale)
+subroutine gamma_vec(self, x, shape, scale)
   class(randompack_rng), intent(inout) :: self
   double precision, intent(out) :: x(:)
   double precision, intent(in) :: shape
   double precision, intent(in), optional :: scale
-  end subroutine
+  double precision :: sc0
+  logical(c_bool) :: c_ok
+  call require_rng(self, "gamma")
+  sc0 = 1
+  if (present(scale)) sc0 = scale
+  if (.not. (shape > 0 .and. sc0 > 0)) error stop "gamma: shape/scale must be positive"
+  c_ok = crp_gamma(x, int(size(x), c_size_t), shape, sc0, self%p)
+  call check_call(self, c_ok, "gamma")
+end subroutine
 
-  module subroutine gamma_mat(self, x, shape, scale)
+subroutine gamma_mat(self, x, shape, scale)
   class(randompack_rng), intent(inout) :: self
   double precision, intent(out) :: x(:,:)
   double precision, intent(in) :: shape
   double precision, intent(in), optional :: scale
-  end subroutine
+  double precision :: sc0
+  logical(c_bool) :: c_ok
+  call require_rng(self, "gamma")
+  sc0 = 1
+  if (present(scale)) sc0 = scale
+  if (.not. (shape > 0 .and. sc0 > 0)) error stop "gamma: shape/scale must be positive"
+  c_ok = crp_gamma(x, int(size(x), c_size_t), shape, sc0, self%p)
+  call check_call(self, c_ok, "gamma")
+end subroutine
 
-  module subroutine gammaf_vec(self, x, shape, scale)
+subroutine gammaf_vec(self, x, shape, scale)
   class(randompack_rng), intent(inout) :: self
   real, intent(out) :: x(:)
   real, intent(in) :: shape
   real, intent(in), optional :: scale
-  end subroutine
+  real :: sc0
+  logical(c_bool) :: c_ok
+  call require_rng(self, "gamma")
+  sc0 = 1
+  if (present(scale)) sc0 = scale
+  if (.not. (shape > 0 .and. sc0 > 0)) error stop "gamma: shape/scale must be positive"
+  c_ok = crp_gammaf(x, int(size(x), c_size_t), shape, sc0, self%p)
+  call check_call(self, c_ok, "gamma")
+end subroutine
 
-  module subroutine gammaf_mat(self, x, shape, scale)
+subroutine gammaf_mat(self, x, shape, scale)
   class(randompack_rng), intent(inout) :: self
   real, intent(out) :: x(:,:)
   real, intent(in) :: shape
   real, intent(in), optional :: scale
-  end subroutine
+  real :: sc0
+  logical(c_bool) :: c_ok
+  call require_rng(self, "gamma")
+  sc0 = 1
+  if (present(scale)) sc0 = scale
+  if (.not. (shape > 0 .and. sc0 > 0)) error stop "gamma: shape/scale must be positive"
+  c_ok = crp_gammaf(x, int(size(x), c_size_t), shape, sc0, self%p)
+  call check_call(self, c_ok, "gamma")
+end subroutine
 
-  module subroutine beta_vec(self, x, a, b)
+subroutine beta_vec(self, x, a, b)
   class(randompack_rng), intent(inout) :: self
   double precision, intent(out) :: x(:)
   double precision, intent(in) :: a
   double precision, intent(in) :: b
-  end subroutine
+  logical(c_bool) :: c_ok
+  call require_rng(self, "beta")
+  c_ok = crp_beta(x, int(size(x), c_size_t), a, b, self%p)
+  call check_call(self, c_ok, "beta")
+end subroutine
 
-  module subroutine beta_mat(self, x, a, b)
+subroutine beta_mat(self, x, a, b)
   class(randompack_rng), intent(inout) :: self
   double precision, intent(out) :: x(:,:)
   double precision, intent(in) :: a
   double precision, intent(in) :: b
-  end subroutine
+  logical(c_bool) :: c_ok
+  call require_rng(self, "beta")
+  c_ok = crp_beta(x, int(size(x), c_size_t), a, b, self%p)
+  call check_call(self, c_ok, "beta")
+end subroutine
 
-  module subroutine betaf_vec(self, x, a, b)
+subroutine betaf_vec(self, x, a, b)
   class(randompack_rng), intent(inout) :: self
   real, intent(out) :: x(:)
   real, intent(in) :: a
   real, intent(in) :: b
-  end subroutine
+  logical(c_bool) :: c_ok
+  call require_rng(self, "beta")
+  c_ok = crp_betaf(x, int(size(x), c_size_t), a, b, self%p)
+  call check_call(self, c_ok, "beta")
+end subroutine
 
-  module subroutine betaf_mat(self, x, a, b)
+subroutine betaf_mat(self, x, a, b)
   class(randompack_rng), intent(inout) :: self
   real, intent(out) :: x(:,:)
   real, intent(in) :: a
   real, intent(in) :: b
-  end subroutine
+  logical(c_bool) :: c_ok
+  call require_rng(self, "beta")
+  c_ok = crp_betaf(x, int(size(x), c_size_t), a, b, self%p)
+  call check_call(self, c_ok, "beta")
+end subroutine
 
-  module subroutine chi2_vec(self, x, nu)
+subroutine chi2_vec(self, x, nu)
   class(randompack_rng), intent(inout) :: self
   double precision, intent(out) :: x(:)
   double precision, intent(in) :: nu
-  end subroutine
+  logical(c_bool) :: c_ok
+  call require_rng(self, "chi2")
+  c_ok = crp_chi2(x, int(size(x), c_size_t), nu, self%p)
+  call check_call(self, c_ok, "chi2")
+end subroutine
 
-  module subroutine chi2_mat(self, x, nu)
+subroutine chi2_mat(self, x, nu)
   class(randompack_rng), intent(inout) :: self
   double precision, intent(out) :: x(:,:)
   double precision, intent(in) :: nu
-  end subroutine
+  logical(c_bool) :: c_ok
+  call require_rng(self, "chi2")
+  c_ok = crp_chi2(x, int(size(x), c_size_t), nu, self%p)
+  call check_call(self, c_ok, "chi2")
+end subroutine
 
-  module subroutine chi2f_vec(self, x, nu)
+subroutine chi2f_vec(self, x, nu)
   class(randompack_rng), intent(inout) :: self
   real, intent(out) :: x(:)
   real, intent(in) :: nu
-  end subroutine
+  logical(c_bool) :: c_ok
+  call require_rng(self, "chi2")
+  c_ok = crp_chi2f(x, int(size(x), c_size_t), nu, self%p)
+  call check_call(self, c_ok, "chi2")
+end subroutine
 
-  module subroutine chi2f_mat(self, x, nu)
+subroutine chi2f_mat(self, x, nu)
   class(randompack_rng), intent(inout) :: self
   real, intent(out) :: x(:,:)
   real, intent(in) :: nu
-  end subroutine
+  logical(c_bool) :: c_ok
+  call require_rng(self, "chi2")
+  c_ok = crp_chi2f(x, int(size(x), c_size_t), nu, self%p)
+  call check_call(self, c_ok, "chi2")
+end subroutine
 
-  module subroutine t_vec(self, x, nu)
+subroutine t_vec(self, x, nu)
   class(randompack_rng), intent(inout) :: self
   double precision, intent(out) :: x(:)
   double precision, intent(in) :: nu
-  end subroutine
+  logical(c_bool) :: c_ok
+  call require_rng(self, "t")
+  c_ok = crp_t(x, int(size(x), c_size_t), nu, self%p)
+  call check_call(self, c_ok, "t")
+end subroutine
 
-  module subroutine t_mat(self, x, nu)
+subroutine t_mat(self, x, nu)
   class(randompack_rng), intent(inout) :: self
   double precision, intent(out) :: x(:,:)
   double precision, intent(in) :: nu
-  end subroutine
+  logical(c_bool) :: c_ok
+  call require_rng(self, "t")
+  c_ok = crp_t(x, int(size(x), c_size_t), nu, self%p)
+  call check_call(self, c_ok, "t")
+end subroutine
 
-  module subroutine tf_vec(self, x, nu)
+subroutine tf_vec(self, x, nu)
   class(randompack_rng), intent(inout) :: self
   real, intent(out) :: x(:)
   real, intent(in) :: nu
-  end subroutine
+  logical(c_bool) :: c_ok
+  call require_rng(self, "t")
+  c_ok = crp_tf(x, int(size(x), c_size_t), nu, self%p)
+  call check_call(self, c_ok, "t")
+end subroutine
 
-  module subroutine tf_mat(self, x, nu)
+subroutine tf_mat(self, x, nu)
   class(randompack_rng), intent(inout) :: self
   real, intent(out) :: x(:,:)
   real, intent(in) :: nu
-  end subroutine
+  logical(c_bool) :: c_ok
+  call require_rng(self, "t")
+  c_ok = crp_tf(x, int(size(x), c_size_t), nu, self%p)
+  call check_call(self, c_ok, "t")
+end subroutine
 
-  module subroutine f_vec(self, x, nu1, nu2)
+subroutine f_vec(self, x, nu1, nu2)
   class(randompack_rng), intent(inout) :: self
   double precision, intent(out) :: x(:)
   double precision, intent(in) :: nu1
   double precision, intent(in) :: nu2
-  end subroutine
+  logical(c_bool) :: c_ok
+  call require_rng(self, "f")
+  c_ok = crp_f(x, int(size(x), c_size_t), nu1, nu2, self%p)
+  call check_call(self, c_ok, "f")
+end subroutine
 
-  module subroutine f_mat(self, x, nu1, nu2)
+subroutine f_mat(self, x, nu1, nu2)
   class(randompack_rng), intent(inout) :: self
   double precision, intent(out) :: x(:,:)
   double precision, intent(in) :: nu1
   double precision, intent(in) :: nu2
-  end subroutine
+  logical(c_bool) :: c_ok
+  call require_rng(self, "f")
+  c_ok = crp_f(x, int(size(x), c_size_t), nu1, nu2, self%p)
+  call check_call(self, c_ok, "f")
+end subroutine
 
-  module subroutine ff_vec(self, x, nu1, nu2)
+subroutine ff_vec(self, x, nu1, nu2)
   class(randompack_rng), intent(inout) :: self
   real, intent(out) :: x(:)
   real, intent(in) :: nu1
   real, intent(in) :: nu2
-  end subroutine
+  logical(c_bool) :: c_ok
+  call require_rng(self, "f")
+  c_ok = crp_ff(x, int(size(x), c_size_t), nu1, nu2, self%p)
+  call check_call(self, c_ok, "f")
+end subroutine
 
-  module subroutine ff_mat(self, x, nu1, nu2)
+subroutine ff_mat(self, x, nu1, nu2)
   class(randompack_rng), intent(inout) :: self
   real, intent(out) :: x(:,:)
   real, intent(in) :: nu1
   real, intent(in) :: nu2
-  end subroutine
+  logical(c_bool) :: c_ok
+  call require_rng(self, "f")
+  c_ok = crp_ff(x, int(size(x), c_size_t), nu1, nu2, self%p)
+  call check_call(self, c_ok, "f")
+end subroutine
 
-  module subroutine gumbel_vec(self, x, mu, beta)
+subroutine gumbel_vec(self, x, mu, beta)
   class(randompack_rng), intent(inout) :: self
   double precision, intent(out) :: x(:)
   double precision, intent(in), optional :: mu
   double precision, intent(in), optional :: beta
-  end subroutine
+  double precision :: mu0, b0
+  logical(c_bool) :: c_ok
+  call require_rng(self, "gumbel")
+  mu0 = 0
+  b0 = 1
+  if (present(mu)) mu0 = mu
+  if (present(beta)) b0 = beta
+  if (.not. (b0 > 0)) error stop "gumbel: beta must be positive"
+  c_ok = crp_gumbel(x, int(size(x), c_size_t), mu0, b0, self%p)
+  call check_call(self, c_ok, "gumbel")
+end subroutine
 
-  module subroutine gumbel_mat(self, x, mu, beta)
+subroutine gumbel_mat(self, x, mu, beta)
   class(randompack_rng), intent(inout) :: self
   double precision, intent(out) :: x(:,:)
   double precision, intent(in), optional :: mu
   double precision, intent(in), optional :: beta
-  end subroutine
+  double precision :: mu0, b0
+  logical(c_bool) :: c_ok
+  call require_rng(self, "gumbel")
+  mu0 = 0
+  b0 = 1
+  if (present(mu)) mu0 = mu
+  if (present(beta)) b0 = beta
+  if (.not. (b0 > 0)) error stop "gumbel: beta must be positive"
+  c_ok = crp_gumbel(x, int(size(x), c_size_t), mu0, b0, self%p)
+  call check_call(self, c_ok, "gumbel")
+end subroutine
 
-  module subroutine gumbelf_vec(self, x, mu, beta)
+subroutine gumbelf_vec(self, x, mu, beta)
   class(randompack_rng), intent(inout) :: self
   real, intent(out) :: x(:)
   real, intent(in), optional :: mu
   real, intent(in), optional :: beta
-  end subroutine
+  real :: mu0, b0
+  logical(c_bool) :: c_ok
+  call require_rng(self, "gumbel")
+  mu0 = 0
+  b0 = 1
+  if (present(mu)) mu0 = mu
+  if (present(beta)) b0 = beta
+  if (.not. (b0 > 0)) error stop "gumbel: beta must be positive"
+  c_ok = crp_gumbelf(x, int(size(x), c_size_t), mu0, b0, self%p)
+  call check_call(self, c_ok, "gumbel")
+end subroutine
 
-  module subroutine gumbelf_mat(self, x, mu, beta)
+subroutine gumbelf_mat(self, x, mu, beta)
   class(randompack_rng), intent(inout) :: self
   real, intent(out) :: x(:,:)
   real, intent(in), optional :: mu
   real, intent(in), optional :: beta
-  end subroutine
+  real :: mu0, b0
+  logical(c_bool) :: c_ok
+  call require_rng(self, "gumbel")
+  mu0 = 0
+  b0 = 1
+  if (present(mu)) mu0 = mu
+  if (present(beta)) b0 = beta
+  if (.not. (b0 > 0)) error stop "gumbel: beta must be positive"
+  c_ok = crp_gumbelf(x, int(size(x), c_size_t), mu0, b0, self%p)
+  call check_call(self, c_ok, "gumbel")
+end subroutine
 
-  module subroutine pareto_vec(self, x, xm, alpha)
+subroutine pareto_vec(self, x, xm, alpha)
   class(randompack_rng), intent(inout) :: self
   double precision, intent(out) :: x(:)
   double precision, intent(in) :: xm
   double precision, intent(in) :: alpha
-  end subroutine
+  logical(c_bool) :: c_ok
+  call require_rng(self, "pareto")
+  c_ok = crp_pareto(x, int(size(x), c_size_t), xm, alpha, self%p)
+  call check_call(self, c_ok, "pareto")
+end subroutine
 
-  module subroutine pareto_mat(self, x, xm, alpha)
+subroutine pareto_mat(self, x, xm, alpha)
   class(randompack_rng), intent(inout) :: self
   double precision, intent(out) :: x(:,:)
   double precision, intent(in) :: xm
   double precision, intent(in) :: alpha
-  end subroutine
+  logical(c_bool) :: c_ok
+  call require_rng(self, "pareto")
+  c_ok = crp_pareto(x, int(size(x), c_size_t), xm, alpha, self%p)
+  call check_call(self, c_ok, "pareto")
+end subroutine
 
-  module subroutine paretof_vec(self, x, xm, alpha)
+subroutine paretof_vec(self, x, xm, alpha)
   class(randompack_rng), intent(inout) :: self
   real, intent(out) :: x(:)
   real, intent(in) :: xm
   real, intent(in) :: alpha
-  end subroutine
+  logical(c_bool) :: c_ok
+  call require_rng(self, "pareto")
+  c_ok = crp_paretof(x, int(size(x), c_size_t), xm, alpha, self%p)
+  call check_call(self, c_ok, "pareto")
+end subroutine
 
-  module subroutine paretof_mat(self, x, xm, alpha)
+subroutine paretof_mat(self, x, xm, alpha)
   class(randompack_rng), intent(inout) :: self
   real, intent(out) :: x(:,:)
   real, intent(in) :: xm
   real, intent(in) :: alpha
-  end subroutine
+  logical(c_bool) :: c_ok
+  call require_rng(self, "pareto")
+  c_ok = crp_paretof(x, int(size(x), c_size_t), xm, alpha, self%p)
+  call check_call(self, c_ok, "pareto")
+end subroutine
 
-  module subroutine weibull_vec(self, x, shape, scale)
+subroutine weibull_vec(self, x, shape, scale)
   class(randompack_rng), intent(inout) :: self
   double precision, intent(out) :: x(:)
   double precision, intent(in) :: shape
   double precision, intent(in), optional :: scale
-  end subroutine
+  double precision :: sc0
+  logical(c_bool) :: c_ok
+  call require_rng(self, "weibull")
+  sc0 = 1
+  if (present(scale)) sc0 = scale
+  if (.not. (shape > 0 .and. sc0 > 0)) error stop "weibull: shape/scale must be positive"
+  c_ok = crp_weibull(x, int(size(x), c_size_t), shape, sc0, self%p)
+  call check_call(self, c_ok, "weibull")
+end subroutine
 
-  module subroutine weibull_mat(self, x, shape, scale)
+subroutine weibull_mat(self, x, shape, scale)
   class(randompack_rng), intent(inout) :: self
   double precision, intent(out) :: x(:,:)
   double precision, intent(in) :: shape
   double precision, intent(in), optional :: scale
-  end subroutine
+  double precision :: sc0
+  logical(c_bool) :: c_ok
+  call require_rng(self, "weibull")
+  sc0 = 1
+  if (present(scale)) sc0 = scale
+  if (.not. (shape > 0 .and. sc0 > 0)) error stop "weibull: shape/scale must be positive"
+  c_ok = crp_weibull(x, int(size(x), c_size_t), shape, sc0, self%p)
+  call check_call(self, c_ok, "weibull")
+end subroutine
 
-  module subroutine weibullf_vec(self, x, shape, scale)
+subroutine weibullf_vec(self, x, shape, scale)
   class(randompack_rng), intent(inout) :: self
   real, intent(out) :: x(:)
   real, intent(in) :: shape
   real, intent(in), optional :: scale
-  end subroutine
+  real :: sc0
+  logical(c_bool) :: c_ok
+  call require_rng(self, "weibull")
+  sc0 = 1
+  if (present(scale)) sc0 = scale
+  if (.not. (shape > 0 .and. sc0 > 0)) error stop "weibull: shape/scale must be positive"
+  c_ok = crp_weibullf(x, int(size(x), c_size_t), shape, sc0, self%p)
+  call check_call(self, c_ok, "weibull")
+end subroutine
 
-  module subroutine weibullf_mat(self, x, shape, scale)
+subroutine weibullf_mat(self, x, shape, scale)
   class(randompack_rng), intent(inout) :: self
   real, intent(out) :: x(:,:)
   real, intent(in) :: shape
   real, intent(in), optional :: scale
-  end subroutine
+  real :: sc0
+  logical(c_bool) :: c_ok
+  call require_rng(self, "weibull")
+  sc0 = 1
+  if (present(scale)) sc0 = scale
+  if (.not. (shape > 0 .and. sc0 > 0)) error stop "weibull: shape/scale must be positive"
+  c_ok = crp_weibullf(x, int(size(x), c_size_t), shape, sc0, self%p)
+  call check_call(self, c_ok, "weibull")
+end subroutine
 
-  module subroutine skew_normal_vec(self, x, mu, sigma, alpha)
+subroutine skew_normal_vec(self, x, mu, sigma, alpha)
   class(randompack_rng), intent(inout) :: self
   double precision, intent(out) :: x(:)
   double precision, intent(in), optional :: mu
   double precision, intent(in), optional :: sigma
   double precision, intent(in) :: alpha
-  end subroutine
+  double precision :: mu0, sig0
+  logical(c_bool) :: c_ok
+  call require_rng(self, "skew_normal")
+  mu0 = 0
+  sig0 = 1
+  if (present(mu)) mu0 = mu
+  if (present(sigma)) sig0 = sigma
+  if (.not. (sig0 > 0)) error stop "skew_normal: sigma must be positive"
+  c_ok = crp_skew_normal(x, int(size(x), c_size_t), mu0, sig0, alpha, self%p)
+  call check_call(self, c_ok, "skew_normal")
+end subroutine
 
-  module subroutine skew_normal_mat(self, x, mu, sigma, alpha)
+subroutine skew_normal_mat(self, x, mu, sigma, alpha)
   class(randompack_rng), intent(inout) :: self
   double precision, intent(out) :: x(:,:)
   double precision, intent(in), optional :: mu
   double precision, intent(in), optional :: sigma
   double precision, intent(in) :: alpha
-  end subroutine
+  double precision :: mu0, sig0
+  logical(c_bool) :: c_ok
+  call require_rng(self, "skew_normal")
+  mu0 = 0
+  sig0 = 1
+  if (present(mu)) mu0 = mu
+  if (present(sigma)) sig0 = sigma
+  if (.not. (sig0 > 0)) error stop "skew_normal: sigma must be positive"
+  c_ok = crp_skew_normal(x, int(size(x), c_size_t), mu0, sig0, alpha, self%p)
+  call check_call(self, c_ok, "skew_normal")
+end subroutine
 
-  module subroutine skew_normalf_vec(self, x, mu, sigma, alpha)
+subroutine skew_normalf_vec(self, x, mu, sigma, alpha)
   class(randompack_rng), intent(inout) :: self
   real, intent(out) :: x(:)
   real, intent(in), optional :: mu
   real, intent(in), optional :: sigma
   real, intent(in) :: alpha
-  end subroutine
+  real :: mu0, sig0
+  logical(c_bool) :: c_ok
+  call require_rng(self, "skew_normal")
+  mu0 = 0
+  sig0 = 1
+  if (present(mu)) mu0 = mu
+  if (present(sigma)) sig0 = sigma
+  if (.not. (sig0 > 0)) error stop "skew_normal: sigma must be positive"
+  c_ok = crp_skew_normalf(x, int(size(x), c_size_t), mu0, sig0, alpha, self%p)
+  call check_call(self, c_ok, "skew_normal")
+end subroutine
 
-  module subroutine skew_normalf_mat(self, x, mu, sigma, alpha)
+subroutine skew_normalf_mat(self, x, mu, sigma, alpha)
   class(randompack_rng), intent(inout) :: self
   real, intent(out) :: x(:,:)
   real, intent(in), optional :: mu
   real, intent(in), optional :: sigma
   real, intent(in) :: alpha
-  end subroutine
+  real :: mu0, sig0
+  logical(c_bool) :: c_ok
+  call require_rng(self, "skew_normal")
+  mu0 = 0
+  sig0 = 1
+  if (present(mu)) mu0 = mu
+  if (present(sigma)) sig0 = sigma
+  if (.not. (sig0 > 0)) error stop "skew_normal: sigma must be positive"
+  c_ok = crp_skew_normalf(x, int(size(x), c_size_t), mu0, sig0, alpha, self%p)
+  call check_call(self, c_ok, "skew_normal")
+end subroutine
 
-  module subroutine mvn_mat(self, x, Sigma, mu, trans)
+subroutine mvn_mat(self, x, Sigma, mu, trans)
   class(randompack_rng), intent(inout) :: self
   double precision, intent(out), target :: x(:,:)
   double precision, intent(in) :: Sigma(:,:)
   double precision, intent(in), optional :: mu(:)
   character(len=1), intent(in), optional :: trans
-  end subroutine
+  double precision, allocatable, target :: sig_tmp(:,:), mu_tmp(:)
+  type(c_ptr) :: mu_ptr
+  character(kind=c_char), target :: transp
+  character(len=1) :: trans1
+  integer(c_int) :: d, ldX
+  integer(c_size_t) :: n
+  logical(c_bool) :: c_ok
+  integer :: d1, d2
+  call require_rng(self, "mvn")
+  d1 = size(Sigma, 1)
+  d2 = size(Sigma, 2)
+  if (d1 <= 0 .or. d2 /= d1) then
+    error stop "mvn: Sigma must be a non-empty square matrix"
+  end if
+  allocate(sig_tmp(d1, d1))
+  sig_tmp = Sigma
+  if (present(mu)) then
+    if (size(mu) /= d1) then
+      error stop "mvn: mu length must match Sigma"
+    end if
+    allocate(mu_tmp(d1))
+    mu_tmp = mu
+    mu_ptr = c_loc(mu_tmp(1))
+  else
+    mu_ptr = c_null_ptr
+  end if
+  trans1 = 'N'
+  if (present(trans)) trans1 = trans
+  if (trans1 >= 'a' .and. trans1 <= 'z') trans1 = achar(iachar(trans1) - 32)
+  if (trans1 /= 'N' .and. trans1 /= 'T') then
+    error stop "mvn: trans must be 'N' or 'T'"
+  end if
+  if (trans1 == 'N') then
+    if (size(x, 2) /= d1) then
+      error stop "mvn: Sigma dimension must match size(x,2) for trans='N'"
+    end if
+    n = int(size(x, 1), c_size_t)
+    ldX = int(size(x, 1), c_int)
+  else
+    if (size(x, 1) /= d1) then
+      error stop "mvn: Sigma dimension must match size(x,1) for trans='T'"
+    end if
+    n = int(size(x, 2), c_size_t)
+    ldX = int(size(x, 1), c_int)
+  end if
+  transp = trans1
+  d = int(d1, c_int)
+  c_ok = crp_mvn(c_loc(transp), mu_ptr, c_loc(sig_tmp(1, 1)), d, &
+    n, c_loc(x(1, 1)), ldX, c_null_ptr, self%p)
+  call check_call(self, c_ok, "mvn")
+end subroutine
 
-  module subroutine int32_vec(self, x, m, n)
+! Integer draws, permutations, samples, and raw output.
+subroutine int32_vec(self, x, m, n)
   class(randompack_rng), intent(inout) :: self
   integer(c_int32_t), intent(out) :: x(:)
   integer(c_int32_t), intent(in) :: m
   integer(c_int32_t), intent(in) :: n
-  end subroutine
+  logical(c_bool) :: c_ok
+  call require_rng(self, "int")
+  c_ok = crp_int(x, int(size(x), c_size_t), m, n, self%p)
+  call check_call(self, c_ok, "int")
+end subroutine
 
-  module subroutine int32_mat(self, x, m, n)
+subroutine int32_mat(self, x, m, n)
   class(randompack_rng), intent(inout) :: self
   integer(c_int32_t), intent(out) :: x(:,:)
   integer(c_int32_t), intent(in) :: m
   integer(c_int32_t), intent(in) :: n
-  end subroutine
+  logical(c_bool) :: c_ok
+  call require_rng(self, "int")
+  c_ok = crp_int(x, int(size(x), c_size_t), m, n, self%p)
+  call check_call(self, c_ok, "int")
+end subroutine
 
-  module subroutine int64_vec(self, x, m, n)
+subroutine int64_vec(self, x, m, n)
   class(randompack_rng), intent(inout) :: self
   integer(c_int64_t), intent(out) :: x(:)
   integer(c_int64_t), intent(in) :: m
   integer(c_int64_t), intent(in) :: n
-  end subroutine
+  logical(c_bool) :: c_ok
+  call require_rng(self, "int")
+  c_ok = crp_long_long(x, int(size(x), c_size_t), m, n, self%p)
+  call check_call(self, c_ok, "int")
+end subroutine
 
-  module subroutine int64_mat(self, x, m, n)
+subroutine int64_mat(self, x, m, n)
   class(randompack_rng), intent(inout) :: self
   integer(c_int64_t), intent(out) :: x(:,:)
   integer(c_int64_t), intent(in) :: m
   integer(c_int64_t), intent(in) :: n
-  end subroutine
+  logical(c_bool) :: c_ok
+  call require_rng(self, "int")
+  c_ok = crp_long_long(x, int(size(x), c_size_t), m, n, self%p)
+  call check_call(self, c_ok, "int")
+end subroutine
 
-  module subroutine int64_vec32(self, x, m, n)
+subroutine int64_vec32(self, x, m, n)
   class(randompack_rng), intent(inout) :: self
   integer(c_int64_t), intent(out) :: x(:)
   integer(c_int32_t), intent(in) :: m
   integer(c_int32_t), intent(in) :: n
-  end subroutine
+  integer(c_int64_t) :: m64, n64
+  logical(c_bool) :: c_ok
+  call require_rng(self, "int")
+  m64 = int(m, c_int64_t)
+  n64 = int(n, c_int64_t)
+  c_ok = crp_long_long(x, int(size(x), c_size_t), m64, n64, self%p)
+  call check_call(self, c_ok, "int")
+end subroutine
 
-  module subroutine int64_mat32(self, x, m, n)
+subroutine int64_mat32(self, x, m, n)
   class(randompack_rng), intent(inout) :: self
   integer(c_int64_t), intent(out) :: x(:,:)
   integer(c_int32_t), intent(in) :: m
   integer(c_int32_t), intent(in) :: n
-  end subroutine
+  integer(c_int64_t) :: m64, n64
+  logical(c_bool) :: c_ok
+  call require_rng(self, "int")
+  m64 = int(m, c_int64_t)
+  n64 = int(n, c_int64_t)
+  c_ok = crp_long_long(x, int(size(x), c_size_t), m64, n64, self%p)
+  call check_call(self, c_ok, "int")
+end subroutine
 
-  module subroutine perm32_vec(self, x)
+subroutine perm32_vec(self, x)
   class(randompack_rng), intent(inout) :: self
   integer(c_int32_t), intent(out) :: x(:)
-  end subroutine
+  integer(c_int64_t) :: n64, max_n
+  logical(c_bool) :: c_ok
+  call require_rng(self, "perm")
+  n64 = int(size(x), c_int64_t)
+  max_n = int(huge(0_c_int), c_int64_t) - 1_c_int64_t
+  if (n64 > max_n) error stop "perm: size(x) too large"
+  c_ok = crp_perm(x, int(n64, c_int), self%p)
+  call check_call(self, c_ok, "perm")
+  x = x + 1_c_int32_t
+end subroutine
 
-  module subroutine perm64_vec(self, x)
+subroutine perm64_vec(self, x)
   class(randompack_rng), intent(inout) :: self
   integer(c_int64_t), intent(out) :: x(:)
-  end subroutine
+  integer(c_int32_t), allocatable :: tmp(:)
+  integer(c_int64_t) :: n64, max_n
+  logical(c_bool) :: c_ok
+  call require_rng(self, "perm")
+  n64 = int(size(x), c_int64_t)
+  max_n = int(huge(0_c_int), c_int64_t) - 1_c_int64_t
+  if (n64 > max_n) error stop "perm: size(x) too large"
+  allocate(tmp(size(x)))
+  c_ok = crp_perm(tmp, int(n64, c_int), self%p)
+  call check_call(self, c_ok, "perm")
+  x = int(tmp, c_int64_t) + 1_c_int64_t
+end subroutine
 
-  module subroutine sample32_vec(self, x, n)
+subroutine sample32_vec(self, x, n)
   class(randompack_rng), intent(inout) :: self
   integer(c_int32_t), intent(out) :: x(:)
   integer(c_int32_t), intent(in) :: n
-  end subroutine
+  integer(c_int64_t) :: n64, k64, max_n
+  logical(c_bool) :: c_ok
+  call require_rng(self, "sample")
+  n64 = int(n, c_int64_t)
+  k64 = int(size(x), c_int64_t)
+  max_n = int(huge(0_c_int), c_int64_t)
+  if (n64 > max_n) error stop "sample: n too large"
+  if (k64 > max_n) error stop "sample: size(x) too large"
+  c_ok = crp_sample(x, int(n64, c_int), int(k64, c_int), self%p)
+  call check_call(self, c_ok, "sample")
+  x = x + 1_c_int32_t
+end subroutine
 
-  module subroutine sample32_vec64(self, x, n)
+subroutine sample32_vec64(self, x, n)
   class(randompack_rng), intent(inout) :: self
   integer(c_int32_t), intent(out) :: x(:)
   integer(c_int64_t), intent(in) :: n
-  end subroutine
+  integer(c_int64_t) :: k64, max_n
+  logical(c_bool) :: c_ok
+  call require_rng(self, "sample")
+  k64 = int(size(x), c_int64_t)
+  max_n = int(huge(0_c_int), c_int64_t)
+  if (n > max_n) error stop "sample: n too large"
+  if (k64 > max_n) error stop "sample: size(x) too large"
+  c_ok = crp_sample(x, int(n, c_int), int(k64, c_int), self%p)
+  call check_call(self, c_ok, "sample")
+  x = x + 1_c_int32_t
+end subroutine
 
-  module subroutine sample64_vec(self, x, n)
+subroutine sample64_vec(self, x, n)
   class(randompack_rng), intent(inout) :: self
   integer(c_int64_t), intent(out) :: x(:)
   integer(c_int64_t), intent(in) :: n
-  end subroutine
+  integer(c_int32_t), allocatable :: tmp(:)
+  integer(c_int64_t) :: k64, max_n
+  logical(c_bool) :: c_ok
+  call require_rng(self, "sample")
+  k64 = int(size(x), c_int64_t)
+  max_n = int(huge(0_c_int), c_int64_t)
+  if (n > max_n) error stop "sample: n too large"
+  if (k64 > max_n) error stop "sample: size(x) too large"
+  allocate(tmp(size(x)))
+  c_ok = crp_sample(tmp, int(n, c_int), int(k64, c_int), self%p)
+  call check_call(self, c_ok, "sample")
+  x = int(tmp, c_int64_t) + 1_c_int64_t
+end subroutine
 
-  module subroutine sample64_vec32(self, x, n)
+subroutine sample64_vec32(self, x, n)
   class(randompack_rng), intent(inout) :: self
   integer(c_int64_t), intent(out) :: x(:)
   integer(c_int32_t), intent(in) :: n
-  end subroutine
+  integer(c_int32_t), allocatable :: tmp(:)
+  integer(c_int64_t) :: n64, k64, max_n
+  logical(c_bool) :: c_ok
+  call require_rng(self, "sample")
+  n64 = int(n, c_int64_t)
+  k64 = int(size(x), c_int64_t)
+  max_n = int(huge(0_c_int), c_int64_t)
+  if (n64 > max_n) error stop "sample: n too large"
+  if (k64 > max_n) error stop "sample: size(x) too large"
+  allocate(tmp(size(x)))
+  c_ok = crp_sample(tmp, int(n64, c_int), int(k64, c_int), self%p)
+  call check_call(self, c_ok, "sample")
+  x = int(tmp, c_int64_t) + 1_c_int64_t
+end subroutine
 
-  module subroutine raw32_vec(self, x)
+subroutine raw32_vec(self, x)
   class(randompack_rng), intent(inout) :: self
   integer(c_int32_t), intent(out) :: x(:)
-  end subroutine
+  logical(c_bool) :: c_ok
+  call require_rng(self, "raw")
+  c_ok = crp_uint32(x, int(size(x), c_size_t), 0_c_int32_t, self%p)
+  call check_call(self, c_ok, "raw")
+end subroutine
 
-  module subroutine raw32_mat(self, x)
+subroutine raw32_mat(self, x)
   class(randompack_rng), intent(inout) :: self
   integer(c_int32_t), intent(out) :: x(:,:)
-  end subroutine
+  logical(c_bool) :: c_ok
+  call require_rng(self, "raw")
+  c_ok = crp_uint32(x, int(size(x), c_size_t), 0_c_int32_t, self%p)
+  call check_call(self, c_ok, "raw")
+end subroutine
 
-  module subroutine raw64_vec(self, x)
+subroutine raw64_vec(self, x)
   class(randompack_rng), intent(inout) :: self
   integer(c_int64_t), intent(out) :: x(:)
-  end subroutine
+  logical(c_bool) :: c_ok
+  call require_rng(self, "raw")
+  c_ok = crp_uint64(x, int(size(x), c_size_t), 0_c_int64_t, self%p)
+  call check_call(self, c_ok, "raw")
+end subroutine
 
-  module subroutine raw64_mat(self, x)
+subroutine raw64_mat(self, x)
   class(randompack_rng), intent(inout) :: self
   integer(c_int64_t), intent(out) :: x(:,:)
-  end subroutine
+  logical(c_bool) :: c_ok
+  call require_rng(self, "raw")
+  c_ok = crp_uint64(x, int(size(x), c_size_t), 0_c_int64_t, self%p)
+  call check_call(self, c_ok, "raw")
+end subroutine
 
-  module subroutine rp_serialize(self, buf)
+! State management and engine-specific controls.
+subroutine rp_serialize(self, buf)
   class(randompack_rng), intent(inout) :: self
   integer(c_int8_t), allocatable, intent(out) :: buf(:)
-  end subroutine
+  integer(c_int) :: len
+  integer(c_int8_t), allocatable, target :: tmp(:)
+  logical(c_bool) :: c_ok
+  call require_rng(self, "serialize")
+  len = 0_c_int
+  c_ok = crp_serialize(c_null_ptr, len, self%p)
+  call check_call(self, c_ok, "serialize")
+  if (len <= 0_c_int) then
+    allocate(buf(0))
+    return
+  end if
+  allocate(tmp(int(len)))
+  c_ok = crp_serialize(c_loc(tmp(1)), len, self%p)
+  call check_call(self, c_ok, "serialize")
+  allocate(buf(int(len)))
+  buf = tmp
+end subroutine
 
-  module subroutine rp_deserialize(self, buf)
+subroutine rp_deserialize(self, buf)
   class(randompack_rng), intent(inout) :: self
   integer(c_int8_t), intent(in) :: buf(:)
-  end subroutine
+  integer(c_int8_t), allocatable, target :: tmp(:)
+  logical(c_bool) :: c_ok
+  call require_rng(self, "deserialize")
+  if (size(buf) == 0) then
+    error stop "deserialize: empty buffer"
+  end if
+  allocate(tmp(size(buf)))
+  tmp = buf
+  c_ok = crp_deserialize(c_loc(tmp(1)), int(size(tmp), c_int), self%p)
+  call check_call(self, c_ok, "deserialize")
+end subroutine
 
-  module subroutine set_state32(self, state)
+subroutine set_state32(self, state)
   class(randompack_rng), intent(inout) :: self
   integer(c_int32_t), intent(in) :: state(:)
-  end subroutine
+  logical(c_bool) :: c_ok
+  integer(c_int64_t), allocatable, target :: tmp(:)
+  call require_rng(self, "set_state")
+  if (size(state) <= 0) then
+    error stop "set_state: empty state"
+  end if
+  allocate(tmp(size(state)))
+  tmp = int(state, c_int64_t)
+  c_ok = crp_set_state(tmp, int(size(tmp), c_int), self%p)
+  call check_call(self, c_ok, "set_state")
+end subroutine
 
-  module subroutine set_state64(self, state)
+subroutine set_state64(self, state)
   class(randompack_rng), intent(inout) :: self
   integer(c_int64_t), intent(in), target :: state(:)
-  end subroutine
+  logical(c_bool) :: c_ok
+  call require_rng(self, "set_state")
+  if (size(state) <= 0) then
+    error stop "set_state: empty state"
+  end if
+  c_ok = crp_set_state(state, int(size(state), c_int), self%p)
+  call check_call(self, c_ok, "set_state")
+end subroutine
 
-  module subroutine rp_advance32(self, delta)
+subroutine rp_advance32(self, delta)
   class(randompack_rng), intent(inout) :: self
   integer(c_int32_t), intent(in) :: delta
-  end subroutine
+  integer(c_int64_t) :: delta64(2)
+  logical(c_bool) :: c_ok
+  call require_rng(self, "advance")
+  if (delta < 0_c_int32_t) error stop "advance: delta must be nonnegative"
+  delta64 = [int(delta, c_int64_t), 0_c_int64_t]
+  c_ok = crp_advance(delta64, self%p)
+  call check_call(self, c_ok, "advance")
+end subroutine
 
-  module subroutine rp_advance64(self, delta)
+subroutine rp_advance64(self, delta)
   class(randompack_rng), intent(inout) :: self
   integer(c_int64_t), intent(in) :: delta
-  end subroutine
+  integer(c_int64_t) :: delta64(2)
+  logical(c_bool) :: c_ok
+  call require_rng(self, "advance")
+  if (delta < 0_c_int64_t) error stop "advance: delta must be nonnegative"
+  delta64 = [delta, 0_c_int64_t]
+  c_ok = crp_advance(delta64, self%p)
+  call check_call(self, c_ok, "advance")
+end subroutine
 
-  module subroutine rp_advance128(self, delta)
+subroutine rp_advance128(self, delta)
   class(randompack_rng), intent(inout) :: self
   integer(c_int64_t), intent(in) :: delta(2)
-  end subroutine
+  logical(c_bool) :: c_ok
+  call require_rng(self, "advance")
+  c_ok = crp_advance(delta, self%p)
+  call check_call(self, c_ok, "advance")
+end subroutine
 
-  module subroutine rp_philox_set_key(self, key)
+subroutine rp_philox_set_key(self, key)
   class(randompack_rng), intent(inout) :: self
   integer(c_int64_t), intent(in) :: key(2)
-  end subroutine
+  logical(c_bool) :: c_ok
+  call require_rng(self, "philox_set_key")
+  c_ok = crp_philox_set_key(key, self%p)
+  call check_call(self, c_ok, "philox_set_key")
+end subroutine
 
-  module subroutine rp_pcg64_set_inc(self, inc)
+subroutine rp_pcg64_set_inc(self, inc)
   class(randompack_rng), intent(inout) :: self
   integer(c_int64_t), intent(in) :: inc(2)
-  end subroutine
+  logical(c_bool) :: c_ok
+  call require_rng(self, "pcg64_set_inc")
+  c_ok = crp_pcg64_set_inc(inc, self%p)
+  call check_call(self, c_ok, "pcg64_set_inc")
+end subroutine
 
-  module subroutine rp_sfc64_set_abc(self, abc)
+subroutine rp_sfc64_set_abc(self, abc)
   class(randompack_rng), intent(inout) :: self
   integer(c_int64_t), intent(in) :: abc(3)
-  end subroutine
+  logical(c_bool) :: c_ok
+  call require_rng(self, "sfc64_set_abc")
+  c_ok = crp_sfc64_set_abc(abc, self%p)
+  call check_call(self, c_ok, "sfc64_set_abc")
+end subroutine
 
-  module subroutine rp_chacha_set_nonce(self, nonce)
+subroutine rp_chacha_set_nonce(self, nonce)
   class(randompack_rng), intent(inout) :: self
   integer(c_int32_t), intent(in) :: nonce(3)
-  end subroutine
+  logical(c_bool) :: c_ok
+  call require_rng(self, "chacha_set_nonce")
+  c_ok = crp_chacha_set_nonce(nonce, self%p)
+  call check_call(self, c_ok, "chacha_set_nonce")
+end subroutine
 
-  module subroutine rp_squares_set_key32(self, key)
+subroutine rp_squares_set_key32(self, key)
   class(randompack_rng), intent(inout) :: self
   integer(c_int32_t), intent(in) :: key
-  end subroutine
+  integer(c_int64_t) :: ckey
+  logical(c_bool) :: c_ok
+  call require_rng(self, "squares_set_key")
+  ckey = int(key, c_int64_t)
+  c_ok = crp_squares_set_key(ckey, self%p)
+  call check_call(self, c_ok, "squares_set_key")
+end subroutine
 
-  module subroutine rp_squares_set_key64(self, key)
+subroutine rp_squares_set_key64(self, key)
   class(randompack_rng), intent(inout) :: self
   integer(c_int64_t), intent(in) :: key
-  end subroutine
+  logical(c_bool) :: c_ok
+  call require_rng(self, "squares_set_key")
+  c_ok = crp_squares_set_key(key, self%p)
+  call check_call(self, c_ok, "squares_set_key")
+end subroutine
 
-  module function rp_last_error(self) result(msg)
+function rp_last_error(self) result(msg)
   class(randompack_rng), intent(in) :: self
   character(len=:), allocatable :: msg
-  end function
-end interface
+  type(c_ptr) :: p
+  if (.not. c_associated(self%p)) then
+    msg = ""
+    return
+  end if
+  p = crp_last_error(self%p)
+  msg = cstr_to_fstring(p)
+end function
 
 end module randompack
