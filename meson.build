@@ -22,7 +22,10 @@ if host_machine.system() != 'windows'  # Ensure <time.h> exposes clock_gettime/C
   endif
 endif
 
-install_data('LICENSE', install_dir: join_paths(get_option('datadir'), 'licenses', 'Randompack'))
+install_data(
+  'LICENSE',
+  install_dir: join_paths(get_option('datadir'), 'licenses', 'Randompack')
+)
 
 # -------------------------------------------------
 # BLAS selection
@@ -222,7 +225,10 @@ endif
 fortran_src = []
 fortran_inc = []
 if build_fortran_interface
-  fortran_src = files('fortran/src/randompack.f90')
+  fortran_src = files(
+    'fortran/src/randompack.f90',
+    'fortran/src/implementation.f90',
+  )
 endif
 
 # -------------------------------------------------
