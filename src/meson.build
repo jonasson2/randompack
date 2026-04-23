@@ -25,10 +25,12 @@ if build_arm_sleef
 endif
 
 blas_objs = []
+fortran_runtime_link_args = []
 if using_builtin_blas
   fc = meson.get_compiler('fortran')
   blas_f_args = fc.get_supported_arguments([
     '-w',
+    '-Minform=severe',
     '-std=legacy',
     '-Wno-compare-reals',
     '-Wno-unused-dummy-argument',
@@ -44,6 +46,7 @@ if using_builtin_blas
     install: false,
   )
   blas_objs = [blas_lib.extract_all_objects(recursive: false)]
+  fortran_runtime_link_args = cc.get_supported_link_arguments(['-fortranlibs'])
 endif
 
 build_avx2_define = build_avx2 ? ['-DBUILD_AVX2'] : []
@@ -123,6 +126,13 @@ endif
 
 extra_objs = avx2_objs + avx512_objs + blas_objs
 extra_objs_buf8 = avx2_objs_buf8 + avx512_objs_buf8 + blas_objs
+randompack_link_language = build_fortran ? 'fortran' : 'c'
+shared_soname_link_args = []
+if host_system == 'linux'
+  shared_soname_link_args = cc.get_supported_link_arguments(
+    ['-Wl,-soname,librandompack.so']
+  )
+endif
 if cc.get_id() == 'msvc'
   librandompack = shared_library(
     'randompack',
@@ -131,6 +141,8 @@ if cc.get_id() == 'msvc'
     include_directories: randompack_inc,
     dependencies: c_deps,
     c_args: base_c_args,
+    link_language: randompack_link_language,
+    link_args: shared_soname_link_args,
     vs_module_defs: 'randompack.def',
     install: true,
   )
@@ -142,6 +154,8 @@ else
     include_directories: randompack_inc,
     dependencies: c_deps,
     c_args: base_c_args,
+    link_language: randompack_link_language,
+    link_args: shared_soname_link_args,
     install: true,
   )
 endif
@@ -175,5 +189,6 @@ if build_buf8_tests
     include_directories: randompack_inc,
     dependencies: c_deps,
     compile_args: buf8_c_args,
+    link_args: fortran_runtime_link_args,
   )
 endif

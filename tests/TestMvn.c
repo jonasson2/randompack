@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #include "xCheck.h"
 #include "randompack.h"
@@ -310,7 +311,8 @@ static void test_mvn_bad_args(void) {
   check_failure(ok, rng);
 
   // Negative sample count n
-  ok = randompack_mvn("N", mu, Sig, d, -1, X, d, 0, rng);
+  size_t bad_n = SIZE_MAX;
+  ok = randompack_mvn("N", mu, Sig, d, bad_n, X, d, 0, rng);
   check_failure(ok, rng);
 
   // X is null but n > 0

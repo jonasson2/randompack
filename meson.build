@@ -54,6 +54,10 @@ if fp_args.length() > 0
   add_project_arguments(fp_args, language: 'c')
 endif
 
+if cc.get_id() == 'nvidia_hpc'
+  add_project_arguments('-Minform=warn', language: 'c')
+endif
+
 force_no128 = get_option('force_no128')
 force_nosimd = get_option('force_nosimd')
 
@@ -202,8 +206,18 @@ build_fortran = has_fortran
 build_fortran_interface = build_fortran and get_option('build_fortran_interface')
 build_cpp = add_languages('cpp', required: false, native: false)
 
+if build_cpp
+  cpp = meson.get_compiler('cpp')
+  if cpp.get_id() == 'nvidia_hpc'
+    add_project_arguments('-Minform=warn', language: 'cpp')
+  endif
+endif
+
 if has_fortran
   fc = meson.get_compiler('fortran')
+  if fc.get_id() == 'nvidia_hpc'
+    add_project_arguments('-Minform=warn', language: 'fortran')
+  endif
   if fc.get_id() == 'gcc'
     add_project_arguments('-fno-backtrace', language: 'fortran')
   endif

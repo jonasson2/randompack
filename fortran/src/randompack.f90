@@ -247,19 +247,19 @@ interface
     type(c_ptr), value :: rngp
   end function
 
-  logical(c_bool) function crp_exp(x, n, scale, rngp) bind(C, name="randompack_exp")
+  logical(c_bool) function crp_exp(x, n, scale0, rngp) bind(C, name="randompack_exp")
     import :: c_double, c_size_t, c_ptr, c_bool
     real(c_double) :: x(*)
     integer(c_size_t), value :: n
-    real(c_double), value :: scale
+    real(c_double), value :: scale0
     type(c_ptr), value :: rngp
   end function
 
-  logical(c_bool) function crp_expf(x, n, scale, rngp) bind(C, name="randompack_expf")
+  logical(c_bool) function crp_expf(x, n, scale0, rngp) bind(C, name="randompack_expf")
     import :: c_float, c_size_t, c_ptr, c_bool
     real(c_float) :: x(*)
     integer(c_size_t), value :: n
-    real(c_float), value :: scale
+    real(c_float), value :: scale0
     type(c_ptr), value :: rngp
   end function
 
@@ -283,23 +283,23 @@ interface
     type(c_ptr), value :: rngp
   end function
 
-  logical(c_bool) function crp_gamma(x, n, shape, scale, rngp) &
+  logical(c_bool) function crp_gamma(x, n, shape0, scale0, rngp) &
     bind(C, name="randompack_gamma")
     import :: c_double, c_size_t, c_ptr, c_bool
     real(c_double) :: x(*)
     integer(c_size_t), value :: n
-    real(c_double), value :: shape
-    real(c_double), value :: scale
+    real(c_double), value :: shape0
+    real(c_double), value :: scale0
     type(c_ptr), value :: rngp
   end function
 
-  logical(c_bool) function crp_gammaf(x, n, shape, scale, rngp) &
+  logical(c_bool) function crp_gammaf(x, n, shape0, scale0, rngp) &
     bind(C, name="randompack_gammaf")
     import :: c_float, c_size_t, c_ptr, c_bool
     real(c_float) :: x(*)
     integer(c_size_t), value :: n
-    real(c_float), value :: shape
-    real(c_float), value :: scale
+    real(c_float), value :: shape0
+    real(c_float), value :: scale0
     type(c_ptr), value :: rngp
   end function
 
@@ -411,23 +411,23 @@ interface
     type(c_ptr), value :: rngp
   end function
 
-  logical(c_bool) function crp_weibull(x, n, shape, scale, rngp) &
+  logical(c_bool) function crp_weibull(x, n, shape0, scale0, rngp) &
     bind(C, name="randompack_weibull")
     import :: c_double, c_size_t, c_ptr, c_bool
     real(c_double) :: x(*)
     integer(c_size_t), value :: n
-    real(c_double), value :: shape
-    real(c_double), value :: scale
+    real(c_double), value :: shape0
+    real(c_double), value :: scale0
     type(c_ptr), value :: rngp
   end function
 
-  logical(c_bool) function crp_weibullf(x, n, shape, scale, rngp) &
+  logical(c_bool) function crp_weibullf(x, n, shape0, scale0, rngp) &
     bind(C, name="randompack_weibullf")
     import :: c_float, c_size_t, c_ptr, c_bool
     real(c_float) :: x(*)
     integer(c_size_t), value :: n
-    real(c_float), value :: shape
-    real(c_float), value :: scale
+    real(c_float), value :: shape0
+    real(c_float), value :: scale0
     type(c_ptr), value :: rngp
   end function
 
@@ -467,54 +467,54 @@ interface
     type(c_ptr), value :: rngp
   end function
 
-  logical(c_bool) function crp_int(x, len, m, n, rngp) bind(C, name="randompack_int")
+  logical(c_bool) function crp_int(x, count0, m, n, rngp) bind(C, name="randompack_int")
     import :: c_int, c_int32_t, c_size_t, c_ptr, c_bool
     integer(c_int32_t) :: x(*)
-    integer(c_size_t), value :: len
+    integer(c_size_t), value :: count0
     integer(c_int32_t), value :: m
     integer(c_int32_t), value :: n
     type(c_ptr), value :: rngp
   end function
 
-  logical(c_bool) function crp_long_long(x, len, m, n, rngp) &
+  logical(c_bool) function crp_long_long(x, count0, m, n, rngp) &
     bind(C, name="randompack_long_long")
     import :: c_int64_t, c_size_t, c_ptr, c_bool
     integer(c_int64_t) :: x(*)
-    integer(c_size_t), value :: len
+    integer(c_size_t), value :: count0
     integer(c_int64_t), value :: m
     integer(c_int64_t), value :: n
     type(c_ptr), value :: rngp
   end function
 
-  logical(c_bool) function crp_perm(x, len, rngp) bind(C, name="randompack_perm")
+  logical(c_bool) function crp_perm(x, count0, rngp) bind(C, name="randompack_perm")
     import :: c_int, c_int32_t, c_ptr, c_bool
     integer(c_int32_t) :: x(*)
-    integer(c_int), value :: len
+    integer(c_int), value :: count0
     type(c_ptr), value :: rngp
   end function
 
-  logical(c_bool) function crp_sample(x, len, k, rngp) bind(C, name="randompack_sample")
+  logical(c_bool) function crp_sample(x, count0, k, rngp) bind(C, name="randompack_sample")
     import :: c_int, c_int32_t, c_ptr, c_bool
     integer(c_int32_t) :: x(*)
-    integer(c_int), value :: len
+    integer(c_int), value :: count0
     integer(c_int), value :: k
     type(c_ptr), value :: rngp
   end function
 
-  logical(c_bool) function crp_uint32(x, len, bound, rngp) &
+  logical(c_bool) function crp_uint32(x, count0, bound, rngp) &
     bind(C, name="randompack_uint32")
     import :: c_int32_t, c_size_t, c_ptr, c_bool
     integer(c_int32_t) :: x(*)
-    integer(c_size_t), value :: len
+    integer(c_size_t), value :: count0
     integer(c_int32_t), value :: bound
     type(c_ptr), value :: rngp
   end function
 
-  logical(c_bool) function crp_uint64(x, len, bound, rngp) &
+  logical(c_bool) function crp_uint64(x, count0, bound, rngp) &
     bind(C, name="randompack_uint64")
     import :: c_int64_t, c_size_t, c_ptr, c_bool
     integer(c_int64_t) :: x(*)
-    integer(c_size_t), value :: len
+    integer(c_size_t), value :: count0
     integer(c_int64_t), value :: bound
     type(c_ptr), value :: rngp
   end function
@@ -529,19 +529,19 @@ interface
     integer(c_int) :: desc_maxlen
   end function
 
-  logical(c_bool) function crp_serialize(buf, len, rngp) &
+  logical(c_bool) function crp_serialize(buf, count0, rngp) &
     bind(C, name="randompack_serialize")
     import :: c_ptr, c_int, c_bool
     type(c_ptr), value :: buf
-    integer(c_int) :: len
+    integer(c_int) :: count0
     type(c_ptr), value :: rngp
   end function
 
-  logical(c_bool) function crp_deserialize(buf, len, rngp) &
+  logical(c_bool) function crp_deserialize(buf, count0, rngp) &
     bind(C, name="randompack_deserialize")
     import :: c_ptr, c_int, c_bool
     type(c_ptr), value :: buf
-    integer(c_int), value :: len
+    integer(c_int), value :: count0
     type(c_ptr), value :: rngp
   end function
 
@@ -1007,57 +1007,57 @@ subroutine normalf_mat(self, x, mu, sigma)
   call check_call(self, c_ok, "normal")
 end subroutine
 
-subroutine exp_vec(self, x, scale)
+subroutine exp_vec(self, x, scale0)
   class(randompack_rng), intent(inout) :: self
   double precision, intent(out) :: x(:)
-  double precision, intent(in), optional :: scale
+  double precision, intent(in), optional :: scale0
   double precision :: s0
   logical(c_bool) :: c_ok
   call require_rng(self, "exp")
   s0 = 1
-  if (present(scale)) s0 = scale
+  if (present(scale0)) s0 = scale0
   if (.not. (s0 > 0)) error stop "exp: scale must be positive"
   c_ok = crp_exp(x, int(size(x), c_size_t), s0, self%p)
   call check_call(self, c_ok, "exp")
 end subroutine
 
-subroutine exp_mat(self, x, scale)
+subroutine exp_mat(self, x, scale0)
   class(randompack_rng), intent(inout) :: self
   double precision, intent(out) :: x(:,:)
-  double precision, intent(in), optional :: scale
+  double precision, intent(in), optional :: scale0
   double precision :: s0
   logical(c_bool) :: c_ok
   call require_rng(self, "exp")
   s0 = 1
-  if (present(scale)) s0 = scale
+  if (present(scale0)) s0 = scale0
   if (.not. (s0 > 0)) error stop "exp: scale must be positive"
   c_ok = crp_exp(x, int(size(x), c_size_t), s0, self%p)
   call check_call(self, c_ok, "exp")
 end subroutine
 
-subroutine expf_vec(self, x, scale)
+subroutine expf_vec(self, x, scale0)
   class(randompack_rng), intent(inout) :: self
   real, intent(out) :: x(:)
-  real, intent(in), optional :: scale
+  real, intent(in), optional :: scale0
   real :: s0
   logical(c_bool) :: c_ok
   call require_rng(self, "exp")
   s0 = 1
-  if (present(scale)) s0 = scale
+  if (present(scale0)) s0 = scale0
   if (.not. (s0 > 0)) error stop "exp: scale must be positive"
   c_ok = crp_expf(x, int(size(x), c_size_t), s0, self%p)
   call check_call(self, c_ok, "exp")
 end subroutine
 
-subroutine expf_mat(self, x, scale)
+subroutine expf_mat(self, x, scale0)
   class(randompack_rng), intent(inout) :: self
   real, intent(out) :: x(:,:)
-  real, intent(in), optional :: scale
+  real, intent(in), optional :: scale0
   real :: s0
   logical(c_bool) :: c_ok
   call require_rng(self, "exp")
   s0 = 1
-  if (present(scale)) s0 = scale
+  if (present(scale0)) s0 = scale0
   if (.not. (s0 > 0)) error stop "exp: scale must be positive"
   c_ok = crp_expf(x, int(size(x), c_size_t), s0, self%p)
   call check_call(self, c_ok, "exp")
@@ -1131,63 +1131,63 @@ subroutine lognormalf_mat(self, x, mu, sigma)
   call check_call(self, c_ok, "lognormal")
 end subroutine
 
-subroutine gamma_vec(self, x, shape, scale)
+subroutine gamma_vec(self, x, shape0, scale0)
   class(randompack_rng), intent(inout) :: self
   double precision, intent(out) :: x(:)
-  double precision, intent(in) :: shape
-  double precision, intent(in), optional :: scale
+  double precision, intent(in) :: shape0
+  double precision, intent(in), optional :: scale0
   double precision :: sc0
   logical(c_bool) :: c_ok
   call require_rng(self, "gamma")
   sc0 = 1
-  if (present(scale)) sc0 = scale
-  if (.not. (shape > 0 .and. sc0 > 0)) error stop "gamma: shape/scale must be positive"
-  c_ok = crp_gamma(x, int(size(x), c_size_t), shape, sc0, self%p)
+  if (present(scale0)) sc0 = scale0
+  if (.not. (shape0 > 0 .and. sc0 > 0)) error stop "gamma: shape/scale must be positive"
+  c_ok = crp_gamma(x, int(size(x), c_size_t), shape0, sc0, self%p)
   call check_call(self, c_ok, "gamma")
 end subroutine
 
-subroutine gamma_mat(self, x, shape, scale)
+subroutine gamma_mat(self, x, shape0, scale0)
   class(randompack_rng), intent(inout) :: self
   double precision, intent(out) :: x(:,:)
-  double precision, intent(in) :: shape
-  double precision, intent(in), optional :: scale
+  double precision, intent(in) :: shape0
+  double precision, intent(in), optional :: scale0
   double precision :: sc0
   logical(c_bool) :: c_ok
   call require_rng(self, "gamma")
   sc0 = 1
-  if (present(scale)) sc0 = scale
-  if (.not. (shape > 0 .and. sc0 > 0)) error stop "gamma: shape/scale must be positive"
-  c_ok = crp_gamma(x, int(size(x), c_size_t), shape, sc0, self%p)
+  if (present(scale0)) sc0 = scale0
+  if (.not. (shape0 > 0 .and. sc0 > 0)) error stop "gamma: shape/scale must be positive"
+  c_ok = crp_gamma(x, int(size(x), c_size_t), shape0, sc0, self%p)
   call check_call(self, c_ok, "gamma")
 end subroutine
 
-subroutine gammaf_vec(self, x, shape, scale)
+subroutine gammaf_vec(self, x, shape0, scale0)
   class(randompack_rng), intent(inout) :: self
   real, intent(out) :: x(:)
-  real, intent(in) :: shape
-  real, intent(in), optional :: scale
+  real, intent(in) :: shape0
+  real, intent(in), optional :: scale0
   real :: sc0
   logical(c_bool) :: c_ok
   call require_rng(self, "gamma")
   sc0 = 1
-  if (present(scale)) sc0 = scale
-  if (.not. (shape > 0 .and. sc0 > 0)) error stop "gamma: shape/scale must be positive"
-  c_ok = crp_gammaf(x, int(size(x), c_size_t), shape, sc0, self%p)
+  if (present(scale0)) sc0 = scale0
+  if (.not. (shape0 > 0 .and. sc0 > 0)) error stop "gamma: shape/scale must be positive"
+  c_ok = crp_gammaf(x, int(size(x), c_size_t), shape0, sc0, self%p)
   call check_call(self, c_ok, "gamma")
 end subroutine
 
-subroutine gammaf_mat(self, x, shape, scale)
+subroutine gammaf_mat(self, x, shape0, scale0)
   class(randompack_rng), intent(inout) :: self
   real, intent(out) :: x(:,:)
-  real, intent(in) :: shape
-  real, intent(in), optional :: scale
+  real, intent(in) :: shape0
+  real, intent(in), optional :: scale0
   real :: sc0
   logical(c_bool) :: c_ok
   call require_rng(self, "gamma")
   sc0 = 1
-  if (present(scale)) sc0 = scale
-  if (.not. (shape > 0 .and. sc0 > 0)) error stop "gamma: shape/scale must be positive"
-  c_ok = crp_gammaf(x, int(size(x), c_size_t), shape, sc0, self%p)
+  if (present(scale0)) sc0 = scale0
+  if (.not. (shape0 > 0 .and. sc0 > 0)) error stop "gamma: shape/scale must be positive"
+  c_ok = crp_gammaf(x, int(size(x), c_size_t), shape0, sc0, self%p)
   call check_call(self, c_ok, "gamma")
 end subroutine
 
@@ -1471,63 +1471,63 @@ subroutine paretof_mat(self, x, xm, alpha)
   call check_call(self, c_ok, "pareto")
 end subroutine
 
-subroutine weibull_vec(self, x, shape, scale)
+subroutine weibull_vec(self, x, shape0, scale0)
   class(randompack_rng), intent(inout) :: self
   double precision, intent(out) :: x(:)
-  double precision, intent(in) :: shape
-  double precision, intent(in), optional :: scale
+  double precision, intent(in) :: shape0
+  double precision, intent(in), optional :: scale0
   double precision :: sc0
   logical(c_bool) :: c_ok
   call require_rng(self, "weibull")
   sc0 = 1
-  if (present(scale)) sc0 = scale
-  if (.not. (shape > 0 .and. sc0 > 0)) error stop "weibull: shape/scale must be positive"
-  c_ok = crp_weibull(x, int(size(x), c_size_t), shape, sc0, self%p)
+  if (present(scale0)) sc0 = scale0
+  if (.not. (shape0 > 0 .and. sc0 > 0)) error stop "weibull: shape/scale must be positive"
+  c_ok = crp_weibull(x, int(size(x), c_size_t), shape0, sc0, self%p)
   call check_call(self, c_ok, "weibull")
 end subroutine
 
-subroutine weibull_mat(self, x, shape, scale)
+subroutine weibull_mat(self, x, shape0, scale0)
   class(randompack_rng), intent(inout) :: self
   double precision, intent(out) :: x(:,:)
-  double precision, intent(in) :: shape
-  double precision, intent(in), optional :: scale
+  double precision, intent(in) :: shape0
+  double precision, intent(in), optional :: scale0
   double precision :: sc0
   logical(c_bool) :: c_ok
   call require_rng(self, "weibull")
   sc0 = 1
-  if (present(scale)) sc0 = scale
-  if (.not. (shape > 0 .and. sc0 > 0)) error stop "weibull: shape/scale must be positive"
-  c_ok = crp_weibull(x, int(size(x), c_size_t), shape, sc0, self%p)
+  if (present(scale0)) sc0 = scale0
+  if (.not. (shape0 > 0 .and. sc0 > 0)) error stop "weibull: shape/scale must be positive"
+  c_ok = crp_weibull(x, int(size(x), c_size_t), shape0, sc0, self%p)
   call check_call(self, c_ok, "weibull")
 end subroutine
 
-subroutine weibullf_vec(self, x, shape, scale)
+subroutine weibullf_vec(self, x, shape0, scale0)
   class(randompack_rng), intent(inout) :: self
   real, intent(out) :: x(:)
-  real, intent(in) :: shape
-  real, intent(in), optional :: scale
+  real, intent(in) :: shape0
+  real, intent(in), optional :: scale0
   real :: sc0
   logical(c_bool) :: c_ok
   call require_rng(self, "weibull")
   sc0 = 1
-  if (present(scale)) sc0 = scale
-  if (.not. (shape > 0 .and. sc0 > 0)) error stop "weibull: shape/scale must be positive"
-  c_ok = crp_weibullf(x, int(size(x), c_size_t), shape, sc0, self%p)
+  if (present(scale0)) sc0 = scale0
+  if (.not. (shape0 > 0 .and. sc0 > 0)) error stop "weibull: shape/scale must be positive"
+  c_ok = crp_weibullf(x, int(size(x), c_size_t), shape0, sc0, self%p)
   call check_call(self, c_ok, "weibull")
 end subroutine
 
-subroutine weibullf_mat(self, x, shape, scale)
+subroutine weibullf_mat(self, x, shape0, scale0)
   class(randompack_rng), intent(inout) :: self
   real, intent(out) :: x(:,:)
-  real, intent(in) :: shape
-  real, intent(in), optional :: scale
+  real, intent(in) :: shape0
+  real, intent(in), optional :: scale0
   real :: sc0
   logical(c_bool) :: c_ok
   call require_rng(self, "weibull")
   sc0 = 1
-  if (present(scale)) sc0 = scale
-  if (.not. (shape > 0 .and. sc0 > 0)) error stop "weibull: shape/scale must be positive"
-  c_ok = crp_weibullf(x, int(size(x), c_size_t), shape, sc0, self%p)
+  if (present(scale0)) sc0 = scale0
+  if (.not. (shape0 > 0 .and. sc0 > 0)) error stop "weibull: shape/scale must be positive"
+  c_ok = crp_weibullf(x, int(size(x), c_size_t), shape0, sc0, self%p)
   call check_call(self, c_ok, "weibull")
 end subroutine
 
@@ -1874,21 +1874,21 @@ end subroutine
 subroutine rp_serialize(self, buf)
   class(randompack_rng), intent(inout) :: self
   integer(c_int8_t), allocatable, intent(out) :: buf(:)
-  integer(c_int) :: len
+  integer(c_int) :: count0
   integer(c_int8_t), allocatable, target :: tmp(:)
   logical(c_bool) :: c_ok
   call require_rng(self, "serialize")
-  len = 0_c_int
-  c_ok = crp_serialize(c_null_ptr, len, self%p)
+  count0 = 0_c_int
+  c_ok = crp_serialize(c_null_ptr, count0, self%p)
   call check_call(self, c_ok, "serialize")
-  if (len <= 0_c_int) then
+  if (count0 <= 0_c_int) then
     allocate(buf(0))
     return
   end if
-  allocate(tmp(int(len)))
-  c_ok = crp_serialize(c_loc(tmp(1)), len, self%p)
+  allocate(tmp(int(count0)))
+  c_ok = crp_serialize(c_loc(tmp(1)), count0, self%p)
   call check_call(self, c_ok, "serialize")
-  allocate(buf(int(len)))
+  allocate(buf(int(count0)))
   buf = tmp
 end subroutine
 

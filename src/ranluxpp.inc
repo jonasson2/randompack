@@ -70,7 +70,7 @@ ALWAYS_INLINE void mul9x9(uint64_t *z, const uint64_t *restrict x,
   const uint64_t *restrict y) {
   uint64_t lo, hi, c, cy;
   for (int i=0; i<18; i++) z[i] = 0;
-#if defined(__GNUC__) // works also for clang
+#if defined(__clang__) || (defined(__GNUC__) && !defined(__NVCOMPILER))
 #pragma GCC unroll 9
 #endif
   for (int i=0; i<9; i++) {
