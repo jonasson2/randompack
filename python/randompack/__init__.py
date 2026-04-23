@@ -1,5 +1,5 @@
 """
-Randompack: high-performance random number generation.
+Python interface to Randompack. See https://github.com/jonasson2/randompack
 
 Quick Start
 -----------

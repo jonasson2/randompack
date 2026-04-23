@@ -43,12 +43,16 @@ use, intrinsic :: ieee_arithmetic, only: ieee_is_finite, ieee_set_flag, ieee_und
   logical :: has_pcg, has_x, has_philox, has_squares, has_chacha
   double precision :: x(100), y(100), z(100)
   double precision :: a(7,11)
+  double precision :: Sigma2(2,2), mu2(2), Xmvn(20,2), Ymvn(20,2), Zmvn(2,20)
+  double precision :: Wmvn(2,20)
   double precision :: xe(1), xn(1), xl(1)
   double precision :: xe1(1), xn1(1), xl1(1)
   real :: xf(100)
   real :: af(7,11)
   integer(c_int32_t) :: iv(50), im(6,9)
+  integer(c_int32_t) :: perm32(10), samp32(4)
   integer(c_int64_t) :: iv64(50)
+  integer(c_int64_t) :: perm64(10), samp64(4)
   integer(c_int64_t) :: inc_pcg(2)
   integer(c_int32_t) :: nonce_chacha(3)
   integer(c_int8_t), allocatable :: bytes(:)
@@ -71,6 +75,8 @@ use, intrinsic :: ieee_arithmetic, only: ieee_is_finite, ieee_set_flag, ieee_und
     engine = names(1)
   end if
   nonce_chacha = [7_c_int32_t, 11_c_int32_t, 13_c_int32_t]
+  Sigma2 = reshape([1d0, 0.3d0, 0.3d0, 2d0], [2,2])
+  mu2 = [1d0, 2d0]
 
   write(*,'(A)') "Using engine: "//engine
 
@@ -201,6 +207,33 @@ use, intrinsic :: ieee_arithmetic, only: ieee_is_finite, ieee_set_flag, ieee_und
   call assert(all(-2 <= iv64 .and. iv64 <= 3), "int64")
   call r1%int(iv64, 1, 9)
   call assert(all(1 <= iv64 .and. iv64 <= 9), "int64 bounds32")
+
+  ! perm/sample vec
+  call r1%seed(123)
+  call r1%perm(perm32)
+  call assert(is_perm32(perm32), "perm32")
+  call r1%perm(perm64)
+  call assert(is_perm64(perm64), "perm64")
+  call r1%sample(samp32, 7)
+  call assert(is_sample32(samp32, 7), "sample32")
+  call r1%sample(samp64, 7)
+  call assert(is_sample64(samp64, 7_c_int64_t), "sample64")
+
+  ! mvn
+  call r1%seed(123)
+  call r1%mvn(Xmvn, Sigma2)
+  call assert(all(ieee_is_finite(Xmvn)), "mvn")
+  call r1%seed(123)
+  call r1%mvn(Ymvn, Sigma2)
+  call assert(all(approx_equal_d(Xmvn, Ymvn)), "mvn determinism")
+  call r1%mvn(Ymvn, Sigma2, mu2)
+  call assert(all(ieee_is_finite(Ymvn)), "mvn mu")
+  call r1%seed(123)
+  call r1%mvn(Zmvn, Sigma2, trans='T')
+  call assert(all(ieee_is_finite(Zmvn)), "mvn transpose")
+  call r1%seed(123)
+  call r1%mvn(Wmvn, Sigma2, trans='T')
+  call assert(all(approx_equal_d(Zmvn, Wmvn)), "mvn transpose determinism")
 
   !------------------------------------------------------------
   ! Determinism: seed resets stream
@@ -349,6 +382,80 @@ use, intrinsic :: ieee_arithmetic, only: ieee_is_finite, ieee_set_flag, ieee_und
   write(*,'(A)') "OK: Fortran randompack tests passed."
 
 contains
+
+  logical function is_perm32(x)
+    integer(c_int32_t), intent(in) :: x(:)
+    logical, allocatable :: seen(:)
+    integer :: i, v, n
+    n = size(x)
+    allocate(seen(n))
+    seen = .false.
+    is_perm32 = .true.
+    do i = 1, n
+      v = int(x(i))
+      if (v < 1 .or. v > n .or. seen(v)) then
+        is_perm32 = .false.
+        exit
+      end if
+      seen(v) = .true.
+    end do
+  end function
+
+  logical function is_perm64(x)
+    integer(c_int64_t), intent(in) :: x(:)
+    logical, allocatable :: seen(:)
+    integer :: i, v, n
+    n = size(x)
+    allocate(seen(n))
+    seen = .false.
+    is_perm64 = .true.
+    do i = 1, n
+      v = int(x(i))
+      if (v < 1 .or. v > n .or. seen(v)) then
+        is_perm64 = .false.
+        exit
+      end if
+      seen(v) = .true.
+    end do
+  end function
+
+  logical function is_sample32(x, n)
+    integer(c_int32_t), intent(in) :: x(:)
+    integer(c_int32_t), intent(in) :: n
+    logical, allocatable :: seen(:)
+    integer :: i, v, n1
+    n1 = int(n)
+    allocate(seen(n1))
+    seen = .false.
+    is_sample32 = .true.
+    do i = 1, size(x)
+      v = int(x(i))
+      if (v < 1 .or. v > n1 .or. seen(v)) then
+        is_sample32 = .false.
+        exit
+      end if
+      seen(v) = .true.
+    end do
+  end function
+
+  logical function is_sample64(x, n)
+    integer(c_int64_t), intent(in) :: x(:)
+    integer(c_int64_t), intent(in) :: n
+    logical, allocatable :: seen(:)
+    integer :: i, v, n1
+    n1 = int(n)
+    allocate(seen(n1))
+    seen = .false.
+    is_sample64 = .true.
+    do i = 1, size(x)
+      v = int(x(i))
+      if (v < 1 .or. v > n1 .or. seen(v)) then
+        is_sample64 = .false.
+        exit
+      end if
+      seen(v) = .true.
+    end do
+  end function
 
   logical function has_name(names, target)
     character(len=:), allocatable, intent(in) :: names(:)

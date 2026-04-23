@@ -84,6 +84,7 @@ contains
   procedure, private :: skew_normalf_vec
   procedure, private :: skew_normalf_mat
   generic :: skew_normal => skew_normal_vec, skew_normal_mat, skew_normalf_vec, skew_normalf_mat
+  procedure :: mvn => mvn_mat
   procedure, private :: int32_vec
   procedure, private :: int32_mat
   procedure, private :: int64_vec
@@ -92,6 +93,14 @@ contains
   procedure, private :: int64_mat32
   generic :: int => int32_vec, int32_mat, int64_vec, int64_mat, &
     int64_vec32, int64_mat32
+  procedure, private :: perm32_vec
+  procedure, private :: perm64_vec
+  generic :: perm => perm32_vec, perm64_vec
+  procedure, private :: sample32_vec
+  procedure, private :: sample32_vec64
+  procedure, private :: sample64_vec
+  procedure, private :: sample64_vec32
+  generic :: sample => sample32_vec, sample32_vec64, sample64_vec, sample64_vec32
   procedure, private :: raw32_vec
   procedure, private :: raw32_mat
   procedure, private :: raw64_vec
@@ -426,6 +435,20 @@ interface
     type(c_ptr), value :: rngp
   end function
 
+  logical(c_bool) function crp_mvn(transp, mu, Sig, d, n, X, ldx, L, rngp) &
+    bind(C, name="randompack_mvn")
+    import :: c_ptr, c_bool, c_int, c_size_t
+    type(c_ptr), value :: transp
+    type(c_ptr), value :: mu
+    type(c_ptr), value :: Sig
+    integer(c_int), value :: d
+    integer(c_size_t), value :: n
+    type(c_ptr), value :: X
+    integer(c_int), value :: ldx
+    type(c_ptr), value :: L
+    type(c_ptr), value :: rngp
+  end function
+
   logical(c_bool) function crp_int(x, len, m, n, rngp) bind(C, name="randompack_int")
     import :: c_int, c_int32_t, c_size_t, c_ptr, c_bool
     integer(c_int32_t) :: x(*)
@@ -442,6 +465,21 @@ interface
     integer(c_size_t), value :: len
     integer(c_int64_t), value :: m
     integer(c_int64_t), value :: n
+    type(c_ptr), value :: rngp
+  end function
+
+  logical(c_bool) function crp_perm(x, len, rngp) bind(C, name="randompack_perm")
+    import :: c_int, c_int32_t, c_ptr, c_bool
+    integer(c_int32_t) :: x(*)
+    integer(c_int), value :: len
+    type(c_ptr), value :: rngp
+  end function
+
+  logical(c_bool) function crp_sample(x, len, k, rngp) bind(C, name="randompack_sample")
+    import :: c_int, c_int32_t, c_ptr, c_bool
+    integer(c_int32_t) :: x(*)
+    integer(c_int), value :: len
+    integer(c_int), value :: k
     type(c_ptr), value :: rngp
   end function
 
@@ -1516,6 +1554,64 @@ subroutine skew_normalf_mat(self, x, mu, sigma, alpha)
   if (.not. c_ok) error stop rp_error_message(self, "skew_normal")
 end subroutine
 
+subroutine mvn_mat(self, x, Sigma, mu, trans)
+  class(randompack_rng), intent(inout) :: self
+  double precision, intent(out), target :: x(:,:)
+  double precision, intent(in) :: Sigma(:,:)
+  double precision, intent(in), optional :: mu(:)
+  character(len=1), intent(in), optional :: trans
+  double precision, allocatable, target :: sig_tmp(:,:), mu_tmp(:)
+  type(c_ptr) :: mu_ptr
+  character(kind=c_char), target :: transp
+  character(len=1) :: trans1
+  integer(c_int) :: d, ldX
+  integer(c_size_t) :: n
+  logical(c_bool) :: c_ok
+  integer :: d1, d2
+  if (.not. c_associated(self%p)) error stop rp_error_message(self, "mvn")
+  d1 = size(Sigma, 1)
+  d2 = size(Sigma, 2)
+  if (d1 <= 0 .or. d2 /= d1) then
+    error stop "mvn: Sigma must be a non-empty square matrix"
+  end if
+  allocate(sig_tmp(d1, d1))
+  sig_tmp = Sigma
+  if (present(mu)) then
+    if (size(mu) /= d1) then
+      error stop "mvn: mu length must match Sigma"
+    end if
+    allocate(mu_tmp(d1))
+    mu_tmp = mu
+    mu_ptr = c_loc(mu_tmp(1))
+  else
+    mu_ptr = c_null_ptr
+  end if
+  trans1 = 'N'
+  if (present(trans)) trans1 = trans
+  if (trans1 >= 'a' .and. trans1 <= 'z') trans1 = achar(iachar(trans1) - 32)
+  if (trans1 /= 'N' .and. trans1 /= 'T') then
+    error stop "mvn: trans must be 'N' or 'T'"
+  end if
+  if (trans1 == 'N') then
+    if (size(x, 2) /= d1) then
+      error stop "mvn: Sigma dimension must match size(x,2) for trans='N'"
+    end if
+    n = int(size(x, 1), c_size_t)
+    ldX = int(size(x, 1), c_int)
+  else
+    if (size(x, 1) /= d1) then
+      error stop "mvn: Sigma dimension must match size(x,1) for trans='T'"
+    end if
+    n = int(size(x, 2), c_size_t)
+    ldX = int(size(x, 1), c_int)
+  end if
+  transp = trans1
+  d = int(d1, c_int)
+  c_ok = crp_mvn(c_loc(transp), mu_ptr, c_loc(sig_tmp(1, 1)), d, &
+    n, c_loc(x(1, 1)), ldX, c_null_ptr, self%p)
+  if (.not. c_ok) error stop rp_error_message(self, "mvn")
+end subroutine
+
 subroutine int32_vec(self, x, m, n)
   class(randompack_rng), intent(inout) :: self
   integer(c_int32_t), intent(out) :: x(:)
@@ -1586,6 +1682,106 @@ subroutine int64_mat32(self, x, m, n)
   n64 = int(n, c_int64_t)
   c_ok = crp_long_long(x, int(size(x), c_size_t), m64, n64, self%p)
   if (.not. c_ok) error stop rp_error_message(self, "int")
+end subroutine
+
+subroutine perm32_vec(self, x)
+  class(randompack_rng), intent(inout) :: self
+  integer(c_int32_t), intent(out) :: x(:)
+  integer(c_int64_t) :: n64, max_n
+  logical(c_bool) :: c_ok
+  if (.not. c_associated(self%p)) error stop rp_error_message(self, "perm")
+  n64 = int(size(x), c_int64_t)
+  max_n = int(huge(0_c_int), c_int64_t) - 1_c_int64_t
+  if (n64 > max_n) error stop "perm: size(x) too large"
+  c_ok = crp_perm(x, int(n64, c_int), self%p)
+  if (.not. c_ok) error stop rp_error_message(self, "perm")
+  x = x + 1_c_int32_t
+end subroutine
+
+subroutine perm64_vec(self, x)
+  class(randompack_rng), intent(inout) :: self
+  integer(c_int64_t), intent(out) :: x(:)
+  integer(c_int32_t), allocatable :: tmp(:)
+  integer(c_int64_t) :: n64, max_n
+  logical(c_bool) :: c_ok
+  if (.not. c_associated(self%p)) error stop rp_error_message(self, "perm")
+  n64 = int(size(x), c_int64_t)
+  max_n = int(huge(0_c_int), c_int64_t) - 1_c_int64_t
+  if (n64 > max_n) error stop "perm: size(x) too large"
+  allocate(tmp(size(x)))
+  c_ok = crp_perm(tmp, int(n64, c_int), self%p)
+  if (.not. c_ok) error stop rp_error_message(self, "perm")
+  x = int(tmp, c_int64_t) + 1_c_int64_t
+end subroutine
+
+subroutine sample32_vec(self, x, n)
+  class(randompack_rng), intent(inout) :: self
+  integer(c_int32_t), intent(out) :: x(:)
+  integer(c_int32_t), intent(in) :: n
+  integer(c_int64_t) :: n64, k64, max_n
+  logical(c_bool) :: c_ok
+  if (.not. c_associated(self%p)) error stop rp_error_message(self, "sample")
+  n64 = int(n, c_int64_t)
+  k64 = int(size(x), c_int64_t)
+  max_n = int(huge(0_c_int), c_int64_t)
+  if (n64 > max_n) error stop "sample: n too large"
+  if (k64 > max_n) error stop "sample: size(x) too large"
+  c_ok = crp_sample(x, int(n64, c_int), int(k64, c_int), self%p)
+  if (.not. c_ok) error stop rp_error_message(self, "sample")
+  x = x + 1_c_int32_t
+end subroutine
+
+subroutine sample32_vec64(self, x, n)
+  class(randompack_rng), intent(inout) :: self
+  integer(c_int32_t), intent(out) :: x(:)
+  integer(c_int64_t), intent(in) :: n
+  integer(c_int64_t) :: k64, max_n
+  logical(c_bool) :: c_ok
+  if (.not. c_associated(self%p)) error stop rp_error_message(self, "sample")
+  k64 = int(size(x), c_int64_t)
+  max_n = int(huge(0_c_int), c_int64_t)
+  if (n > max_n) error stop "sample: n too large"
+  if (k64 > max_n) error stop "sample: size(x) too large"
+  c_ok = crp_sample(x, int(n, c_int), int(k64, c_int), self%p)
+  if (.not. c_ok) error stop rp_error_message(self, "sample")
+  x = x + 1_c_int32_t
+end subroutine
+
+subroutine sample64_vec(self, x, n)
+  class(randompack_rng), intent(inout) :: self
+  integer(c_int64_t), intent(out) :: x(:)
+  integer(c_int64_t), intent(in) :: n
+  integer(c_int32_t), allocatable :: tmp(:)
+  integer(c_int64_t) :: k64, max_n
+  logical(c_bool) :: c_ok
+  if (.not. c_associated(self%p)) error stop rp_error_message(self, "sample")
+  k64 = int(size(x), c_int64_t)
+  max_n = int(huge(0_c_int), c_int64_t)
+  if (n > max_n) error stop "sample: n too large"
+  if (k64 > max_n) error stop "sample: size(x) too large"
+  allocate(tmp(size(x)))
+  c_ok = crp_sample(tmp, int(n, c_int), int(k64, c_int), self%p)
+  if (.not. c_ok) error stop rp_error_message(self, "sample")
+  x = int(tmp, c_int64_t) + 1_c_int64_t
+end subroutine
+
+subroutine sample64_vec32(self, x, n)
+  class(randompack_rng), intent(inout) :: self
+  integer(c_int64_t), intent(out) :: x(:)
+  integer(c_int32_t), intent(in) :: n
+  integer(c_int32_t), allocatable :: tmp(:)
+  integer(c_int64_t) :: n64, k64, max_n
+  logical(c_bool) :: c_ok
+  if (.not. c_associated(self%p)) error stop rp_error_message(self, "sample")
+  n64 = int(n, c_int64_t)
+  k64 = int(size(x), c_int64_t)
+  max_n = int(huge(0_c_int), c_int64_t)
+  if (n64 > max_n) error stop "sample: n too large"
+  if (k64 > max_n) error stop "sample: size(x) too large"
+  allocate(tmp(size(x)))
+  c_ok = crp_sample(tmp, int(n64, c_int), int(k64, c_int), self%p)
+  if (.not. c_ok) error stop rp_error_message(self, "sample")
+  x = int(tmp, c_int64_t) + 1_c_int64_t
 end subroutine
 
 subroutine raw32_vec(self, x)

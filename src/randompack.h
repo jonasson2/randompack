@@ -1,4 +1,4 @@
-// randompack.h – see the file README.md for help
+// randompack.h – see https://github.com/jonasson2/randompack
 
 #ifndef RANDOMPACK_H
 #define RANDOMPACK_H
@@ -7,7 +7,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define RANDOMPACK_VERSION "0.1.3"
+#define RANDOMPACK_VERSION "0.1.4"
 
 typedef struct randompack_rng randompack_rng;
 
