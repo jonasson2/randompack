@@ -33,14 +33,67 @@ y holds). For the remaining distributions, samples agree to within ca. 2 ulp. If
 the `bitexact` parameter is set to `.true.` the agreement is bit-exact for all
 distributions.
 
-## Usage
+## Installation
 
-### Installation, setup, and seeding
+### Building from sources
+
+Randompack relies on the Meson/Ninja build system. After cloning the repository
+from github, build an optimized version with:
 ```sh
-meson setup build --buildtype=release
-meson compile -C build
-meson install -C build
+    meson setup build --buildtype=release
+    ninja -C build
 ```
+
+To install the library and the Fortran interface source, `randompack.f90`, into the
+default installation directory (almost always `/usr/local`) use:
+
+```sh
+    sudo ninja -C build install
+```
+To install into a user-selected installation directory, set --prefix when configuring:
+```sh
+    meson setup build --buildtype=release --prefix=<prefix>
+    ninja -C build install
+```
+
+(where, for example, `<prefix>` could be $HOME/opt). After installation, other projects
+can compile `randompack.f90` with their own source and link against the installed library.
+It is convenient to use `pkg-config` to get the linker flags, for example:
+```sh
+    gfortran -o myprog <prefix>/include/randompack/randompack.f90 \
+             myprog.f90 $(pkg-config --libs randompack)
+```
+where again, `<prefix>` is the installation directory, either user-selected or the default
+`/usr/local`.
+
+### Installing from conda-forge
+
+Randompack is also available on conda-forge. To install the library and the Fortran
+interface, `randompack.f90`, into the current conda environment use:
+
+```sh
+    conda install -c conda-forge randompacklib
+```
+
+(the installation prefix is available in `$CONDA_PREFIX`). To compile `randompack.f90`
+together with your own source and link against the installed library using `pkg-config`,
+first make sure that it is available in the environment:
+
+```sh
+    conda install -c conda-forge pkg-config
+```
+This allows, for example:
+
+```sh
+    gfortran -o myprog $CONDA_PREFIX/include/randompack/randompack.f90 \
+             myprog.f90 $(pkg-config --libs randompack)
+```
+The same pattern works with `ifx`, `nvfortran`, or `flang`; just replace
+`gfortran` with the compiler being used.
+
+## Use
+
+### Setup, and seeding
 
 ```fortran
 program demo_randompack
@@ -61,9 +114,6 @@ program demo_randompack
   call rng%unif(x)                          ! simple draw into x
 end program
 ```
-
-The supported build path is via Meson/Ninja. The Fortran module is built from
-`fortran/src/randompack.f90` and installed together with the shared C library.
 
 ### Continuous distributions
 
@@ -166,7 +216,13 @@ program demo_state
 end program
 ```
 
-### Notes on types
+### Errors
+
+On failure, the Fortran interface raises `error stop` with the underlying error
+message from the C library when available. `last_error()` returns the most
+recent C-side error string for the current RNG instance.
+
+## Notes on types
 
 The floating-point drawing routines are generic over `double precision` and
 default `real` arrays, and they accept both rank-1 and rank-2 output arrays.
@@ -185,9 +241,3 @@ For deterministic seeding, `seed` accepts either 32-bit or 64-bit integers. The
 Multivariate normal sampling is currently provided for `double precision`
 matrices only. The default is `trans='N'`, with `X(n,d)`; `trans='T'` uses
 `X(d,n)`. `Sigma` must be square, and `mu`, when present, must have length `d`.
-
-## Errors
-
-On failure, the Fortran interface raises `error stop` with the underlying error
-message from the C library when available. `last_error()` returns the most
-recent C-side error string for the current RNG instance.

@@ -110,10 +110,11 @@ seed_seq_fe128, also adopted by NumPy to initialize its random number
 generators. The mechanism supports reproducible construction of independent
 substreams via optional spawn keys.
 
-For all engines an alternative way of creating independent streams exists: with jumps for
-the xor-family and ranlux++, and with setting the key of the counter based generators
-squares and philox, the $(a,b,c)$ state of sfc64, the increment of pcg64 and cwg128, and
-the nonce of chacha20. State serialization supports checkpointing and allows simulations
+For all engines an alternative way of creating independent streams exists:
+with jumps for the xor-family and ranlux++, and with setting the key of
+the counter based generators squares and philox, the $(a,b,c)$ state of
+sfc64, the increment of pcg64 and cwg128, and the nonce of chacha20.
+State serialization supports checkpointing and allows simulations
 to be stopped and restarted exactly.
 
 Note that for Philox and squares, users should not change the counter while the
@@ -138,7 +139,8 @@ against independent reference implementations from authoritative upstream
 sources or widely used mainstream libraries.
 
 Philox is verified against the Random123 reference implementation, ChaCha20
-against the official RFC 8439 test vectors, PCG64 against NumPy, and xoshiro256++
+against the official RFC 8439 test vectors, PCG64 against NumPy, and
+xoshiro256++
 and xoshiro256** against Rust’s standard implementation. For engines where no
 widely accepted reference streams are readily available (xorshift128+,
 xoroshiro128++, cwg128, sfc64, and squares64), verification relies on careful
@@ -156,35 +158,55 @@ independent execution chains. On x86-64 processors with AVX2, four SIMD lanes
 with two chains are used, and on AVX-512 eight lanes. On other processors
 eight-way loop unrolling is used to advance the eight streams.
 
-## Building and installation
-Randompack relies on the Meson/Ninja build system. Install these programs if
-they are not already available.
+## Installation
 
-To build an optimized release version of Randompack:
+### Building from sources
+
+Randompack relies on the Meson/Ninja build system. After cloning the repository
+from github, build an optimized version with:
 ```sh
     meson setup build --buildtype=release
-    meson compile -C build
+    ninja -C build
 ```
 To install the library and headers into the default installation directory
 (usually `/usr/local`):
 ```sh
-    sudo meson install -C build
+    sudo ninja -C build install
 ```
-To prescribe a local installation directory, include a --prefix option when
-configuring the build, for example:
+To install into a user-selected location, set --prefix when configuring:
 ```sh
     meson setup build --buildtype=release --prefix=$HOME/opt
-    meson install -C build
+    ninja -C build install
 ```
-After installation, Randompack can be used by other projects via pkg-config:
+Other projects can use `pkg-config` to obtain the required compiler and linker
+flags, for example:
 ```sh
-    pkg-config --cflags --libs randompack
+    cc -o myprog myprog.c $(pkg-config --cflags --libs randompack)
+```
+
+### Installing from conda-forge
+
+Randompack is also available on conda-forge. To install the library and headers
+into the current conda environment use:
+```sh
+    conda install -c conda-forge randompacklib
+```
+(the installation prefix is available in $CONDA_PREFIX). To compile and link
+another C program against the installed library using `pkg_config`, first make
+sure that it is available in the environment:
+```sh
+    conda install -c conda-forge pkg-config
+```
+This allows, for example:
+```sh
+    cc -o myprog myprog.c $(pkg-config --cflags --libs randompack)
 ```
 
 ## Testing
 
-In addition to the verification described above, the included tests check both
-API behavior and distributional correctness. This includes checking that
+In addition to the verification described above, the test programs in the
+repository's `tests/` folder check both API behavior and distributional
+correctness. This includes checking that
 
 - zero-length buffers are handled correctly
 - invalid inputs return an error
@@ -193,7 +215,8 @@ API behavior and distributional correctness. This includes checking that
 - drawn variates are contained in each distribution's support
 - the frequency of each bit in bit streams is statistically balanced
 - counts across all values of bounded and interval integer draws are balanced
-- for continuous distributions, the corresponding PIT-transformed U01 distribution
+- for continuous distributions, the corresponding PIT-transformed U01
+  distribution
   exhibits balanced bins, and its mean, variance, skewness, and kurtosis pass
   statistical tests
   
@@ -220,10 +243,11 @@ such systems which should be run on one platform:
 
 ## Timing
 
-Randompack includes a small set of benchmarking programs intended to measure raw
-generator throughput and per-value distribution costs. All benchmarks are
-implemented as standalone C programs with a small number of command-line
-options; details are available via the `-h` option.
+Randompack includes a small set of benchmarking programs in the repository's
+`benchmark/` folder, intended to measure raw generator throughput and per-value
+distribution costs. All benchmarks are implemented as standalone C programs
+with a small number of command-line options; details are available via the `-h`
+option.
 
 - `TimeEngines` measures the throughput of each random number generator in
   ns/draw and MB/s by repeatedly drawing blocks of 4096 `uint64` values.
@@ -253,17 +277,19 @@ check the raw bit streams generated by randompack's engines.
 - TestU01 (L'Ecuyer and Simard 2007) via `TestU01Driver`
 - PractRand (Doty-Humphrey 2013) via `RawStream`
 
-To run the former install it and add its install location to meson_options.txt.
+To run the former, install it and add its install location to
+`meson_options.txt`.
 Then build with meson/ninja and issue TestU01Driver TODO
 
-## C API overview (by example)
+## C API overview by example
 
-The examples subfolodr contains additional example programs.
+Additional C example programs are provided in the repository's `examples/`
+folder.
 
 ### Minimal example: N(0,1), automatically randomized rng, default engine
 ```c
     #include <stdio.h>
-    #include "randompack.h"
+    #include <randompack/randompack.h>
 
     int main(void) {
       randompack_rng *rng = randompack_create(0);
@@ -277,7 +303,7 @@ The examples subfolodr contains additional example programs.
 ### N(3,2), PCG64 engine, seeded with 42
 ```c
     #include <stdio.h>
-    #include "randompack.h"
+    #include <randompack/randompack.h>
 
     int main(void) {
       randompack_rng *rng = randompack_create("pcg64");
@@ -292,7 +318,7 @@ The examples subfolodr contains additional example programs.
 ### Secondary distributions
 ```c
     #include <stdio.h>
-    #include "randompack.h"
+    #include <randompack/randompack.h>
 
     int main(void) {
       randompack_rng *rng = randompack_create(0);
@@ -308,7 +334,7 @@ The examples subfolodr contains additional example programs.
 ### Integer range example
 ```c
     #include <stdio.h>
-    #include "randompack.h"
+    #include <randompack/randompack.h>
 
     int main(void) {
       randompack_rng *rng = randompack_create(0);
@@ -326,7 +352,7 @@ The examples subfolodr contains additional example programs.
 ### Raw bitstream example
 ```c
     #include <stdio.h>
-    #include "randompack.h"
+    #include <randompack/randompack.h>
 
     int main(void) {
       randompack_rng *rng = randompack_create(0);
@@ -346,7 +372,7 @@ The examples subfolodr contains additional example programs.
 ### Example with full error checking
 ```c
     #include <stdio.h>
-    #include "randompack.h"
+    #include <randompack/randompack.h>
 
     int main(void) {
       bool ok;
@@ -374,9 +400,10 @@ The examples subfolodr contains additional example programs.
 ### Threads example demonstrating spawn key seeding
 In this example each thread uses the same base seed but a different spawn key
 (the thread id), producing reproducible independent substreams. Note that the
-example relies on assert() for simplicity – if compiled with -DNDEBUG these
-checks become inactive. The example relies on pthreads, usually not available on
-Windows. See MpiThreadExample.c for another spawn key example.
+example relies on `assert()` for simplicity; if compiled with `-DNDEBUG` these
+checks become inactive. The example relies on pthreads, usually not available
+on Windows. See `examples/MpiThreadExample.c` in the repository for another
+spawn key example.
 ```c
     // Simple pthread example.
     // Launch M threads. Each thread derives an independent RNG stream from a
@@ -386,7 +413,7 @@ Windows. See MpiThreadExample.c for another spawn key example.
     #include <stdio.h>
     #include <pthread.h>
 
-    #include "randompack.h"
+    #include <randompack/randompack.h>
 
     enum { M = 10, N = 100000 };
     static int seed = 42;

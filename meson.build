@@ -233,11 +233,17 @@ endif
 if build_fortran and not build_fortran_interface
   message('Fortran interface disabled by build_fortran_interface option')
 endif
+fortran_interface_src = files('fortran/src/randompack.f90')
 fortran_src = []
 fortran_inc = []
 if build_fortran_interface
-  fortran_src = files('fortran/src/randompack.f90')
+  fortran_src = fortran_interface_src
 endif
+
+install_data(
+  fortran_interface_src,
+  install_dir: join_paths(get_option('includedir'), 'randompack'),
+)
 
 # -------------------------------------------------
 # Includes / subdirectories
