@@ -97,9 +97,9 @@ extern double lgam ( double );
 extern double exp ( double );
 extern double log ( double );
 extern double fabs ( double );
+#endif
 extern double igam ( double, double );
 extern double igamc ( double, double );
-#endif
 #else
 double lgam(), exp(), log(), fabs(), igam(), igamc();
 #endif
