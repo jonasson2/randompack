@@ -11,7 +11,7 @@
 
 // Return the first n uint64 draws from the given engine with fixed seed 123.
 // Check that everything works cleanly (unbounded draw)
-static void draw_randoms(char *engine, uint64_t *x, int n, uint64_t seed) {
+static void draw_randoms(char *engine, uint64_t *x, int n, int seed) {
   randompack_rng *rng = create_seeded_rng(engine, seed);
   check_rng_clean(rng);
   bool ok = randompack_uint64(x, n, 0, rng);

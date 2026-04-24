@@ -66,7 +66,7 @@ static void rand_uint32(uint32_t x[], size_t len, uint32_t bound, randompack_rng
     exit_u16_mode(rng, w);
   }
   else {
-    uint32_t thresh = (-bound) % bound;
+    uint32_t thresh = ((~bound) + 1u) % bound;
     int w = enter_u32_mode(rng);
     while (i < len) {
       uint32_t r = draw_u32(rng, &w);
@@ -92,7 +92,7 @@ static void rand_uint64(uint64_t x[], size_t len, uint64_t bound, randompack_rng
     exit_u16_mode(rng, w);
   }
   else {
-    uint64_t thresh = (-bound) % bound;
+    uint64_t thresh = ((~bound) + 1ull) % bound;
     int w = enter_u64_mode(rng);
     while (i < len) {
       uint64_t r = draw_u64(rng, &w);
@@ -118,7 +118,7 @@ static void rand_int(int x[], size_t len, int m, uint32_t bound, randompack_rng 
     exit_u16_mode(rng, w);
   }
   else {
-    uint32_t thresh = (-bound) % bound;
+    uint32_t thresh = ((~bound) + 1u) % bound;
     int w = enter_u32_mode(rng);
     while (i < len) {
       uint32_t r = draw_u32(rng, &w);
@@ -145,7 +145,7 @@ static void rand_long_long(long long x[], size_t len, long long m, uint64_t boun
     exit_u16_mode(rng, w);
   }
   else {
-    uint64_t thresh = (-bound) % bound;
+    uint64_t thresh = ((~bound) + 1ull) % bound;
     int w = enter_u64_mode(rng);
     while (i < len) {
       uint64_t r = draw_u64(rng, &w);
@@ -307,7 +307,7 @@ ALWAYS_INLINE void gen_beta(double *x, size_t len, double a, double b, randompac
   double gb[128];
   size_t i = 0;
   while (i < len) {
-    int n = mini(128, len - i);
+    int n = mini(128, (int)(len - i));
     gen_gamma(gb, n, b, 1.0, rng);
     double hi = 1.0 - DBL_EPSILON;
     for (int j = 0; j < n; j++) { // force the beta-draws to (0, 1)
@@ -328,7 +328,7 @@ ALWAYS_INLINE void gen_t(double *x, size_t len, double nu, randompack_rng *rng) 
   rand_norm(x, len, rng);
   size_t i = 0;
   while (i < len) {
-    int n = mini(128, len - i);
+    int n = mini(128, (int)(len - i));
     gen_gamma(u, n, 0.5*nu, 2.0, rng);
     for (int j = 0; j < n; j++)
       x[i + j] /= sqrt(u[j]/nu);
@@ -344,7 +344,7 @@ ALWAYS_INLINE void gen_f(double *x, size_t len, double nu1, double nu2,
   gen_gamma(x, len, nu1/2.0, 1.0, rng);
   size_t i = 0;
   while (i < len) {
-    int n = mini(len - i, 128);
+    int n = mini((int)(len - i), 128);
     gen_gamma(x2, n, nu2/2.0, 1.0, rng);
     for (int j = 0; j < n; j++)
       x[i + j] = (x[i + j]*nu2)/(x2[j]*nu1);
@@ -402,7 +402,7 @@ ALWAYS_INLINE void gen_skew_normal(double *x, size_t len, double mu,
   size_t i = 0;
   double u[128];
   while (i < len) {
-    int n = mini(128, len - i);
+    int n = mini(128, (int)(len - i));
     rand_norm(u, n, rng);
     for (int j = 0; j < n; j++) {
       double v = delta*fabs(u[j]) + scale*x[i + j];

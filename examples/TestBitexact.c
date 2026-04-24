@@ -100,12 +100,12 @@ static bool streq_ci(const char *a, const char *b) {
   return *a == 0 && *b == 0;
 }
 
-static bool parse_u64(const char *s, uint64_t *out) {
+static bool parse_int(const char *s, int *out) {
   if (!s || !*s) return false;
   char *end = 0;
   double v = strtod(s, &end);
-  if (!end || *end || v < 0 || v > (double)UINT64_MAX) return false;
-  uint64_t n = (uint64_t)v;
+  if (!end || *end || v < (double)INT_MIN || v > (double)INT_MAX) return false;
+  int n = (int)v;
   if ((double)n != v) return false;
   *out = n;
   return true;
@@ -295,7 +295,7 @@ static bool fill_float(float *x, size_t len, dist_t dist, double *p, randompack_
 }
 
 int main(int argc, char **argv) {
-  uint64_t seed = 123;
+  int seed = 123;
   uint64_t ndraws = 100000000ull;
   char *dist_name = "N(0,1)";
   char *par_text = "";
@@ -312,7 +312,7 @@ int main(int argc, char **argv) {
     if (c == 'h') help = true;
     else if (c == 'x') set_bitexact = false;
     else if (c == 's') {
-      if (!parse_u64(optarg, &seed)) badopt = true;
+      if (!parse_int(optarg, &seed)) badopt = true;
     }
     else if (c == 'n') {
       if (!parse_u64(optarg, &ndraws)) badopt = true;

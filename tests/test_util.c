@@ -528,7 +528,7 @@ static void check_u01_distribution_df(double *u, int n, char *dist, char *engine
   char tag[64];
   snprintf(tag, sizeof(tag), "%s:%s", dist, precision);
   xCheckMsg2(check_u01_endpoints(k0, k1, n, p), engine, tag);
-  int nbins = mini(500, maxi(20, sqrt(nnz)));
+  int nbins = mini(500, maxi(20, (int)sqrt((double)nnz)));
   ASSERT(nnz/nbins >= 20);
   int *counts;
   TEST_ALLOC(counts, nbins);
@@ -538,7 +538,7 @@ static void check_u01_distribution_df(double *u, int n, char *dist, char *engine
   if (!strcmp(precision, "double"))  // this test is too shaky for float
 	 xCheckMsg2(check_u01_minmax(u, nnz), engine, tag);
   for (int i = 0; i < nnz; i++) {
-    int b = mini(nbins - 1, nbins*u[i]);
+    int b = mini(nbins - 1, (int)(nbins*u[i]));
     counts[b]++;
   }
   xCheckMsg2(check_balanced_counts(counts, nbins), engine, tag);

@@ -103,14 +103,14 @@ ALWAYS_INLINE int add1_cy(uint64_t *x, uint64_t c, int n) {
   for (int i = 1; i < n; i++) {
     x[i] = addc64(x[i], 0, carry, &carry);
   }
-  return carry;
+  return (int)carry;
 }
 
 ALWAYS_INLINE int sub1_bw(uint64_t *x, uint64_t c, int n) {
   uint64_t borrow = 0;
   x[0] = subb64(x[0], c, 0, &borrow);
   for (int i = 1; i < n; i++) x[i] = subb64(x[i], 0, borrow, &borrow);
-  return borrow;
+  return (int)borrow;
 }
 
 ALWAYS_INLINE int add_cy9(uint64_t *r, const uint64_t *restrict y) {

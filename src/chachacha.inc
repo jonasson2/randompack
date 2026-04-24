@@ -10,10 +10,10 @@ static inline uint32_t load_u32_le(uint8_t *src) {
 }
 
 static inline void store_u32_le(uint8_t *dst, uint32_t v) {
-  dst[0] = v;
-  dst[1] = v >> 8;
-  dst[2] = v >> 16;
-  dst[3] = v >> 24;
+  dst[0] = (uint8_t)v;
+  dst[1] = (uint8_t)(v >> 8);
+  dst[2] = (uint8_t)(v >> 16);
+  dst[3] = (uint8_t)(v >> 24);
 }
 
 // Big-endian compatibility: byte-swap 64-bit words for draw_byte order.
@@ -38,7 +38,7 @@ static inline ALIGN64 void fill_chacha(uint64_t *buf, size_t len,
   uint8_t *key     = &state->u8[0];
   uint8_t *nonce   = &state->u8[32];
   chacha20_xor_stream(dst, zeros, nbytes, key, nonce, counter);
-  uint32_t blocks = len/8;
+  uint32_t blocks = (uint32_t)(len/8);
   counter += blocks; // count of 64 byte blocks
   store_u32_le(state->u8 + 44, counter);
   // Big-endian compatibility: swap output words for byte-wise draws.

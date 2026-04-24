@@ -122,7 +122,7 @@ static double time_perm(int n, double bench_time, randompack_rng *rng) {
   FREE(buf);
   if (calls == 0)
     return 0;
-  return (t - t0)/calls;
+  return (double)(t - t0)/calls;
 }
 
 static double time_sample(int n, int k, double bench_time, randompack_rng *rng) {
@@ -146,7 +146,7 @@ static double time_sample(int n, int k, double bench_time, randompack_rng *rng) 
   FREE(buf);
   if (calls == 0)
     return 0;
-  return (t - t0)/calls;
+  return (double)(t - t0)/calls;
 }
 
 static double time_long_long_range(int chunk, double bench_time, long long m,

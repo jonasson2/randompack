@@ -37,8 +37,8 @@ static void test_u01_statistics(char *engine) {
 static void test_basic(char *engine) {
   double a = -2;
   double b = 3;
-  float a_f = -2.0f;
-  float b_f = 3.0f;
+  float a_f = -2;
+  float b_f = 3;
   TEST_DETERMINISM2(engine, double, unif, a, b);
   TEST_EDGE_CASES2(engine, double, unif, a, b);
   TEST_ILLEGAL_PARAMS2(double, engine, unif, 0, 0);
@@ -53,8 +53,8 @@ static void test_PIT(char *engine, double a, double b) {
   int N = N_STAT_FAST;
   double *x, *u;
   float *y, *v;
-  float a_f = a;
-  float b_f = b;
+  float a_f = (float)a;
+  float b_f = (float)b;
   float w_f = b_f - a_f;
   TEST_ALLOC(x, N);
   TEST_ALLOC(u, N);

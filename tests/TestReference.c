@@ -37,7 +37,7 @@ static void parse_hex_bytes(const char *s, uint8_t *out, int n) {
   for (int i = 0; i < n; i++) {
     unsigned int x;
     xCheck(sscanf(s, "%2x", &x) == 1);
-    out[i] = x;
+    out[i] = (uint8_t)x;
     s += 2;
     if (*s == ' ') s++;
   }
