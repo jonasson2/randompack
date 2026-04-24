@@ -249,7 +249,7 @@ void warmup(double seconds) {
 int main(int argc, char **argv) {
   double bench_time = 0.2;
   int chunk = 4096;
-  uint64_t seed = 0;
+  int seed = 0;
   bool use_seed = false;
   const char *engine = "x256++simd";
 
@@ -289,7 +289,14 @@ int main(int argc, char **argv) {
         fprintf(stderr, "missing value for -s\n");
         return 1;
       }
-      seed = strtoull(argv[++i], 0, 10);
+      char *end = 0;
+      long v = strtol(argv[++i], &end, 10);
+      if (!end || *end || v < std::numeric_limits<int>::min() ||
+          v > std::numeric_limits<int>::max()) {
+        fprintf(stderr, "seed must fit in int\n");
+        return 1;
+      }
+      seed = (int)v;
       use_seed = true;
     }
     else if (strcmp(argv[i], "-e") == 0) {
@@ -314,103 +321,113 @@ int main(int argc, char **argv) {
   printf("\n");
   printf("%-18s %10s %11s %8s\n", "Benchmark", "std", "Randompack", "Factor");
 
-  uint64_t case_seed = use_seed ? seed : std::random_device{}();
+  uint64_t case_seed = use_seed ? (uint64_t)(uint32_t)seed : std::random_device{}();
+  int rp_seed = use_seed ? seed : (int)case_seed;
   std::mt19937_64 std_rng(case_seed);
   randompack_rng *rp_rng = randompack_create(engine);
-  randompack_seed(case_seed, 0, 0, rp_rng);
+  randompack_seed(rp_seed, 0, 0, rp_rng);
   double std_ns = time_int_range_std<int32_t>(std_rng, chunk, bench_time, 1, 10);
   std_rng.seed(case_seed);
-  randompack_seed(case_seed, 0, 0, rp_rng);
+  randompack_seed(rp_seed, 0, 0, rp_rng);
   double rp_ns = time_int_range_rp(rp_rng, chunk, bench_time, 1, 10);
   double factor = std_ns/rp_ns;
   printf("%-18s %10.2f %11.2f %8.2f\n", "int 1-10", std_ns, rp_ns, factor);
 
-  case_seed = use_seed ? seed : std::random_device{}();
+  case_seed = use_seed ? (uint64_t)(uint32_t)seed : std::random_device{}();
+  rp_seed = use_seed ? seed : (int)case_seed;
   std_rng.seed(case_seed);
-  randompack_seed(case_seed, 0, 0, rp_rng);
+  randompack_seed(rp_seed, 0, 0, rp_rng);
   std_ns = time_int_range_std<int32_t>(std_rng, chunk, bench_time, 1, 100000);
   std_rng.seed(case_seed);
-  randompack_seed(case_seed, 0, 0, rp_rng);
+  randompack_seed(rp_seed, 0, 0, rp_rng);
   rp_ns = time_int_range_rp(rp_rng, chunk, bench_time, 1, 100000);
   factor = std_ns/rp_ns;
   printf("%-18s %10.2f %11.2f %8.2f\n", "int 1-1e5", std_ns, rp_ns, factor);
 
-  case_seed = use_seed ? seed : std::random_device{}();
+  case_seed = use_seed ? (uint64_t)(uint32_t)seed : std::random_device{}();
+  rp_seed = use_seed ? seed : (int)case_seed;
   std_rng.seed(case_seed);
-  randompack_seed(case_seed, 0, 0, rp_rng);
+  randompack_seed(rp_seed, 0, 0, rp_rng);
   std_ns = time_int_range_std<int32_t>(std_rng, chunk, bench_time, 1, 2000000000);
   std_rng.seed(case_seed);
-  randompack_seed(case_seed, 0, 0, rp_rng);
+  randompack_seed(rp_seed, 0, 0, rp_rng);
   rp_ns = time_int_range_rp(rp_rng, chunk, bench_time, 1, 2000000000);
   factor = std_ns/rp_ns;
   printf("%-18s %10.2f %11.2f %8.2f\n", "int 1-2e9", std_ns, rp_ns, factor);
 
-  case_seed = use_seed ? seed : std::random_device{}();
+  case_seed = use_seed ? (uint64_t)(uint32_t)seed : std::random_device{}();
+  rp_seed = use_seed ? seed : (int)case_seed;
   std_rng.seed(case_seed);
-  randompack_seed(case_seed, 0, 0, rp_rng);
+  randompack_seed(rp_seed, 0, 0, rp_rng);
   std_ns = time_long_long_range_std(std_rng, chunk, bench_time, 1LL, 2000000000LL);
   std_rng.seed(case_seed);
-  randompack_seed(case_seed, 0, 0, rp_rng);
+  randompack_seed(rp_seed, 0, 0, rp_rng);
   rp_ns = time_long_long_range_rp(rp_rng, chunk, bench_time, 1LL, 2000000000LL);
   factor = std_ns/rp_ns;
   printf("%-18s %10.2f %11.2f %8.2f\n", "long long 1-2e9", std_ns, rp_ns, factor);
 
-  case_seed = use_seed ? seed : std::random_device{}();
+  case_seed = use_seed ? (uint64_t)(uint32_t)seed : std::random_device{}();
+  rp_seed = use_seed ? seed : (int)case_seed;
   std_rng.seed(case_seed);
-  randompack_seed(case_seed, 0, 0, rp_rng);
+  randompack_seed(rp_seed, 0, 0, rp_rng);
   std_ns = time_long_long_range_std(std_rng, chunk, bench_time, 1LL, 6000000000000000000LL);
   std_rng.seed(case_seed);
-  randompack_seed(case_seed, 0, 0, rp_rng);
+  randompack_seed(rp_seed, 0, 0, rp_rng);
   rp_ns = time_long_long_range_rp(rp_rng, chunk, bench_time, 1LL, 6000000000000000000LL);
   factor = std_ns/rp_ns;
   printf("%-18s %10.2f %11.2f %8.2f\n", "long long 1-6e18", std_ns, rp_ns, factor);
 
-  case_seed = use_seed ? seed : std::random_device{}();
+  case_seed = use_seed ? (uint64_t)(uint32_t)seed : std::random_device{}();
+  rp_seed = use_seed ? seed : (int)case_seed;
   std_rng.seed(case_seed);
-  randompack_seed(case_seed, 0, 0, rp_rng);
+  randompack_seed(rp_seed, 0, 0, rp_rng);
   std_ns = time_perm_std(std_rng, bench_time, 100);
   std_rng.seed(case_seed);
-  randompack_seed(case_seed, 0, 0, rp_rng);
+  randompack_seed(rp_seed, 0, 0, rp_rng);
   rp_ns = time_perm_rp(rp_rng, bench_time, 100);
   factor = std_ns/rp_ns;
   printf("%-18s %10.2f %11.2f %8.2f\n", "perm 100", std_ns, rp_ns, factor);
 
-  case_seed = use_seed ? seed : std::random_device{}();
+  case_seed = use_seed ? (uint64_t)(uint32_t)seed : std::random_device{}();
+  rp_seed = use_seed ? seed : (int)case_seed;
   std_rng.seed(case_seed);
-  randompack_seed(case_seed, 0, 0, rp_rng);
+  randompack_seed(rp_seed, 0, 0, rp_rng);
   std_ns = time_perm_std(std_rng, bench_time, 100000);
   std_rng.seed(case_seed);
-  randompack_seed(case_seed, 0, 0, rp_rng);
+  randompack_seed(rp_seed, 0, 0, rp_rng);
   rp_ns = time_perm_rp(rp_rng, bench_time, 100000);
   factor = std_ns/rp_ns;
   printf("%-18s %10.2f %11.2f %8.2f\n", "perm 100000", std_ns, rp_ns, factor);
 
-  case_seed = use_seed ? seed : std::random_device{}();
+  case_seed = use_seed ? (uint64_t)(uint32_t)seed : std::random_device{}();
+  rp_seed = use_seed ? seed : (int)case_seed;
   std_rng.seed(case_seed);
-  randompack_seed(case_seed, 0, 0, rp_rng);
+  randompack_seed(rp_seed, 0, 0, rp_rng);
   std_ns = time_sample_std(std_rng, bench_time, 1000, 20);
   std_rng.seed(case_seed);
-  randompack_seed(case_seed, 0, 0, rp_rng);
+  randompack_seed(rp_seed, 0, 0, rp_rng);
   rp_ns = time_sample_rp(rp_rng, bench_time, 1000, 20);
   factor = std_ns/rp_ns;
   printf("%-18s %10.2f %11.2f %8.2f\n", "sample 20/1000", std_ns, rp_ns, factor);
 
-  case_seed = use_seed ? seed : std::random_device{}();
+  case_seed = use_seed ? (uint64_t)(uint32_t)seed : std::random_device{}();
+  rp_seed = use_seed ? seed : (int)case_seed;
   std_rng.seed(case_seed);
-  randompack_seed(case_seed, 0, 0, rp_rng);
+  randompack_seed(rp_seed, 0, 0, rp_rng);
   std_ns = time_sample_std(std_rng, bench_time, 1000, 500);
   std_rng.seed(case_seed);
-  randompack_seed(case_seed, 0, 0, rp_rng);
+  randompack_seed(rp_seed, 0, 0, rp_rng);
   rp_ns = time_sample_rp(rp_rng, bench_time, 1000, 500);
   factor = std_ns/rp_ns;
   printf("%-18s %10.2f %11.2f %8.2f\n", "sample 500/1000", std_ns, rp_ns, factor);
 
-  case_seed = use_seed ? seed : std::random_device{}();
+  case_seed = use_seed ? (uint64_t)(uint32_t)seed : std::random_device{}();
+  rp_seed = use_seed ? seed : (int)case_seed;
   std_rng.seed(case_seed);
-  randompack_seed(case_seed, 0, 0, rp_rng);
+  randompack_seed(rp_seed, 0, 0, rp_rng);
   std_ns = time_sample_std(std_rng, bench_time, 1000, 980);
   std_rng.seed(case_seed);
-  randompack_seed(case_seed, 0, 0, rp_rng);
+  randompack_seed(rp_seed, 0, 0, rp_rng);
   rp_ns = time_sample_rp(rp_rng, bench_time, 1000, 980);
   factor = std_ns/rp_ns;
   printf("%-18s %10.2f %11.2f %8.2f\n", "sample 980/1000", std_ns, rp_ns, factor);

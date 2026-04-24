@@ -471,15 +471,15 @@ ALWAYS_INLINE float openlibm_expf(float x)
     if(x < u_threshold_f) return twom100_f*twom100_f; /* underflow */
   }
   /* argument reduction */
-  if(hx > 0x3eb17218) {		/* if  |x| > 0.5 ln2 */
-    if(hx < 0x3F851592) {	/* and |x| < 1.5 ln2 */
-		hi = x-ln2HI_f[xsb]; lo=ln2LO_f[xsb]; k = 1-xsb-xsb;
-    } else {
-		k  = invln2_f*x+halF_f[xsb];
-		t  = k;
-		hi = x - t*ln2HI_f[0];	/* t*ln2HI is exact here */
-		lo = t*ln2LO_f[0];
-    }
+	if(hx > 0x3eb17218) {		/* if  |x| > 0.5 ln2 */
+	  if(hx < 0x3F851592) {	/* and |x| < 1.5 ln2 */
+			hi = x-ln2HI_f[xsb]; lo=ln2LO_f[xsb]; k = 1-xsb-xsb;
+	  } else {
+			k  = (int32_t)(invln2_f*x+halF_f[xsb]);
+			t  = (float)k;
+			hi = x - t*ln2HI_f[0];	/* t*ln2HI is exact here */
+			lo = t*ln2LO_f[0];
+	  }
     x = hi - lo;
   }
   else if(hx < 0x39000000)  {	/* when |x|<2**-14 */

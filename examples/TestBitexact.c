@@ -1,5 +1,6 @@
 // -*- C -*-
 #include <ctype.h>
+#include <errno.h>
 #include <inttypes.h>
 #include <limits.h>
 #include <stdbool.h>
@@ -98,6 +99,16 @@ static bool streq_ci(const char *a, const char *b) {
     if (ca != cb) return false;
   }
   return *a == 0 && *b == 0;
+}
+
+static bool parse_u64(const char *s, uint64_t *out) {
+  if (!s || !*s || *s == '-') return false;
+  char *end = 0;
+  errno = 0;
+  uintmax_t v = strtoumax(s, &end, 10);
+  if (!end || *end || errno == ERANGE || v > UINT64_MAX) return false;
+  *out = (uint64_t)v;
+  return true;
 }
 
 static bool parse_int(const char *s, int *out) {
@@ -414,7 +425,7 @@ int main(int argc, char **argv) {
     printf("%-10s %s\n", "params:", par_text);
     printf("%-10s %s\n", "precision:", prec_text);
     printf("%-10s %" PRIu64 "\n", "draws:", ndraws);
-    printf("%-10s %" PRIu64 "\n", "seed:", seed);
+    printf("%-10s %d\n", "seed:", seed);
     printf("%-10s 0x%016" PRIx64 "\n", "xor:", xorsum);
     printf("%-10s %.17g\n", "last:", last);
     free(x);
@@ -450,7 +461,7 @@ int main(int argc, char **argv) {
     printf("%-10s %s\n", "params:", par_text);
     printf("%-10s %s\n", "precision:", prec_text);
     printf("%-10s %" PRIu64 "\n", "draws:", ndraws);
-    printf("%-10s %" PRIu64 "\n", "seed:", seed);
+    printf("%-10s %d\n", "seed:", seed);
     printf("%-10s 0x%08" PRIx32 "\n", "xor:", xorsum);
     printf("%-10s %.9g\n", "last:", last);
     free(x);

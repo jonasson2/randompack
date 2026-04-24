@@ -465,31 +465,32 @@ static bool rand_mvn(char transp, double mu[], double Sig[], int d, size_t len,
     if (Lalloc) FREE(L);
     return true;
   }
+  int nlen = (int)len;
   if (rank == d) {
     if (TRAN) {
       for (size_t i = 0; i < len; i++)
         rand_norm(X + i*ldX, d, rng);
-      trmm("Left", "Lower", "NoT", "NotUdia", d, len, 1.0, L, d, X, ldX);
+      trmm("Left", "Lower", "NoT", "NotUdia", d, nlen, 1.0, L, d, X, ldX);
     }
     else {
       for (int i = 0; i < d; i++)
         rand_norm(X + i*ldX, len, rng);
-      trmm("Right", "Lower", "T", "NotUdia", len, d, 1.0, L, d, X, ldX);
+      trmm("Right", "Lower", "T", "NotUdia", nlen, d, 1.0, L, d, X, ldX);
     }
   }
   else { // Singular Sig, use workspace for the N(0,1) randoms
     if (!ALLOC(Wrk, len*rank)) goto fail;
     rand_norm(Wrk, len*rank, rng);
     if (TRAN)
-      gemm("NoT", "NoT", d, len, rank, 1.0, L, d, Wrk, rank, 0.0, X, ldX);
+      gemm("NoT", "NoT", d, nlen, rank, 1.0, L, d, Wrk, rank, 0.0, X, ldX);
     else
-      gemm("NoT", "T", len, d, rank, 1.0, Wrk, len, L, d, 0.0, X, ldX);
+      gemm("NoT", "T", nlen, d, rank, 1.0, Wrk, nlen, L, d, 0.0, X, ldX);
     FREE(Wrk);
   }
   if (mu) {
     size_t i;
     if (TRAN) for (i=0; i<len; i++) axpy(d, 1.0, mu, 1, X + i*d, 1); // add mu to each col
-    else      for (i=0; i<len; i++) axpy(d, 1.0, mu, 1, X + i, len); // add mu to each row
+    else      for (i=0; i<len; i++) axpy(d, 1.0, mu, 1, X + i, nlen); // add mu to each row
   }
   if (Lalloc) FREE(L);
   return true;

@@ -7,6 +7,7 @@ private
 public :: randompack_rng, engines
 
 integer, parameter :: MAXSTRLEN = 1000
+logical(c_bool), parameter :: C_TRUE = .true._c_bool
 
 ! Public Fortran API.
 type :: randompack_rng
@@ -780,13 +781,13 @@ subroutine rp_create(self, engine, bitexact, full_mantissa)
   end if
   if (present(bitexact)) then
     if (bitexact) then
-      c_ok = crp_bitexact(self%p, .true._c_bool)
+      c_ok = crp_bitexact(self%p, C_TRUE)
       call check_call(self, c_ok, "bitexact")
     end if
   end if
   if (present(full_mantissa)) then
     if (full_mantissa) then
-      c_ok = crp_full_mantissa(self%p, .true._c_bool)
+      c_ok = crp_full_mantissa(self%p, C_TRUE)
       call check_call(self, c_ok, "full_mantissa")
     end if
   end if
