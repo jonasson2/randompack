@@ -250,6 +250,16 @@ if has_fortran
     ]),
     language: 'fortran'
   )
+  if fc.get_id() in ['intel', 'intel-cl', 'intel-llvm', 'intel-llvm-cl']
+    add_project_arguments(
+      fc.get_supported_arguments(['/Qdiag-disable:5472']),
+      language: 'fortran'
+    )
+    add_project_link_arguments(
+      fc.get_supported_link_arguments(['/Qdiag-disable:10047']),
+      language: 'fortran'
+    )
+  endif
 endif
 
 if build_fortran and not build_fortran_interface
