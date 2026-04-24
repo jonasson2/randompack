@@ -46,7 +46,7 @@ if build_fortran_interface
     'CheckFortranInts',
     'CheckFortranInts.f90',
     link_language: 'fortran',
-    dependencies : [randompack_dep],
+    dependencies : [randompack_fortran_dep],
     link_args : darwin_link_args,
   )
 endif

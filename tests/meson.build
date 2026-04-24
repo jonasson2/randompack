@@ -112,7 +112,7 @@ if build_fortran_interface
     'RunFortranTests',
     '../fortran/tests/run_fortran_tests.f90',
     link_language: 'fortran',
-    dependencies: [randompack_dep],
+    dependencies: [randompack_fortran_dep],
     link_args : darwin_link_args,
   )
   test('RunFortranTests', fortran_tests)

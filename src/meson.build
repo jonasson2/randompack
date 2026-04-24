@@ -172,6 +172,23 @@ randompack_dep = declare_dependency(
   compile_args: base_c_args,
 )
 
+randompack_fortran_dep = randompack_dep
+if build_fortran_interface and host_system == 'windows'
+  randompack_fortran_lib = static_library(
+    'randompack_fortran',
+    fortran_src,
+    include_directories: randompack_inc,
+    dependencies: c_deps,
+    install: false,
+  )
+
+  randompack_fortran_dep = declare_dependency(
+    link_with: randompack_fortran_lib,
+    include_directories: randompack_inc,
+    dependencies: [randompack_dep],
+  )
+endif
+
 if build_buf8_tests
   librandompack_buf8 = static_library(
     'randompack_buf8',
