@@ -213,10 +213,11 @@ accel_vv_args = accel_vv ? ['-DUSE_ACCEL_VV']: []
 # Optional Fortran support
 # -------------------------------------------------
 
-need_fortran = local_dpstrf
+build_fortran_requested = get_option('build_fortran_interface')
+need_fortran = local_dpstrf or build_fortran_requested
 has_fortran = add_languages('fortran', required: need_fortran, native: false)
 build_fortran = has_fortran
-build_fortran_interface = build_fortran and get_option('build_fortran_interface')
+build_fortran_interface = build_fortran and build_fortran_requested
 build_cpp = add_languages('cpp', required: false, native: false)
 
 if build_cpp
