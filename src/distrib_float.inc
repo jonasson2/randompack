@@ -81,9 +81,9 @@ ALWAYS_INLINE void gen_betaf(float *x, size_t len, float a, float b,
     gen_gammaf(gb, n, b, 1.0f, rng);
     float hi = 1.0f - FLT_EPSILON; // restrict draws to (0, 1):
     for (int j = 0; j < n; j++) {
-      float a = x[i + j];
-      float b = gb[j];
-      float y = a / (a + b);
+      float ga = x[i + j];
+      float gbj = gb[j];
+      float y = ga / (ga + gbj);
       if (y < FLT_MIN) y = FLT_MIN;
       if (y > hi) y = hi;
       x[i + j] = y;

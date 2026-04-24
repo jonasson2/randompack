@@ -9,8 +9,8 @@
 
 #define CHECK_EQUALV(a, b, n) do { \
   bool same = true;                         \
-  for (int i = 0; i < (n); i++) {           \
-    if ((a)[i] != (b)[i]) {                 \
+  for (int idx = 0; idx < (n); idx++) {     \
+    if ((a)[idx] != (b)[idx]) {             \
       same = false;                         \
       break;                                \
     }                                       \
@@ -20,8 +20,8 @@
 
 #define CHECK_EQUALV_MSG(a, b, n, msg) do { \
   bool same = true;                                  \
-  for (int i = 0; i < (n); i++) {                    \
-    if ((a)[i] != (b)[i]) {                          \
+  for (int idx = 0; idx < (n); idx++) {              \
+    if ((a)[idx] != (b)[idx]) {                      \
       same = false;                                  \
       break;                                         \
     }                                                \
@@ -31,8 +31,8 @@
 
 #define CHECK_DIFFV(a, b, n) do { \
   bool diff = false;                            \
-  for (int i = 0; i < (n); i++) {               \
-    if ((a)[i] != (b)[i]) {                     \
+  for (int idx = 0; idx < (n); idx++) {         \
+    if ((a)[idx] != (b)[idx]) {                 \
       diff = true;                              \
       break;                                    \
     }                                           \
@@ -42,8 +42,8 @@
 
 #define CHECK_DIFFV_MSG(a, b, n, msg) do { \
   bool diff = false;                                     \
-  for (int i = 0; i < (n); i++) {                        \
-    if ((a)[i] != (b)[i]) {                              \
+  for (int idx = 0; idx < (n); idx++) {                  \
+    if ((a)[idx] != (b)[idx]) {                          \
       diff = true;                                       \
       break;                                             \
     }                                                    \
@@ -53,8 +53,8 @@
 
 #define CHECK_ZEROV(a, n) do { \
   bool zero = true;            \
-  for (int i = 0; i < (n); i++) { \
-    if ((a)[i] != 0) {         \
+  for (int idx = 0; idx < (n); idx++) { \
+    if ((a)[idx] != 0) {       \
       zero = false;            \
       break;                   \
     }                          \
@@ -64,8 +64,8 @@
 
 #define CHECK_ZEROV_MSG(a, n, msg) do { \
   bool zero = true;                     \
-  for (int i = 0; i < (n); i++) {       \
-    if ((a)[i] != 0) {                  \
+  for (int idx = 0; idx < (n); idx++) { \
+    if ((a)[idx] != 0) {                \
       zero = false;                     \
       break;                            \
     }                                   \
@@ -168,8 +168,8 @@
 #define TEST_SUPPORT(TYPE, x, n, a, b) do {		\
 	TYPE xmin = (x)[0];									\
 	TYPE xmax = (x)[0];									\
-	for (int i=1; i<(n); i++) {						\
-	  TYPE xi = (x)[i];									\
+	for (int idx=1; idx<(n); idx++) {			\
+	  TYPE xi = (x)[idx];								\
 	  if (xi < xmin) xmin = xi;						\
 	  if (xi > xmax) xmax = xi;						\
 	}															\

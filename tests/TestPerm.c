@@ -34,8 +34,8 @@ static void test_perm_api(void) {
 	 check_success(ok, rng);
 	 for (int j = 0; j < LEN(lens); j++) {
 		len = lens[j];
-		bool ok = randompack_perm(perm, len, rng);
-		check_success(ok, rng);
+		bool ok_perm = randompack_perm(perm, len, rng);
+		check_success(ok_perm, rng);
 		printIV("perm", perm, len);		
 		xCheck(minv(perm, len) == 0 && maxv(perm, len) == len - 1);
 		xCheck(is_permutation(perm, len));

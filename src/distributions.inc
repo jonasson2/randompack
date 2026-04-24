@@ -311,9 +311,9 @@ ALWAYS_INLINE void gen_beta(double *x, size_t len, double a, double b, randompac
     gen_gamma(gb, n, b, 1.0, rng);
     double hi = 1.0 - DBL_EPSILON;
     for (int j = 0; j < n; j++) { // force the beta-draws to (0, 1)
-      double a = x[i + j];
-      double b = gb[j];
-      double y = a / (a + b);
+      double ga = x[i + j];
+      double gbj = gb[j];
+      double y = ga / (ga + gbj);
       if (y < DBL_MIN) y = DBL_MIN;
       if (y > hi)      y = hi;
       x[i + j] = y;
