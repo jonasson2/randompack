@@ -10,7 +10,7 @@
 #include "../src/randompack_config.h"
 
 #define STATINLINE ALWAYS_INLINE
-#define CONST CONST_ATTR
+#define SLEEF_CONST CONST_ATTR
 #define SLEEF_INF INF_VALUE
 #define SLEEF_NAN NAN_VALUE
 
@@ -87,45 +87,45 @@ STATINLINE vdouble vsel_vd_vo_vd_vd(vopmask o, vdouble x, vdouble y) {
 STATINLINE vint vsel_vi_vo_vi_vi(vopmask m, vint x, vint y) {
   return _mm_blendv_epi8(y, x, _mm256_castsi256_si128(m));
 }
-STATINLINE CONST vdouble vd2getx_vd_vd2(vdouble2 v) { return v.x; }
-STATINLINE CONST vdouble vd2gety_vd_vd2(vdouble2 v) { return v.y; }
-STATINLINE CONST vdouble2 vd2setxy_vd2_vd_vd(vdouble x, vdouble y) {
+STATINLINE SLEEF_CONST vdouble vd2getx_vd_vd2(vdouble2 v) { return v.x; }
+STATINLINE SLEEF_CONST vdouble vd2gety_vd_vd2(vdouble2 v) { return v.y; }
+STATINLINE SLEEF_CONST vdouble2 vd2setxy_vd2_vd_vd(vdouble x, vdouble y) {
   vdouble2 v;
   v.x = x;
   v.y = y;
   return v;
 }
-STATINLINE CONST vdouble2 vcast_vd2_d_d(double h, double l) {
+STATINLINE SLEEF_CONST vdouble2 vcast_vd2_d_d(double h, double l) {
   return vd2setxy_vd2_vd_vd(vcast_vd_d(h), vcast_vd_d(l));
 }
-STATINLINE CONST vdouble vadd_vd_3vd(vdouble v0, vdouble v1, vdouble v2) {
+STATINLINE SLEEF_CONST vdouble vadd_vd_3vd(vdouble v0, vdouble v1, vdouble v2) {
   return vadd_vd_vd_vd(vadd_vd_vd_vd(v0, v1), v2);
 }
-STATINLINE CONST vdouble vadd_vd_4vd(vdouble v0, vdouble v1, vdouble v2,
+STATINLINE SLEEF_CONST vdouble vadd_vd_4vd(vdouble v0, vdouble v1, vdouble v2,
     vdouble v3) {
   return vadd_vd_3vd(vadd_vd_vd_vd(v0, v1), v2, v3);
 }
-STATINLINE CONST vdouble2 ddscale_vd2_vd2_vd(vdouble2 d, vdouble s) {
+STATINLINE SLEEF_CONST vdouble2 ddscale_vd2_vd2_vd(vdouble2 d, vdouble s) {
   return vd2setxy_vd2_vd_vd(vmul_vd_vd_vd(vd2getx_vd_vd2(d), s),
       vmul_vd_vd_vd(vd2gety_vd_vd2(d), s));
 }
-STATINLINE CONST vdouble2 ddadd2_vd2_vd_vd(vdouble x, vdouble y) {
+STATINLINE SLEEF_CONST vdouble2 ddadd2_vd2_vd_vd(vdouble x, vdouble y) {
   vdouble s = vadd_vd_vd_vd(x, y);
   vdouble v = vsub_vd_vd_vd(s, x);
   return vd2setxy_vd2_vd_vd(s, vadd_vd_vd_vd(vsub_vd_vd_vd(x,
       vsub_vd_vd_vd(s, v)), vsub_vd_vd_vd(y, v)));
 }
-STATINLINE CONST vdouble2 ddadd_vd2_vd2_vd(vdouble2 x, vdouble y) {
+STATINLINE SLEEF_CONST vdouble2 ddadd_vd2_vd2_vd(vdouble2 x, vdouble y) {
   vdouble s = vadd_vd_vd_vd(vd2getx_vd_vd2(x), y);
   return vd2setxy_vd2_vd_vd(s, vadd_vd_3vd(vsub_vd_vd_vd(vd2getx_vd_vd2(x),
       s), y, vd2gety_vd_vd2(x)));
 }
-STATINLINE CONST vdouble2 ddadd_vd2_vd2_vd2(vdouble2 x, vdouble2 y) {
+STATINLINE SLEEF_CONST vdouble2 ddadd_vd2_vd2_vd2(vdouble2 x, vdouble2 y) {
   vdouble s = vadd_vd_vd_vd(vd2getx_vd_vd2(x), vd2getx_vd_vd2(y));
   return vd2setxy_vd2_vd_vd(s, vadd_vd_4vd(vsub_vd_vd_vd(vd2getx_vd_vd2(x),
       s), vd2getx_vd_vd2(y), vd2gety_vd_vd2(x), vd2gety_vd_vd2(y)));
 }
-STATINLINE CONST vdouble2 dddiv_vd2_vd2_vd2(vdouble2 n, vdouble2 d) {
+STATINLINE SLEEF_CONST vdouble2 dddiv_vd2_vd2_vd2(vdouble2 n, vdouble2 d) {
   vdouble t = vrec_vd_vd(vd2getx_vd_vd2(d));
   vdouble s = vmul_vd_vd_vd(vd2getx_vd_vd2(n), t);
   vdouble u = vfmapn_vd_vd_vd_vd(t, vd2getx_vd_vd2(n), s);
@@ -134,24 +134,24 @@ STATINLINE CONST vdouble2 dddiv_vd2_vd2_vd2(vdouble2 n, vdouble2 d) {
   return vd2setxy_vd2_vd_vd(s, vfma_vd_vd_vd_vd(s, v,
       vfma_vd_vd_vd_vd(vd2gety_vd_vd2(n), t, u)));
 }
-STATINLINE CONST vint vilogb2k_vi_vd(vdouble d) {
+STATINLINE SLEEF_CONST vint vilogb2k_vi_vd(vdouble d) {
   vint q = vcastu_vi_vm(vreinterpret_vm_vd(d));
   q = vsrl_vi_vi_i(q, 20);
   q = vand_vi_vi_vi(q, vcast_vi_i(0x7ff));
   q = vsub_vi_vi_vi(q, vcast_vi_i(0x3ff));
   return q;
 }
-STATINLINE CONST vdouble vldexp3_vd_vd_vi(vdouble d, vint q) {
+STATINLINE SLEEF_CONST vdouble vldexp3_vd_vd_vi(vdouble d, vint q) {
   return vreinterpret_vd_vm(vadd64_vm_vm_vm(vreinterpret_vm_vd(d),
       vcastu_vm_vi(vsll_vi_vi_i(q, 20))));
 }
-STATINLINE CONST vdouble2 ddmul_vd2_vd2_vd(vdouble2 x, vdouble y) {
+STATINLINE SLEEF_CONST vdouble2 ddmul_vd2_vd2_vd(vdouble2 x, vdouble y) {
   vdouble s = vmul_vd_vd_vd(vd2getx_vd_vd2(x), y);
   return vd2setxy_vd2_vd_vd(s, vfma_vd_vd_vd_vd(vd2gety_vd_vd2(x), y,
       vfmapn_vd_vd_vd_vd(vd2getx_vd_vd2(x), y, s)));
 }
 
-CONST vdouble Sleef_logd4_u10avx2(vdouble d) {
+SLEEF_CONST vdouble Sleef_logd4_u10avx2(vdouble d) {
   vdouble2 x;
   vdouble t, m, x2;
   vopmask o = vlt_vo_vd_vd(d, vcast_vd_d(0x1p-1022));

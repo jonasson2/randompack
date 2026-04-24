@@ -3,7 +3,7 @@ project('randompack', 'c',
   version: '0.1.4',
   default_options: [
     'c_std=c11',
-    'cpp_std=c++11',
+    'cpp_std=c++17',
     'warning_level=3',
     'buildtype=debug',
     'default_library=shared',
@@ -52,6 +52,19 @@ endif
 
 if fp_args.length() > 0
   add_project_arguments(fp_args, language: 'c')
+endif
+
+if cc.get_id() == 'msvc'
+  add_project_arguments(
+    cc.get_supported_arguments([
+      '/D_CRT_SECURE_NO_WARNINGS',
+      '/wd4701',
+      '/wd4702',
+      '/wd4723',
+      '/wd4756',
+    ]),
+    language: 'c'
+  )
 endif
 
 if cc.get_id() == 'nvidia_hpc'
@@ -208,6 +221,14 @@ build_cpp = add_languages('cpp', required: false, native: false)
 
 if build_cpp
   cpp = meson.get_compiler('cpp')
+  if cpp.get_id() == 'msvc'
+    add_project_arguments(
+      cpp.get_supported_arguments([
+        '/D_CRT_SECURE_NO_WARNINGS',
+      ]),
+      language: 'cpp'
+    )
+  endif
   if cpp.get_id() == 'nvidia_hpc'
     add_project_arguments('-Minform=warn', language: 'cpp')
   endif

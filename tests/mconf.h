@@ -95,12 +95,8 @@ Copyright 1984, 1987, 1989, 1995 by Stephen L. Moshier
 /* Constant definitions for math error conditions
  */
 
-#define DOMAIN		1	/* argument domain error */
-#define SING		2	/* argument singularity */
-#define OVERFLOW	3	/* overflow range error */
-#define UNDERFLOW	4	/* underflow range error */
-#define TLOSS		5	/* total loss of precision */
-#define PLOSS		6	/* partial loss of precision */
+#define CEPHES_DOMAIN		1	/* argument domain error */
+#define CEPHES_UNDERFLOW	4	/* underflow range error */
 
 #define EDOM		33
 #define ERANGE		34

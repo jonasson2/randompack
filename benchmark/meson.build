@@ -66,14 +66,12 @@ if build_cpp
     'TimeDistCpp',
     'TimeDistCpp.cpp',
     dependencies : [randompack_dep],
-    cpp_args : ['-std=c++17'],
   )
 
   time_int_cpp = executable(
     'TimeIntCpp',
     'TimeIntCpp.cpp',
     dependencies : [randompack_dep],
-    cpp_args : ['-std=c++17'],
   )
 endif
 

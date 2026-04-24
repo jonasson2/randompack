@@ -79,12 +79,14 @@ Copyright 1984, 1995, 2000 by Stephen L. Moshier
 #define MAXLOG (log(DBL_MAX))
 
 #ifdef ANSIPROT
+#if !defined(_MSC_VER)
 extern double gamma ( double );
 extern double lgam ( double );
 extern double exp ( double );
 extern double log ( double );
 extern double pow ( double, double );
 extern double fabs ( double );
+#endif
 static double incbcf(double, double, double);
 static double incbd(double, double, double);
 static double pseries(double, double, double);
@@ -112,7 +114,7 @@ if( (xx <= 0.0) || ( xx >= 1.0) )
 	if( xx == 1.0 )
 		return( 1.0 );
 domerr:
-	mtherr( "incbet", DOMAIN );
+	mtherr( "incbet", CEPHES_DOMAIN );
 	return( 0.0 );
 	}
 

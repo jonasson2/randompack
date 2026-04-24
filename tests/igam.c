@@ -92,12 +92,14 @@ Copyright 1985, 1987, 2000 by Stephen L. Moshier
 #define mtherr(name, code) ((void)0)
 
 #ifdef ANSIPROT
+#if !defined(_MSC_VER)
 extern double lgam ( double );
 extern double exp ( double );
 extern double log ( double );
 extern double fabs ( double );
 extern double igam ( double, double );
 extern double igamc ( double, double );
+#endif
 #else
 double lgam(), exp(), log(), fabs(), igam(), igamc();
 #endif
@@ -122,7 +124,7 @@ if( (x < 1.0) || (x < a) )
 ax = a * log(x) - x - lgam(a);
 if( ax < -MAXLOG )
 	{
-	mtherr( "igamc", UNDERFLOW );
+	mtherr( "igamc", CEPHES_UNDERFLOW );
 	return( 0.0 );
 	}
 ax = exp(ax);
@@ -196,7 +198,7 @@ if( (x > 1.0) && (x > a ) )
 ax = a * log(x) - x - lgam(a);
 if( ax < -MAXLOG )
 	{
-	mtherr( "igam", UNDERFLOW );
+	mtherr( "igam", CEPHES_UNDERFLOW );
 	return( 0.0 );
 	}
 ax = exp(ax);
