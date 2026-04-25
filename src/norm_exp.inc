@@ -28,6 +28,8 @@ ALWAYS_INLINE double norm_decode(uint64_t r, uint8_t idx, uint64_t *ki,
   *rabs = (r >> 9) & 0x000fffffffffffff;
   *sign = ((r >> 8) & 1) != 0;
   int64_t s = (int64_t)*rabs;
+  int64_t m = -(int64_t)*sign;
+  s = (s ^ m) - m;
   //if (*sign) s = -s;
   return (double)s * wi_double[idx];
 }
