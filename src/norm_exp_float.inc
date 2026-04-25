@@ -13,7 +13,12 @@ ALWAYS_INLINE float norm_decode(uint32_t r, uint8_t idx, uint32_t *ki,
   *rabs = r >> 9;
   *sign = ((r >> 8) & 1) != 0;
   int32_t s = (int32_t)*rabs;
+#if defined(_MSC_VER) && !defined(__clang__)
+  int32_t m = -(int32_t)*sign;
+  s = (s ^ m) - m;
+#else
   if (*sign) s = -s;
+#endif
   return (float)s * wi_float[idx];
 }
 

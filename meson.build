@@ -54,7 +54,7 @@ if fp_args.length() > 0
   add_project_arguments(fp_args, language: 'c')
 endif
 
-if cc.get_id() == 'msvc'
+if cc.get_argument_syntax() == 'msvc'
   add_project_arguments(
     cc.get_supported_arguments([
       '/D_CRT_SECURE_NO_WARNINGS',
@@ -222,7 +222,7 @@ build_cpp = add_languages('cpp', required: false, native: false)
 
 if build_cpp
   cpp = meson.get_compiler('cpp')
-  if cpp.get_id() == 'msvc'
+  if cpp.get_argument_syntax() == 'msvc'
     add_project_arguments(
       cpp.get_supported_arguments([
         '/D_CRT_SECURE_NO_WARNINGS',

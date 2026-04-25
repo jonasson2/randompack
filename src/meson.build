@@ -141,7 +141,7 @@ if host_system == 'linux'
     ['-Wl,-soname,librandompack.so']
   )
 endif
-if cc.get_id() == 'msvc'
+if host_system == 'windows'
   librandompack = shared_library(
     'randompack',
     randompack_src,
