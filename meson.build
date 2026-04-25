@@ -88,10 +88,10 @@ build_avx512 = false
 avx512_c_args = []
 
 if host_machine.cpu_family() in ['x86', 'x86_64']
-  if cc.get_id() in ['gcc', 'clang', 'appleclang', 'msvc', 'intel-llvm'] or
-     cc.get_argument_syntax() == 'msvc'
+  msvc_syntax = cc.get_argument_syntax() == 'msvc'
+  if cc.get_id() in ['gcc', 'clang', 'appleclang', 'msvc', 'intel-llvm'] or msvc_syntax
     build_avx2 = true
-    build_avx512 = cc.get_argument_syntax() != 'msvc'
+    build_avx512 = not msvc_syntax
   endif
 endif
 
