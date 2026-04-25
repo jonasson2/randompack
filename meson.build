@@ -37,9 +37,7 @@ endif
 cc = meson.get_compiler('c')
 fp_args = []
 
-if cc.get_id() == 'msvc'
-  fp_args += cc.get_supported_arguments(['/fp:precise'])
-elif cc.get_id() == 'intel-cl'
+if cc.get_argument_syntax() == 'msvc'
   fp_args += cc.get_supported_arguments(['/fp:precise'])
 elif cc.get_id() in ['clang', 'appleclang']
   fp_args += cc.get_supported_arguments(['-ffp-model=precise'])
