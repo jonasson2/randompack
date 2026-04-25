@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "getopt.h"
 
 #include "TimeUtil.h"
@@ -104,6 +105,8 @@ int main(int argc, char **argv) {
   int chunk, seed, digits;
   bool have_seed;
   bool simd_only, nonsimd_only, help;
+  setvbuf(stdout, 0, _IOLBF, 0);
+  setvbuf(stderr, 0, _IOLBF, 0);
   if (!get_options(argc, argv, &bench_time, &warmup_time, &chunk, &seed,
       &have_seed, &digits, &simd_only, &nonsimd_only, &help) || help) {
     print_help();
@@ -116,6 +119,7 @@ int main(int argc, char **argv) {
   printf("bench_time:       %.3f s per engine\n", bench_time);
   printf("warmup_time:      %.3f s\n", warmup_time);
   printf("chunk:            %d\n\n", chunk);
+  fflush(stdout);
   int n = 0;
   int emax = 0;
   int dmax = 0;

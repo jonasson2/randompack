@@ -7,7 +7,11 @@ randompack_src = files(
   'printX.c',
   'rp_dpstrf.c',
 )
-randompack_src += fortran_src
+fortran_shared_src = fortran_src
+if build_fortran_interface and host_system == 'windows'
+  fortran_shared_src = []
+endif
+randompack_src += fortran_shared_src
 
 build_arm_sleef = (
   host_machine.cpu_family() in ['aarch64', 'arm64'] and
@@ -126,7 +130,11 @@ endif
 
 extra_objs = avx2_objs + avx512_objs + blas_objs
 extra_objs_buf8 = avx2_objs_buf8 + avx512_objs_buf8 + blas_objs
-randompack_link_language = build_fortran ? 'fortran' : 'c'
+needs_fortran_link = (
+  using_builtin_blas or
+  (build_fortran_interface and host_system != 'windows')
+)
+randompack_link_language = needs_fortran_link ? 'fortran' : 'c'
 shared_soname_link_args = []
 if host_system == 'linux'
   shared_soname_link_args = cc.get_supported_link_arguments(
