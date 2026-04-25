@@ -28,9 +28,12 @@ ALWAYS_INLINE double norm_decode(uint64_t r, uint8_t idx, uint64_t *ki,
   *rabs = (r >> 9) & 0x000fffffffffffff;
   *sign = ((r >> 8) & 1) != 0;
   int64_t s = (int64_t)*rabs;
+#if defined(_MSC_VER) && !defined(__clang__)
   int64_t m = -(int64_t)*sign;
   s = (s ^ m) - m;
-  //if (*sign) s = -s;
+#else
+  if (*sign) s = -s;
+#endif
   return (double)s * wi_double[idx];
 }
 
@@ -114,14 +117,13 @@ NEVER_INLINE void rand_norm(double *buf, size_t len, randompack_rng *rng) {
   uint64_t r, rabs, ki;
   double x;
   bool sign;
-  //for (size_t i = len; i-- > 0;) {
-  for (size_t i=0; i<len; i++) {
+  for (size_t i = len; i-- > 0;) {
     uint8_t *bufpi = (uint8_t*)(buf + i);
     memcpy(&r, bufpi, sizeof(r));
     idx = r & 0xff;
     x = norm_decode(r, idx, &ki, &rabs, &sign);
     buf[i] = x;
-    //buf[i] = LIKELY(rabs < ki) ? x : norm_unlikely(rng, &w, x, idx, rabs, ki, sign);
+    buf[i] = LIKELY(rabs < ki) ? x : norm_unlikely(rng, &w, x, idx, rabs, ki, sign);
   }
   exit_u64_mode(rng, w);
 }
