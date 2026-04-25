@@ -118,7 +118,8 @@ NEVER_INLINE void rand_norm(double *buf, size_t len, randompack_rng *rng) {
     memcpy(&r, bufpi, sizeof(r));
     idx = r & 0xff;
     x = norm_decode(r, idx, &ki, &rabs, &sign);
-    buf[i] = LIKELY(rabs < ki) ? x : norm_unlikely(rng, &w, x, idx, rabs, ki, sign);
+    buf[i] = x;
+    //buf[i] = LIKELY(rabs < ki) ? x : norm_unlikely(rng, &w, x, idx, rabs, ki, sign);
   }
   exit_u64_mode(rng, w);
 }
