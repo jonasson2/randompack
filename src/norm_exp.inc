@@ -22,14 +22,15 @@
 
 //=============================== NORMAL DISTRIBUTION ==============================
 
-#define NORM_DECODE(r, idx, ki, rabs, sign, x) do {   \
-   (ki) = ki_double[idx];                             \
-   (rabs) = ((r) >> 9) & 0x000fffffffffffff;          \
-   (sign) = (((r) >> 8) & 1) != 0;                    \
-   int64_t s = (int64_t)(rabs);                       \
-   if (sign) s = -s;                                  \
-   (x) = (double)s*wi_double[idx];                    \
- } while (0)
+ALWAYS_INLINE double norm_decode(uint64_t r, uint8_t idx, uint64_t *ki,
+  uint64_t *rabs, bool *sign) {
+  *ki = ki_double[idx];
+  *rabs = (r >> 9) & 0x000fffffffffffff;
+  *sign = ((r >> 8) & 1) != 0;
+  int64_t s = (int64_t)*rabs;
+  //if (*sign) s = -s;
+  return (double)s * wi_double[idx];
+}
 
 NEVER_INLINE bool below_normpdf(uint8_t idx, double x, double y) {
   double f0 = fi_double[idx-1];
@@ -85,7 +86,7 @@ NEVER_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x, uint8_t
   next_try:
     ru = draw_u64(rng, w);
     idx = ru & 0xff;
-    NORM_DECODE(ru, idx, ki, rabs, sign, x);
+    x = norm_decode(ru, idx, &ki, &rabs, &sign);
     if (LIKELY(rabs < ki)) return x;
   }
 }
@@ -97,7 +98,7 @@ ALWAYS_INLINE double draw_norm(randompack_rng *rng, int *w) {
   bool sign;
   r = draw_u64(rng, w);
   idx = r & 0xff;
-  NORM_DECODE(r, idx, ki, rabs, sign, x);
+  x = norm_decode(r, idx, &ki, &rabs, &sign);
   if (LIKELY(rabs < ki)) return x;
   x = norm_unlikely(rng, w, x, idx, rabs, ki, sign);
   return x;
@@ -116,7 +117,7 @@ NEVER_INLINE void rand_norm(double *buf, size_t len, randompack_rng *rng) {
     uint8_t *bufpi = (uint8_t*)(buf + i);
     memcpy(&r, bufpi, sizeof(r));
     idx = r & 0xff;
-    NORM_DECODE(r, idx, ki, rabs, sign, x);
+    x = norm_decode(r, idx, &ki, &rabs, &sign);
     buf[i] = x;
     //buf[i] = LIKELY(rabs < ki) ? x : norm_unlikely(rng, &w, x, idx, rabs, ki, sign);
   }
