@@ -38,6 +38,12 @@ sed -i.bak -E \
   Randompack.jl/Project.toml
 rm -f Randompack.jl/Project.toml.bak
 
+# Update Julia/Yggdrasil recipe
+sed -i.bak -E \
+  "s/^version[[:space:]]*=[[:space:]]*v\".*\"/version = v\"$VER\"/" \
+  packaging/build_tarballs.jl
+rm -f packaging/build_tarballs.jl.bak
+
 # Update meson.build (version: 'x.y.z')
 sed -i.bak -E \
   "s/^  version[[:space:]]*:[[:space:]]*'.*'/  version: '$VER'/" \

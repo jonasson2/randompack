@@ -1,6 +1,6 @@
 project('randompack', 'c',
   meson_version: '>=1.3.0',
-  version: '0.1.4',
+  version: '0.1.5',
   default_options: [
     'c_std=c11',
     'cpp_std=c++17',

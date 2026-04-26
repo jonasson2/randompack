@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.5] - 2026-04-26
+
+Availability: in preparation.
+
+- Speed up normal draws on Windows.
+- Fix Windows compiler warnings and portability issues for MSVC, clang, and icx.
+- Prepare Julia/Yggdrasil packaging for Randompack_jll submission.
+
 ## [0.1.4] - 2026-04-23
 
 Availability: tagged on GitHub; not yet uploaded to PyPI or CRAN.

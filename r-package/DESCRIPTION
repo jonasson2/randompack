@@ -1,7 +1,7 @@
 Package: randompack
 Type: Package
 Title: Fast Random Number Generation with Multiple Engines and Distributions
-Version: 0.1.4
+Version: 0.1.5
 Authors@R: person("Kristján", "Jónasson", 
                   email = "jonasson@hi.is",
                   role = c("aut", "cre"))
