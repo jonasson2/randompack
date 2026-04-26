@@ -6,7 +6,7 @@ version = v"0.1.5"
 sources = [
   GitSource(
     "https://github.com/jonasson2/randompack.git",
-    "daece60b23fa14844ef87c36238ee7c284eb8988",
+    "4f91c55f93b027c72bc46971bf7c3df3a4960145",
   ),
 ]
 
