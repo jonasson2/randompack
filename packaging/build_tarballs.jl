@@ -1,17 +1,13 @@
 using BinaryBuilder, Pkg
 
 name = "Randompack"
-version = v"0.1.1"
+version = v"0.1.5"
 
 sources = [
-  # ArchiveSource(
-  #   "https://raw.githubusercontent.com/jonasson2/randompack-src/v0.1.1/randompack-0.1.1.tar.gz",
-  #   "ec06c776d76317dafa2a94f3c09219d989fb7b1045ca4a99b0c620015bd97964",
-  # ),
-ArchiveSource(
-  "/home/jonasson/randompack/archives/randompack-0.1.1.tar.gz",
-    "91791fddc7c252eec2fd38e068976fd6431d25ed2effef7472442f05f9ce4a33",
-)
+  GitSource(
+    "https://github.com/jonasson2/randompack.git",
+    "7401cbd462196284a50c406f4aaf419867e37d18",
+  ),
 ]
 
 script = raw"""
@@ -20,11 +16,11 @@ set -e
 find /usr/lib/python3.9/site-packages -maxdepth 1 -name '._*' -delete 2>/dev/null || true
 
 cd $WORKSPACE/srcdir
-SRC=$WORKSPACE/srcdir/randompack-0.1.1
+SRC=$WORKSPACE/srcdir/randompack
 
-if echo "$target" | grep -q 'apple-darwin'; then
-  # Meson fails to detect the linker for apple-darwin targets in BinaryBuilder (ld rejects
-  # --version), so build manually here.
+manual_apple_build_backup() {
+  # Backup of the previous manual macOS build path. Keep this until the Meson
+  # macOS/aarch64 BinaryBuilder build has been verified.
   BUILD=$WORKSPACE/build-manual
   rm -rf $BUILD
   mkdir -p $BUILD $prefix/lib $prefix/include $prefix/share/licenses/Randompack
@@ -35,8 +31,6 @@ if echo "$target" | grep -q 'apple-darwin'; then
   if echo "$target" | grep -q '^aarch64-apple-darwin'; then
     COPTS="$COPTS -mcpu=apple-m1"
   fi
-
-  AR=${target}-ar
 
   $CC -std=c11 $COPTS $CDEFS -I$SRC/src -c $SRC/src/printX.c -o $BUILD/printX.c.o
   $CC -std=c11 $COPTS $CDEFS -I$SRC/src -c $SRC/src/rp_dpstrf.c -o $BUILD/rp_dpstrf.c.o
@@ -50,64 +44,44 @@ if echo "$target" | grep -q 'apple-darwin'; then
   cp $SRC/src/randompack.h $prefix/include/
   cp $SRC/src/randompack_config.h $prefix/include/
   cp $SRC/LICENSE $prefix/share/licenses/Randompack/LICENSE
-else
-  cd $WORKSPACE
-  rm -rf build
+}
 
-  P1="${prefix}/lib/pkgconfig:${prefix}/lib64/pkgconfig:${prefix}/share/pkgconfig"
-  export PKG_CONFIG_PATH="$P1:${PKG_CONFIG_PATH:-}"
-  export CPPFLAGS="-I${prefix}/include ${CPPFLAGS:-}"
-  export LDFLAGS="-L${prefix}/lib -L${prefix}/lib64 ${LDFLAGS:-}"
+cd $WORKSPACE
+rm -rf build
 
-  meson setup build $SRC \
-    --cross-file=${MESON_TARGET_TOOLCHAIN} \
-    --buildtype=release \
-    --prefix=${prefix} \
-    -Ddefault_library=shared \
-    -Dblas=openblas \
-    -Dbuild_examples=false \
-    -Dbuild_tests=false \
-    -Dbuild_fortran_interface=false
+P1="${prefix}/lib/pkgconfig:${prefix}/lib64/pkgconfig:${prefix}/share/pkgconfig"
+export PKG_CONFIG_PATH="$P1:${PKG_CONFIG_PATH:-}"
+export CPPFLAGS="-I${prefix}/include ${CPPFLAGS:-}"
+export LDFLAGS="-L${prefix}/lib -L${prefix}/lib64 ${LDFLAGS:-}"
 
-  ninja -C build
-  ninja -C build install
-fi
+meson setup build $SRC \
+  --cross-file=${MESON_TARGET_TOOLCHAIN} \
+  --buildtype=release \
+  --prefix=${prefix} \
+  -Ddefault_library=shared \
+  -Dblas=openblas \
+  -Dbuild_examples=false \
+  -Dbuild_tests=false \
+  -Dbuild_fortran_interface=false
+
+ninja -C build
+ninja -C build install
 """
 
-# These are the platforms we will build for by default, unless further
-# platforms are passed in on the command line
-
-platforms = [
-  Platform("aarch64", "macos"),
-  Platform("x86_64",  "macos"),
-  Platform("aarch64", "linux"),
-  Platform("x86_64",  "linux"),
-  Platform("x86_64",  "windows"),
-]
-
-# platforms = [
-#   Platform("aarch64", "macos";   libgfortran_version="5.0.0"),
-#   Platform("x86_64",  "macos";   libgfortran_version="5.0.0"),
-#   Platform("aarch64", "linux";   libgfortran_version="5.0.0", cxxstring_abi="cxx11"),
-#   Platform("x86_64",  "linux";   libgfortran_version="5.0.0", cxxstring_abi="cxx11"),
-#   Platform("x86_64",  "windows"; libgfortran_version="5.0.0", cxxstring_abi="cxx11"),
-# ]
+# Randompack requires 64-bit platforms.
+platforms = filter(p -> nbits(p) == 64, supported_platforms())
 
 dependencies = [
   Dependency(PackageSpec(name="OpenBLAS32_jll",
-                         uuid="656ef2d0-ae68-5445-9ca0-591084a874a2");
-             platforms=platforms),
+                         uuid="656ef2d0-ae68-5445-9ca0-591084a874a2")),
 ]
 
 # The products that we will ensure are always built
 products = [
     LibraryProduct("librandompack", :librandompack)
 ]
-
-dependencies = [
-  Dependency(PackageSpec(name="OpenBLAS32_jll",
-                         uuid="656ef2d0-ae68-5445-9ca0-591084a874a2")),
-]
 		
 # Build the tarballs, and possibly a `build.jl` as well.
-build_tarballs(ARGS, name, version, sources, script, platforms, products, dependencies; julia_compat="1.10")
+build_tarballs(ARGS, name, version, sources, script, platforms, products, dependencies;
+               julia_compat="1.10", clang_use_lld=false, dont_dlopen=true,
+               preferred_gcc_version=v"8")
