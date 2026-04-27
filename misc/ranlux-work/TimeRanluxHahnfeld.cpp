@@ -18,8 +18,24 @@ extern "C" {
 #endif
 #include "RanluxppEngine.h"
 
+#if defined(HAVE_SIBBIDANOV_RANLUXPP)
+extern "C" {
+bool sibbidanov_ranluxpp_fill(double out[], int n, void *rng);
+bool sibbidanov_ranluxpp_fill_u64(uint64_t out[], int n, void *rng);
+void *sibbidanov_ranluxpp_create(uint64_t seed);
+void sibbidanov_ranluxpp_destroy(void *rng);
+}
+#endif
+
+extern "C" {
+bool hahnmon_state_fill(uint64_t out[], int n, void *rng);
+}
+
 #if defined(_WIN32)
   #include <windows.h>
+#elif defined(__x86_64__) || defined(_M_X64) || defined(__i386) || defined(_M_IX86)
+  #include <cpuid.h>
+  #include <time.h>
 #elif defined(CLOCK_MONOTONIC)
   #include <time.h>
 #else
@@ -31,6 +47,7 @@ static int max2(int m, int n) {
 }
 
 typedef bool (*fill_u64_fn)(uint64_t out[], int n, void *rng);
+typedef bool (*fill_f64_fn)(double out[], int n, void *rng);
 
 static uint64_t clock_nsec(void) {
 #ifdef _WIN32
@@ -45,6 +62,25 @@ static uint64_t clock_nsec(void) {
   }
 #endif
   return (uint64_t)((1000000000.0*(double)clock())/(double)CLOCKS_PER_SEC);
+}
+
+static bool cpu_has_avx2_local(void) {
+#if defined(_MSC_VER)
+  return false;
+#elif defined(__GNUC__) || defined(__clang__)
+  unsigned int eax, ebx, ecx, edx;
+  if (!__get_cpuid(1, &eax, &ebx, &ecx, &edx)) return false;
+  if (!(ecx & (1 << 27))) return false;
+  if (!(ecx & (1 << 28))) return false;
+  unsigned int xcr0_lo, xcr0_hi;
+  __asm__ volatile ("xgetbv" : "=a"(xcr0_lo), "=d"(xcr0_hi) : "c"(0));
+  if ((xcr0_lo & 0x6) != 0x6) return false;
+  if (__get_cpuid_max(0, 0) < 7) return false;
+  __cpuid_count(7, 0, eax, ebx, ecx, edx);
+  return (ebx & (1 << 5)) != 0;
+#else
+  return false;
+#endif
 }
 
 static void print_help(void) {
@@ -101,6 +137,13 @@ static bool get_options(int argc, char **argv,
 }
 
 static inline void consume64(const void *p) {
+  static volatile uint64_t sink;
+  uint64_t u;
+  memcpy(&u, p, sizeof(u));
+  sink ^= u;
+}
+
+static inline void consume_d64(const void *p) {
   static volatile uint64_t sink;
   uint64_t u;
   memcpy(&u, p, sizeof(u));
@@ -185,6 +228,32 @@ static double time_u64(int chunk, double bench_time, fill_u64_fn fill, void *rng
   return (calls > 0) ? (t - t0)/((double)calls*chunk) : 0;
 }
 
+static double time_f64(int chunk, double bench_time, fill_f64_fn fill, void *rng) {
+  enum { M = 1000000 };
+  double *buf = new (std::nothrow) double[chunk];
+  if (!buf) {
+    return 0;
+  }
+  int reps = max2(1, M/chunk);
+  int64_t calls = 0;
+  uint64_t t0 = clock_nsec();
+  uint64_t deadline = t0 + (uint64_t)(bench_time*1e9);
+  uint64_t t = t0;
+  while (t < deadline) {
+    for (int i = 0; i < reps; i++) {
+      if (!fill(buf, chunk, rng)) {
+        delete[] buf;
+        return 0;
+      }
+      consume_d64(&buf[chunk - 1]);
+    }
+    calls += reps;
+    t = clock_nsec();
+  }
+  delete[] buf;
+  return (calls > 0) ? (t - t0)/((double)calls*chunk) : 0;
+}
+
 int main(int argc, char **argv) {
   double bench_time;
   int chunk;
@@ -216,10 +285,25 @@ int main(int argc, char **argv) {
   double ns_rp = time_u64(chunk, bench_time, fill_u64_rp, rng_rp);
   double ns64_rp = ns64_from_ns(ns_rp, 64);
   print_result("ranlux-hahnmon", ns64_from_ns(ns_hahn, 48), ns64_rp);
+  RanluxppEngine rng_state(seed);
+  double ns_hahn_state = time_u64(chunk, bench_time, hahnmon_state_fill, &rng_state);
+  print_result("hahnmon-state", ns64_from_ns(ns_hahn_state, 64), ns64_rp);
   randompack_free(rng_rp);
   ranluxpp_t portable;
   ranluxpp_init(&portable, seed, 2048);
   double ns_portable = time_u64(chunk, bench_time, fill_u64_portable, &portable);
   print_result("ranlux-portable", ns64_from_ns(ns_portable, 64), ns64_rp);
+#if defined(HAVE_SIBBIDANOV_RANLUXPP)
+  if (cpu_has_avx2_local()) {
+    void *sib = sibbidanov_ranluxpp_create(seed);
+    if (sib) {
+      double ns_sib = time_f64(chunk, bench_time, sibbidanov_ranluxpp_fill, sib);
+      print_result("ranlux-sibbidanov", ns64_from_ns(ns_sib, 52), ns64_rp);
+      double ns_sib_u64 = time_u64(chunk, bench_time, sibbidanov_ranluxpp_fill_u64, sib);
+      print_result("sibbidanov-state", ns64_from_ns(ns_sib_u64, 64), ns64_rp);
+      sibbidanov_ranluxpp_destroy(sib);
+    }
+  }
+#endif
   return 0;
 }

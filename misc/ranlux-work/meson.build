@@ -8,6 +8,8 @@ project('ranlux-work', 'c', 'cpp',
 )
 
 cc = meson.get_compiler('c')
+cpp = meson.get_compiler('cpp')
+as = find_program('as', required : false)
 if host_machine.system() != 'windows'
   add_project_arguments('-D_POSIX_C_SOURCE=200809L', language: 'c')
   if host_machine.system() == 'darwin'
@@ -35,6 +37,38 @@ randompack_dep = declare_dependency(
   ],
 )
 
+sibbidanov_deps = []
+if host_machine.cpu_family() in ['x86', 'x86_64'] and as.found()
+  mul9x9mod_obj = custom_target(
+    'sibbidanov_mul9x9mod',
+    input : '../../third-party/ranlux-sibbidanov/src/mul9x9mod.asm',
+    output : 'mul9x9mod.o',
+    command : [as, '-c', '-o', '@OUTPUT@', '@INPUT@'],
+  )
+  sibbidanov_cpp_args = cpp.get_supported_arguments(
+    ['-ffunction-sections', '-fdata-sections']
+  )
+  sibbidanov_link_args = cpp.get_supported_link_arguments(['-Wl,--gc-sections'])
+  sibbidanov_lib = static_library(
+    'sibbidanov_ranluxpp',
+    [
+      'sibbidanov_ranluxpp.cpp',
+      '../../third-party/ranlux-sibbidanov/src/ranluxpp.cxx',
+      '../../third-party/ranlux-sibbidanov/src/mulmod.cxx',
+      mul9x9mod_obj,
+    ],
+    include_directories : ['../../third-party/ranlux-sibbidanov/inc'],
+    cpp_args : sibbidanov_cpp_args,
+    install : false,
+  )
+  sibbidanov_deps += declare_dependency(
+    include_directories : ['../../third-party/ranlux-sibbidanov/inc'],
+    objects : [sibbidanov_lib.extract_all_objects(recursive : false)],
+    compile_args : ['-DHAVE_SIBBIDANOV_RANLUXPP'],
+    link_args : sibbidanov_link_args,
+  )
+endif
+
 
 executable(
   'compute_ranlux_jumps',
@@ -60,6 +94,7 @@ executable(
   'TimeRanluxHahnfeld',
   [
     'TimeRanluxHahnfeld.cpp',
+    'hahnmon_state.cpp',
     '../../common/getopt.c',
     '../../third-party/ranluxpp-portable/ranluxpp.c',
     '../../third-party/ranluxpp-hahnmon/RanluxppEngine.cpp',
@@ -69,7 +104,7 @@ executable(
     '../../third-party/ranluxpp-portable',
     '../../third-party/ranluxpp-hahnmon',
   ],
-  dependencies : [randompack_dep],
+  dependencies : [randompack_dep] + sibbidanov_deps,
 )
 
 executable(
