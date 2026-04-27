@@ -41,7 +41,7 @@ sibbidanov_deps = []
 if host_machine.cpu_family() in ['x86', 'x86_64'] and as.found()
   mul9x9mod_obj = custom_target(
     'sibbidanov_mul9x9mod',
-    input : '../../third-party/ranlux-sibbidanov/src/mul9x9mod.asm',
+    input : '../../third-party/ranluxpp-sib/src/mul9x9mod.asm',
     output : 'mul9x9mod.o',
     command : [as, '-c', '-o', '@OUTPUT@', '@INPUT@'],
   )
@@ -53,16 +53,16 @@ if host_machine.cpu_family() in ['x86', 'x86_64'] and as.found()
     'sibbidanov_ranluxpp',
     [
       'sibbidanov_ranluxpp.cpp',
-      '../../third-party/ranlux-sibbidanov/src/ranluxpp.cxx',
-      '../../third-party/ranlux-sibbidanov/src/mulmod.cxx',
+      '../../third-party/ranluxpp-sib/src/ranluxpp.cxx',
+      '../../third-party/ranluxpp-sib/src/mulmod.cxx',
       mul9x9mod_obj,
     ],
-    include_directories : ['../../third-party/ranlux-sibbidanov/inc'],
+    include_directories : ['../../third-party/ranluxpp-sib/inc'],
     cpp_args : sibbidanov_cpp_args,
     install : false,
   )
   sibbidanov_deps += declare_dependency(
-    include_directories : ['../../third-party/ranlux-sibbidanov/inc'],
+    include_directories : ['../../third-party/ranluxpp-sib/inc'],
     objects : [sibbidanov_lib.extract_all_objects(recursive : false)],
     compile_args : ['-DHAVE_SIBBIDANOV_RANLUXPP'],
     link_args : sibbidanov_link_args,

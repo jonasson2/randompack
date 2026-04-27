@@ -298,7 +298,7 @@ int main(int argc, char **argv) {
     void *sib = sibbidanov_ranluxpp_create(seed);
     if (sib) {
       double ns_sib = time_f64(chunk, bench_time, sibbidanov_ranluxpp_fill, sib);
-      print_result("ranlux-sibbidanov", ns64_from_ns(ns_sib, 52), ns64_rp);
+      print_result("ranluxpp-sib", ns64_from_ns(ns_sib, 52), ns64_rp);
       double ns_sib_u64 = time_u64(chunk, bench_time, sibbidanov_ranluxpp_fill_u64, sib);
       print_result("sibbidanov-state", ns64_from_ns(ns_sib_u64, 64), ns64_rp);
       sibbidanov_ranluxpp_destroy(sib);
