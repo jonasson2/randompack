@@ -11,6 +11,10 @@
 
 typedef struct randompack_rng randompack_rng;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //================================== CREATION AND SETUP ==================================
 
 randompack_rng *randompack_create( // Create randomized RNG with given engine, error → 0
@@ -440,4 +444,7 @@ bool randompack_skew_normalf( // Generate skew-normal random floats, false on er
   randompack_rng *rng   // in/out  Random number generator
 );
 
+#ifdef __cplusplus
+}
+#endif
 #endif /* RANDOMPACK_H */
