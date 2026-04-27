@@ -67,7 +67,8 @@ static uint64_t clock_nsec(void) {
 static bool cpu_has_avx2_local(void) {
 #if defined(_MSC_VER)
   return false;
-#elif defined(__GNUC__) || defined(__clang__)
+#elif (defined(__GNUC__) || defined(__clang__)) && \
+    (defined(__x86_64__) || defined(_M_X64) || defined(__i386) || defined(_M_IX86))
   unsigned int eax, ebx, ecx, edx;
   if (!__get_cpuid(1, &eax, &ebx, &ecx, &edx)) return false;
   if (!(ecx & (1 << 27))) return false;
