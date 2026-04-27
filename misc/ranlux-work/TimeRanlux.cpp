@@ -193,18 +193,18 @@ static double ns64_from_ns(double ns, int bits) {
   return ns*64/bits;
 }
 
-static void print_result(const char *name, double ns64, double base_ns64) {
-  double speedup = ns64/base_ns64;
+static void print_result(const char *name, double t, double base_t) {
+  double speedup = t/base_t;
   printf("%-18s", name);
-  printf(" %10.2f", ns64);
-  printf(" %10.2f", base_ns64);
+  printf(" %10.2f", t);
+  printf(" %10.2f", base_t);
   printf(" %8.2fx", speedup);
   printf("\n");
 }
 
-static void print_header(const char *title, const char *base_name) {
+static void print_header(const char *title, const char *unit, const char *base_name) {
   printf("%s\n", title);
-  printf("%-18s %10s %10s %9s\n", "Engine", "ns/64bits", base_name, "speedup");
+  printf("%-18s %10s %10s %9s\n", "Engine", unit, base_name, "speedup");
 }
 
 static void warmup_cpu(double warmup_time) {
@@ -287,7 +287,7 @@ int main(int argc, char **argv) {
   printf("bench_time:       %.3f s per engine\n", bench_time);
   printf("chunk:            %d\n", chunk);
   printf("seed:             %" PRIu64 "\n\n", seed);
-  print_header("integer/state output:", "randompack");
+  print_header("integer/state output:", "ns/64bits", "randompack");
   RanluxppEngine rng(seed);
   double ns_hahn = time_u64(chunk, bench_time, fill_u64_hahn, &rng);
   randompack_rng *rng_rp = randompack_create("ranlux++");
@@ -324,18 +324,17 @@ int main(int argc, char **argv) {
   }
 #endif
   printf("\n");
-  print_header("double output:", "randompack");
+  print_header("double output:", "ns/double", "randompack");
   RanluxppEngine rng_hahn_d(seed);
   double ns_hahn_d = time_f64(chunk, bench_time, fill_f64_hahn, &rng_hahn_d);
   double ns_rp_d = time_f64(chunk, bench_time, fill_f64_rp, rng_rp);
-  double ns64_rp_d = ns64_from_ns(ns_rp_d, 64);
-  print_result("ranlux-hahnmon", ns64_from_ns(ns_hahn_d, 48), ns64_rp_d);
+  print_result("ranlux-hahnmon", ns_hahn_d, ns_rp_d);
 #if defined(HAVE_SIBBIDANOV_RANLUXPP)
   if (cpu_has_avx2_local()) {
     void *sib = sibbidanov_ranluxpp_create(seed);
     if (sib) {
       double ns_sib = time_f64(chunk, bench_time, sibbidanov_ranluxpp_fill, sib);
-      print_result("ranluxpp-sib", ns64_from_ns(ns_sib, 52), ns64_rp_d);
+      print_result("ranluxpp-sib", ns_sib, ns_rp_d);
       sibbidanov_ranluxpp_destroy(sib);
     }
   }
