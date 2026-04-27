@@ -1,4 +1,4 @@
-// TimeRanluxHahnfeld.cpp: throughput (GB/s) of Hahnfeld/Moneta ranlux++.
+// TimeRanlux.cpp: throughput (GB/s) of ranlux++ implementations.
 
 #include <cinttypes>
 #include <cstdint>
@@ -85,8 +85,8 @@ static bool cpu_has_avx2_local(void) {
 }
 
 static void print_help(void) {
-  printf("TimeRanluxHahnfeld - measure RNG engine throughput\n");
-  printf("Usage: TimeRanluxHahnfeld [options]\n\n");
+  printf("TimeRanlux - measure RNG engine throughput\n");
+  printf("Usage: TimeRanlux [options]\n\n");
   printf("Options:\n");
   printf("  -h            Show this help message\n");
   printf("  -t seconds    Benchmark time per engine (default 0.1)\n");
@@ -159,9 +159,22 @@ static bool fill_u64_hahn(uint64_t out[], int n, void *rng) {
   return true;
 }
 
+static bool fill_f64_hahn(double out[], int n, void *rng) {
+  RanluxppEngine *r = (RanluxppEngine *)rng;
+  for (int i = 0; i < n; i++) {
+    out[i] = r->Rndm();
+  }
+  return true;
+}
+
 static bool fill_u64_rp(uint64_t out[], int n, void *rng) {
   randompack_rng *r = (randompack_rng *)rng;
   return randompack_uint64(out, (size_t)n, 0, r);
+}
+
+static bool fill_f64_rp(double out[], int n, void *rng) {
+  randompack_rng *r = (randompack_rng *)rng;
+  return randompack_u01(out, (size_t)n, r);
 }
 
 static bool fill_u64_portable(uint64_t out[], int n, void *rng) {
@@ -187,6 +200,11 @@ static void print_result(const char *name, double ns64, double base_ns64) {
   printf(" %10.2f", base_ns64);
   printf(" %8.2fx", speedup);
   printf("\n");
+}
+
+static void print_header(const char *title, const char *base_name) {
+  printf("%s\n", title);
+  printf("%-18s %10s %10s %9s\n", "Engine", "ns/64bits", base_name, "speedup");
 }
 
 static void warmup_cpu(double warmup_time) {
@@ -269,8 +287,7 @@ int main(int argc, char **argv) {
   printf("bench_time:       %.3f s per engine\n", bench_time);
   printf("chunk:            %d\n", chunk);
   printf("seed:             %" PRIu64 "\n\n", seed);
-  printf("%-18s %10s %10s %9s\n",
-         "Engine", "ns/64bits", "randompack", "speedup");
+  print_header("integer/state output:", "randompack");
   RanluxppEngine rng(seed);
   double ns_hahn = time_u64(chunk, bench_time, fill_u64_hahn, &rng);
   randompack_rng *rng_rp = randompack_create("ranlux++");
@@ -302,6 +319,23 @@ int main(int argc, char **argv) {
       print_result("ranluxpp-sib", ns64_from_ns(ns_sib, 52), ns64_rp);
       double ns_sib_u64 = time_u64(chunk, bench_time, sibbidanov_ranluxpp_fill_u64, sib);
       print_result("sibbidanov-state", ns64_from_ns(ns_sib_u64, 64), ns64_rp);
+      sibbidanov_ranluxpp_destroy(sib);
+    }
+  }
+#endif
+  printf("\n");
+  print_header("double output:", "randompack");
+  RanluxppEngine rng_hahn_d(seed);
+  double ns_hahn_d = time_f64(chunk, bench_time, fill_f64_hahn, &rng_hahn_d);
+  double ns_rp_d = time_f64(chunk, bench_time, fill_f64_rp, rng_rp);
+  double ns64_rp_d = ns64_from_ns(ns_rp_d, 64);
+  print_result("ranlux-hahnmon", ns64_from_ns(ns_hahn_d, 48), ns64_rp_d);
+#if defined(HAVE_SIBBIDANOV_RANLUXPP)
+  if (cpu_has_avx2_local()) {
+    void *sib = sibbidanov_ranluxpp_create(seed);
+    if (sib) {
+      double ns_sib = time_f64(chunk, bench_time, sibbidanov_ranluxpp_fill, sib);
+      print_result("ranluxpp-sib", ns64_from_ns(ns_sib, 52), ns64_rp_d);
       sibbidanov_ranluxpp_destroy(sib);
     }
   }

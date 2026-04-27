@@ -91,9 +91,9 @@ executable(
 )
 
 executable(
-  'TimeRanluxHahnfeld',
+  'TimeRanlux',
   [
-    'TimeRanluxHahnfeld.cpp',
+    'TimeRanlux.cpp',
     'hahnmon_state.cpp',
     '../../common/getopt.c',
     '../../third-party/ranluxpp-portable/ranluxpp.c',
