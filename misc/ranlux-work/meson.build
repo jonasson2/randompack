@@ -15,12 +15,23 @@ if host_machine.system() != 'windows'
   endif
 endif
 
-randompack_prefix = join_paths(meson.project_source_root(), '../../install')
+fs = import('fs')
+randompack_root = meson.project_source_root() / '../..'
+randompack_prefix = join_paths(randompack_root, 'release')
+randompack_incdir = join_paths(randompack_root, 'src')
+randompack_libdir = join_paths(randompack_prefix, 'src')
+randompack_libname = host_machine.system() == 'darwin' ? 'librandompack.dylib' : 'librandompack.so'
+if not fs.exists(join_paths(randompack_libdir, randompack_libname))
+  randompack_prefix = join_paths(randompack_root, 'install')
+  randompack_incdir = join_paths(randompack_prefix, 'include/randompack')
+  randompack_libdir = join_paths(randompack_prefix, 'lib')
+endif
+
 randompack_dep = declare_dependency(
-  compile_args : ['-I' + join_paths(randompack_prefix, 'include/randompack')],
+  compile_args : ['-I' + randompack_incdir],
   link_args : [
-    join_paths(randompack_prefix, 'lib/librandompack.dylib'),
-    '-Wl,-rpath,' + join_paths(randompack_prefix, 'lib'),
+    join_paths(randompack_libdir, randompack_libname),
+    '-Wl,-rpath,' + randompack_libdir,
   ],
 )
 
