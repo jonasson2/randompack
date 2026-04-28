@@ -70,10 +70,28 @@ static void check_weibull(randompack_rng *rng, char *engine) {
   FREE(u);
 }
 
+static void check_config_persists(char *engine) {
+  randompack_rng *rng = create_seeded_rng(engine, 123);
+  bool ok = randompack_bitexact(rng, true);
+  check_success(ok, rng);
+  ok = randompack_full_mantissa(rng, true);
+  check_success(ok, rng);
+  ok = randompack_seed(456, 0, 0, rng);
+  check_success(ok, rng);
+  xCheck(rng->bitexact);
+  xCheck(rng->usefullmantissa);
+  ok = randompack_randomize(rng);
+  check_success(ok, rng);
+  xCheck(rng->bitexact);
+  xCheck(rng->usefullmantissa);
+  randompack_free(rng);
+}
+
 void TestBitexact(void) {
   char *engines[] = {"x256++simd", "pcg64"};
   for (int i = 0; i < LEN(engines); i++) {
     char *engine = engines[i];
+    check_config_persists(engine);
     randompack_rng *rng = create_seeded_rng(engine, 123);
     bool ok = randompack_bitexact(rng, false);
     check_success(ok, rng);
