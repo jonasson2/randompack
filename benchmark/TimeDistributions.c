@@ -196,13 +196,17 @@ static void fill_wrapperf(float out[], int n, float param[], randompack_rng *rng
   ASSERT(fill_distf(out, n, param, rng));
 }
 
-static void set_seed(randompack_rng *rng, int seed, bool have_seed) {
+static void set_seed(randompack_rng *rng, int seed, bool have_seed, bool bitexact) {
   bool ok;
   if (have_seed)
     ok = randompack_seed(seed, 0, 0, rng);
   else
     ok = randompack_randomize(rng);
   ASSERT(ok);
+  if (bitexact) {
+    ok = randompack_bitexact(rng, true);
+    ASSERT(ok);
+  }
 }
 
 int main(int argc, char **argv) {
@@ -221,12 +225,15 @@ int main(int argc, char **argv) {
 #endif
   randompack_rng *rngd = randompack_create(engine);
   randompack_rng *rngf = randompack_create(engine);
-  if (!rngd || !rngf) {
+  randompack_rng *rngd_fast = bitexact ? randompack_create(engine) : 0;
+  if (!rngd || !rngf || (bitexact && !rngd_fast)) {
     fprintf(stderr, "randompack_create failed: %s\n", engine);
     if (rngd)
       randompack_free(rngd);
     if (rngf)
       randompack_free(rngf);
+    if (rngd_fast)
+      randompack_free(rngd_fast);
     return 1;
   }
   if (bitexact) {
@@ -235,6 +242,7 @@ int main(int argc, char **argv) {
       fprintf(stderr, "randompack_bitexact failed\n");
       randompack_free(rngd);
       randompack_free(rngf);
+      randompack_free(rngd_fast);
       return 1;
     }
   }
@@ -263,7 +271,11 @@ int main(int argc, char **argv) {
   printf("time per value:   ns/value\n");
   printf("bench_time:       %.3f s per distribution\n", bench_time);
   printf("chunk:            %d\n\n", chunk);
-  printf("%-18s %8s %8s\n", "Distribution", "double", "float");
+  if (bitexact)
+    printf("%-18s %8s %8s %7s %8s\n",
+      "Distribution", "bitexact", "fast", "ratio", "float");
+  else
+    printf("%-18s %8s %8s\n", "Distribution", "double", "float");
   for (int i = 0; i < LEN(dists); i++) {
     double par[4];
     par[0] = (double)dists[i].id;
@@ -277,18 +289,32 @@ int main(int argc, char **argv) {
     parf[3] = (float)dists[i].param[2];
     double x[4];
     float xf[4];
-    set_seed(rngd, seed, have_seed);
-    set_seed(rngf, seed, have_seed);
+    set_seed(rngd, seed, have_seed, bitexact);
+    set_seed(rngf, seed, have_seed, bitexact);
     fill_dist(x, 4, par, rngd);
     fill_distf(xf, 4, parf, rngf);
-    set_seed(rngd, seed, have_seed);
-    set_seed(rngf, seed, have_seed);
+    set_seed(rngd, seed, have_seed, bitexact);
+    set_seed(rngf, seed, have_seed, bitexact);
     double nsd = time_double(chunk, bench_time, fill_wrapper, par, rngd);
     double nsf = time_float(chunk, bench_time, fill_wrapperf, parf, rngf);
+    double nsd_fast = 0;
+    if (bitexact) {
+      set_seed(rngd_fast, seed, have_seed, false);
+      fill_dist(x, 4, par, rngd_fast);
+      set_seed(rngd_fast, seed, have_seed, false);
+      nsd_fast = time_double(chunk, bench_time, fill_wrapper, par, rngd_fast);
+    }
     printf("%-18s", dists[i].name);
-    printf(" %8.*f %8.*f\n", digits, nsd, digits, nsf);
+    if (bitexact)
+      printf(" %8.*f %8.*f %7.2f %8.*f\n",
+        digits, nsd, digits, nsd_fast, nsd_fast > 0 ? nsd/nsd_fast : 0,
+        digits, nsf);
+    else
+      printf(" %8.*f %8.*f\n", digits, nsd, digits, nsf);
   }
   randompack_free(rngd);
   randompack_free(rngf);
+  if (rngd_fast)
+    randompack_free(rngd_fast);
   return 0;
 }
