@@ -51,6 +51,7 @@ static void print_help(void) {
   printf("  -h            Show this help message\n");
   printf("  -e engine     RNG engine (default x256++simd)\n");
   printf("  -t seconds    Benchmark time per distribution (default 0.2)\n");
+  printf("  -w seconds    CPU warmup time before timing (default 0.1)\n");
   printf("  -c chunk      Chunk size (values per call, default 4096)\n");
   printf("  -s seed       Fixed RNG seed (default random seed per distribution)\n");
   printf("  -d digits     Decimal places for ns output (default 2)\n");
@@ -62,20 +63,22 @@ static void print_help(void) {
 }
 
 static bool get_options(int argc, char **argv, char **engine, double *bench_time,
-                        int *chunk, int *seed, bool *have_seed, int *digits,
-                        bool *bitexact, bool *help) {
+                        double *warmup_time, int *chunk, int *seed,
+                        bool *have_seed, int *digits, bool *bitexact,
+                        bool *help) {
   opterr = 0;
   optind = 1;
   int opt;
   *engine = "x256++simd";
   *bench_time = 0.2;
+  *warmup_time = 0.1;
   *chunk = 4096;
   *seed = 0;
   *have_seed = false;
   *digits = 2;
   *bitexact = false;
   *help = false;
-  while ((opt = getopt(argc, argv, "he:t:c:s:d:b")) != -1) {
+  while ((opt = getopt(argc, argv, "he:t:w:c:s:d:b")) != -1) {
     switch (opt) {
       case 'h':
         *help = true;
@@ -86,6 +89,11 @@ static bool get_options(int argc, char **argv, char **engine, double *bench_time
       case 't':
         *bench_time = atof(optarg);
         if (*bench_time <= 0)
+          return false;
+        break;
+      case 'w':
+        *warmup_time = atof(optarg);
+        if (*warmup_time < 0)
           return false;
         break;
       case 'c':
@@ -212,12 +220,13 @@ static void set_seed(randompack_rng *rng, int seed, bool have_seed, bool bitexac
 int main(int argc, char **argv) {
   char *engine;
   double bench_time;
+  double warmup_time;
   int chunk, seed, digits;
   bool have_seed;
   bool bitexact;
   bool help;
-  if (!get_options(argc, argv, &engine, &bench_time, &chunk, &seed, &have_seed,
-      &digits, &bitexact, &help) || help) {
+  if (!get_options(argc, argv, &engine, &bench_time, &warmup_time, &chunk,
+      &seed, &have_seed, &digits, &bitexact, &help) || help) {
     print_help();
     return help ? 0 : 1;
   }
@@ -246,7 +255,7 @@ int main(int argc, char **argv) {
       return 1;
     }
   }
-  warmup_cpu(0.1);
+  warmup_cpu(warmup_time);
   dist_spec dists[] = {
     { U01,       "u01",            0, { 0, 0} },
     { UNIF,      "unif(2,5)",      2, { 2, 5} },
@@ -269,6 +278,7 @@ int main(int argc, char **argv) {
   };
   printf("engine:           %s\n", engine);
   printf("time per value:   ns/value\n");
+  printf("warmup_time:      %.3f s\n", warmup_time);
   printf("bench_time:       %.3f s per distribution\n", bench_time);
   printf("chunk:            %d\n\n", chunk);
   if (bitexact)
