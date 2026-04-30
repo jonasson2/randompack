@@ -44,7 +44,7 @@ if build_fortran_interface
   darwin_link_args = host_machine.system() == 'darwin' ? ['-Wl,-no_warn_duplicate_libraries'] : []
   check_fortran_ints = executable(
     'CheckFortranInts',
-    'CheckFortranInts.f90',
+    '../fortran/examples/CheckFortranInts.f90',
     link_language: 'fortran',
     dependencies : [randompack_fortran_dep],
     link_args : darwin_link_args,

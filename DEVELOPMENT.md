@@ -249,3 +249,23 @@ TABLE OF CONTENTS
     R CMD check randompack_*.tar.gz
     R CMD check --as-cran randompack_*.gz  # complete checking
                                            # edit cran-comments.md with results
+
+## CONDA-FORGE
+    When the version is bumped and a version tag pushed, a pull request (PR) is
+    usually created within a few hours on:
+       https://github.com/conda-forge/randompack-feedstock. 
+    If it doesn't appear:
+       edit recipe/meta.yaml on that page:
+       version: x.y.z
+       sha256: <new-sha>
+    GitHub should guide one into opening a PR (perhaps one needs to choose:
+    "Create a new branch for this commit and start a pull request") After the PR
+    is created automatic testing of Randompack is carried out. If all the tests
+    pass the changes the PR is "merged" either automatically or be a conda-forge
+    maintainer, and following that the new release will be automatically
+    installed on conda-forge.
+    #
+    To obtain the new sha use:
+       curl -L -o randompack-0.1.6.tar.gz \
+       https://github.com/jonasson2/randompack/archive/refs/tags/v0.1.6.tar.gz
+    shasum -a 256 randompack-0.1.6.tar.gz

@@ -257,15 +257,9 @@ ALWAYS_INLINE void gen_gamma_shape1(double *x, size_t len, double shape,
         v3 = v*v*v;
         u = draw_u01(rng, &w);
         if (u < 1 - 0.0331*z4) goto accept;
-        // compute logs:
-        if (!rng->bitexact) {
-          logu = log(u);
-          logv3 = log(v3);
-        }
-        else {
-          logu = openlibm_log(u);
-          logv3 = openlibm_log(v3);
-        }
+        // Use fixed logs here because this test controls RNG consumption.
+        logu = openlibm_log(u);
+        logv3 = openlibm_log(v3);
         if (logu < 0.5*z2 + d*(1 - v3 + logv3)) goto accept;
       }
       x[i] = draw_norm(rng, &w);

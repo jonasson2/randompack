@@ -29,14 +29,9 @@ ALWAYS_INLINE void gen_gamma_shape1f(float *x, size_t len, float shape,
           x[i] = dscale*v3;
           break;
         }
-        if (!rng->bitexact) {
-          logu = logf(u);
-          logv3 = logf(v3);
-        }
-        else {
-          logu = openlibm_logf(u);
-          logv3 = openlibm_logf(v3);
-        }
+        // Use fixed logs here because this test controls RNG consumption.
+        logu = openlibm_logf(u);
+        logv3 = openlibm_logf(v3);
         if (logu < 0.5f*z2 + d*(1.0f - v3 + logv3)) {
           x[i] = dscale*v3;
           break;

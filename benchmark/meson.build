@@ -109,7 +109,7 @@ if build_fortran_interface
   darwin_link_args = host_machine.system() == 'darwin' ? ['-Wl,-no_warn_duplicate_libraries'] : []
   time_distributions_f = executable(
     'TimeDistFortran',
-    'TimeDistFortran.f90',
+    '../fortran/examples/TimeDistFortran.f90',
     link_language: 'fortran',
     dependencies : [randompack_fortran_dep],
     link_args : darwin_link_args,
