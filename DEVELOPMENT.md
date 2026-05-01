@@ -269,3 +269,21 @@ TABLE OF CONTENTS
        curl -L -o randompack-0.1.6.tar.gz \
        https://github.com/jonasson2/randompack/archive/refs/tags/v0.1.6.tar.gz
     shasum -a 256 randompack-0.1.6.tar.gz
+
+DEBIAN:
+  1. work in:
+     - /home/jonasson/randompack-debian-clean
+  2. if needed, regenerate the upstream tarball from origin/main:
+
+     rm -f ../randompack_0.1.5.orig.tar.xz
+     git archive --format=tar --prefix=randompack-0.1.5/ origin/main | \
+       xz -T0 > ../randompack_0.1.5.orig.tar.xz
+  3. build binary package:
+
+     DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -us -uc -b
+  4. build source package:
+
+     dpkg-buildpackage -S -us -uc
+  5. lint source upload:
+
+     lintian --profile debian ../randompack_0.1.5-1_source.changes
