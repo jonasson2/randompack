@@ -1,0 +1,4 @@
+usr/include/randompack/randompack.h
+usr/include/randompack/randompack.f90
+usr/lib/*/librandompack.so
+usr/lib/*/pkgconfig/randompack.pc

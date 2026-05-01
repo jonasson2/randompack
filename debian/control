@@ -1,0 +1,35 @@
+Source: randompack
+Section: libs
+Priority: optional
+Maintainer: Kristjan Jonasson <jonasson@hi.is>
+Rules-Requires-Root: no
+Build-Depends:
+ debhelper-compat (= 13),
+ chrpath,
+ meson,
+ ninja-build,
+ pkgconf,
+ gfortran,
+ libopenblas-dev
+Standards-Version: 4.6.2
+Homepage: https://github.com/jonasson2/randompack
+
+Package: librandompack0
+Section: libs
+Architecture: any
+Depends:
+ ${shlibs:Depends},
+ ${misc:Depends}
+Description: fast random number generation library
+ Randompack is a C library for pseudo-random number generation with
+ multiple engines and distribution samplers.
+
+Package: librandompack-dev
+Section: libdevel
+Architecture: any
+Depends:
+ librandompack0 (= ${binary:Version}),
+ ${misc:Depends}
+Description: development files for the randompack library
+ This package contains the headers, pkg-config metadata and Fortran
+ interface source for developing against librandompack.

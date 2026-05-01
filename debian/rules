@@ -1,0 +1,17 @@
+#!/usr/bin/make -f
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+%:
+	dh $@
+
+override_dh_auto_configure:
+	dh_auto_configure -- \
+		-Dbuild_examples=false \
+		-Dbuild_tests=false \
+		-Dbuild_fortran_interface=true \
+		-Dblas=openblas
+
+override_dh_auto_install:
+	dh_auto_install
+	chrpath -d debian/tmp/usr/lib/*/librandompack.so.0.1.5
