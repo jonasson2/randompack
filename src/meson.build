@@ -135,12 +135,6 @@ needs_fortran_link = (
   (build_fortran_interface and host_system != 'windows')
 )
 randompack_link_language = needs_fortran_link ? 'fortran' : 'c'
-shared_soname_link_args = []
-if host_system == 'linux'
-  shared_soname_link_args = cc.get_supported_link_arguments(
-    ['-Wl,-soname,librandompack.so']
-  )
-endif
 if host_system == 'windows'
   librandompack = shared_library(
     'randompack',
@@ -150,7 +144,8 @@ if host_system == 'windows'
     dependencies: c_deps,
     c_args: base_c_args,
     link_language: randompack_link_language,
-    link_args: shared_soname_link_args,
+    version: meson.project_version(),
+    soversion: '0',
     vs_module_defs: 'randompack.def',
     install: true,
   )
@@ -163,7 +158,9 @@ else
     dependencies: c_deps,
     c_args: base_c_args,
     link_language: randompack_link_language,
-    link_args: shared_soname_link_args,
+    version: meson.project_version(),
+    soversion: '0',
+    install_rpath: '',
     install: true,
   )
 endif
