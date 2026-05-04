@@ -123,7 +123,7 @@ static void test_serialize_roundtrip_and_truncation(void) {
     randompack_rng *r1 = randompack_create(engines[i]);
     randompack_rng *r2 = randompack_create(engines[i]);
     ASSERT(r1 && r2);
-    uint64_t state[8];
+    uint64_t state[16];
     make_state(state, m->state_words, r1->engine);
     bool ok = randompack_set_state(state, m->state_words, r1);
     check_success(ok, r1);

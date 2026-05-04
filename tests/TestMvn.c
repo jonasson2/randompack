@@ -244,8 +244,9 @@ static void test_multivariate_normal(void) {
 static void test_mvn_ldx(void) {
   int d = 3, n = 2;
   double Sig[9] = {1,0,0, 0,1,0, 0,0,1};
+  double mu[3] = {10, 20, 30};
   double X1[6];
-  double Xbig[10];
+  double Xbig[16];
   double X2[6];
 
   for (int t=0; t<2; t++) {
@@ -254,7 +255,8 @@ static void test_mvn_ldx(void) {
     int col = t ? n : d;
     int ld_big = row + 2; // padded ldX
 
-    for (int i=0; i<10; i++) Xbig[i] = -999.0;
+    int nbig = ld_big*col;
+    for (int i=0; i<16; i++) Xbig[i] = -999;
 
     randompack_rng *r1 = create_seeded_rng("x256++", 123);
     randompack_rng *r2 = create_seeded_rng("x256++", 123);
@@ -272,10 +274,58 @@ static void test_mvn_ldx(void) {
         X2[i + j*row] = Xbig[i + j*ld_big];
 
     xCheck(almostEqual(X1, X2, row*col));
+    for (int j=0; j<col; j++)
+      for (int i=row; i<ld_big; i++)
+        xCheck(Xbig[i + j*ld_big] == -999);
+    for (int i=0; i<16; i++) Xbig[i] = -999;
+    randompack_seed(123, 0, 0, r1);
+    randompack_seed(123, 0, 0, r2);
+    ok = randompack_mvn(transp, mu, Sig, d, n, X1, row, 0, r1);
+    check_success(ok, r1);
+    ok = randompack_mvn(transp, mu, Sig, d, n, Xbig, ld_big, 0, r2);
+    check_success(ok, r2);
+    for (int j=0; j<col; j++)
+      for (int i=0; i<row; i++)
+        X2[i + j*row] = Xbig[i + j*ld_big];
+    xCheck(almostEqual(X1, X2, row*col));
+    for (int j=0; j<col; j++)
+      for (int i=row; i<ld_big; i++)
+        xCheck(Xbig[i + j*ld_big] == -999);
+    for (int i=nbig; i<16; i++) xCheck(Xbig[i] == -999);
 
     randompack_free(r1);
     randompack_free(r2);
   }
+}
+
+static void check_rank_one_support(char *transp, int ldX) {
+  int d = 3, n = 4;
+  double Sig[9] = {
+    1, 1, 1,
+    1, 1, 1,
+    1, 1, 1
+  };
+  double mu[3] = {1, 2, 3};
+  double X[24];
+  for (int i=0; i<24; i++) X[i] = -999;
+  randompack_rng *rng = create_seeded_rng("x256++", 77);
+  bool ok = randompack_mvn(transp, mu, Sig, d, n, X, ldX, 0, rng);
+  check_success(ok, rng);
+  for (int j=0; j<n; j++) {
+    double *x = transp[0] == 'T' ? X + j*ldX : X + j;
+    int inc = transp[0] == 'T' ? 1 : ldX;
+    double z0 = x[0*inc] - mu[0];
+    double z1 = x[1*inc] - mu[1];
+    double z2 = x[2*inc] - mu[2];
+    xCheck(fabs(z0 - z1) < 1e-12);
+    xCheck(fabs(z0 - z2) < 1e-12);
+  }
+  randompack_free(rng);
+}
+
+static void test_mvn_singular_psd_support(void) {
+  check_rank_one_support("N", 4);
+  check_rank_one_support("T", 5);
 }
 
 static void test_mvn_bad_args(void) {
@@ -342,4 +392,5 @@ void TestMvn(void) {
   test_mvn_bad_args();
   test_multivariate_normal();
   test_mvn_ldx();
+  test_mvn_singular_psd_support();
 }

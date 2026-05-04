@@ -446,9 +446,11 @@ static bool rand_mvn(char transp, double mu[], double Sig[], int d, size_t len,
       pstrf("Low", d, L, d, piv, &rank, 1e-14, work, &info); // PSD Chol fact.
       if (!ALLOC(A, rank*d)) goto fail;
       copy(rank*d, L, 1, A, 1);
-      for (int j = 0; j < d; j++) // Set L to [A(piv, 1:rank) 0]
-        copy(rank, A + piv[j], d, L + j, d);
-      laset("All", d, d-rank, 0.0, 0.0, L + d*rank, d);
+      laset("All", d, d, 0, 0, L, d);
+      // Undo pivoting: original row piv[j] gets row j.
+      for (int j = 0; j < d; j++)
+        copy(rank, A + j, d, L + piv[j], d);
+      laset("All", d, d-rank, 0, 0, L + d*rank, d);
       FREE(A);
     }
     FREE(piv);
@@ -483,8 +485,12 @@ static bool rand_mvn(char transp, double mu[], double Sig[], int d, size_t len,
   }
   if (mu) {
     size_t i;
-    if (TRAN) for (i=0; i<len; i++) axpy(d, 1.0, mu, 1, X + i*d, 1); // add mu to each col
-    else      for (i=0; i<len; i++) axpy(d, 1.0, mu, 1, X + i, nlen); // add mu to each row
+    if (TRAN) {
+      for (i=0; i<len; i++) axpy(d, 1.0, mu, 1, X + i*ldX, 1);
+    }
+    else {
+      for (i=0; i<len; i++) axpy(d, 1.0, mu, 1, X + i, ldX);
+    }
   }
   if (Lalloc) FREE(L);
   return true;
