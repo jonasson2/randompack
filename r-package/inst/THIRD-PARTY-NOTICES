@@ -31,11 +31,11 @@ Files: src/xoshiro256pp.inc, src/xoshiro256ss.inc
 
 NumPy random distributions
 NumPy — https://github.com/numpy/numpy — BSD-3-Clause
-Files: src/random_standard_norm_exp.inc
+Files: src/norm_exp.inc, src/norm_exp_float.inc
 
 Random123 (Philox)
 Salmon et al. — https://www.deshawresearch.com/resources_random123.html — BSD
-Files: src/philox4x64.inc (license in src/License-Random123.txt)
+Files: src/philox4x64.inc
 
 PCG64-DXSM
 Melissa O’Neill — https://www.pcg-random.org/ — 0BSD (MIT-0)
@@ -43,7 +43,7 @@ Files: src/pcg64_dxsm.inc
 
 ChaCha20 portable
 D. J. Bernstein — https://cr.yp.to/chacha.html — CC0
-Files: src/chacha-portable.c, src/chacha-portable.h
+Files: src/chacha-portable.inc, src/chacha-portable.h
 
 randutils seed_seq_fe128
 Melissa O’Neill — https://github.com/imneme/pcg-cpp — MIT
@@ -55,11 +55,11 @@ Files: src/sleef.c, src/sleef_arm.c, src/sleef_avx512.c
 
 getopt
 OpenBSD / NetBSD — https://github.com/openbsd/src — BSD-style
-Files: examples/getopt.c, examples/getopt.h
+Files: common/getopt.c, common/getopt.h
 
 AS241 (PPND16 inverse normal)
 Wichura et al. — Public Domain
-Files: tests/TestUtil.c
+Files: tests/test_util.c
 
 LAPACK routines
 Netlib LAPACK — https://www.netlib.org/lapack/ — BSD-style

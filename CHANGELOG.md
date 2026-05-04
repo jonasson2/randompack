@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.1.6] - 2026-05-04
+
+Availability: in preparation.
+
+- Fix `randompack_mvn` for singular positive semidefinite covariance matrices.
+- Fix `randompack_mvn` mean handling for `transpose='T'` with padded leading
+  dimensions.
+- Add regression tests for singular multivariate normal draws and padded
+  `ldX` layouts.
+- Add TagBot workflow for Julia package registration.
+
 ## [0.1.5] - 2026-04-26
 
 Availability: in preparation.

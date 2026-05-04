@@ -66,7 +66,7 @@ static void rand_uint32(uint32_t x[], size_t len, uint32_t bound, randompack_rng
     exit_u16_mode(rng, w);
   }
   else {
-    uint32_t thresh = (-bound) % bound;
+    uint32_t thresh = ((~bound) + 1u) % bound;
     int w = enter_u32_mode(rng);
     while (i < len) {
       uint32_t r = draw_u32(rng, &w);
@@ -92,7 +92,7 @@ static void rand_uint64(uint64_t x[], size_t len, uint64_t bound, randompack_rng
     exit_u16_mode(rng, w);
   }
   else {
-    uint64_t thresh = (-bound) % bound;
+    uint64_t thresh = ((~bound) + 1ull) % bound;
     int w = enter_u64_mode(rng);
     while (i < len) {
       uint64_t r = draw_u64(rng, &w);
@@ -118,7 +118,7 @@ static void rand_int(int x[], size_t len, int m, uint32_t bound, randompack_rng 
     exit_u16_mode(rng, w);
   }
   else {
-    uint32_t thresh = (-bound) % bound;
+    uint32_t thresh = ((~bound) + 1u) % bound;
     int w = enter_u32_mode(rng);
     while (i < len) {
       uint32_t r = draw_u32(rng, &w);
@@ -145,7 +145,7 @@ static void rand_long_long(long long x[], size_t len, long long m, uint64_t boun
     exit_u16_mode(rng, w);
   }
   else {
-    uint64_t thresh = (-bound) % bound;
+    uint64_t thresh = ((~bound) + 1ull) % bound;
     int w = enter_u64_mode(rng);
     while (i < len) {
       uint64_t r = draw_u64(rng, &w);
@@ -257,15 +257,9 @@ ALWAYS_INLINE void gen_gamma_shape1(double *x, size_t len, double shape,
         v3 = v*v*v;
         u = draw_u01(rng, &w);
         if (u < 1 - 0.0331*z4) goto accept;
-        // compute logs:
-        if (!rng->bitexact) {
-          logu = log(u);
-          logv3 = log(v3);
-        }
-        else {
-          logu = openlibm_log(u);
-          logv3 = openlibm_log(v3);
-        }
+        // Use fixed logs here because this test controls RNG consumption.
+        logu = openlibm_log(u);
+        logv3 = openlibm_log(v3);
         if (logu < 0.5*z2 + d*(1 - v3 + logv3)) goto accept;
       }
       x[i] = draw_norm(rng, &w);
@@ -307,13 +301,13 @@ ALWAYS_INLINE void gen_beta(double *x, size_t len, double a, double b, randompac
   double gb[128];
   size_t i = 0;
   while (i < len) {
-    int n = mini(128, len - i);
+    int n = mini(128, (int)(len - i));
     gen_gamma(gb, n, b, 1.0, rng);
     double hi = 1.0 - DBL_EPSILON;
     for (int j = 0; j < n; j++) { // force the beta-draws to (0, 1)
-      double a = x[i + j];
-      double b = gb[j];
-      double y = a / (a + b);
+      double ga = x[i + j];
+      double gbj = gb[j];
+      double y = ga / (ga + gbj);
       if (y < DBL_MIN) y = DBL_MIN;
       if (y > hi)      y = hi;
       x[i + j] = y;
@@ -328,7 +322,7 @@ ALWAYS_INLINE void gen_t(double *x, size_t len, double nu, randompack_rng *rng) 
   rand_norm(x, len, rng);
   size_t i = 0;
   while (i < len) {
-    int n = mini(128, len - i);
+    int n = mini(128, (int)(len - i));
     gen_gamma(u, n, 0.5*nu, 2.0, rng);
     for (int j = 0; j < n; j++)
       x[i + j] /= sqrt(u[j]/nu);
@@ -344,7 +338,7 @@ ALWAYS_INLINE void gen_f(double *x, size_t len, double nu1, double nu2,
   gen_gamma(x, len, nu1/2.0, 1.0, rng);
   size_t i = 0;
   while (i < len) {
-    int n = mini(len - i, 128);
+    int n = mini((int)(len - i), 128);
     gen_gamma(x2, n, nu2/2.0, 1.0, rng);
     for (int j = 0; j < n; j++)
       x[i + j] = (x[i + j]*nu2)/(x2[j]*nu1);
@@ -402,7 +396,7 @@ ALWAYS_INLINE void gen_skew_normal(double *x, size_t len, double mu,
   size_t i = 0;
   double u[128];
   while (i < len) {
-    int n = mini(128, len - i);
+    int n = mini(128, (int)(len - i));
     rand_norm(u, n, rng);
     for (int j = 0; j < n; j++) {
       double v = delta*fabs(u[j]) + scale*x[i + j];
@@ -452,9 +446,11 @@ static bool rand_mvn(char transp, double mu[], double Sig[], int d, size_t len,
       pstrf("Low", d, L, d, piv, &rank, 1e-14, work, &info); // PSD Chol fact.
       if (!ALLOC(A, rank*d)) goto fail;
       copy(rank*d, L, 1, A, 1);
-      for (int j = 0; j < d; j++) // Set L to [A(piv, 1:rank) 0]
-        copy(rank, A + piv[j], d, L + j, d);
-      laset("All", d, d-rank, 0.0, 0.0, L + d*rank, d);
+      laset("All", d, d, 0, 0, L, d);
+      // Undo pivoting: original row piv[j] gets row j.
+      for (int j = 0; j < d; j++)
+        copy(rank, A + j, d, L + piv[j], d);
+      laset("All", d, d-rank, 0, 0, L + d*rank, d);
       FREE(A);
     }
     FREE(piv);
@@ -465,31 +461,36 @@ static bool rand_mvn(char transp, double mu[], double Sig[], int d, size_t len,
     if (Lalloc) FREE(L);
     return true;
   }
+  int nlen = (int)len;
   if (rank == d) {
     if (TRAN) {
       for (size_t i = 0; i < len; i++)
         rand_norm(X + i*ldX, d, rng);
-      trmm("Left", "Lower", "NoT", "NotUdia", d, len, 1.0, L, d, X, ldX);
+      trmm("Left", "Lower", "NoT", "NotUdia", d, nlen, 1.0, L, d, X, ldX);
     }
     else {
       for (int i = 0; i < d; i++)
         rand_norm(X + i*ldX, len, rng);
-      trmm("Right", "Lower", "T", "NotUdia", len, d, 1.0, L, d, X, ldX);
+      trmm("Right", "Lower", "T", "NotUdia", nlen, d, 1.0, L, d, X, ldX);
     }
   }
   else { // Singular Sig, use workspace for the N(0,1) randoms
     if (!ALLOC(Wrk, len*rank)) goto fail;
     rand_norm(Wrk, len*rank, rng);
     if (TRAN)
-      gemm("NoT", "NoT", d, len, rank, 1.0, L, d, Wrk, rank, 0.0, X, ldX);
+      gemm("NoT", "NoT", d, nlen, rank, 1.0, L, d, Wrk, rank, 0.0, X, ldX);
     else
-      gemm("NoT", "T", len, d, rank, 1.0, Wrk, len, L, d, 0.0, X, ldX);
+      gemm("NoT", "T", nlen, d, rank, 1.0, Wrk, nlen, L, d, 0.0, X, ldX);
     FREE(Wrk);
   }
   if (mu) {
     size_t i;
-    if (TRAN) for (i=0; i<len; i++) axpy(d, 1.0, mu, 1, X + i*d, 1); // add mu to each col
-    else      for (i=0; i<len; i++) axpy(d, 1.0, mu, 1, X + i, len); // add mu to each row
+    if (TRAN) {
+      for (i=0; i<len; i++) axpy(d, 1.0, mu, 1, X + i*ldX, 1);
+    }
+    else {
+      for (i=0; i<len; i++) axpy(d, 1.0, mu, 1, X + i, ldX);
+    }
   }
   if (Lalloc) FREE(L);
   return true;

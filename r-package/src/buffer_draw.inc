@@ -52,7 +52,7 @@ ALWAYS_INLINE void align64(randompack_rng *rng) { // align to beginning or word
 ALWAYS_INLINE uint8_t draw_byte(randompack_rng *rng) {
   fill_buf_if_empty(rng);
   uint64_t w = rng->buf.u64[rng->buf_word];
-  uint8_t b = w >> (8*rng->buf_byte);
+  uint8_t b = (uint8_t)(w >> (8*rng->buf_byte));
   rng->buf_byte++;
   if (rng->buf_byte >= 8) {
     rng->buf_byte = 0;

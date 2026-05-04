@@ -174,8 +174,6 @@ static void rand_init(randompack_rng *rng) {
   rng->buf_word = BUFSIZE;
   rng->buf_byte = 0;
   rng->last_error = 0;
-  rng->usefullmantissa = false;
-  rng->bitexact = false;
 }
 
 static void rand_randomize(randompack_rng *rng) {

@@ -396,7 +396,7 @@ enum { RNG_STATE_WORDS = sizeof(((randompack_rng *)0)->state)/sizeof(uint64_t) }
 
 typedef struct {
   uint32_t version;
-  uint32_t engine;
+  rng_engine engine;
   uint64_t state_u64[RNG_STATE_WORDS];
   uint32_t buf_word;
   uint32_t buf_byte;

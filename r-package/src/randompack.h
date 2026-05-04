@@ -1,4 +1,4 @@
-// randompack.h – see the file README.md for help
+// randompack.h – see https://github.com/jonasson2/randompack
 
 #ifndef RANDOMPACK_H
 #define RANDOMPACK_H
@@ -7,9 +7,13 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define RANDOMPACK_VERSION "0.1.2"
+#define RANDOMPACK_VERSION "0.1.6"
 
 typedef struct randompack_rng randompack_rng;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 //================================== CREATION AND SETUP ==================================
 
@@ -440,4 +444,7 @@ bool randompack_skew_normalf( // Generate skew-normal random floats, false on er
   randompack_rng *rng   // in/out  Random number generator
 );
 
+#ifdef __cplusplus
+}
+#endif
 #endif /* RANDOMPACK_H */

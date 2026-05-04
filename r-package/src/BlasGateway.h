@@ -142,7 +142,7 @@ static inline void trsv(char *uplo, char *transa, char *diag, int n, double a[],
 }
 
 static inline int ilaenv(int ispec, char *name, char *opts, int n1, int n2, int n3, int n4) {
-  return ilaenv_(&ispec, name, opts, &n1, &n2, &n3, &n4, strlen(name), 1);
+  return ilaenv_(&ispec, name, opts, &n1, &n2, &n3, &n4, (fstrlen)strlen(name), 1);
 }
 
 static inline double lamch(char *cmach) {

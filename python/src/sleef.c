@@ -12,7 +12,7 @@
 
 #define STATINLINE ALWAYS_INLINE // MinGW crashes on the out-of-line AVX2 vector helper form.
 #define STATINLINECONST ALWAYS_INLINE CONST_ATTR
-#define CONST CONST_ATTR
+#define SLEEF_CONST CONST_ATTR
 #define SLEEF_INF INF_VALUE
 #define SLEEF_INFF INFF_VALUE
 #define SLEEF_NAN NAN_VALUE
@@ -53,12 +53,12 @@ STATINLINE vint vsll_vi_vi_i(vint x, int c) { return _mm_slli_epi32(x, c); }
 STATINLINE vint vsra_vi_vi_i(vint x, int c) { return _mm_srai_epi32(x, c); }
 STATINLINE vdouble vsel_vd_vo_vd_vd(vopmask o, vdouble x, vdouble y) { return _mm256_blendv_pd(y, x, _mm256_castsi256_pd(o)); }
 
-STATINLINE CONST vdouble vpow2i_vd_vi(vint q) {
+STATINLINE SLEEF_CONST vdouble vpow2i_vd_vi(vint q) {
   q = vadd_vi_vi_vi(vcast_vi_i(0x3ff), q);
   vmask r = vcastu_vm_vi(vsll_vi_vi_i(q, 20));
   return vreinterpret_vd_vm(r);
 }
-STATINLINE CONST vdouble vldexp2_vd_vd_vi(vdouble d, vint e) {
+STATINLINE SLEEF_CONST vdouble vldexp2_vd_vd_vi(vdouble d, vint e) {
   return vmul_vd_vd_vd(vmul_vd_vd_vd(d, vpow2i_vd_vi(vsra_vi_vi_i(e, 1))), vpow2i_vd_vi(vsub_vi_vi_vi(e, vsra_vi_vi_i(e, 1))));
 }
 
@@ -111,10 +111,10 @@ STATINLINE vint2 vsub_vi2_vi2_vi2_sp(vint2 x, vint2 y) { return _mm256_sub_epi32
 STATINLINE vint2 vsll_vi2_vi2_i_sp(vint2 x, int c) { return _mm256_slli_epi32(x, c); }
 STATINLINE vint2 vsra_vi2_vi2_i_sp(vint2 x, int c) { return _mm256_srai_epi32(x, c); }
 STATINLINE vfloat vsel_vf_vo_vf_vf_sp(vopmask o, vfloat x, vfloat y) { return _mm256_blendv_ps(y, x, _mm256_castsi256_ps(o)); }
-STATINLINE CONST vfloat vpow2i_vf_vi2_sp(vint2 q) {
+STATINLINE SLEEF_CONST vfloat vpow2i_vf_vi2_sp(vint2 q) {
   return vreinterpret_vf_vi2_sp(vsll_vi2_vi2_i_sp(vadd_vi2_vi2_vi2_sp(q, vcast_vi2_i_sp(0x7f)), 23));
 }
-STATINLINE CONST vfloat vldexp2_vf_vf_vi2_sp(vfloat d, vint2 e) {
+STATINLINE SLEEF_CONST vfloat vldexp2_vf_vf_vi2_sp(vfloat d, vint2 e) {
   return vmul_vf_vf_vf_sp(vmul_vf_vf_vf_sp(d, vpow2i_vf_vi2_sp(vsra_vi2_vi2_i_sp(e, 1))),
   vpow2i_vf_vi2_sp(vsub_vi2_vi2_vi2_sp(e, vsra_vi2_vi2_i_sp(e, 1))));
 }
@@ -167,41 +167,41 @@ STATINLINE vopmask vispinf_vo_vd(vdouble d) {
 STATINLINE vopmask visnan_vo_vd(vdouble d) {
   return vreinterpret_vm_vd(_mm256_cmp_pd(d, d, 0x04));
 }
-STATINLINE CONST vdouble vd2getx_vd_vd2(vdouble2 v) { return v.x; }
-STATINLINE CONST vdouble vd2gety_vd_vd2(vdouble2 v) { return v.y; }
-STATINLINE CONST vdouble2 vd2setxy_vd2_vd_vd(vdouble x, vdouble y) { vdouble2 v; v.x = x; v.y = y; return v; }
-STATINLINE CONST vdouble2 vcast_vd2_d_d(double h, double l) {
+STATINLINE SLEEF_CONST vdouble vd2getx_vd_vd2(vdouble2 v) { return v.x; }
+STATINLINE SLEEF_CONST vdouble vd2gety_vd_vd2(vdouble2 v) { return v.y; }
+STATINLINE SLEEF_CONST vdouble2 vd2setxy_vd2_vd_vd(vdouble x, vdouble y) { vdouble2 v; v.x = x; v.y = y; return v; }
+STATINLINE SLEEF_CONST vdouble2 vcast_vd2_d_d(double h, double l) {
   return vd2setxy_vd2_vd_vd(vcast_vd_d(h), vcast_vd_d(l));
 }
-STATINLINE CONST vdouble vadd_vd_3vd(vdouble v0, vdouble v1, vdouble v2) {
+STATINLINE SLEEF_CONST vdouble vadd_vd_3vd(vdouble v0, vdouble v1, vdouble v2) {
   return vadd_vd_vd_vd(vadd_vd_vd_vd(v0, v1), v2);
 }
 
-STATINLINE CONST vdouble vadd_vd_4vd(vdouble v0, vdouble v1, vdouble v2, vdouble v3) {
+STATINLINE SLEEF_CONST vdouble vadd_vd_4vd(vdouble v0, vdouble v1, vdouble v2, vdouble v3) {
   return vadd_vd_3vd(vadd_vd_vd_vd(v0, v1), v2, v3);
 }
 
-STATINLINE CONST vdouble2 ddscale_vd2_vd2_vd(vdouble2 d, vdouble s) {
+STATINLINE SLEEF_CONST vdouble2 ddscale_vd2_vd2_vd(vdouble2 d, vdouble s) {
   return vd2setxy_vd2_vd_vd(vmul_vd_vd_vd(vd2getx_vd_vd2(d), s), vmul_vd_vd_vd(vd2gety_vd_vd2(d), s));
 }
 
-STATINLINE CONST vdouble2 ddadd2_vd2_vd_vd(vdouble x, vdouble y) {
+STATINLINE SLEEF_CONST vdouble2 ddadd2_vd2_vd_vd(vdouble x, vdouble y) {
   vdouble s = vadd_vd_vd_vd(x, y);
   vdouble v = vsub_vd_vd_vd(s, x);
   return vd2setxy_vd2_vd_vd(s, vadd_vd_vd_vd(vsub_vd_vd_vd(x, vsub_vd_vd_vd(s, v)), vsub_vd_vd_vd(y, v)));
 }
 
-STATINLINE CONST vdouble2 ddadd_vd2_vd2_vd(vdouble2 x, vdouble y) {
+STATINLINE SLEEF_CONST vdouble2 ddadd_vd2_vd2_vd(vdouble2 x, vdouble y) {
   vdouble s = vadd_vd_vd_vd(vd2getx_vd_vd2(x), y);
   return vd2setxy_vd2_vd_vd(s, vadd_vd_3vd(vsub_vd_vd_vd(vd2getx_vd_vd2(x), s), y, vd2gety_vd_vd2(x)));
 }
 
-STATINLINE CONST vdouble2 ddadd_vd2_vd2_vd2(vdouble2 x, vdouble2 y) {
+STATINLINE SLEEF_CONST vdouble2 ddadd_vd2_vd2_vd2(vdouble2 x, vdouble2 y) {
   vdouble s = vadd_vd_vd_vd(vd2getx_vd_vd2(x), vd2getx_vd_vd2(y));
   return vd2setxy_vd2_vd_vd(s, vadd_vd_4vd(vsub_vd_vd_vd(vd2getx_vd_vd2(x), s), vd2getx_vd_vd2(y), vd2gety_vd_vd2(x), vd2gety_vd_vd2(y)));
 }
 
-STATINLINE CONST vdouble2 dddiv_vd2_vd2_vd2(vdouble2 n, vdouble2 d) {
+STATINLINE SLEEF_CONST vdouble2 dddiv_vd2_vd2_vd2(vdouble2 n, vdouble2 d) {
   vdouble t = vrec_vd_vd(vd2getx_vd_vd2(d));
   vdouble s = vmul_vd_vd_vd(vd2getx_vd_vd2(n), t);
   vdouble u = vfmapn_vd_vd_vd_vd(t, vd2getx_vd_vd2(n), s);
@@ -209,12 +209,12 @@ STATINLINE CONST vdouble2 dddiv_vd2_vd2_vd2(vdouble2 n, vdouble2 d) {
   return vd2setxy_vd2_vd_vd(s, vfma_vd_vd_vd_vd(s, v, vfma_vd_vd_vd_vd(vd2gety_vd_vd2(n), t, u)));
 }
 
-STATINLINE CONST vdouble2 ddmul_vd2_vd2_vd(vdouble2 x, vdouble y) {
+STATINLINE SLEEF_CONST vdouble2 ddmul_vd2_vd2_vd(vdouble2 x, vdouble y) {
   vdouble s = vmul_vd_vd_vd(vd2getx_vd_vd2(x), y);
   return vd2setxy_vd2_vd_vd(s, vfma_vd_vd_vd_vd(vd2gety_vd_vd2(x), y, vfmapn_vd_vd_vd_vd(vd2getx_vd_vd2(x), y, s)));
 }
 
-STATINLINE CONST vint vilogb2k_vi_vd(vdouble d) {
+STATINLINE SLEEF_CONST vint vilogb2k_vi_vd(vdouble d) {
   vint q = vcastu_vi_vm(vreinterpret_vm_vd(d));
   q = vsrl_vi_vi_i(q, 20);
   q = vand_vi_vi_vi(q, vcast_vi_i(0x7ff));
@@ -222,7 +222,7 @@ STATINLINE CONST vint vilogb2k_vi_vd(vdouble d) {
   return q;
 }
 
-STATINLINE CONST vdouble vldexp3_vd_vd_vi(vdouble d, vint q) {
+STATINLINE SLEEF_CONST vdouble vldexp3_vd_vd_vi(vdouble d, vint q) {
   return vreinterpret_vd_vm(vadd64_vm_vm_vm(vreinterpret_vm_vd(d),
     vcastu_vm_vi(vsll_vi_vi_i(q, 20))));
 }
@@ -277,36 +277,36 @@ STATINLINE vint2 vsel_vi2_vo_vi2_vi2_sp(vopmask m, vint2 x, vint2 y) {
 }
 STATINLINE vopmask vispinf_vo_vf_sp(vfloat d) { return veq_vo_vf_vf_sp(d, vcast_vf_f_sp(SLEEF_INFF)); }
 STATINLINE vopmask visnan_vo_vf_sp(vfloat d) { return vneq_vo_vf_vf_sp(d, d); }
-STATINLINE CONST vfloat vf2getx_vf_vf2_sp(vfloat2 v) { return v.x; }
-STATINLINE CONST vfloat vf2gety_vf_vf2_sp(vfloat2 v) { return v.y; }
-STATINLINE CONST vfloat2 vf2setxy_vf2_vf_vf_sp(vfloat x, vfloat y) { vfloat2 v; v.x = x; v.y = y; return v; }
-STATINLINE CONST vfloat2 vcast_vf2_f_f_sp(float h, float l) {
+STATINLINE SLEEF_CONST vfloat vf2getx_vf_vf2_sp(vfloat2 v) { return v.x; }
+STATINLINE SLEEF_CONST vfloat vf2gety_vf_vf2_sp(vfloat2 v) { return v.y; }
+STATINLINE SLEEF_CONST vfloat2 vf2setxy_vf2_vf_vf_sp(vfloat x, vfloat y) { vfloat2 v; v.x = x; v.y = y; return v; }
+STATINLINE SLEEF_CONST vfloat2 vcast_vf2_f_f_sp(float h, float l) {
   return vf2setxy_vf2_vf_vf_sp(vcast_vf_f_sp(h), vcast_vf_f_sp(l));
 }
-STATINLINE CONST vfloat vadd_vf_3vf_sp(vfloat v0, vfloat v1, vfloat v2) {
+STATINLINE SLEEF_CONST vfloat vadd_vf_3vf_sp(vfloat v0, vfloat v1, vfloat v2) {
   return vadd_vf_vf_vf_sp(vadd_vf_vf_vf_sp(v0, v1), v2);
 }
-STATINLINE CONST vfloat vadd_vf_4vf_sp(vfloat v0, vfloat v1, vfloat v2, vfloat v3) {
+STATINLINE SLEEF_CONST vfloat vadd_vf_4vf_sp(vfloat v0, vfloat v1, vfloat v2, vfloat v3) {
   return vadd_vf_3vf_sp(vadd_vf_vf_vf_sp(v0, v1), v2, v3);
 }
-STATINLINE CONST vfloat2 dfscale_vf2_vf2_vf_sp(vfloat2 d, vfloat s) {
+STATINLINE SLEEF_CONST vfloat2 dfscale_vf2_vf2_vf_sp(vfloat2 d, vfloat s) {
   return vf2setxy_vf2_vf_vf_sp(vmul_vf_vf_vf_sp(vf2getx_vf_vf2_sp(d), s), vmul_vf_vf_vf_sp(vf2gety_vf_vf2_sp(d), s));
 }
-STATINLINE CONST vfloat2 dfadd2_vf2_vf_vf_sp(vfloat x, vfloat y) {
+STATINLINE SLEEF_CONST vfloat2 dfadd2_vf2_vf_vf_sp(vfloat x, vfloat y) {
   vfloat s = vadd_vf_vf_vf_sp(x, y);
   vfloat v = vsub_vf_vf_vf_sp(s, x);
   return vf2setxy_vf2_vf_vf_sp(s, vadd_vf_vf_vf_sp(vsub_vf_vf_vf_sp(x, vsub_vf_vf_vf_sp(s, v)), vsub_vf_vf_vf_sp(y, v)));
 }
-STATINLINE CONST vfloat2 dfadd_vf2_vf2_vf_sp(vfloat2 x, vfloat y) {
+STATINLINE SLEEF_CONST vfloat2 dfadd_vf2_vf2_vf_sp(vfloat2 x, vfloat y) {
   vfloat s = vadd_vf_vf_vf_sp(vf2getx_vf_vf2_sp(x), y);
   return vf2setxy_vf2_vf_vf_sp(s, vadd_vf_3vf_sp(vsub_vf_vf_vf_sp(vf2getx_vf_vf2_sp(x), s), y, vf2gety_vf_vf2_sp(x)));
 }
-STATINLINE CONST vfloat2 dfadd_vf2_vf2_vf2_sp(vfloat2 x, vfloat2 y) {
+STATINLINE SLEEF_CONST vfloat2 dfadd_vf2_vf2_vf2_sp(vfloat2 x, vfloat2 y) {
   vfloat s = vadd_vf_vf_vf_sp(vf2getx_vf_vf2_sp(x), vf2getx_vf_vf2_sp(y));
   return vf2setxy_vf2_vf_vf_sp(s, vadd_vf_4vf_sp(vsub_vf_vf_vf_sp(vf2getx_vf_vf2_sp(x), s), vf2getx_vf_vf2_sp(y), vf2gety_vf_vf2_sp(x), vf2gety_vf_vf2_sp(y)));
 }
 
-STATINLINE CONST vfloat2 dfdiv_vf2_vf2_vf2_sp(vfloat2 n, vfloat2 d) {
+STATINLINE SLEEF_CONST vfloat2 dfdiv_vf2_vf2_vf2_sp(vfloat2 n, vfloat2 d) {
   vfloat t = vrec_vf_vf_sp(vf2getx_vf_vf2_sp(d));
   vfloat s = vmul_vf_vf_vf_sp(vf2getx_vf_vf2_sp(n), t);
   vfloat u = vfmapn_vf_vf_vf_vf_sp(t, vf2getx_vf_vf2_sp(n), s);
@@ -314,12 +314,12 @@ STATINLINE CONST vfloat2 dfdiv_vf2_vf2_vf2_sp(vfloat2 n, vfloat2 d) {
   return vf2setxy_vf2_vf_vf_sp(s, vfma_vf_vf_vf_vf_sp(s, v, vfma_vf_vf_vf_vf_sp(vf2gety_vf_vf2_sp(n), t, u)));
 }
 
-STATINLINE CONST vfloat2 dfmul_vf2_vf2_vf_sp(vfloat2 x, vfloat y) {
+STATINLINE SLEEF_CONST vfloat2 dfmul_vf2_vf2_vf_sp(vfloat2 x, vfloat y) {
   vfloat s = vmul_vf_vf_vf_sp(vf2getx_vf_vf2_sp(x), y);
   return vf2setxy_vf2_vf_vf_sp(s, vfma_vf_vf_vf_vf_sp(vf2gety_vf_vf2_sp(x), y, vfmapn_vf_vf_vf_vf_sp(vf2getx_vf_vf2_sp(x), y, s)));
 }
 
-STATINLINE CONST vint2 vilogb2k_vi2_vf_sp(vfloat d) {
+STATINLINE SLEEF_CONST vint2 vilogb2k_vi2_vf_sp(vfloat d) {
   vint2 q = vreinterpret_vi2_vf_sp(d);
   q = vsrl_vi2_vi2_i_sp(q, 23);
   q = vand_vi2_vi2_vi2_sp(q, vcast_vi2_i_sp(0xff));
@@ -327,7 +327,7 @@ STATINLINE CONST vint2 vilogb2k_vi2_vf_sp(vfloat d) {
   return q;
 }
 
-STATINLINE CONST vfloat vldexp3_vf_vf_vi2_sp(vfloat d, vint2 q) {
+STATINLINE SLEEF_CONST vfloat vldexp3_vf_vf_vi2_sp(vfloat d, vint2 q) {
   return vreinterpret_vf_vi2_sp(vadd_vi2_vi2_vi2_sp(vreinterpret_vi2_vf_sp(d), vsll_vi2_vi2_i_sp(q, 23)));
 }
 

@@ -28,7 +28,12 @@ ALWAYS_INLINE double norm_decode(uint64_t r, uint8_t idx, uint64_t *ki,
   *rabs = (r >> 9) & 0x000fffffffffffff;
   *sign = ((r >> 8) & 1) != 0;
   int64_t s = (int64_t)*rabs;
+#if defined(_MSC_VER) && !defined(__clang__)
+  int64_t m = -(int64_t)*sign;
+  s = (s ^ m) - m;
+#else
   if (*sign) s = -s;
+#endif
   return (double)s * wi_double[idx];
 }
 
@@ -54,11 +59,12 @@ NEVER_INLINE double norm_tail_draw(randompack_rng *rng, bool sign, double y, int
 NEVER_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x, uint8_t idx,
   uint64_t rabs, uint64_t ki, bool sign) {
   uint64_t ru, tmp, L, R, Y, YL;
+  double u = 0;
   const int inflection_idx = 52;
   for (;;) {
     Y = draw_u64(rng, w);
     if (UNLIKELY(idx == 0)) {
-      double u = U64_TO_DOUBLE(Y);
+      u = U64_TO_DOUBLE(Y);
       x = norm_tail_draw(rng, sign, u, w);
       return x;
     }
@@ -80,7 +86,7 @@ NEVER_INLINE double norm_unlikely(randompack_rng *rng, int *w, double x, uint8_t
       if (YL > R + Dzig52) goto next_try;
       if (YL + Dnorm[idx] < R) return x;
     } // blk-end
-    double u = U64_TO_DOUBLE(Y);
+    u = U64_TO_DOUBLE(Y);
     if (below_normpdf(idx, x, u)) return x;
   next_try:
     ru = draw_u64(rng, w);
@@ -116,6 +122,7 @@ NEVER_INLINE void rand_norm(double *buf, size_t len, randompack_rng *rng) {
     memcpy(&r, bufpi, sizeof(r));
     idx = r & 0xff;
     x = norm_decode(r, idx, &ki, &rabs, &sign);
+    buf[i] = x;
     buf[i] = LIKELY(rabs < ki) ? x : norm_unlikely(rng, &w, x, idx, rabs, ki, sign);
   }
   exit_u64_mode(rng, w);

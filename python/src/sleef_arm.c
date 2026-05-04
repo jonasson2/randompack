@@ -8,7 +8,11 @@
 #include <arm_neon.h>
 #include <stdint.h>
 
-#define INLINE __attribute__((always_inline))
+#if defined(__NVCOMPILER)
+  #define INLINE inline
+#else
+  #define INLINE inline __attribute__((always_inline))
+#endif
 #define CONST __attribute__((const))
 
 typedef uint32x4_t vmask;

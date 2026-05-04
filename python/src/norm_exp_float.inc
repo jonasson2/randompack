@@ -13,7 +13,12 @@ ALWAYS_INLINE float norm_decode(uint32_t r, uint8_t idx, uint32_t *ki,
   *rabs = r >> 9;
   *sign = ((r >> 8) & 1) != 0;
   int32_t s = (int32_t)*rabs;
+#if defined(_MSC_VER) && !defined(__clang__)
+  int32_t m = -(int32_t)*sign;
+  s = (s ^ m) - m;
+#else
   if (*sign) s = -s;
+#endif
   return (float)s * wi_float[idx];
 }
 
@@ -57,17 +62,18 @@ NEVER_INLINE float avx512_unlikely(randompack_rng *rng, int *w, float x,
 NEVER_INLINE float normf_unlikely(randompack_rng *rng, int *w, float x,
   uint8_t idx, uint32_t rabs, uint32_t ki, bool sign) {
   uint32_t ru, tmp, L, R, Y, YL;
+  float u = 0;
   const int inflection_idx = 52;
   for (;;) {
     Y = draw_u32(rng, w);
     if (UNLIKELY(idx == 0)) {
-		float u = U32_TO_FLOAT(Y);
+      u = U32_TO_FLOAT(Y);
       x = norm_tail_draw_f(rng, sign, u, w);
       return x;
     }
     if (!rng->cpu_has_avx512) {
-		L = (1U << 23) - ki;
-		R = (1U << 23) - rabs;
+      L = (1U << 23) - ki;
+      R = (1U << 23) - rabs;
       MUL32_WIDE(Y, L, YL, tmp);
       (void)tmp;
       if (LIKELY(idx > inflection_idx)) {
@@ -83,7 +89,7 @@ NEVER_INLINE float normf_unlikely(randompack_rng *rng, int *w, float x,
         if (YL + Dnormf[idx] < R) return x;
       }
     }
-	 float u = U32_TO_FLOAT(Y);
+    u = U32_TO_FLOAT(Y);
     if (below_normpdf_f(idx, x, u)) return x;
   next_try:
     ru = draw_u32(rng, w);

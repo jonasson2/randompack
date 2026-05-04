@@ -29,14 +29,9 @@ ALWAYS_INLINE void gen_gamma_shape1f(float *x, size_t len, float shape,
           x[i] = dscale*v3;
           break;
         }
-        if (!rng->bitexact) {
-          logu = logf(u);
-          logv3 = logf(v3);
-        }
-        else {
-          logu = openlibm_logf(u);
-          logv3 = openlibm_logf(v3);
-        }
+        // Use fixed logs here because this test controls RNG consumption.
+        logu = openlibm_logf(u);
+        logv3 = openlibm_logf(v3);
         if (logu < 0.5f*z2 + d*(1.0f - v3 + logv3)) {
           x[i] = dscale*v3;
           break;
@@ -77,13 +72,13 @@ ALWAYS_INLINE void gen_betaf(float *x, size_t len, float a, float b,
   float gb[64];
   size_t i = 0;
   while (i < len) {
-    int n = mini(64, len - i);
+    int n = mini(64, (int)(len - i));
     gen_gammaf(gb, n, b, 1.0f, rng);
     float hi = 1.0f - FLT_EPSILON; // restrict draws to (0, 1):
     for (int j = 0; j < n; j++) {
-      float a = x[i + j];
-      float b = gb[j];
-      float y = a / (a + b);
+      float ga = x[i + j];
+      float gbj = gb[j];
+      float y = ga / (ga + gbj);
       if (y < FLT_MIN) y = FLT_MIN;
       if (y > hi) y = hi;
       x[i + j] = y;
@@ -97,7 +92,7 @@ ALWAYS_INLINE void gen_tf(float *x, size_t len, float nu, randompack_rng *rng) {
   rand_normf(x, len, rng);
   size_t i = 0;
   while (i < len) {
-    int n = mini(64, len - i);
+    int n = mini(64, (int)(len - i));
     gen_gammaf(u, n, 0.5f*nu, 2.0f, rng);
     for (int j = 0; j < n; j++)
       x[i + j] /= sqrtf(u[j]/nu);
@@ -111,7 +106,7 @@ ALWAYS_INLINE void gen_ff(float *x, size_t len, float nu1, float nu2,
   gen_gammaf(x, len, nu1/2.0f, 1.0f, rng);
   size_t i = 0;
   while (i < len) {
-    int n = mini(64, len - i);
+    int n = mini(64, (int)(len - i));
     gen_gammaf(x2, n, nu2/2.0f, 1.0f, rng);
     for (int j = 0; j < n; j++)
       x[i + j] = (x[i + j]*nu2)/(x2[j]*nu1);
@@ -169,7 +164,7 @@ ALWAYS_INLINE void gen_skew_normalf(float *x, size_t len, float mu,
   size_t i = 0;
   float u[64];
   while (i < len) {
-    int n = mini(64, len - i);
+    int n = mini(64, (int)(len - i));
     rand_normf(u, n, rng);
     for (int j = 0; j < n; j++) {
       float v = delta*fabsf(u[j]) + scale*x[i + j];

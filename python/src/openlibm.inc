@@ -107,7 +107,7 @@ ALWAYS_INLINE double openlibm_log(double x)
   if (hx < 0x00100000) {			/* x < 2**-1022  */
     if (((hx&0x7fffffff)|lx)==0) 
 		return -two54/zero;		/* log(+-0)=-inf */
-    if (hx<0) return (x-x)/zero;	/* log(-#) = NaN */
+    if (hx<0) return NAN;	/* log(-#) = NaN */
     k -= 54; x *= two54; /* subnormal number, scale up x */
     GET_HIGH_WORD(hx,x);
   } 
@@ -313,7 +313,7 @@ ALWAYS_INLINE float openlibm_logf(float x)
   if (ix < 0x00800000) {			/* x < 2**-126  */
     if ((ix&0x7fffffff)==0)
 		return -two25_f/zero_f;		/* log(+-0)=-inf */
-    if (ix<0) return (x-x)/zero_f;	/* log(-#) = NaN */
+    if (ix<0) return NAN;	/* log(-#) = NaN */
     k -= 25; x *= two25_f; /* subnormal number, scale up x */
     GET_FLOAT_WORD(ix,x);
   }
@@ -471,15 +471,15 @@ ALWAYS_INLINE float openlibm_expf(float x)
     if(x < u_threshold_f) return twom100_f*twom100_f; /* underflow */
   }
   /* argument reduction */
-  if(hx > 0x3eb17218) {		/* if  |x| > 0.5 ln2 */
-    if(hx < 0x3F851592) {	/* and |x| < 1.5 ln2 */
-		hi = x-ln2HI_f[xsb]; lo=ln2LO_f[xsb]; k = 1-xsb-xsb;
-    } else {
-		k  = invln2_f*x+halF_f[xsb];
-		t  = k;
-		hi = x - t*ln2HI_f[0];	/* t*ln2HI is exact here */
-		lo = t*ln2LO_f[0];
-    }
+	if(hx > 0x3eb17218) {		/* if  |x| > 0.5 ln2 */
+	  if(hx < 0x3F851592) {	/* and |x| < 1.5 ln2 */
+			hi = x-ln2HI_f[xsb]; lo=ln2LO_f[xsb]; k = 1-xsb-xsb;
+	  } else {
+			k  = (int32_t)(invln2_f*x+halF_f[xsb]);
+			t  = (float)k;
+			hi = x - t*ln2HI_f[0];	/* t*ln2HI is exact here */
+			lo = t*ln2LO_f[0];
+	  }
     x = hi - lo;
   }
   else if(hx < 0x39000000)  {	/* when |x|<2**-14 */
