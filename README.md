@@ -40,7 +40,7 @@ role of each parameter.
 ## Interfaces in the GitHub Repository
 
 Interfaces for C, Fortran, R, Python, and Julia have been written; see
-`LANGUAGE_INTERFACES.md` in the project GitHub repository for details. For further
+`INTERFACES.md` in the project GitHub repository for details. For further
 development of Randompack, see `DEVELOPMENT.md`, also in the GitHub repository.
 
 ## Distributions
@@ -259,7 +259,7 @@ option.
 
 There are also timing programs for other random-generation libraries but many 
 of these are tied to the language interface benchmarks. They are described in
-LANGUAGE_INTERFACES.md in the GitHub repository.
+INTERFACES.md in the GitHub repository.
 
 ## External statistical validation
 
