@@ -10,7 +10,7 @@ Randompack_jll = "5c24137f-ff18-52c9-a23f-97a498cab286"
 [compat]
 julia = "1.9"
 Distributions = "0.25"
-Randompack_jll = "0.1"
+Randompack_jll = "0.1.6"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
