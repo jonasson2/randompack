@@ -20,7 +20,7 @@ option('build_tests',
 
 option('build_fortran_interface',
   type: 'boolean',
-  value: false,
+  value: true,
   description: 'Build the Fortran interface'
 )
 
