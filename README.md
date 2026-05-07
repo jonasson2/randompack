@@ -37,11 +37,20 @@ The public header file `randompack.h` serves as a compact reference for the C
 API: all user-facing functions are declared there, with comments describing the
 role of each parameter.
 
-## Interfaces in the GitHub Repository
+## More information
 
-Interfaces for C, Fortran, R, Python, and Julia have been written; see
-`INTERFACES.md` in the project GitHub repository for details. For further
-development of Randompack, see `DEVELOPMENT.md`, also in the GitHub repository.
+### Scientific publication
+
+A manuscript about Randompack has been submitted to ACM Transactions on Mathematical
+Software (TOMS). The manuscript is also available on arXiv: Kristján Jónasson (2026),
+"Randompack: Cross-Platform Reproducible Random Number Generation and Distribution
+Sampling", arXiv:2605.05099.
+
+### Interfaces in the GitHub Repository
+
+Interfaces for C, Fortran, R, Python, and Julia have been written; see `INTERFACES.md` in
+the project GitHub repository for details. For further development of Randompack, see
+`DEVELOPMENT.md`, also in the GitHub repository.
 
 ## Distributions
 
