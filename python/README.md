@@ -114,3 +114,11 @@ rng = randompack.Rng("philox", bitexact=True)  # bitexact with specified engine
 rng = randompack.Rng(full_mantissa=True)       # enable full 53-bit mantissa
                                                # (52-bit is default)
 ```
+
+### Extension interop
+
+Companion Python extensions can call `rng.__randompack_capsule__()` to obtain a
+borrowed `PyCapsule` containing the underlying `randompack_rng *`. The capsule
+name is `randompack.RNG_CAPSULE_NAME`, currently `"randompack.randompack_rng"`.
+Ownership remains with the `Rng` object, so the caller must keep `rng` alive
+while using the pointer.

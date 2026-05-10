@@ -1,6 +1,6 @@
 name = "Randompack"
 uuid = "253386b1-9842-41af-b678-bbe31787c5e9"
-version = "0.1.6"
+version = "0.1.7"
 
 [deps]
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"

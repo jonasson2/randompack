@@ -12,3 +12,9 @@ option('conda',
   value: false,
   description: 'Use pkg-config BLAS/LAPACK from conda'
 )
+
+option('external_randompack',
+  type: 'boolean',
+  value: false,
+  description: 'Build Python extension against an installed randompack library'
+)

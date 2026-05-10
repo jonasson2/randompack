@@ -7,6 +7,10 @@
 #include "randompack.h"
 
 /* ---------- external pointer finalizer ---------- */
+static SEXP rng_tag(void){
+  return Rf_install("randompack_rng");
+}
+
 static void rng_finalizer(SEXP ext){
   randompack_rng *rng = (randompack_rng *)R_ExternalPtrAddr(ext);
   if (rng){
@@ -65,7 +69,7 @@ SEXP randompack_create_R(SEXP engine, SEXP bitexact_) {
       Rf_error("%s", msg);
     }
   }
-  SEXP ext = R_MakeExternalPtr(rng, R_NilValue, R_NilValue);
+  SEXP ext = R_MakeExternalPtr(rng, rng_tag(), R_NilValue);
   R_RegisterCFinalizerEx(ext, rng_finalizer, TRUE);
   return ext;
 }
@@ -131,7 +135,7 @@ SEXP randompack_duplicate_R(SEXP ext){
   char *err = randompack_last_error(out);
   if (err && err[0])
     Rf_error("%s", err);
-  SEXP ext_out = R_MakeExternalPtr(out, R_NilValue, R_NilValue);
+  SEXP ext_out = R_MakeExternalPtr(out, rng_tag(), R_NilValue);
   R_RegisterCFinalizerEx(ext_out, rng_finalizer, TRUE);
   return ext_out;
 }

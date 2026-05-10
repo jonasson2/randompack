@@ -16,7 +16,7 @@
 # only needed if pyproject.toml, package layout, or Python version changes.
 
 project('randompack', 'c',
-  version: '0.1.5',
+  version: '0.1.7',
   default_options: ['c_std=c11']
 )
 
@@ -42,6 +42,16 @@ core_sources = files(
 )
 
 deps = [py_dep]
+external_randompack = get_option('external_randompack')
+
+if external_randompack
+  deps += [dependency('randompack', method: 'pkg-config', required: true)]
+  core_sources = []
+  extra_sources = []
+  extra_objs = []
+  core_c_args = []
+  message('Using external randompack library from pkg-config')
+else
 
 host_system = host_machine.system()
 build_avx2 = false
@@ -238,6 +248,8 @@ if build_avx512
     install: false,
   )
   extra_objs += [avx512_lib.extract_all_objects(recursive: false)]
+endif
+
 endif
 
 py.extension_module(

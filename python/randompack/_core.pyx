@@ -7,12 +7,14 @@ from libc.stdint cimport uint8_t, uint32_t, uint64_t
 
 from cpython.bytearray cimport PyByteArray_AsString
 from cpython.bytes cimport PyBytes_AS_STRING, PyBytes_GET_SIZE
+from cpython.pycapsule cimport PyCapsule_New
 
 U32_MAX = (1 << 32) - 1
 U64_MAX = (1 << 64) - 1
 U128_MAX = (1 << 128) - 1
 DTYPE_F32 = np.dtype(np.float32)
 DTYPE_F64 = np.dtype(np.float64)
+RNG_CAPSULE_NAME = "randompack.randompack_rng"
 
 from ._core cimport (
     randompack_rng, randompack_create,
@@ -181,6 +183,19 @@ cdef class Rng:
         if self.ptr != NULL:
             randompack_free(self.ptr)
             self.ptr = NULL
+
+    def __randompack_capsule__(self):
+        """
+        Return a borrowed-pointer capsule for companion extension modules.
+
+        The returned PyCapsule is named ``randompack.randompack_rng`` and
+        contains the underlying ``randompack_rng *``. Ownership remains with
+        this ``Rng`` object, so callers must keep it alive while using the
+        capsule pointer.
+        """
+        if self.ptr == NULL:
+            raise RuntimeError("RNG pointer is NULL")
+        return PyCapsule_New(<void *>self.ptr, b"randompack.randompack_rng", NULL)
 
     def seed(self, seed, spawn_key=None):
         """

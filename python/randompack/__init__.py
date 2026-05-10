@@ -25,5 +25,5 @@ try:
 except PackageNotFoundError:
   __version__ = None
 
-from ._core import Rng, engines
-__all__ = ["Rng", "engines"]
+from ._core import RNG_CAPSULE_NAME, Rng, engines
+__all__ = ["RNG_CAPSULE_NAME", "Rng", "engines"]
