@@ -7,7 +7,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define RANDOMPACK_VERSION "0.1.6"
+#define RANDOMPACK_VERSION "0.1.7"
 
 typedef struct randompack_rng randompack_rng;
 
