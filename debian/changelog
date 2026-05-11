@@ -1,5 +1,5 @@
 randompack (0.1.7-1) unstable; urgency=medium
 
-  * Initial Debian packaging.
+  * Initial Debian packaging. Closes: #1136321
 
  -- Kristjan Jonasson <jonasson@hi.is>  Fri, 01 May 2026 12:00:00 +0000
