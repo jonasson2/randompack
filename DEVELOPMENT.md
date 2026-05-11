@@ -275,9 +275,9 @@ DEBIAN:
      - /home/jonasson/randompack-debian-clean
   2. if needed, regenerate the upstream tarball from origin/main:
 
-     rm -f ../randompack_0.1.7.orig.tar.xz
-     git archive --format=tar --prefix=randompack-0.1.7/ origin/main | \
-       xz -T0 > ../randompack_0.1.7.orig.tar.xz
+     rm -f ../randompack_0.1.5.orig.tar.xz
+     git archive --format=tar --prefix=randompack-0.1.5/ origin/main | \
+       xz -T0 > ../randompack_0.1.5.orig.tar.xz
   3. build binary package:
 
      DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -us -uc -b
@@ -286,4 +286,4 @@ DEBIAN:
      dpkg-buildpackage -S -us -uc
   5. lint source upload:
 
-     lintian --profile debian ../randompack_0.1.7-1_source.changes
+     lintian --profile debian ../randompack_0.1.5-1_source.changes
