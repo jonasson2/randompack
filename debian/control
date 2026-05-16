@@ -2,6 +2,8 @@ Source: randompack
 Section: libs
 Priority: optional
 Maintainer: Kristjan Jonasson <jonasson@hi.is>
+Vcs-Browser: https://github.com/jonasson2/randompack/tree/debian/latest
+Vcs-Git: https://github.com/jonasson2/randompack.git -b debian/latest
 Rules-Requires-Root: no
 Build-Depends:
  debhelper-compat (= 13),
@@ -11,7 +13,7 @@ Build-Depends:
  pkgconf,
  gfortran,
  libopenblas-dev
-Standards-Version: 4.6.2
+Standards-Version: 4.7.3
 Homepage: https://github.com/jonasson2/randompack
 
 Package: librandompack0

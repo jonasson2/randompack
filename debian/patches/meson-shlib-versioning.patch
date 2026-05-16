@@ -1,5 +1,7 @@
 Description: add Debian-friendly shared library versioning in Meson
  Author: Kristjan Jonasson <jonasson@hi.is>
+Forwarded: not-needed
+Last-Update: 2026-05-16
 
 --- a/src/meson.build
 +++ b/src/meson.build

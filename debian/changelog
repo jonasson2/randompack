@@ -1,3 +1,14 @@
+randompack (0.1.7-2) unstable; urgency=medium
+
+  * Refresh Debian packaging metadata:
+    - add Vcs fields and debian/watch
+    - add upstream metadata
+    - correct copyright and license information
+    - mark the Meson patch as not forwarded upstream
+  * Closes: #1136321
+
+ -- Kristjan Jonasson <jonasson@hi.is>  Fri, 16 May 2026 21:50:00 +0000
+
 randompack (0.1.7-1) unstable; urgency=medium
 
   * Initial Debian packaging. Closes: #1136321

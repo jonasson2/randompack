@@ -1,23 +1,144 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: randompack
+Upstream-Contact: Kristjan Jonasson <jonasson@hi.is>
 Source: https://github.com/jonasson2/randompack
 
 Files: *
 Copyright: 2024-2026 Kristjan Jonasson
-License: Apache-2.0
+License: Expat
 
-License: Apache-2.0
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
+Files: src/xoshiro256pp.inc src/xoshiro256ss.inc
+Copyright: 2018-2021 David Blackman, Sebastiano Vigna
+License: public-domain
+
+Files: src/norm_exp.inc src/norm_exp_float.inc
+Copyright: 2005-2026 NumPy Developers
+License: BSD-3-clause
+
+Files: src/philox4x64.inc
+Copyright: 2010-2011 D. E. Shaw Research
+License: BSD-3-clause
+
+Files: src/pcg64_dxsm.inc
+Copyright: 2014 Melissa E. O'Neill
+License: Expat
+
+Files: src/chacha-portable.inc src/chacha-portable.h
+Copyright: 2008 D. J. Bernstein
+License: CC0-1.0
+
+Files: src/seed_seq_fe128.inc tests/randutils.hpp
+Copyright: 2014 Melissa E. O'Neill
+License: Expat
+
+Files: src/sleef.c src/sleef_arm.c src/sleef_avx512.c
+Copyright: 2010-2024 Naoki Shibata and contributors
+License: BSL-1.0
+
+Files: common/getopt.c common/getopt.h
+Copyright:
+ 1987, 1993, 1994 The Regents of the University of California
+ 1994 Henry Spencer
+ 1997 Christos Zoulas
+ 2005 Marc Espie
+License: BSD-3-clause
+
+Files: tests/test_util.c
+Copyright: Public domain
+License: public-domain
+
+Files: src/rp_dpstrf.c
+Copyright: 1992-2013 The University of Tennessee and The University of Tennessee Research Foundation
+           1992-2013 The University of California Berkeley
+           1992-2013 The University of Colorado Denver
+License: BSD-3-clause
+
+License: Expat
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
  .
-     http://www.apache.org/licenses/LICENSE-2.0
+ The above copyright notice and this permission notice shall be included in all
+ copies or substantial portions of the Software.
  .
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ SOFTWARE.
  .
- On Debian systems, the full text of the Apache-2.0 license can be found in
- /usr/share/common-licenses/Apache-2.0.
+ On Debian systems, the full text of the Expat license can be found in
+ /usr/share/common-licenses/Expat.
+
+License: BSD-3-clause
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are met:
+ .
+ 1. Redistributions of source code must retain the above copyright notice,
+    this list of conditions and the following disclaimer.
+ 2. Redistributions in binary form must reproduce the above copyright notice,
+    this list of conditions and the following disclaimer in the documentation
+    and/or other materials provided with the distribution.
+ 3. Neither the name of the copyright holder nor the names of its contributors
+    may be used to endorse or promote products derived from this software
+    without specific prior written permission.
+ .
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ .
+ On Debian systems, the full text of the BSD-3-clause license can be found in
+ /usr/share/common-licenses/BSD-3-clause.
+
+License: BSL-1.0
+ Permission is hereby granted, free of charge, to any person or organization
+ obtaining a copy of the software and accompanying documentation covered by
+ this license (the "Software") to use, reproduce, display, distribute,
+ execute, and transmit the Software, and to prepare derivative works of the
+ Software, and to permit third-parties to whom the Software is furnished to do
+ so, all subject to the following:
+ .
+ The copyright notices in the Software and this entire statement, including
+ the above license grant, this restriction and the following disclaimer, must
+ be included in all copies of the Software, in whole or in part, and all
+ derivative works of the Software, unless such copies or derivative works are
+ solely in the form of machine-executable object code generated by a source
+ language processor.
+ .
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE, TITLE AND NON-INFRINGEMENT. IN NO EVENT
+ SHALL THE COPYRIGHT HOLDERS OR ANYONE DISTRIBUTING THE SOFTWARE BE LIABLE
+ FOR ANY DAMAGES OR OTHER LIABILITY, WHETHER IN CONTRACT, TORT OR OTHERWISE,
+ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ DEALINGS IN THE SOFTWARE.
+ .
+ On Debian systems, the full text of the Boost Software License 1.0 can be
+ found in /usr/share/common-licenses/BSL-1.0.
+
+License: CC0-1.0
+ The person who associated a work with this deed has dedicated the work to the
+ public domain by waiving all of his or her rights to the work worldwide under
+ copyright law, including all related and neighboring rights, to the extent
+ allowed by law.
+ .
+ You can copy, modify, distribute and perform the work, even for commercial
+ purposes, all without asking permission.
+ .
+ On Debian systems, the full text of the CC0-1.0 license can be found in
+ /usr/share/common-licenses/CC0-1.0.
+
+License: public-domain
+ This file is in the public domain.
