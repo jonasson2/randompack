@@ -24,10 +24,6 @@ release = data["project"]["version"]
 
 # -- General configuration ---------------------------------------------------
 
-import os
-import sys
-from pathlib import Path
-
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
@@ -38,7 +34,6 @@ extensions = [
 
 autosummary_generate = True
 numpydoc_show_class_members = False
-autosummary_generate = True
 autosummary_imported_members = True
 add_module_names = False
 autodoc_typehints = "none"
@@ -59,10 +54,3 @@ html_css_files = ["custom.css"]
 
 pygments_style = "default"
 pygments_dark_style = "monokai"
-
-
-print("SPHINX srcdir:", os.getcwd())
-print("templates_path:", templates_path)
-print("abs templates:", [os.path.abspath(p) for p in templates_path])
-print("method template exists:",
-      os.path.exists(os.path.join(os.path.abspath(templates_path[0]), "autosummary", "method.rst")))

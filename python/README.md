@@ -17,11 +17,11 @@ xoshiro256++ delivers high throughput for bulk generation, typically providing
 3–6 times faster performance than NumPy for uniform, normal, and exponential
 draws.
 
-For more information, including implementation details, benchmarking results,
-and documentation of engines and distributions, see the main project readme file
-at https://github.com/jonasson2/randompack. The same page also links to
-DEVELOPMENT.md, which contains setup and development instructions, including
-details specific to the Python interface.
+For Python API documentation, see https://randompack.readthedocs.io/. For more
+information, including implementation details and benchmarking results, see the
+main project readme file at https://github.com/jonasson2/randompack. The same
+page also links to DEVELOPMENT.md, which contains setup and development
+instructions, including details specific to the Python interface.
 
 ## Cross platform consistency
 

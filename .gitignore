@@ -8,6 +8,7 @@
 *.Rcheck
 .Rlib
 .R*
+!.readthedocs.yaml
 r-package/docs/
 .Rproj.user
 r-package/README.html

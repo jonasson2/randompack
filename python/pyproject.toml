@@ -10,6 +10,12 @@ requires-python = ">=3.9"
 dependencies = ["numpy>=1.22"]
 readme = { file = "README.md", content-type = "text/markdown" }
 
+[project.urls]
+Homepage = "https://github.com/jonasson2/randompack"
+Documentation = "https://randompack.readthedocs.io/"
+Repository = "https://github.com/jonasson2/randompack"
+Issues = "https://github.com/jonasson2/randompack/issues"
+
 [tool.cibuildwheel]
 skip = "*t-*"
 test-requires = ["numpy"]

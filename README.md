@@ -1,5 +1,7 @@
 # Randompack [https://github.com/jonasson2/randompack]
 
+Documentation: https://randompack.readthedocs.io/
+
 ## Introduction
 
 Randompack is a library for random number generation written in C. It is

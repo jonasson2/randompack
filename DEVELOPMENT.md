@@ -228,6 +228,7 @@ TABLE OF CONTENTS
     Upload to PyPI:
     python -m twine upload dist/*   # real upload
     pip install randompack          # try it out
+    open https://randompack.readthedocs.io/  # verify docs show this version
 
     More wheel commands:
     gh workflow list
