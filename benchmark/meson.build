@@ -76,30 +76,53 @@ if build_cpp
 endif
 
 mkl_bench_dep = disabler()
-mkl_header_found = false
 mkl_bench_found = false
-mkl_root = '/opt/intel/oneapi/mkl/latest'
-mkl_inc_dir = join_paths(mkl_root, 'include')
-mkl_lib_dirs = [join_paths(mkl_root, 'lib', 'intel64'), join_paths(mkl_root, 'lib')]
-mkl_header_found = cc.has_header('mkl.h', args : ['-I' + mkl_inc_dir])
-if mkl_header_found
-  mkl_bench_dep = cc.find_library('mkl_rt', dirs : mkl_lib_dirs, required : false)
-  mkl_bench_found = mkl_bench_dep.found()
+mkl_include_args = []
+mkl_root_candidates = []
+mkl_root_env = run_command('sh', '-c', 'printf %s "$MKLROOT"', check : true).stdout().strip()
+if mkl_root_env != ''
+  mkl_root_candidates += [mkl_root_env]
+endif
+mkl_root_candidates += ['/opt/intel/oneapi/mkl/latest']
+
+foreach mkl_root : mkl_root_candidates
+  mkl_inc_dir = join_paths(mkl_root, 'include')
+  if cc.has_header('mkl.h', args : ['-I' + mkl_inc_dir])
+    mkl_lib_dirs = [join_paths(mkl_root, 'lib', 'intel64'), join_paths(mkl_root, 'lib')]
+    mkl_bench_dep = cc.find_library('mkl_rt', dirs : mkl_lib_dirs, required : false)
+    if mkl_bench_dep.found()
+      mkl_include_args = ['-I' + mkl_inc_dir]
+      mkl_bench_found = true
+      message('Using MKL benchmark library from ' + mkl_root)
+      break
+    endif
+  endif
+endforeach
+
+if not mkl_bench_found
+  foreach mkl_pkg : ['mkl-dynamic-lp64-iomp', 'mkl-dynamic-lp64-gomp', 'mkl-dynamic-lp64-seq', 'mkl-sdl']
+    mkl_bench_dep = dependency(mkl_pkg, required : false)
+    if mkl_bench_dep.found()
+      mkl_bench_found = true
+      message('Using MKL benchmark dependency via pkg-config: ' + mkl_pkg)
+      break
+    endif
+  endforeach
 endif
 
-if mkl_header_found and mkl_bench_found
+if mkl_bench_found
   time_dist_mkl = executable(
     'TimeDistMKL',
     'TimeDistMKL.c',
     dependencies : [randompack_dep, mkl_bench_dep],
-    c_args : ['-I' + mkl_inc_dir],
+    c_args : mkl_include_args,
   )
 
   time_int_mkl = executable(
     'TimeIntMKL',
     'TimeIntMKL.c',
     dependencies : [randompack_dep, mkl_bench_dep],
-    c_args : ['-I' + mkl_inc_dir],
+    c_args : mkl_include_args,
   )
 else
   message('Skipping TimeDistMKL and TimeIntMKL benchmarks (MKL headers or libraries not found)')
