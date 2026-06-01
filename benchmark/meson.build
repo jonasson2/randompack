@@ -62,16 +62,19 @@ time_integers = executable(
 )
 
 if build_cpp
+  benchmark_cpp_fast_args = cpp.get_supported_arguments(['-U_GLIBCXX_ASSERTIONS'])
   time_dist_cpp = executable(
     'TimeDistCpp',
     'TimeDistCpp.cpp',
     dependencies : [randompack_dep],
+    cpp_args : benchmark_cpp_fast_args,
   )
 
   time_int_cpp = executable(
     'TimeIntCpp',
     'TimeIntCpp.cpp',
     dependencies : [randompack_dep],
+    cpp_args : benchmark_cpp_fast_args,
   )
 endif
 
