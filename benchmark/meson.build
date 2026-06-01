@@ -79,33 +79,34 @@ mkl_bench_dep = disabler()
 mkl_bench_found = false
 mkl_include_args = []
 mkl_root_candidates = []
+
+foreach mkl_pkg : ['mkl-dynamic-lp64-seq', 'mkl-dynamic-lp64-gomp', 'mkl-dynamic-lp64-iomp', 'mkl-sdl']
+  mkl_bench_dep = dependency(mkl_pkg, required : false)
+  if mkl_bench_dep.found()
+    mkl_bench_found = true
+    message('Using MKL benchmark dependency via pkg-config: ' + mkl_pkg)
+    break
+  endif
+endforeach
+
 mkl_root_env = run_command('sh', '-c', 'printf %s "$MKLROOT"', check : true).stdout().strip()
 if mkl_root_env != ''
   mkl_root_candidates += [mkl_root_env]
 endif
 mkl_root_candidates += ['/opt/intel/oneapi/mkl/latest']
 
-foreach mkl_root : mkl_root_candidates
-  mkl_inc_dir = join_paths(mkl_root, 'include')
-  if cc.has_header('mkl.h', args : ['-I' + mkl_inc_dir])
-    mkl_lib_dirs = [join_paths(mkl_root, 'lib', 'intel64'), join_paths(mkl_root, 'lib')]
-    mkl_bench_dep = cc.find_library('mkl_rt', dirs : mkl_lib_dirs, required : false)
-    if mkl_bench_dep.found()
-      mkl_include_args = ['-I' + mkl_inc_dir]
-      mkl_bench_found = true
-      message('Using MKL benchmark library from ' + mkl_root)
-      break
-    endif
-  endif
-endforeach
-
 if not mkl_bench_found
-  foreach mkl_pkg : ['mkl-dynamic-lp64-iomp', 'mkl-dynamic-lp64-gomp', 'mkl-dynamic-lp64-seq', 'mkl-sdl']
-    mkl_bench_dep = dependency(mkl_pkg, required : false)
-    if mkl_bench_dep.found()
-      mkl_bench_found = true
-      message('Using MKL benchmark dependency via pkg-config: ' + mkl_pkg)
-      break
+  foreach mkl_root : mkl_root_candidates
+    mkl_inc_dir = join_paths(mkl_root, 'include')
+    if cc.has_header('mkl.h', args : ['-I' + mkl_inc_dir])
+      mkl_lib_dirs = [join_paths(mkl_root, 'lib', 'intel64'), join_paths(mkl_root, 'lib')]
+      mkl_bench_dep = cc.find_library('mkl_rt', dirs : mkl_lib_dirs, required : false)
+      if mkl_bench_dep.found()
+        mkl_include_args = ['-I' + mkl_inc_dir]
+        mkl_bench_found = true
+        message('Using MKL benchmark library from ' + mkl_root)
+        break
+      endif
     endif
   endforeach
 endif
