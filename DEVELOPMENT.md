@@ -83,6 +83,28 @@ TABLE OF CONTENTS
     >>> import randompack
     will automatically rebuild the module after changes to C/Cython sources.
 
+### Python RNG capsule interoperability
+
+    Companion Python extensions can accept a `randompack.Rng` object and use it
+    as the random number generator for C-level computations. This is how, for
+    example, a simulation package can let users seed one Randompack generator
+    and pass it into another package's Python API.
+
+    The interoperability hook is the private method:
+
+        rng.__randompack_capsule__()
+
+    It returns a borrowed PyCapsule containing the underlying `randompack_rng *`.
+    The capsule name used internally is:
+
+        randompack.randompack_rng
+
+    A consuming Cython extension should call `PyCapsule_GetPointer` with that
+    name and cast the result to `randompack_rng *`. Ownership remains with the
+    Python `Rng` object, so the consuming package must not free the pointer and
+    must keep the `Rng` object alive while using it. If no user RNG is supplied,
+    the consuming package should create and free its own temporary C RNG.
+
 ## R-LIBRARY
 ### Build:
     cd <project-root>                  # enter project root

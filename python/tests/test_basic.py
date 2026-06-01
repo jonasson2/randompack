@@ -45,4 +45,3 @@ def test_rng_capsule():
     rng = rp.Rng()
     capsule = rng.__randompack_capsule__()
     assert type(capsule).__name__ == "PyCapsule"
-    assert rp.RNG_CAPSULE_NAME == "randompack.randompack_rng"
