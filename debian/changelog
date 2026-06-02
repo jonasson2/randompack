@@ -1,3 +1,16 @@
+randompack (0.1.7-3) unstable; urgency=medium
+
+  * Fix debian/watch to match upstream GitHub tag archives.
+  * Remove redundant binary package Section field.
+  * Remove deprecated BSD common-license reference from debian/copyright.
+  * Document lintian overrides for generated Cython output and unsigned
+    upstream tarballs.
+  * Document that language-specific upstream examples are not installed in the
+    C library packages.
+  * Closes: #1136321
+
+ -- Kristjan Jonasson <jonasson@hi.is>  Tue, 02 Jun 2026 20:30:00 +0000
+
 randompack (0.1.7-2) unstable; urgency=medium
 
   * Refresh Debian packaging metadata:
