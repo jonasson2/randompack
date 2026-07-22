@@ -14,7 +14,10 @@ name = "randompack"
 version = "0.1.8"
 license = { file = "LICENSE" }
 requires-python = ">=3.9"
-dependencies = ["numpy>=1.22"]
+dependencies = [
+  "numpy>=1.22,<2.3; python_version == '3.13' and platform_machine == 'aarch64'",
+  "numpy>=1.22; python_version != '3.13' or platform_machine != 'aarch64'",
+]
 readme = { file = "README.md", content-type = "text/markdown" }
 
 [project.urls]
