@@ -5,13 +5,11 @@ build:
   tools:
     python: "3.12"
   apt_packages:
-    - gfortran
+    - libopenblas-dev
+  jobs:
+    pre_install:
+      - python -m pip install -r python/docs/requirements.txt
+      - python -m pip install ./python -Csetup-args=-Dblas=openblas
 
 sphinx:
   configuration: python/docs/conf.py
-
-python:
-  install:
-    - requirements: python/docs/requirements.txt
-    - method: pip
-      path: python
