@@ -231,6 +231,10 @@ TABLE OF CONTENTS
     Comment on the new commit on github: @JuliaRegistrator register
 
 ## PYTHON PIPY
+    Create release-tool environment:
+    python3 -m venv /tmp/randompack-release-tools
+    /tmp/randompack-release-tools/bin/python -m pip install -U pip build twine
+
     Create wheels:
     Bump version with set_version.sh
     commit, push, and tag randompack
@@ -240,12 +244,13 @@ TABLE OF CONTENTS
     gh run delete <RUN-ID>             # delete run
     .                                  # wait for the actions to complete successfully
     cd python/
-    python -m build -s                 # build sdist in dist/
+    /tmp/randompack-release-tools/bin/python -m build -s  # build sdist in dist/
     cd ..
     scripts/wheel-download.sh          # download wheels from GH Actions into python/dist/
 
     Upload to TestPyPI:
-    python -m twine upload --repository testpypi dist/*     # verify on TestPyPI
+    /tmp/randompack-release-tools/bin/python -m twine upload --repository testpypi dist/*
+    .                                                       # verify on TestPyPI
     python -m venv /tmp/rp-test                             # - using a fresh venv
     source /tmp/rp-test/bin/activate                        # 
     pip install \                                           # try out the new TestPyPI version 
@@ -256,7 +261,7 @@ TABLE OF CONTENTS
     deactivate                                              # exit the venv
 
     Upload to PyPI:
-    python -m twine upload dist/*   # real upload
+    /tmp/randompack-release-tools/bin/python -m twine upload dist/*  # real upload
     pip install randompack          # try it out
     open https://randompack.readthedocs.io/  # verify docs show this version
 

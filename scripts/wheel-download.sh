@@ -8,7 +8,7 @@ pwd
 
 # Clean the wheelhouse and dist:
 rm -rf wheelhouse/*
-rm dist/*.whl
+rm -f dist/*.whl
 
 # Get run id-s of successful wheel-builds:
 ids=$(gh run list --status success --json databaseId --jq '.[].databaseId')
