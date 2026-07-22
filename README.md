@@ -1,7 +1,5 @@
 # Randompack [https://github.com/jonasson2/randompack]
 
-Documentation: https://randompack.readthedocs.io/
-
 ## Introduction
 
 Randompack is a library for random number generation written in C. It is
@@ -50,9 +48,11 @@ Sampling"](https://arxiv.org/abs/2605.05099), arXiv:2605.05099.
 
 ### Interfaces in the GitHub Repository
 
-Interfaces for C, Fortran, R, Python, and Julia have been written; see `INTERFACES.md` in
+Interfaces for C, Fortran, R, Python, and Julia have been written; see
+[`INTERFACES.md`](https://github.com/jonasson2/randompack/blob/main/INTERFACES.md) in
 the project GitHub repository for details. For further development of Randompack, see
-`DEVELOPMENT.md`, also in the GitHub repository.
+[`DEVELOPMENT.md`](https://github.com/jonasson2/randompack/blob/main/DEVELOPMENT.md),
+also in the GitHub repository.
 
 ## Distributions
 
@@ -89,20 +89,21 @@ and squares64 are counter-based generators, while the remaining engines are
 state-based. When selecting an engine the names are case-insensitive. In the
 following table W denotes the number of 64-bit state words.
 
-- ENGINE      W  DESCRIPTION
-- x256++simd  4  xorshift256++, SIMD accelerated
-- sfc64simd   4  sfc64, SIMD accelerated
-- x256++      4  xoshiro256++ (Vigna and Blackman, 2018)
-- x256**      4  xoshiro256** (Vigna and Blackman, 2018)
-- x128+       2  xorshift128+ (Vigna, 2014)
-- xoro++      2  xoroshiro128++ (Vigna and Blackman, 2016)
-- pcg64       4  PCG64 DXSM (O’Neill, 2014)
-- sfc64       4  sfc64 (Chris Doty-Humphrey, 2010)
-- squares     2  squares64 (Widynski, 2021)
-- philox      6  Philox-4×64 (Salmon and Moraes, 2011)
-- cwg128      5  cwg128 (Działa, 2022)
-- ranlux++    9  ranlux++ (Sibidanov, 2017)
-- chacha20    6  ChaCha20 (Bernstein, 2008)
+| Engine      | W || Description |
+| :--- |:---:| --- | :---                                     |
+| `x256++simd`| 4 || xorshift256++, SIMD accelerated          |
+| `sfc64simd` | 4 || sfc64, SIMD accelerated                  |
+| `x256++`    | 4 || xoshiro256++ (Vigna and Blackman, 2018)  |
+| `x256**`    | 4 || xoshiro256** (Vigna and Blackman, 2018)  |
+| `x128+`     | 2 || xorshift128+ (Vigna, 2014)               |
+| `xoro++`    | 2 || xoroshiro128++ (Vigna and Blackman, 2016)|
+| `pcg64`     | 4 || PCG64 DXSM (O’Neill, 2014)               |
+| `sfc64`     | 4 || sfc64 (Chris Doty-Humphrey, 2010)        |
+| `squares`   | 2 || squares64 (Widynski, 2021)               |
+| `philox`    | 6 || Philox-4×64 (Salmon and Moraes, 2011)    |
+| `cwg128`    | 5 || cwg128 (Działa, 2022)                    |
+| `ranlux++`  | 9 || ranlux++ (Sibidanov, 2017)               |
+| `chacha20`  | 6 || ChaCha20 (Bernstein, 2008)               |
 
 ## Support functions
 
@@ -367,8 +368,44 @@ folder.
       return 0;
     }
 ```
-### State control
-```
+### State control and serialization
+```c
+    #include <stdio.h>
+    #include <stdlib.h>
+    #include <stdint.h>
+    #include <randompack/randompack.h>
+
+    int main(void) {
+      randompack_rng *rngq = randompack_create("pcg64");
+      randompack_rng *rngr = randompack_create("ranlux++");
+      randompack_rng *rngx = randompack_create("x256**");
+      randompack_rng *rngy = randompack_create("x256**");
+      randompack_rng *rng = randompack_create(0);
+      uint64_t inc[2] = {3, 5};
+      uint64_t delta[2] = {1ULL << 16, 0};
+      uint64_t state[4] = {1, 2, 3, 4};
+      uint8_t *buf;
+      int len = 0;
+      randompack_pcg64_set_inc(inc, rngq);
+      randompack_advance(delta, rngq);
+      randompack_jump(16, rngq);
+      randompack_jump(32, rngr);
+      randompack_jump(128, rngx);
+      randompack_set_state(state, 4, rngx);
+      randompack_serialize(0, &len, rngx);
+      buf = malloc(sizeof(buf[0])*len);
+      randompack_serialize(buf, &len, rngx);
+      randompack_deserialize(buf, len, rngy);
+      randompack_bitexact(rng, true);
+      randompack_full_mantissa(rng, true);
+      free(buf);
+      randompack_free(rng);
+      randompack_free(rngy);
+      randompack_free(rngx);
+      randompack_free(rngr);
+      randompack_free(rngq);
+      return 0;
+    }
 ```
 
 ### Example with full error checking
