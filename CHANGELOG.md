@@ -1,8 +1,27 @@
 # Changelog
 
+## [Unreleased]
+
+- Improve C README rendering and examples.
+- Add Python, Julia, and R examples for threaded/substream usage.
+- Fix unbound Python `Rng` method calls to raise `TypeError` instead of crashing.
+- Add a Fortran intrinsic timing benchmark.
+- Update Python development setup notes.
+
+## [0.1.7] - 2026-05-11
+
+Availability: tagged on GitHub; submitted to conda-forge.
+
+Note: this entry was added after the 0.1.7 tag and summarizes the release
+retroactively.
+
+- Add Python RNG capsule interoperability for companion extension modules.
+- Expose the public C version as `0.1.7`.
+- Update conda-forge staged-recipes submission to the 0.1.7 release.
+
 ## [0.1.6] - 2026-05-04
 
-Availability: in preparation.
+Availability: tagged on GitHub.
 
 - Fix `randompack_mvn` for singular positive semidefinite covariance matrices.
 - Fix `randompack_mvn` mean handling for `transpose='T'` with padded leading
@@ -13,7 +32,7 @@ Availability: in preparation.
 
 ## [0.1.5] - 2026-04-26
 
-Availability: in preparation.
+Availability: tagged on GitHub.
 
 - Speed up normal draws on Windows.
 - Fix Windows compiler warnings and portability issues for MSVC, clang, and icx.
