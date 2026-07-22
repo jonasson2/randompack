@@ -45,3 +45,14 @@ def test_rng_capsule():
     rng = rp.Rng()
     capsule = rng.__randompack_capsule__()
     assert type(capsule).__name__ == "PyCapsule"
+
+
+def test_duplicate_is_public_rng_instance():
+    rng = rp.Rng()
+    dup = rng.duplicate()
+    assert isinstance(dup, rp.Rng)
+
+
+def test_unbound_rng_method_rejected():
+    with pytest.raises(TypeError, match=r"randompack\.Rng\(\)\.normal"):
+        rp.Rng.normal(1000)

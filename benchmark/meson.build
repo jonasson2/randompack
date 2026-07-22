@@ -141,4 +141,12 @@ if build_fortran_interface
     dependencies : [randompack_fortran_dep],
     link_args : darwin_link_args,
   )
+
+  time_dist_gfortran = executable(
+    'TimeDistGfortran',
+    'TimeDistGfortran.f90',
+    link_language: 'fortran',
+    dependencies : [randompack_fortran_dep],
+    link_args : darwin_link_args,
+  )
 endif

@@ -25,5 +25,40 @@ try:
 except PackageNotFoundError:
   __version__ = None
 
-from ._core import Rng, engines
+from functools import wraps
+
+from ._core import Rng as _CoreRng, engines
+
+_CYTHON_METHOD = type(_CoreRng.seed)
+_RNG_METHODS = frozenset(
+  name for name, value in _CoreRng.__dict__.items()
+  if isinstance(value, _CYTHON_METHOD)
+)
+
+
+def _unbound_method(name, method):
+  @wraps(method)
+  def wrapper(*args, **kwargs):
+    raise TypeError(
+      f"Rng.{name} requires an instance; use randompack.Rng().{name}(...)"
+    )
+  return wrapper
+
+
+class _RngType(type):
+  def __getattribute__(cls, name):
+    value = super().__getattribute__(name)
+    if name in _RNG_METHODS:
+      return _unbound_method(name, value)
+    return value
+
+  def __instancecheck__(cls, value):
+    return isinstance(value, _CoreRng)
+
+
+class Rng(_CoreRng, metaclass=_RngType):
+  __doc__ = _CoreRng.__doc__
+  __module__ = __name__
+
+
 __all__ = ["Rng", "engines"]

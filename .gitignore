@@ -14,6 +14,9 @@ r-package/docs/
 r-package/README.html
 
 # PYTHON
+.venv/
+venv/
+python/uv.lock
 build/
 dist/
 __pycache__/

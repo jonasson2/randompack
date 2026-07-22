@@ -60,31 +60,35 @@ TABLE OF CONTENTS
     (3) or run Julia with julia +1.13
 
 ## PYTHON
-    To simplify setup, the Python instructions below assume a conda environment.
-
-### First time setup:
+### First time setup with conda
     cd <project-root>
     conda create -n randompack-dev python
     conda activate randompack-dev
     conda install meson meson-python ninja cython pytest numpy
-    scripts/syncpy.sh
-    cd python
-    = optionally use clang: "CC=clang pip install -e . --no-build-isolation"
-    = optionally specify Python version: "conda create -n randompack-dev python=3.12"
-    to change the setup remove python/build/cp312
+    pip install -e python --no-build-isolation
 
-    AFTER CHANGE TO C LIBRARY
+### First time setup with uv
     cd <project-root>
-    scripts/syncpy.sh
-    restart python
+    uv venv
+    source .venv/bin/activate
+    uv pip install meson-python meson ninja cython pytest numpy
+    uv pip install -e python --no-build-isolation
 
-    USE:
-    (with Python running in the same environment)
-    >>> import randompack
+### Build with clang:
+    CC=clang pip install -e python --no-build-isolation
+    or:
+    CC=clang uv pip install -e python --no-build-isolation
+
+### After change to C library:
+    cd <project-root>
+    source .venv/bin/activate (not needed with conda)
+    scripts/syncpy.sh
+    restart python (keeping the same environment)
+    Then
+       >>> import randompack
     will automatically rebuild the module after changes to C/Cython sources.
 
 ### Python RNG capsule interoperability
-
     Companion Python extensions can accept a `randompack.Rng` object and use it
     as the random number generator for C-level computations. This is how, for
     example, a simulation package can let users seed one Randompack generator
@@ -124,9 +128,10 @@ TABLE OF CONTENTS
     release/tests/RunTests -h          # show help for test runner
     release/tests/RunFortranTests      # Run only the Fortran tests
 
-    cd python
-    pytest -q                          # quiet testing of the Python Randompack
-    pytest                             # verbose testing
+    cd <project-root>
+    source .venv/bin/activate          # or activate the conda environment
+    python -m pytest -q python/tests   # quiet testing of the Python Randompack
+    python -m pytest python/tests      # verbose testing
 
     cd <project-root>
     R CMD build r-package              # build library in randompack_<version>.tar.gz 
