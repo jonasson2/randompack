@@ -1,12 +1,15 @@
 # Changelog
 
-## [Unreleased]
+## [0.1.8] - 2026-07-22
+
+Availability: in preparation.
 
 - Improve C README rendering and examples.
 - Add Python, Julia, and R examples for threaded/substream usage.
 - Fix unbound Python `Rng` method calls to raise `TypeError` instead of crashing.
 - Add a Fortran intrinsic timing benchmark.
 - Update Python development setup notes.
+- Fix README typos.
 
 ## [0.1.7] - 2026-05-11
 

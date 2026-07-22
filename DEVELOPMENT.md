@@ -30,7 +30,8 @@ TABLE OF CONTENTS
     release/examples/RunRandom  # simple example program
 
 ## ALL SUBPROJECTS
-    scripts/set_version.sh      # sets version number across all the language interfaces
+    scripts/set_version.sh      # sets version number across language interfaces
+    = does not update packaging/build_tarballs.jl; do that manually for Yggdrasil
     build-all.sh                # rebuilds all language interfaces
 
 ## JULIA
@@ -201,7 +202,8 @@ TABLE OF CONTENTS
     Yggdrasil (Julia):
     scripts/make-julia-tarball.sh       # create .tar.gz file with C library in archives/
     cd archives                         # clone of github.com/jonasson2/randompack-src
-    – update package/build_tarballs.jl  # change version number (2x) and sha (from script)
+    – update packaging/build_tarballs.jl # version and GitSource commit for this release
+                                         # set_version.sh does not update this file
     git commit -am "Release x.y.z"      #
     git push                            # 
     git tag vx.y.z                      # (can also use local tarball from build_tarball.jl
@@ -239,7 +241,8 @@ TABLE OF CONTENTS
     .                                  # wait for the actions to complete successfully
     cd python/
     python -m build -s                 # build sdist in dist/
-    scripts/wheel-download.sh          # download wheels from GH Actions into dist/
+    cd ..
+    scripts/wheel-download.sh          # download wheels from GH Actions into python/dist/
 
     Upload to TestPyPI:
     python -m twine upload --repository testpypi dist/*     # verify on TestPyPI

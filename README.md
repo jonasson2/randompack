@@ -46,7 +46,7 @@ Software (TOMS). The manuscript is also available on arXiv: Kristján Jónasson 
 ["Randompack: Cross-Platform Reproducible Random Number Generation and Distribution
 Sampling"](https://arxiv.org/abs/2605.05099), arXiv:2605.05099.
 
-### Interfaces in the GitHub Repository
+### Interfaces in the GitHub repository
 
 Interfaces for C, Fortran, R, Python, and Julia have been written; see
 [`INTERFACES.md`](https://github.com/jonasson2/randompack/blob/main/INTERFACES.md) in
@@ -161,7 +161,7 @@ tests described in the next section.
 
 ## SIMD support
 
-The two SIMD (single-intstruction multiple-data) accelerated engines use the
+The two SIMD (single-instruction multiple-data) accelerated engines use the
 SIMD instruction sets of modern CPUs, AVX2, AVX-512 and NEON, to speed up
 execution. Eight independent RNG streams are advanced in parallel. On NEON (e.g.
 Apple M-series) processors vector instructions provide two lanes, and each lane
@@ -198,8 +198,8 @@ flags, for example:
 
 ### Installing from conda-forge
 
-Randompack is also available on conda-forge. To install the library and headers
-into the current conda environment use:
+Randompack is also intended to become available on conda-forge. To install the
+library and headers into the current conda environment (once available) use:
 ```sh
     conda install -c conda-forge randompacklib
 ```

@@ -103,7 +103,7 @@ rngz$squares_set_key(c(4, 0))             # change squares key
 rngx$set_state(c(1, 2, 3, 4))             # general state setter                    
 
 state <- rngx$serialize()                 # copy engine state of rngx
-rngy$deserialize(state)                   # and put in rngy (engines much match)
+rngy$deserialize(state)                   # and put in rngy (engines must match)
 
 rng <- randompack_rng(bitexact=TRUE)     # make agreement across platforms exact
 rng <- randompack_rng('philox', bitexact=TRUE) # bitexact with specified engine
