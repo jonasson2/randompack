@@ -14,20 +14,20 @@ TABLE OF CONTENTS
 
 ## C-LIBRARY
 ### Meson setup:
-    scripts/meson-setup.sh release                     # optimized (default buildtype)
+    scripts/meson-setup.sh build                       # optimized (default buildtype)
     scripts/meson-setup.sh debug --buildtype=debug     # debug-enabled
     CC=<C-compiler> scripts/meson-setup.sh <builddir>  # optional compiler override
     = these set library "prefix" to install/
     = an existing builddir is removed first
 
 ### Build:
-    ninja -C release
+    ninja -C build
     ninja -C debug
 
 ### Install:
-    ninja -C release install    # used for Julia and Fortran
+    ninja -C build install      # used for Julia and Fortran
                                 # (copies library to ./install)
-    release/examples/RunRandom  # simple example program
+    build/examples/RunRandom    # simple example program
 
 ## ALL SUBPROJECTS
     scripts/set_version.sh      # sets version number across language interfaces
@@ -43,7 +43,7 @@ TABLE OF CONTENTS
     julia> ] instantiate       # install project dependencies (once per Julia version) (1)
 
 ### After change to C library:
-    Make sure to run "ninja -C release install" and restart Julia
+    Make sure to run "ninja -C build install" and restart Julia
 
 ### Use:
     export JULIA_PROJECT=.     # needed in a new shell (2)
@@ -124,10 +124,10 @@ TABLE OF CONTENTS
     > library(randompack)              # load into session
 
 ## NORMAL TESTING
-    meson test -C release              # run meson defined tests for C and Fortran
-    release/tests/RunTests -v          # run C tests in verbose mode
-    release/tests/RunTests -h          # show help for test runner
-    release/tests/RunFortranTests      # Run only the Fortran tests
+    meson test -C build                # run meson defined tests for C and Fortran
+    build/tests/RunTests -v            # run C tests in verbose mode
+    build/tests/RunTests -h            # show help for test runner
+    build/tests/RunFortranTests        # Run only the Fortran tests
 
     cd <project-root>
     source .venv/bin/activate          # or activate the conda environment
@@ -148,7 +148,7 @@ TABLE OF CONTENTS
     julia test/runtests.jl             # run the Julia tests
 
 ## BENCHMARKING
-    cd <project-root>/release/examples # enter build folder
+    cd <project-root>/build/examples   # enter build folder
     TimeDistributions                  # benchmark distributions with C randompack
     TimeDistFortran                    # = distributions with Fortran randompack
     TimeEngines                        # = engines with C bitstream samples
@@ -160,7 +160,7 @@ TABLE OF CONTENTS
     julia Randompack.jl/examples/TimeDist.jl    # compare Julia randompack with the built-in
     python python/examples/TimeDist.py          # compare Python-randompack with numpy.random
 
-    release/benchmark/TimeDistributions -h     # display short help
+    build/benchmark/TimeDistributions -h       # display short help
     .                                           # the other benchmark programs also accept -h
 
 ## EXTRA TESTING
@@ -175,9 +175,9 @@ TABLE OF CONTENTS
     ./configure --prefix=<prefix>                           # E.g. $HOME/lib
     make -j                                                 #
     make install                                            #
-    meson setup -C release -Dbuildtype=release \            #
+    meson setup -C build -Dbuildtype=release \              #
         -DTestU01=<prefix>                                  # or edit meson_config.txt
-    cd release/examples                                     #
+    cd build/examples                                       #
     TestU01Driver -h                                        # help
     TestU01Driver -c                                        # Crush (minutes)
     TestU01Driver -b                                        # BigCrush (hours)
@@ -190,8 +190,8 @@ TABLE OF CONTENTS
     Download from https://sourceforge.net/projects/pracrand/files
     unzip and enter PractRand folder
     g++ -O3 -std=c++11 -pthread -Iinclude src/*.cpp src/RNGs/*.cpp src/RNGs/other/*.cpp 
-      tools/RNG_test.cpp -o ../../release/examples/RNG_test
-    cd <project-root>/release/examples
+      tools/RNG_test.cpp -o ../../build/examples/RNG_test
+    cd <project-root>/build/examples
 
     RawStream | Rng_test stdin64           # default engine, runs "forever"
     RawStream -e x128+ | Rng_test stdin64  # x128+ fails fast

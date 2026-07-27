@@ -7,7 +7,7 @@ cd "$REPO_ROOT"
 
 remote_host=
 remote_folder=randompack
-builddir=release
+builddir=build
 cmp_build=
 seed=123
 ndraws=1e8
@@ -34,7 +34,7 @@ Options (defaults in brackets):
   -h                Show this help message
   -r REMOTE_HOST    Remote host to run the same test on [none]
   -f REMOTE_FOLDER  Remote repo folder [randompack]
-  -b BUILD          Local build folder [release]
+  -b BUILD          Local build folder [build]
   -c BUILD          Comparison build folder [same as -b]
   -s SEED           Seed [123]
   -n NDRAWS         Number of draws [1e8]

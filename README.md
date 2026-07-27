@@ -289,6 +289,9 @@ To run the former, install it and add its install location to
 Additional C example programs are provided in the repository's `examples/`
 folder.
 
+For readability, the short examples below omit error checking; a later example
+shows usage with error checking.
+
 ### Minimal example: N(0,1), automatically randomized rng, default engine
 ```c
     #include <stdio.h>

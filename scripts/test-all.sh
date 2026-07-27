@@ -7,7 +7,7 @@ cd "$REPO_ROOT"
 # Run all normal tests (per DEVELOPMENT.md)
 
 echo RUNNING C AND FORTRAN TESTS
-meson test -C release
+meson test -C build
 #scripts/run-test-variants.sh
 
 echo RUNNING PYTHON TESTS

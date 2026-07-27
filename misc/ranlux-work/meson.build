@@ -19,7 +19,7 @@ endif
 
 fs = import('fs')
 randompack_root = meson.project_source_root() / '../..'
-randompack_prefix = join_paths(randompack_root, 'release')
+randompack_prefix = join_paths(randompack_root, 'build')
 randompack_incdir = join_paths(randompack_root, 'src')
 randompack_libdir = join_paths(randompack_prefix, 'src')
 randompack_libname = host_machine.system() == 'darwin' ? 'librandompack.dylib' : 'librandompack.so'

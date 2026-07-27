@@ -3,7 +3,7 @@
 //
 // Example build on Linux with clang (after sourcing oneAPI setvars.sh):
 //   clang -O3 -std=c11 -I../src -I${MKLROOT}/include TimeDistMKL.c \
-//     -L../release/src -lrandompack -Wl,-rpath,../release/src \
+//     -L../build/src -lrandompack -Wl,-rpath,../build/src \
 //     -Wl,--start-group \
 //     ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a \
 //     ${MKLROOT}/lib/intel64/libmkl_sequential.a \

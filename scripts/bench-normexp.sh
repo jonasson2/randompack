@@ -2,7 +2,7 @@
 set -e
 
 root_dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-release_dir="$root_dir/release"
+baseline_dir="$root_dir/build"
 modified_dir="$root_dir/modified"
 
 get_build_option()
@@ -41,10 +41,10 @@ ensure_build_dir()
   fi
 }
 
-ensure_build_dir "$release_dir"
+ensure_build_dir "$baseline_dir"
 ensure_build_dir "$modified_dir"
 
-ninja -C "$release_dir" benchmark/TimeNormExp
+ninja -C "$baseline_dir" benchmark/TimeNormExp
 ninja -C "$modified_dir" benchmark/TimeNormExp
 
 printf "\n=== modified ===\n"
@@ -52,7 +52,7 @@ modified_out=$("$modified_dir/benchmark/TimeNormExp" "$@")
 printf "%s\n" "$modified_out"
 
 printf "\n=== release ===\n"
-release_out=$("$release_dir/benchmark/TimeNormExp" "$@")
+release_out=$("$baseline_dir/benchmark/TimeNormExp" "$@")
 printf "%s\n" "$release_out"
 
 modified_norm=$(printf "%s\n" "$modified_out" | awk '/^norm / {print $2}')

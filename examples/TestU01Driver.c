@@ -2,16 +2,16 @@
 //
 // To build, install TestU01 in <prefix> and build randompack with:
 //
-//    meson setup -C release -Dbuildtype=release -DTestU01_prefix=<prefix>
-//    meson compile -C release
+//    meson setup -C build -Dbuildtype=release -DTestU01_prefix=<prefix>
+//    meson compile -C build
 //
 // Then get help with:
 //
-//    release/examples/TestU01Driver -h
+//    build/examples/TestU01Driver -h
 //
 // and run, for example for Small Crush:
 //
-//    release/examples/TestU01Driver -S
+//    build/examples/TestU01Driver -S
 
 #include <stdio.h>
 #include <stdint.h>

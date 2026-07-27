@@ -3,7 +3,7 @@
 //
 // Example build:
 //   c++ -O3 -std=c++17 -I../src TimeDistCpp.cpp
-//   -L../release/src -lrandompack -Wl,-rpath,../release/src -o TimeDistCpp
+//   -L../build/src -lrandompack -Wl,-rpath,../build/src -o TimeDistCpp
 
 #include <cmath>
 #include <cstdint>
