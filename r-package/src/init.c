@@ -3,6 +3,7 @@
 #include <R.h>
 #include <Rinternals.h>
 #include <R_ext/Rdynload.h>
+#include "randompack.h"
 
 // .Call entry points
 SEXP randompack_create_R(SEXP engine, SEXP bitexact);
@@ -41,6 +42,7 @@ SEXP randompack_serialize_R(SEXP ptr);
 SEXP randompack_deserialize_R(SEXP ptr, SEXP raw);
 SEXP randompack_engines_R(void);
 SEXP randompack_free_R(SEXP ptr);
+randompack_rng *randompack_rng_from_R(SEXP ext);
 
 static const R_CallMethodDef CallEntries[] = {
   {"randompack_create_R",      (DL_FUNC)&randompack_create_R,      2},
@@ -84,5 +86,14 @@ static const R_CallMethodDef CallEntries[] = {
 
 void R_init_randompack(DllInfo *dll){
   R_registerRoutines(dll, 0, CallEntries, 0, 0);
+  R_RegisterCCallable("randompack", "randompack_create", (DL_FUNC)&randompack_create);
+  R_RegisterCCallable("randompack", "randompack_free", (DL_FUNC)&randompack_free);
+  R_RegisterCCallable("randompack", "randompack_last_error",
+                     (DL_FUNC)&randompack_last_error);
+  R_RegisterCCallable("randompack", "randompack_mvn", (DL_FUNC)&randompack_mvn);
+  R_RegisterCCallable("randompack", "randompack_seed", (DL_FUNC)&randompack_seed);
+  R_RegisterCCallable("randompack", "randompack_u01", (DL_FUNC)&randompack_u01);
+  R_RegisterCCallable("randompack", "randompack_rng_from_R",
+                     (DL_FUNC)&randompack_rng_from_R);
   R_useDynamicSymbols(dll, FALSE);
 }

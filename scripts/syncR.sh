@@ -32,3 +32,7 @@ rsync -av --delete \
 
 # COPY LICENSE FILE
 cp -f LICENSE r-package/inst/THIRD-PARTY-NOTICES
+
+# COPY PUBLIC C HEADERS FOR COMPANION R PACKAGES
+mkdir -p r-package/inst/include
+cp -f src/randompack.h r-package/inst/include/

@@ -11,6 +11,11 @@ static SEXP rng_tag(void){
   return Rf_install("randompack_rng");
 }
 
+randompack_rng *randompack_rng_from_R(SEXP ext) {
+  if (TYPEOF(ext) != EXTPTRSXP || R_ExternalPtrTag(ext) != rng_tag()) return 0;
+  return R_ExternalPtrAddr(ext);
+}
+
 static void rng_finalizer(SEXP ext){
   randompack_rng *rng = (randompack_rng *)R_ExternalPtrAddr(ext);
   if (rng){
