@@ -13,7 +13,7 @@ build-backend = "mesonpy"
 name = "randompack"
 version = "0.1.9"
 license = { file = "LICENSE" }
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
   "numpy>=1.22,<2.3; python_version == '3.13' and platform_machine == 'aarch64'",
   "numpy>=1.22; python_version != '3.13' or platform_machine != 'aarch64'",

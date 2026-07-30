@@ -1,7 +1,10 @@
+import ctypes
+
 import numpy as np
 import pytest
 
 import randompack as rp
+import randompack._core as rp_core
 
 
 def pick_engine():
@@ -45,6 +48,28 @@ def test_rng_capsule():
     rng = rp.Rng()
     capsule = rng.__randompack_capsule__()
     assert type(capsule).__name__ == "PyCapsule"
+
+
+def test_c_api_capsule():
+    class ApiPrefix(ctypes.Structure):
+        _fields_ = [
+            ("abi_version", ctypes.c_uint32),
+            ("struct_size", ctypes.c_size_t),
+        ]
+
+    capsule = rp_core._C_API
+    capsule_name = b"randompack._core._C_API"
+    get_name = ctypes.pythonapi.PyCapsule_GetName
+    get_name.argtypes = [ctypes.py_object]
+    get_name.restype = ctypes.c_char_p
+    get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
+    get_pointer.argtypes = [ctypes.py_object, ctypes.c_char_p]
+    get_pointer.restype = ctypes.c_void_p
+    assert type(capsule).__name__ == "PyCapsule"
+    assert get_name(capsule) == capsule_name
+    prefix = ApiPrefix.from_address(get_pointer(capsule, capsule_name))
+    assert prefix.abi_version == 1
+    assert prefix.struct_size >= ctypes.sizeof(ApiPrefix)
 
 
 def test_duplicate_is_public_rng_instance():

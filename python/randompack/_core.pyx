@@ -16,6 +16,11 @@ DTYPE_F32 = np.dtype(np.float32)
 DTYPE_F64 = np.dtype(np.float64)
 RNG_CAPSULE_NAME = "randompack.randompack_rng"
 
+cdef extern from "randompack_python_api_internal.h":
+    ctypedef struct randompack_python_api
+    const char *RANDOMPACK_PYTHON_API_CAPSULE
+    randompack_python_api *randompack_python_api_table()
+
 from ._core cimport (
     randompack_rng, randompack_create,
     randompack_duplicate, randompack_free,
@@ -50,6 +55,9 @@ from ._core cimport (
     randompack_set_state, )
 
 np.import_array()
+
+_C_API = PyCapsule_New(<void *>randompack_python_api_table(),
+                       RANDOMPACK_PYTHON_API_CAPSULE, NULL)
 
 cdef inline void _raise_last_error(randompack_rng *rng):
     cdef char *msg = randompack_last_error(rng)

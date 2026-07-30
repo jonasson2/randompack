@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.9] - 2026-07-30
+
+- Add a versioned Python C API capsule for companion extension modules.
+- Ship the C API function-table declaration in Python wheels.
+- Build Linux ARM64 wheels for all supported Python versions.
+- Require Python 3.10 or later.
+- Make clean Python release builds exclude local environments and old wheels.
+
 ## [0.1.8] - 2026-07-22
 
 Availability: in preparation.

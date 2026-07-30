@@ -26,7 +26,8 @@ py_dep = py.dependency()
 
 numpy_inc = run_command(py, ['-c', 'import numpy; print(numpy.get_include())'],
   check: true).stdout().strip()
-inc = include_directories('src', numpy_inc)
+inc = include_directories('src', 'randompack', 'randompack/include')
+numpy_dep = declare_dependency(compile_args: ['-I' + numpy_inc])
 
 cython = find_program('cython', required: true)
 wrap_sources = [custom_target(
@@ -40,8 +41,9 @@ core_sources = files(
   'src/randompack_float.c',
   'src/pcg_advance.c',
 )
+python_api_sources = files('randompack/randompack_python_api.c')
 
-deps = [py_dep]
+deps = [py_dep, numpy_dep]
 external_randompack = get_option('external_randompack')
 
 if external_randompack
@@ -254,7 +256,7 @@ endif
 
 py.extension_module(
   '_core',
-  sources: wrap_sources + core_sources + extra_sources,
+  sources: wrap_sources + core_sources + extra_sources + python_api_sources,
   objects: extra_objs,
   include_directories: inc,
   dependencies: deps,
@@ -264,3 +266,7 @@ py.extension_module(
 )
 
 py.install_sources('randompack/__init__.py', subdir: 'randompack')
+py.install_sources(
+  'randompack/include/randompack_python_api.h',
+  subdir: 'randompack/include',
+)

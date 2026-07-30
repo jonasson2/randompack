@@ -3,6 +3,11 @@ set -eu
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 REPO_ROOT=$(dirname "$SCRIPT_DIR")
 cd "$REPO_ROOT"
+builder="$REPO_ROOT/python/.venv/bin/python"
+[ -x "$builder" ] || {
+  echo "check-python-wheel.sh: python/.venv is not available" 1>&2
+  exit 1
+}
 
 # check-python-wheel.sh
 # Build and test a clean Python wheel and sdist (local system only).
@@ -31,12 +36,15 @@ mkdir -p "$tmp"
 
 echo "Copying python package..."
 rsync -av \
+  --exclude '.venv' \
   --exclude '__pycache__' \
   --exclude '.mesonpy-*' \
   --exclude 'dist' \
   --exclude 'build' \
   --exclude '.pytest_cache' \
   --exclude 'docs/_build' \
+  --exclude '*.so' \
+  --exclude 'wheelhouse' \
   python/ "$tmp"/
 
 cd "$tmp"
@@ -47,7 +55,7 @@ git add -A
 git commit -qm "release"
 
 echo "Building wheel and sdist..."
-python -m build
+"$builder" -m build
 
 echo
 echo "Running clean install and tests..."
