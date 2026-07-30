@@ -8,11 +8,22 @@ on:
 jobs:
   build:
     runs-on: ubuntu-22.04-arm  # free once randompack goes public
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - build: "cp310-* cp311-* cp312-* cp313-*"
+            image: manylinux2014
+            artifact: wheels-linux-aarch64
+          - build: "cp314-*"
+            image: manylinux_2_28
+            artifact: wheels-linux-aarch64-cp314
 
     env:
       CIBW_ARCHS_LINUX: aarch64
-      CIBW_BUILD: "cp310-* cp311-* cp312-* cp313-* cp314-*"
+      CIBW_BUILD: ${{ matrix.build }}
       CIBW_CONFIG_SETTINGS: "setup-args=-Dblas=builtin"
+      CIBW_MANYLINUX_AARCH64_IMAGE: ${{ matrix.image }}
       CIBW_SKIP: "*musllinux*"
 
     steps:
@@ -27,6 +38,6 @@ jobs:
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
-          name: wheels-linux-aarch64
+          name: ${{ matrix.artifact }}
           path: wheelhouse/*.whl
           retention-days: 7
