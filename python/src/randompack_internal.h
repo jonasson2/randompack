@@ -85,8 +85,6 @@ void rand_float_avx512(float x[], size_t len, randompack_rng *rng);
 void scale_double_avx512(double x[], size_t len, double scale);
 void scale_float_avx512(float x[], size_t len, float scale);
 void shift_scale_double_avx512(double x[], size_t len, double shift, double scale);
-void affine_double_avx512(double x[], size_t len, double shift, double scale,
-  double hi);
 void shift_scale_float_avx512(float x[], size_t len, float shift, float scale);
 #endif
 
@@ -102,8 +100,6 @@ void rand_float_avx2(float x[], size_t len, randompack_rng *rng);
 void scale_double_avx2(double x[], size_t len, double scale);
 void scale_float_avx2(float x[], size_t len, float scale);
 void shift_scale_double_avx2(double x[], size_t len, double shift, double scale);
-void affine_double_avx2(double x[], size_t len, double shift, double scale,
-  double hi);
 void shift_scale_float_avx2(float x[], size_t len, float shift, float scale);
 #if defined(RANDOMPACK_TEST_HOOKS)
 int randompack_avx2_used(void);

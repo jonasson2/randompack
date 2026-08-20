@@ -1,13 +1,14 @@
 // TimeDistMKL.c
 // Compare Intel oneMKL VSL vs randompack distributions (ns/value).
 //
-// Example build on Linux with clang (after sourcing oneAPI setvars.sh):
-//   clang -O3 -std=c11 -I../src -I${MKLROOT}/include TimeDistMKL.c \
-//     -L../build/src -lrandompack -Wl,-rpath,../build/src \
-//     -Wl,--start-group \
-//     ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a \
-//     ${MKLROOT}/lib/intel64/libmkl_sequential.a \
-//     ${MKLROOT}/lib/intel64/libmkl_core.a \
+// Example build on Linux with clang after sourcing oneAPI setvars.sh. Join the
+// following lines with spaces:
+//   clang -O3 -std=c11 -I../src -I${MKLROOT}/include TimeDistMKL.c
+//     -L../build/src -lrandompack -Wl,-rpath,../build/src
+//     -Wl,--start-group
+//     ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a
+//     ${MKLROOT}/lib/intel64/libmkl_sequential.a
+//     ${MKLROOT}/lib/intel64/libmkl_core.a
 //     -Wl,--end-group -lpthread -lm -ldl -o TimeDistMKL
 //
 // If you prefer dynamic MKL linkage, replace the three static libraries with
