@@ -174,24 +174,51 @@ eight-way loop unrolling is used to advance the eight streams.
 
 ### Building from sources
 
-Randompack relies on the Meson/Ninja build system. After cloning the repository
-from GitHub, build an optimized version with:
+Randompack relies on the Meson/Ninja build system. Choose either a system-wide
+or user-local installation before configuring the build.
+
+For a system-wide installation under `/usr/local`, configure, build, test, and
+install with:
+
 ```sh
-    meson setup build --buildtype=release
+    meson setup build --buildtype=release --prefix=/usr/local --libdir=lib
     ninja -C build
+    meson test -C build --print-errorlogs
+    meson install -C build
 ```
-To install the library and headers into the default installation directory
-(usually `/usr/local`):
+
+The installation step may request `sudo` when `/usr/local` is not writable.
+
+For a user-local installation that does not require `sudo`, use `~/.local`:
+
 ```sh
-    sudo ninja -C build install
+    meson setup build --buildtype=release --prefix="$HOME/.local" --libdir=lib
+    ninja -C build
+    meson test -C build --print-errorlogs
+    meson install -C build
 ```
-To install into a user-selected location, set --prefix when configuring:
+
+Make the user-local installation visible to `pkg-config` in the current shell:
+
 ```sh
-    meson setup build --buildtype=release --prefix=$HOME/opt
-    ninja -C build install
+    export PKG_CONFIG_PATH="$HOME/.local/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
 ```
-Other projects can use `pkg-config` to obtain the required compiler and linker
-flags, for example:
+
+Add this export to the appropriate shell startup file if the user-local
+installation should be available in future shells. No such setting is normally
+needed for a system-wide installation.
+
+In either case, verify the installed version and inspect the compiler and linker
+flags with:
+
+```sh
+    pkg-config --modversion randompack
+    pkg-config --cflags --libs randompack
+```
+
+Other projects can then use `pkg-config` to compile and link against Randompack,
+for example:
+
 ```sh
     cc -o myprog myprog.c $(pkg-config --cflags --libs randompack)
 ```
@@ -204,7 +231,7 @@ library and headers into the current conda environment (once available) use:
     conda install -c conda-forge randompacklib
 ```
 (the installation prefix is available in $CONDA_PREFIX). To compile and link
-another C program against the installed library using `pkg_config`, first make
+another C program against the installed library using `pkg-config`, first make
 sure that it is available in the environment:
 ```sh
     conda install -c conda-forge pkg-config

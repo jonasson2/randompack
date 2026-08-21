@@ -13,6 +13,11 @@ TABLE OF CONTENTS
 - [PractRand](#practrand)
 
 ## C-LIBRARY
+
+These instructions use a checkout-local `install/` prefix for developing
+Randompack and testing its language interfaces. For an ordinary system-wide or
+user-local installation, follow [README.md](README.md).
+
 ### Meson setup:
     scripts/meson-setup.sh build                       # optimized (default buildtype)
     scripts/meson-setup.sh debug --buildtype=debug     # debug-enabled
@@ -24,9 +29,15 @@ TABLE OF CONTENTS
     ninja -C build
     ninja -C debug
 
+### Test:
+    meson test -C build --print-errorlogs
+    meson test -C debug --print-errorlogs
+
 ### Install:
-    ninja -C build install      # used for Julia and Fortran
+    meson install -C build      # used for Julia and Fortran
                                 # (copies library to ./install)
+    PKG_CONFIG_PATH="$PWD/install/lib/pkgconfig" \
+      pkg-config --modversion randompack
     build/examples/RunRandom    # simple example program
 
 ## ALL SUBPROJECTS
@@ -43,7 +54,7 @@ TABLE OF CONTENTS
     julia> ] instantiate       # install project dependencies (once per Julia version) (1)
 
 ### After change to C library:
-    Make sure to run "ninja -C build install" and restart Julia
+    Make sure to run "meson install -C build" and restart Julia
 
 ### Use:
     export JULIA_PROJECT=.     # needed in a new shell (2)
@@ -137,7 +148,7 @@ TABLE OF CONTENTS
     > library(randompack)              # load into session
 
 ## NORMAL TESTING
-    meson test -C build                # run meson defined tests for C and Fortran
+    meson test -C build --print-errorlogs  # run Meson tests for C and Fortran
     build/tests/RunTests -v            # run C tests in verbose mode
     build/tests/RunTests -h            # show help for test runner
     build/tests/RunFortranTests        # Run only the Fortran tests
