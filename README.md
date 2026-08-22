@@ -183,12 +183,15 @@ Building Randompack requires Meson, Ninja, C and Fortran compilers, and
 ```
 
 Choose either a system-wide or user-local installation before configuring the
-build.
+build. For source installations, specifying `--libdir=lib` is recommended to
+ensure consistent library paths across platforms. The commands below use this
+setting. Without an explicit `libdir`, Meson may choose a platform-specific
+multiarch directory.
 
 For a system-wide installation, configure, build, test, and install with:
 
 ```sh
-    meson setup build --buildtype=release
+    meson setup build --buildtype=release --prefix=/usr/local --libdir=lib
     ninja -C build
     meson test -C build
     sudo meson install -C build
