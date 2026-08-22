@@ -177,11 +177,10 @@ eight-way loop unrolling is used to advance the eight streams.
 Randompack relies on the Meson/Ninja build system. Choose either a system-wide
 or user-local installation before configuring the build.
 
-For a system-wide installation under `/usr/local`, configure, build, test, and
-install with:
+For a system-wide installation, configure, build, test, and install with:
 
 ```sh
-    meson setup build --buildtype=release --prefix=/usr/local --libdir=lib
+    meson setup build --buildtype=release
     ninja -C build
     meson test -C build --print-errorlogs
     meson install -C build

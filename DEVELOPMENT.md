@@ -14,16 +14,14 @@ TABLE OF CONTENTS
 
 ## C-LIBRARY
 
-These instructions use a checkout-local `install/` prefix for developing
-Randompack and testing its language interfaces. For an ordinary system-wide or
-user-local installation, follow [README.md](README.md).
+For ordinary installation, see [README.md](README.md). The setup script below
+is for Randompack development: it recreates the build directory and installs
+under the checkout-local `install/` prefix.
 
 ### Meson setup:
     scripts/meson-setup.sh build                       # optimized (default buildtype)
     scripts/meson-setup.sh debug --buildtype=debug     # debug-enabled
     CC=<C-compiler> scripts/meson-setup.sh <builddir>  # optional compiler override
-    = these set library "prefix" to install/
-    = an existing builddir is removed first
 
 ### Build:
     ninja -C build
