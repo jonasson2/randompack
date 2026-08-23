@@ -13,7 +13,7 @@ build-backend = "mesonpy"
 
 [project]
 name = "randompack"
-version = "0.1.9"
+version = "0.1.10"
 license = { file = "LICENSE" }
 requires-python = ">=3.10"
 dependencies = [
@@ -40,4 +40,5 @@ Sig = np.array([[2,1],[1,2]])
 rng.mvn(4, Sig)
 print('wheel smoke test OK')
 "
+python {project}/scripts/check-builtin-blas-exports.py {project}/src/blas.f --module randompack._core --require PyInit__core
 """

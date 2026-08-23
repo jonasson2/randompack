@@ -29,6 +29,8 @@ if build_arm_sleef
 endif
 
 blas_objs = []
+builtin_blas_link_args = []
+builtin_blas_link_depends = []
 fortran_runtime_link_args = []
 if using_builtin_blas
   fc = meson.get_compiler('fortran')
@@ -51,6 +53,15 @@ if using_builtin_blas
   )
   blas_objs = [blas_lib.extract_all_objects(recursive: false)]
   fortran_runtime_link_args = cc.get_supported_link_arguments(['-fortranlibs'])
+  if host_system == 'darwin'
+    blas_export_file = meson.current_source_dir() / 'randompack_blas_unexported.txt'
+    builtin_blas_link_args = ['-Wl,-unexported_symbols_list,' + blas_export_file]
+    builtin_blas_link_depends = files('randompack_blas_unexported.txt')
+  elif host_system == 'linux'
+    blas_export_file = meson.current_source_dir() / 'randompack_blas.map'
+    builtin_blas_link_args = ['-Wl,--version-script=' + blas_export_file]
+    builtin_blas_link_depends = files('randompack_blas.map')
+  endif
 endif
 
 build_avx2_define = build_avx2 ? ['-DBUILD_AVX2'] : []
@@ -150,7 +161,8 @@ if host_system == 'windows'
     dependencies: c_deps,
     c_args: base_c_args,
     link_language: randompack_link_language,
-    link_args: shared_soname_link_args,
+    link_args: shared_soname_link_args + builtin_blas_link_args,
+    link_depends: builtin_blas_link_depends,
     vs_module_defs: 'randompack.def',
     install: true,
   )
@@ -163,9 +175,31 @@ else
     dependencies: c_deps,
     c_args: base_c_args,
     link_language: randompack_link_language,
-    link_args: shared_soname_link_args,
+    link_args: shared_soname_link_args + builtin_blas_link_args,
+    link_depends: builtin_blas_link_depends,
     install: true,
   )
+endif
+
+if using_builtin_blas and get_option('build_tests')
+  export_check_python = find_program('python3', 'python', required: false)
+  if export_check_python.found()
+    test(
+      'builtin-blas-exports',
+      export_check_python,
+      args: [
+        files('../scripts/check-builtin-blas-exports.py'),
+        files('blas.f'),
+        librandompack,
+        '--require',
+        'randompack_create',
+        '--require',
+        'randompack_mvn',
+      ],
+    )
+  else
+    warning('Python not found; built-in BLAS export test disabled')
+  endif
 endif
 
 install_headers(
@@ -179,6 +213,11 @@ randompack_dep = declare_dependency(
   dependencies: c_deps,
   compile_args: base_c_args,
 )
+
+test_blas_dep = declare_dependency()
+if using_builtin_blas
+  test_blas_dep = declare_dependency(link_with: blas_lib)
+endif
 
 randompack_fortran_dep = randompack_dep
 if build_fortran_interface and host_system == 'windows'

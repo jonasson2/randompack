@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.10] - 2026-08-23
+
+- Prevent the bundled reference BLAS and LAPACK routines from being exported
+  from shared libraries and Python extensions, avoiding symbol interposition
+  in applications that use another BLAS implementation.
+- Add export regression checks for standalone and Python built-in-BLAS builds.
+- Remove unused SIMD helper implementations and associated compiler warnings.
+- Clarify standalone-library installation and library-directory guidance.
+
 ## [0.1.9] - 2026-07-30
 
 - Add a versioned Python C API capsule for companion extension modules.

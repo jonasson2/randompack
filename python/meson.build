@@ -16,7 +16,7 @@
 # only needed if pyproject.toml, package layout, or Python version changes.
 
 project('randompack', 'c',
-  version: '0.1.9',
+  version: '0.1.10',
   default_options: ['c_std=c11']
 )
 
@@ -98,6 +98,8 @@ endif
 extra_sources = []
 extra_objs = []
 core_c_args = []
+builtin_blas_link_args = []
+builtin_blas_link_depends = []
 if cc.has_argument('-O3')
   core_c_args += ['-O3']
 endif
@@ -199,6 +201,15 @@ if local_dpstrf
   if using_builtin_blas
     add_languages('fortran', required: true, native: false)
     extra_sources += files('src/blas.f')
+    if host_system == 'darwin'
+      blas_export_file = meson.current_source_dir() / 'src/randompack_blas_unexported.txt'
+      builtin_blas_link_args = ['-Wl,-unexported_symbols_list,' + blas_export_file]
+      builtin_blas_link_depends = files('src/randompack_blas_unexported.txt')
+    elif host_system == 'linux'
+      blas_export_file = meson.current_source_dir() / 'src/randompack_blas.map'
+      builtin_blas_link_args = ['-Wl,--version-script=' + blas_export_file]
+      builtin_blas_link_depends = files('src/randompack_blas.map')
+    endif
   endif
 endif
 
@@ -254,16 +265,32 @@ endif
 
 endif
 
-py.extension_module(
+core_module = py.extension_module(
   '_core',
   sources: wrap_sources + core_sources + extra_sources + python_api_sources,
   objects: extra_objs,
   include_directories: inc,
   dependencies: deps,
   c_args: core_c_args,
+  link_args: builtin_blas_link_args,
+  link_depends: builtin_blas_link_depends,
   install: true,
   subdir: 'randompack',
 )
+
+if using_builtin_blas
+  test(
+    'builtin-blas-exports',
+    py,
+    args: [
+      files('scripts/check-builtin-blas-exports.py'),
+      files('src/blas.f'),
+      core_module,
+      '--require',
+      'PyInit__core',
+    ],
+  )
+endif
 
 py.install_sources('randompack/__init__.py', subdir: 'randompack')
 py.install_sources(

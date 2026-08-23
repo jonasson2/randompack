@@ -18,4 +18,8 @@ rsync -av --delete \
 echo "Copying LICENSE..."
 cp -f LICENSE python/LICENSE
 
+echo "Copying export checker..."
+mkdir -p python/scripts
+cp -f scripts/check-builtin-blas-exports.py python/scripts/
+
 echo "Sync complete."

@@ -24,6 +24,8 @@ rsync -av --delete \
   --exclude='blas.f' \
   --exclude='norm_polar.inc' \
   --exclude='printX.c' \
+  --exclude='randompack_blas.map' \
+  --exclude='randompack_blas_unexported.txt' \
   --exclude='randompack_float.c' \
   --exclude='*_float.inc' \
   --exclude='*_float.h' \

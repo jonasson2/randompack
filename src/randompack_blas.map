@@ -1,0 +1,25 @@
+{
+  local:
+    daxpy_;
+    dcopy_;
+    dgemm_;
+    dgemv_;
+    disnan_;
+    dlaisnan_;
+    dlacpy_;
+    dlamch_;
+    dlaset_;
+    dpotrf_;
+    dpotrf2_;
+    dscal_;
+    dswap_;
+    dsyrk_;
+    dtrmm_;
+    dtrsm_;
+    idamax_;
+    ieeeck_;
+    ilaenv_;
+    iparmq_;
+    lsame_;
+    xerbla_;
+};

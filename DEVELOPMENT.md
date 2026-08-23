@@ -189,6 +189,9 @@ under the checkout-local `install/` prefix.
     scripts/run-test-variants.sh  # Run built-in BLAS, no128, and nosimd variants
     scripts/test-all.sh           # Run tests for all language interfaces
 
+The built-in BLAS variant also checks that the bundled BLAS and LAPACK routines
+are not exported from the shared library.
+
 ### TestU01:
     In some folder:
     wget http://simul.iro.umontreal.ca/testu01/TestU01.zip  # Download official TestU01

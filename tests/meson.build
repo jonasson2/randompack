@@ -59,7 +59,7 @@ run_tests = executable(
   'RunTests',
   test_sources + extra_util + common_util + dpstrf_test_src,
   include_directories: [common_inc],
-  dependencies : [randompack_dep],
+  dependencies : [randompack_dep, test_blas_dep],
   c_args : ['-DRANDOMPACK_TEST_HOOKS'] + blas_test_args,
 )
 
