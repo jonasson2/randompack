@@ -1,14 +1,17 @@
 ## Test environments
-- macOS aarch64 (local), R 4.5.2
+- macOS Sequoia 15.7.4 (aarch64), R 4.5.2
 - Windows Server 2022 x64, R-devel (win-builder)
 - Windows Server 2022 x64, R-release (win-builder)
 
 ## R CMD check results
-There were no ERRORs or WARNINGs.
+0 errors | 0 warnings | 1 note
 
-There were the following NOTEs:
-1. `New submission` — this is the first submission of `randompack` to CRAN.
-2. win-builder reported the use of non-portable compiler flags `-mavx2` and `-mfma`. These flags are used only for optional SIMD-specific source files selected at configure time when the compiler supports them. The package contains scalar fallback implementations, and runtime dispatch is used so that the generic code path remains available on machines without these instruction sets.
+The local `--as-cran` check skipped HTML validation because recent HTML Tidy
+and the R package V8 were unavailable. Package installation, tests, examples,
+and the PDF manual all completed successfully.
+
+## Reverse dependencies
+There are currently no reverse dependencies on CRAN.
 
 ## Submission
-This is the first submission of `randompack` to CRAN.
+This is an update to the existing CRAN package.
