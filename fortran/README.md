@@ -72,7 +72,7 @@ Randompack is also available on conda-forge. To install the library and the Fort
 interface, `randompack.f90`, into the current conda environment use:
 
 ```sh
-    conda install -c conda-forge randompacklib
+    conda install -c conda-forge librandompack
 ```
 
 (the installation prefix is available in `$CONDA_PREFIX`). To compile `randompack.f90`

@@ -234,7 +234,7 @@ for example:
 Randompack is also intended to become available on conda-forge. To install the
 library and headers into the current conda environment (once available) use:
 ```sh
-    conda install -c conda-forge randompacklib
+    conda install -c conda-forge librandompack
 ```
 (the installation prefix is available in $CONDA_PREFIX). To compile and link
 another C program against the installed library using `pkg-config`, first make

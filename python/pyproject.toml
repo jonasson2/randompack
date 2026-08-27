@@ -13,7 +13,7 @@ build-backend = "mesonpy"
 
 [project]
 name = "randompack"
-version = "0.1.10"
+version = "0.1.11"
 license = { file = "LICENSE" }
 requires-python = ">=3.10"
 dependencies = [
@@ -42,3 +42,6 @@ print('wheel smoke test OK')
 "
 python {project}/scripts/check-builtin-blas-exports.py {project}/src/blas.f --module randompack._core --require PyInit__core
 """
+
+[tool.cibuildwheel.windows]
+config-settings = { "setup-args" = "--vsenv -Dblas=builtin" }

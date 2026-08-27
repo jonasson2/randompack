@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.11] - 2026-08-27
+
+- Rename the conda-forge C and Fortran library output from `randompacklib` to
+  `librandompack`, matching the installed library filename and conventional
+  conda-forge library-package naming.
+- Document the `librandompack` conda-forge installation command for the C and
+  Fortran interfaces.
+- Make Windows Python-wheel builds explicitly use the MSVC environment.
+
 ## [0.1.10] - 2026-08-23
 
 - Prevent the bundled reference BLAS and LAPACK routines from being exported

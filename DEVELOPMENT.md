@@ -268,6 +268,9 @@ are not exported from the shared library.
     gh run view <RUN-ID> --log-failed  # view failed log
     gh run delete <RUN-ID>             # delete run
     .                                  # wait for the actions to complete successfully
+    The [tool.cibuildwheel.windows] settings in python/pyproject.toml pass
+    Meson's --vsenv option so Windows wheels use MSVC rather than an accidental
+    MinGW compiler found on the GitHub Actions PATH.
     cd python/
     /tmp/randompack-release-tools/bin/python -m build -s  # build sdist in dist/
     cd ..
