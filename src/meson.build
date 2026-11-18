@@ -163,6 +163,7 @@ if host_system == 'windows'
     link_language: randompack_link_language,
     link_args: shared_soname_link_args + builtin_blas_link_args,
     link_depends: builtin_blas_link_depends,
+    name_prefix: '',
     vs_module_defs: 'randompack.def',
     install: true,
   )
